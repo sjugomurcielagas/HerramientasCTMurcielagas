@@ -47,12 +47,12 @@
 
     .hero {
       position: relative;
-      min-height: 250px;
+      min-height: 330px;
       background: rgba(255,255,255,.42);
       border: 1px solid rgba(216, 229, 239, .9);
       border-radius: 28px;
       box-shadow: var(--shadow-soft);
-      padding: 34px 190px 30px;
+      padding: 42px 330px 38px;
       margin-bottom: 18px;
       backdrop-filter: blur(3px);
       overflow: hidden;
@@ -66,8 +66,8 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 12% 50%, rgba(0,159,227,.10), transparent 16rem),
-        radial-gradient(circle at 88% 50%, rgba(0,111,166,.10), transparent 16rem);
+        radial-gradient(circle at 12% 50%, rgba(0,159,227,.10), transparent 18rem),
+        radial-gradient(circle at 88% 50%, rgba(0,111,166,.10), transparent 18rem);
       pointer-events: none;
     }
 
@@ -83,13 +83,13 @@
     }
 
     .hero-logo.fadec {
-      left: 34px;
-      height: 170px;
+      left: 28px;
+      height: 340px;
     }
 
     .hero-logo.murcielagas {
-      right: 34px;
-      height: 190px;
+      right: 24px;
+      height: 380px;
     }
 
     .hero-text {
@@ -230,22 +230,26 @@
 
     @media (min-width: 700px) and (max-width: 1099px) {
       .hero {
-        min-height: 230px;
-        padding: 30px 160px 28px;
+        min-height: 300px;
+        padding: 36px 250px 34px;
       }
 
       .hero-logo.fadec {
-        left: 26px;
-        height: 140px;
+        left: 18px;
+        height: 280px;
       }
 
       .hero-logo.murcielagas {
-        right: 26px;
-        height: 158px;
+        right: 16px;
+        height: 316px;
       }
 
       h1 {
-        font-size: clamp(42px, 6vw, 62px);
+        font-size: clamp(40px, 5.4vw, 58px);
+      }
+
+      .subtitle {
+        font-size: 16px;
       }
 
       .grid {
@@ -271,6 +275,7 @@
         display: block;
         padding: 18px 14px 20px;
         border-radius: 22px;
+        text-align: center;
       }
 
       .hero::before {
@@ -283,24 +288,21 @@
         position: static;
         transform: none;
         display: inline-block;
-        margin: 0 10px 12px;
+        margin: 0 8px 12px;
         vertical-align: middle;
       }
 
       .hero-logo.fadec {
-        height: 94px;
+        height: 145px;
       }
 
       .hero-logo.murcielagas {
-        height: 108px;
-      }
-
-      .hero {
-        text-align: center;
+        height: 165px;
       }
 
       .hero-text {
         max-width: none;
+        clear: both;
       }
 
       .eyebrow {
@@ -310,7 +312,7 @@
       }
 
       h1 {
-        font-size: clamp(36px, 10vw, 52px);
+        font-size: clamp(34px, 9vw, 48px);
         margin-bottom: 8px;
       }
 
@@ -340,15 +342,15 @@
 
     @media (max-width: 420px) {
       .hero-logo.fadec {
-        height: 82px;
+        height: 125px;
       }
 
       .hero-logo.murcielagas {
-        height: 96px;
+        height: 145px;
       }
 
       h1 {
-        font-size: clamp(32px, 10vw, 46px);
+        font-size: clamp(31px, 9vw, 44px);
       }
     }
   </style>
@@ -363,6 +365,12 @@
         alt="FADEC"
       >
 
+      <img
+        class="hero-logo murcielagas"
+        src="./assets/logo%20las%20murcielagas%20nuevo.png"
+        alt="Las Murciélagas"
+      >
+
       <div class="hero-text">
         <div class="eyebrow">Las Murciélagas · Herramientas internas</div>
         <h1>Herramientas del Cuerpo Técnico</h1>
@@ -370,12 +378,6 @@
           Acceso rápido a las herramientas de trabajo del cuerpo técnico.
         </p>
       </div>
-
-      <img
-        class="hero-logo murcielagas"
-        src="./assets/logo%20las%20murcielagas%20nuevo.png"
-        alt="Las Murciélagas"
-      >
     </section>
 
     <section class="grid" aria-label="Herramientas disponibles">
