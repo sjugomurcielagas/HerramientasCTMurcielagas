@@ -1569,6 +1569,7 @@ function updateBlockLabel() {
 
     const script = document.createElement('script');
     script.src = API_URL + '?' + params.toString();
+console.log('JSONP URL:', script.src);
 
     const timeout = setTimeout(() => {
       cleanup();
