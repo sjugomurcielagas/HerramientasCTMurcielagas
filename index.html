@@ -16,7 +16,7 @@
       --accent: #009fe3;
       --accent-dark: #006fa6;
       --border: #d8e5ef;
-      --shadow: 0 16px 36px rgba(16, 32, 51, .10);
+      --shadow: 0 18px 42px rgba(16, 32, 51, .12);
       --sans: 'Barlow', sans-serif;
       --condensed: 'Barlow Condensed', sans-serif;
     }
@@ -30,7 +30,8 @@
     body {
       min-height: 100vh;
       background:
-        radial-gradient(circle at top left, rgba(0, 159, 227, .16), transparent 30rem),
+        radial-gradient(circle at top left, rgba(0, 159, 227, .18), transparent 28rem),
+        radial-gradient(circle at bottom right, rgba(0, 111, 166, .10), transparent 30rem),
         linear-gradient(180deg, #f8fbff 0%, #eaf3f9 100%);
       color: var(--text);
       font-family: var(--sans);
@@ -42,45 +43,44 @@
 
     .app {
       width: 100%;
-      max-width: 1040px;
+      max-width: 1080px;
     }
 
     header {
-      margin-bottom: 22px;
-    }
-
-    .brand-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 20px;
+      text-align: center;
+      margin-bottom: 28px;
     }
 
     .brand-logos {
       display: flex;
       align-items: center;
-      gap: 14px;
+      justify-content: center;
+      gap: 26px;
+      margin-bottom: 18px;
       flex-wrap: wrap;
     }
 
     .brand-logo {
-      height: 58px;
+      height: 92px;
       width: auto;
-      max-width: 170px;
+      max-width: 240px;
       object-fit: contain;
       display: block;
+      filter: drop-shadow(0 8px 18px rgba(16, 32, 51, .14));
+    }
+
+    .brand-logo.fadec {
+      height: 86px;
     }
 
     .brand-logo.murcielagas {
-      height: 68px;
-      max-width: 190px;
+      height: 104px;
     }
 
     .eyebrow {
       font-family: var(--condensed);
       text-transform: uppercase;
-      letter-spacing: .14em;
+      letter-spacing: .16em;
       font-size: 13px;
       font-weight: 700;
       color: var(--accent-dark);
@@ -89,8 +89,8 @@
 
     h1 {
       font-family: var(--condensed);
-      font-size: clamp(34px, 7vw, 64px);
-      line-height: .95;
+      font-size: clamp(40px, 8vw, 76px);
+      line-height: .9;
       text-transform: uppercase;
       letter-spacing: .02em;
       color: var(--text);
@@ -99,41 +99,69 @@
 
     .subtitle {
       color: var(--muted);
-      font-size: 16px;
-      max-width: 700px;
-      line-height: 1.5;
+      font-size: 17px;
+      max-width: 620px;
+      line-height: 1.45;
+      margin: 0 auto;
     }
 
     .grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 14px;
-      margin-top: 26px;
+      gap: 16px;
+      margin-top: 28px;
     }
 
     .tool-card {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       text-decoration: none;
       color: inherit;
-      background: var(--card);
+      background: rgba(255, 255, 255, .94);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 22px;
+      border-radius: 22px;
+      padding: 24px;
       box-shadow: var(--shadow);
+      min-height: 210px;
       transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, opacity .14s ease;
-      min-height: 190px;
     }
 
     .tool-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(0, 159, 227, .55);
-      box-shadow: 0 18px 42px rgba(16, 32, 51, .15);
+      transform: translateY(-3px);
+      border-color: rgba(0, 159, 227, .58);
+      box-shadow: 0 24px 52px rgba(16, 32, 51, .16);
+    }
+
+    .tool-label {
+      font-family: var(--condensed);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+
+    .tool-title {
+      font-family: var(--condensed);
+      font-size: clamp(31px, 5vw, 42px);
+      line-height: .92;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tool-desc {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 310px;
     }
 
     .tool-card-disabled {
       cursor: not-allowed;
       opacity: .72;
-      position: relative;
     }
 
     .tool-card-disabled:hover {
@@ -142,37 +170,12 @@
       box-shadow: var(--shadow);
     }
 
-    .tool-label {
-      font-family: var(--condensed);
-      font-size: 13px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--accent-dark);
-      margin-bottom: 6px;
-    }
-
-    .tool-title {
-      font-family: var(--condensed);
-      font-size: 32px;
-      line-height: 1;
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    .tool-desc {
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.45;
-    }
-
     .badge {
       display: inline-flex;
       align-items: center;
       width: fit-content;
-      margin-top: 14px;
-      padding: 5px 10px;
+      margin-top: 18px;
+      padding: 6px 11px;
       border-radius: 999px;
       border: 1px solid rgba(0, 111, 166, .24);
       background: rgba(0, 159, 227, .08);
@@ -185,44 +188,49 @@
     }
 
     .footer {
-      margin-top: 24px;
+      margin-top: 26px;
       color: var(--muted);
       font-size: 12px;
+      text-align: center;
       border-top: 1px solid var(--border);
       padding-top: 14px;
     }
 
-    @media (max-width: 520px) {
-      .brand-row {
-        align-items: flex-start;
-      }
-
-      .brand-logos {
-        gap: 10px;
-      }
-
-      .brand-logo {
-        height: 46px;
-        max-width: 130px;
-      }
-
-      .brand-logo.murcielagas {
-        height: 54px;
-        max-width: 150px;
-      }
-
-      .tool-card {
-        min-height: auto;
-      }
-    }
-
-    @media (min-width: 720px) {
+    @media (min-width: 760px) {
       body {
-        padding: 32px;
+        padding: 34px;
       }
 
       .grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        align-items: flex-start;
+      }
+
+      .brand-logos {
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .brand-logo.fadec {
+        height: 68px;
+      }
+
+      .brand-logo.murcielagas {
+        height: 82px;
+      }
+
+      .subtitle {
+        font-size: 15px;
+      }
+
+      .tool-card {
+        min-height: 170px;
+        padding: 20px;
       }
     }
   </style>
@@ -231,46 +239,47 @@
 <body>
   <main class="app">
     <header>
-      <div class="brand-row">
-        <div class="brand-logos" aria-label="Identidad institucional">
-          <img
-            class="brand-logo fadec"
-            src="./assets/Fadec%20logo.PNG"
-            alt="FADEC"
-          >
+      <div class="brand-logos" aria-label="Identidad institucional">
+        <img
+          class="brand-logo fadec"
+          src="./assets/Fadec%20logo.PNG"
+          alt="FADEC"
+        >
 
-          <img
-            class="brand-logo murcielagas"
-            src="./assets/logo%20las%20murcielagas%20nuevo.png"
-            alt="Las Murciélagas"
-          >
-        </div>
+        <img
+          class="brand-logo murcielagas"
+          src="./assets/logo%20las%20murcielagas%20nuevo.png"
+          alt="Las Murciélagas"
+        >
       </div>
 
       <div class="eyebrow">Las Murciélagas · Herramientas internas</div>
       <h1>Herramientas del CT</h1>
       <p class="subtitle">
-        Acceso centralizado a las herramientas de trabajo del cuerpo técnico:
-        reportes de entrenamiento, tablero táctico y futuras herramientas de gestión del plantel.
+        Acceso rápido a las herramientas de trabajo del cuerpo técnico.
       </p>
     </header>
 
     <section class="grid" aria-label="Herramientas disponibles">
 
       <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento">
-        <div class="tool-label">Seguimiento</div>
-        <div class="tool-title">Reportes de entrenamiento</div>
-        <p class="tool-desc">
-          Control semanal, análisis periódicos, jugadoras analizadas, auditoría de datos e informes asistidos por IA.
-        </p>
+        <div>
+          <div class="tool-label">Seguimiento</div>
+          <div class="tool-title">Reportes de entrenamiento</div>
+          <p class="tool-desc">
+            Control semanal, análisis periódicos e informes internos.
+          </p>
+        </div>
       </a>
 
       <a class="tool-card" href="./tactica/" aria-label="Abrir tablero táctico">
-        <div class="tool-label">Cancha y juego</div>
-        <div class="tool-title">Tablero táctico</div>
-        <p class="tool-desc">
-          Herramienta visual para trabajar situaciones, movimientos y organización táctica en fútbol para personas ciegas.
-        </p>
+        <div>
+          <div class="tool-label">Cancha y juego</div>
+          <div class="tool-title">Tablero táctico</div>
+          <p class="tool-desc">
+            Movimientos, acciones y organización táctica.
+          </p>
+        </div>
       </a>
 
       <a
@@ -280,11 +289,14 @@
         aria-disabled="true"
         onclick="return false;"
       >
-        <div class="tool-label">Gestión del plantel</div>
-        <div class="tool-title">Base de datos</div>
-        <p class="tool-desc">
-          Futuro módulo para centralizar información actualizada de jugadoras: datos personales, documentación, talles, fotos y registros útiles para el cuerpo técnico.
-        </p>
+        <div>
+          <div class="tool-label">Gestión del plantel</div>
+          <div class="tool-title">Base de datos</div>
+          <p class="tool-desc">
+            Datos, documentación, fotos y registros del plantel.
+          </p>
+        </div>
+
         <span class="badge">En construcción</span>
       </a>
 
