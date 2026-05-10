@@ -42,11 +42,39 @@
 
     .app {
       width: 100%;
-      max-width: 920px;
+      max-width: 1040px;
     }
 
     header {
       margin-bottom: 22px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .brand-logos {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand-logo {
+      height: 58px;
+      width: auto;
+      max-width: 170px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .brand-logo.murcielagas {
+      height: 68px;
+      max-width: 190px;
     }
 
     .eyebrow {
@@ -72,7 +100,7 @@
     .subtitle {
       color: var(--muted);
       font-size: 16px;
-      max-width: 620px;
+      max-width: 700px;
       line-height: 1.5;
     }
 
@@ -92,13 +120,26 @@
       border-radius: 18px;
       padding: 22px;
       box-shadow: var(--shadow);
-      transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+      transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, opacity .14s ease;
+      min-height: 190px;
     }
 
     .tool-card:hover {
       transform: translateY(-2px);
       border-color: rgba(0, 159, 227, .55);
       box-shadow: 0 18px 42px rgba(16, 32, 51, .15);
+    }
+
+    .tool-card-disabled {
+      cursor: not-allowed;
+      opacity: .72;
+      position: relative;
+    }
+
+    .tool-card-disabled:hover {
+      transform: none;
+      border-color: var(--border);
+      box-shadow: var(--shadow);
     }
 
     .tool-label {
@@ -126,6 +167,23 @@
       line-height: 1.45;
     }
 
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 14px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 111, 166, .24);
+      background: rgba(0, 159, 227, .08);
+      color: var(--accent-dark);
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
     .footer {
       margin-top: 24px;
       color: var(--muted);
@@ -134,43 +192,79 @@
       padding-top: 14px;
     }
 
+    @media (max-width: 520px) {
+      .brand-row {
+        align-items: flex-start;
+      }
+
+      .brand-logos {
+        gap: 10px;
+      }
+
+      .brand-logo {
+        height: 46px;
+        max-width: 130px;
+      }
+
+      .brand-logo.murcielagas {
+        height: 54px;
+        max-width: 150px;
+      }
+
+      .tool-card {
+        min-height: auto;
+      }
+    }
+
     @media (min-width: 720px) {
       body {
         padding: 32px;
       }
 
       .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .tool-card {
-        min-height: 210px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
-
   </style>
 </head>
 
 <body>
   <main class="app">
     <header>
+      <div class="brand-row">
+        <div class="brand-logos" aria-label="Identidad institucional">
+          <img
+            class="brand-logo fadec"
+            src="./assets/Fadec%20logo.PNG"
+            alt="FADEC"
+          >
+
+          <img
+            class="brand-logo murcielagas"
+            src="./assets/logo%20las%20murcielagas%20nuevo.png"
+            alt="Las Murciélagas"
+          >
+        </div>
+      </div>
+
       <div class="eyebrow">Las Murciélagas · Herramientas internas</div>
       <h1>Herramientas del CT</h1>
       <p class="subtitle">
         Acceso centralizado a las herramientas de trabajo del cuerpo técnico:
-        reportes de entrenamiento y tablero táctico.
+        reportes de entrenamiento, tablero táctico y futuras herramientas de gestión del plantel.
       </p>
     </header>
 
     <section class="grid" aria-label="Herramientas disponibles">
-  <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento">
-    <div class="tool-label">Seguimiento</div>
-    <div class="tool-title">Reportes de entrenamiento</div>
-    <p class="tool-desc">
-      Control semanal, análisis periódicos, jugadoras analizadas, auditoría de datos e informes asistidos por IA.
-    </p>
-  </a>
-</section>
+
+      <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento">
+        <div class="tool-label">Seguimiento</div>
+        <div class="tool-title">Reportes de entrenamiento</div>
+        <p class="tool-desc">
+          Control semanal, análisis periódicos, jugadoras analizadas, auditoría de datos e informes asistidos por IA.
+        </p>
+      </a>
+
       <a class="tool-card" href="./tactica/" aria-label="Abrir tablero táctico">
         <div class="tool-label">Cancha y juego</div>
         <div class="tool-title">Tablero táctico</div>
@@ -178,6 +272,22 @@
           Herramienta visual para trabajar situaciones, movimientos y organización táctica en fútbol para personas ciegas.
         </p>
       </a>
+
+      <a
+        class="tool-card tool-card-disabled"
+        href="#"
+        aria-label="Base de datos en construcción"
+        aria-disabled="true"
+        onclick="return false;"
+      >
+        <div class="tool-label">Gestión del plantel</div>
+        <div class="tool-title">Base de datos</div>
+        <p class="tool-desc">
+          Futuro módulo para centralizar información actualizada de jugadoras: datos personales, documentación, talles, fotos y registros útiles para el cuerpo técnico.
+        </p>
+        <span class="badge">En construcción</span>
+      </a>
+
     </section>
 
     <div class="footer">
