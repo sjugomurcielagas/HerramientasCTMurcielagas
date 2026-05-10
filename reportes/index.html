@@ -61,15 +61,15 @@ body {
 
 
 .top-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 8px 10px;
-  background: rgba(255,255,255,.78);
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.82);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   box-shadow: 0 8px 22px rgba(18, 40, 58, .08);
 }
 
@@ -78,8 +78,8 @@ body {
   align-items: center;
   justify-content: center;
   width: fit-content;
-  min-height: 34px;
-  padding: 7px 11px;
+  min-height: 36px;
+  padding: 7px 12px;
   border-radius: 999px;
   border: 1px solid var(--border-hi);
   background: var(--surface-2);
@@ -100,6 +100,36 @@ body {
   background: var(--accent-dim);
 }
 
+.module-title {
+  min-width: 0;
+  text-align: center;
+  line-height: 1;
+}
+
+.module-title span {
+  display: block;
+  font-family: var(--mono);
+  color: var(--accent-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.module-title strong {
+  display: block;
+  font-family: var(--mono);
+  color: var(--text);
+  font-size: clamp(22px, 4.2vw, 34px);
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .report-brand {
   display: flex;
   align-items: center;
@@ -112,26 +142,37 @@ body {
   display: block;
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(18,40,58,.10));
+  filter: drop-shadow(0 4px 10px rgba(18,40,58,.12));
 }
 
 .report-brand .logo-fadec {
-  height: 38px;
+  height: 44px;
 }
 
 .report-brand .logo-murcielagas {
-  height: 46px;
+  height: 52px;
 }
 
 /* Mobile first: la vista operativa aparece primero; herramientas después. */
-header {
+header.report-header {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
-  padding: 12px 4px 14px;
+  padding: 10px 4px 14px;
   margin-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
+
+.header-copy h1 {
+  font-family: var(--mono);
+  font-size: clamp(28px, 6vw, 42px);
+  letter-spacing: .03em;
+  line-height: .95;
+  font-weight: 800;
+  text-transform: uppercase;
+  max-width: 900px;
+}
+
 
 .eyebrow {
   font-family: var(--mono);
@@ -726,6 +767,47 @@ footer {
   }
 }
 
+
+@media (max-width: 560px) {
+  .top-nav {
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding: 8px 9px;
+    border-radius: 15px;
+  }
+
+  .back-home {
+    min-height: 32px;
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+
+  .module-title span {
+    font-size: 9px;
+    letter-spacing: .12em;
+  }
+
+  .module-title strong {
+    font-size: clamp(18px, 6vw, 24px);
+  }
+
+  .report-brand {
+    gap: 6px;
+  }
+
+  .report-brand .logo-fadec {
+    height: 30px;
+  }
+
+  .report-brand .logo-murcielagas {
+    height: 36px;
+  }
+
+  .header-copy h1 {
+    font-size: clamp(26px, 8vw, 36px);
+  }
+}
+
 @media (min-width: 560px) {
   body { padding: 18px; }
 
@@ -758,9 +840,9 @@ footer {
 @media (min-width: 980px) {
   body { padding: 24px 16px; }
 
-  header {
-    grid-template-columns: 1fr auto;
-    align-items: start;
+  header.report-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: 20px;
   }
 
@@ -808,17 +890,22 @@ footer {
         ← Inicio
       </a>
 
+      <div class="module-title" aria-label="Módulo actual">
+        <span>Las Murciélagas</span>
+        <strong>Reportes de entrenamiento</strong>
+      </div>
+
       <div class="report-brand" aria-label="Identidad institucional">
         <img class="logo-fadec" src="../assets/Fadec%20logo.PNG" alt="FADEC">
         <img class="logo-murcielagas" src="../assets/logo%20las%20murcielagas%20nuevo.png" alt="Las Murciélagas">
       </div>
     </nav>
 
-    <header>
-      <div>
-        <div class="eyebrow">Las Murciélagas · Reportes de entrenamiento</div>
-        <h1>Generador interno de reportes deportivos</h1>
-        <p class="subtitle">Seguimiento interno de reportes de entrenamiento · Las Murciélagas</p>
+    <header class="report-header">
+      <div class="header-copy">
+        <div class="eyebrow">Vista operativa</div>
+        <h1>Seguimiento del plantel</h1>
+        <p class="subtitle">Control semanal · análisis periódicos · informes internos</p>
       </div>
       <aside class="status-panel" aria-label="Estado del sistema">
         <div class="status-line"><span class="status-k">Datos</span><span class="status-v" id="status-data">sin cargar</span></div>
