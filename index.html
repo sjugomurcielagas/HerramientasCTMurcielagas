@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Herramientas CT · Las Murciélagas</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #f4f8fc;
+      --card: #ffffff;
+      --text: #102033;
+      --muted: #5f7288;
+      --accent: #009fe3;
+      --accent-dark: #006fa6;
+      --border: #d8e5ef;
+      --shadow: 0 16px 36px rgba(16, 32, 51, .10);
+      --sans: 'Barlow', sans-serif;
+      --condensed: 'Barlow Condensed', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(0, 159, 227, .16), transparent 30rem),
+        linear-gradient(180deg, #f8fbff 0%, #eaf3f9 100%);
+      color: var(--text);
+      font-family: var(--sans);
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 920px;
+    }
+
+    header {
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      font-family: var(--condensed);
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-family: var(--condensed);
+      font-size: clamp(34px, 7vw, 64px);
+      line-height: .95;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 620px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .tool-card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 159, 227, .55);
+      box-shadow: 0 18px 42px rgba(16, 32, 51, .15);
+    }
+
+    .tool-label {
+      font-family: var(--condensed);
+      font-size: 13px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--accent-dark);
+      margin-bottom: 6px;
+    }
+
+    .tool-title {
+      font-family: var(--condensed);
+      font-size: 32px;
+      line-height: 1;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .tool-desc {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .footer {
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    @media (min-width: 720px) {
+      body {
+        padding: 32px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tool-card {
+        min-height: 210px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <div class="eyebrow">Las Murciélagas · Herramientas internas</div>
+      <h1>Herramientas del CT</h1>
+      <p class="subtitle">
+        Acceso centralizado a las herramientas de trabajo del cuerpo técnico:
+        reportes de entrenamiento y tablero táctico.
+      </p>
+    </header>
+
+    <section class="grid" aria-label="Herramientas disponibles">
+      <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento">
+        <div class="tool-label">Seguimiento</div>
+        <div class="tool-title">Reportes de entrenamiento</div>
+        <p class="tool-desc">
+          Control semanal, análisis periódicos, jugadoras analizadas, auditoría de datos e informes asistidos por IA.
+        </p>
+      </a>
+
+      <a class="tool-card" href="./tactica/" aria-label="Abrir tablero táctico">
+        <div class="tool-label">Cancha y juego</div>
+        <div class="tool-title">Tablero táctico</div>
+        <p class="tool-desc">
+          Herramienta visual para trabajar situaciones, movimientos y organización táctica en fútbol para personas ciegas.
+        </p>
+      </a>
+    </section>
+
+    <div class="footer">
+      Murciélagas Analytics · uso interno del cuerpo técnico
+    </div>
+  </main>
+</body>
+</html>
