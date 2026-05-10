@@ -955,6 +955,45 @@ let includedPlayers = new Set(
     const $ = (id) => document.getElementById(id);
     const fmtDate = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
 
+    const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
+
+    async function callBackend(action, payload = {}, options = {}) {
+      const method = options.method || (payload && Object.keys(payload).length ? 'POST' : 'GET');
+      const url = `${API_BASE_URL}?action=${encodeURIComponent(action)}`;
+
+      const fetchOptions = {
+        method,
+        headers: {
+          'Accept': 'application/json'
+        }
+      };
+
+      if (method !== 'GET') {
+        fetchOptions.headers['Content-Type'] = 'application/json';
+        fetchOptions.body = JSON.stringify({
+          action,
+          payload,
+          ...payload
+        });
+      }
+
+      const response = await fetch(url, fetchOptions);
+      const text = await response.text();
+
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (error) {
+        throw new Error(`La API respondió, pero no devolvió JSON válido. Estado ${response.status}. Respuesta: ${text.slice(0, 300)}`);
+      }
+
+      if (!response.ok) {
+        const message = data && data.error ? data.error : `Error HTTP ${response.status}`;
+        throw new Error(message);
+      }
+
+      return data;
+    }
 
 
 let appStarted = false;
@@ -1532,7 +1571,7 @@ function updateBlockLabel() {
       $('status-date').textContent = rows.length ? fmtDate.format(rows[rows.length - 1].fecha) : '—';
     }
 
-   function loadServerData() {
+   async function loadServerData() {
   $('status-data').textContent = 'cargando...';
 
   const btnLoad = $('btn-load');
@@ -1540,49 +1579,41 @@ function updateBlockLabel() {
 
   $('output').innerHTML = '<div class="notice">Cargando planilla...</div>';
 
-  google.script.run
-    .withSuccessHandler(data => {
-      if (btnLoad) btnLoad.disabled = false;
+  try {
+    const data = await callBackend('getClientData');
 
-      try {
-        if (!data || !data.ok) {
-          const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
-          rows = [];
-          updateStatus('error');
-          $('output').innerHTML = `<div class="notice warn"><strong>No se pudo cargar la planilla.</strong><br>${escapeHtml(error)}</div>`;
-          return;
-        }
-
-        const parsed = data.rows || [];
-
-        if (!parsed.length) {
-          rows = [];
-          updateStatus('sin datos');
-          $('output').innerHTML = '<div class="notice warn"><strong>La planilla no devolvió registros.</strong></div>';
-          return;
-        }
-
-        setRows(parsed, 'planilla');
-
-      } catch (error) {
-        console.error(error);
-        rows = [];
-        updateStatus('error');
-        $('output').innerHTML =
-          `<div class="notice warn"><strong>Los datos cargaron, pero falló la vista rápida.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
-      }
-    })
-    .withFailureHandler(error => {
-      if (btnLoad) btnLoad.disabled = false;
-
-      console.error(error);
+    if (!data || !data.ok) {
+      const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
       rows = [];
+      rawRows = [];
       updateStatus('error');
+      $('output').innerHTML = `<div class="notice warn"><strong>No se pudo cargar la planilla.</strong><br>${escapeHtml(error)}</div>`;
+      return;
+    }
 
-      $('output').innerHTML =
-        `<div class="notice warn"><strong>Error de comunicación con Apps Script.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
-    })
-    .getClientData();
+    const parsed = data.rows || [];
+
+    if (!parsed.length) {
+      rows = [];
+      rawRows = [];
+      updateStatus('sin datos');
+      $('output').innerHTML = '<div class="notice warn"><strong>La planilla no devolvió registros.</strong></div>';
+      return;
+    }
+
+    setRows(parsed, 'planilla');
+
+  } catch (error) {
+    console.error(error);
+    rows = [];
+    rawRows = [];
+    updateStatus('error');
+
+    $('output').innerHTML =
+      `<div class="notice warn"><strong>Error de comunicación con la API.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si este mensaje aparece desde GitHub Pages, revisá que el Worker tenga CORS habilitado y que esté reenviando correctamente la acción getClientData al Apps Script.</div>`;
+  } finally {
+    if (btnLoad) btnLoad.disabled = false;
+  }
 }
   function getSelectedSummary() {
   if (!rows.length) return null;
@@ -2416,7 +2447,7 @@ ${JSON.stringify(s, null, 2)}
 Generá el informe final en español argentino, con títulos breves y párrafos claros.`;
 }
 
-function generateWithAI() {
+async function generateWithAI() {
   const summary = getSelectedSummary();
 
   if (!summary) {
@@ -2430,44 +2461,46 @@ function generateWithAI() {
 
   $('output').innerHTML =
     '<div class="notice">Generando informe con IA...</div>';
-const aiTimeout = setTimeout(() => {
-  const btnAi = $('btn-ai');
-  if (btnAi) btnAi.disabled = false;
 
-  $('output').innerHTML =
-    '<div class="notice warn"><strong>La generación del informe está tardando demasiado.</strong><br>Probá nuevamente o reducí el período analizado.</div>';
-}, 90000);
+  const aiTimeout = setTimeout(() => {
+    const btnAi = $('btn-ai');
+    if (btnAi) btnAi.disabled = false;
+
+    $('output').innerHTML =
+      '<div class="notice warn"><strong>La generación del informe está tardando demasiado.</strong><br>Probá nuevamente o reducí el período analizado.</div>';
+  }, 90000);
+
   const payload = {
-  prompt: buildPrompt()
-};
+    prompt: buildPrompt(),
+    summary,
+    audience: $('audience') ? $('audience').value : 'ct_completo',
+    focus: $('focus') ? $('focus').value : 'general'
+  };
 
-  google.script.run
-    .withSuccessHandler(data => {
+  try {
+    const data = await callBackend('generateClientReport', payload);
 
-      clearTimeout(aiTimeout);
-      if (btnAi) btnAi.disabled = false;
+    clearTimeout(aiTimeout);
 
-      if (!data || !data.ok) {
-        const error = data && data.error
-          ? data.error
-          : 'Respuesta inválida del servidor.';
-
-        $('output').innerHTML =
-          `<div class="notice warn"><strong>No se pudo generar el informe.</strong><br>${escapeHtml(error)}</div>`;
-        return;
-      }
-
-      $('output').innerHTML = markdownToHtml(data.report || '');
-    })
-    .withFailureHandler(error => {
-
-      clearTimeout(aiTimeout);
-      if (btnAi) btnAi.disabled = false;
+    if (!data || !data.ok) {
+      const error = data && data.error
+        ? data.error
+        : 'Respuesta inválida del servidor.';
 
       $('output').innerHTML =
-        `<div class="notice warn"><strong>Error al generar el informe con IA.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
-    })
-    .generateClientReport(payload);
+        `<div class="notice warn"><strong>No se pudo generar el informe.</strong><br>${escapeHtml(error)}</div>`;
+      return;
+    }
+
+    $('output').innerHTML = markdownToHtml(data.report || data.text || data.result || '');
+  } catch (error) {
+    clearTimeout(aiTimeout);
+
+    $('output').innerHTML =
+      `<div class="notice warn"><strong>Error al generar el informe con IA.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si el Worker responde pero el informe no se genera, revisá que la acción generateClientReport esté conectada con Apps Script y que acepte el prompt enviado por JSON.</div>`;
+  } finally {
+    if (btnAi) btnAi.disabled = false;
+  }
 }
 
 function markdownToHtml(md) {
@@ -2561,14 +2594,6 @@ function inlineMarkdownToHtml_(text) {
     .replace(/\*(.*?)\*/g, '<em>$1</em>');
 }
 
-  function closeList() {
-    if (inList) {
-      html.push('</ul>');
-      inList = false;
-    }
-  }
-
-  
     function copyReportText() {
       const text = $('output').innerText.trim();
       if (!text) return;
@@ -2591,42 +2616,42 @@ function shortText(text, maxLength) {
     }
 
 
-function runAudit() {
-  $('btn-audit').disabled = true;
+async function runAudit() {
+  const btnAudit = $('btn-audit');
+  if (btnAudit) btnAudit.disabled = true;
   $('audit-result').textContent = 'Ejecutando auditoría...';
 
-  google.script.run
-    .withSuccessHandler(data => {
-      $('btn-audit').disabled = false;
+  try {
+    const data = await callBackend('generarAuditoriaDatos');
 
-      if (!data || !data.ok) {
-        const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
-        $('audit-result').innerHTML =
-          'No se pudo ejecutar la auditoría: ' + escapeHtml(error);
-        return;
-      }
-
-      const total = Number(data.totalIssues || 0);
-      const auditLink = data.auditUrl
-        ? `<a href="${escapeHtml(data.auditUrl)}" target="_blank" rel="noopener">Abrir hoja de auditoría</a>`
-        : '';
-
-      if (total === 0) {
-        $('audit-result').innerHTML =
-          'No se detectaron inconsistencias pendientes. ' + auditLink;
-        return;
-      }
-
+    if (!data || !data.ok) {
+      const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
       $('audit-result').innerHTML =
-        `Se detectaron ${total} inconsistencias pendientes. ` + auditLink;
-    })
-    .withFailureHandler(error => {
-      $('btn-audit').disabled = false;
+        'No se pudo ejecutar la auditoría: ' + escapeHtml(error);
+      return;
+    }
+
+    const total = Number(data.totalIssues || data.inconsistencias || data.total || 0);
+    const auditLink = data.auditUrl || data.url || data.sheetUrl
+      ? `<a href="${escapeHtml(data.auditUrl || data.url || data.sheetUrl)}" target="_blank" rel="noopener">Abrir hoja de auditoría</a>`
+      : '';
+
+    if (total === 0) {
       $('audit-result').innerHTML =
-        'Error al ejecutar auditoría: ' +
-        escapeHtml(error && error.message ? error.message : error);
-    })
-    .generarAuditoriaDatos();
+        'No se detectaron inconsistencias pendientes. ' + auditLink;
+      return;
+    }
+
+    $('audit-result').innerHTML =
+      `Se detectaron ${total} inconsistencias pendientes. ` + auditLink;
+  } catch (error) {
+    $('audit-result').innerHTML =
+      'Error al ejecutar auditoría: ' +
+      escapeHtml(error && error.message ? error.message : error) +
+      '<br>Revisá que el Worker tenga habilitada la acción generarAuditoriaDatos y que Apps Script permita ejecutarla desde la API.';
+  } finally {
+    if (btnAudit) btnAudit.disabled = false;
+  }
 }
 
 function toggleAuditPanel() {
