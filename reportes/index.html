@@ -5,15 +5,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <div class="app">
-
-  <nav class="top-nav" aria-label="Navegación principal">
-    <a class="back-home" href="../">
-      ← Volver al inicio
-    </a>
-  </nav>
-
-  <header>
   <title>Murciélagas Analytics · Reportes de Entrenamiento</title>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,600&family=Barlow:wght@400;500;600;700&display=swap');
@@ -66,6 +57,70 @@ body {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
+}
+
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.78);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(18, 40, 58, .08);
+}
+
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-hi);
+  background: var(--surface-2);
+  color: var(--accent-soft);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+
+.back-home:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.report-brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.report-brand img {
+  display: block;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(18,40,58,.10));
+}
+
+.report-brand .logo-fadec {
+  height: 38px;
+}
+
+.report-brand .logo-murcielagas {
+  height: 46px;
 }
 
 /* Mobile first: la vista operativa aparece primero; herramientas después. */
@@ -646,6 +701,31 @@ footer {
   opacity: .9;
 }
 
+
+@media (max-width: 480px) {
+  .top-nav {
+    padding: 7px 8px;
+    gap: 8px;
+  }
+
+  .back-home {
+    font-size: 11px;
+    padding: 6px 9px;
+  }
+
+  .report-brand {
+    gap: 7px;
+  }
+
+  .report-brand .logo-fadec {
+    height: 32px;
+  }
+
+  .report-brand .logo-murcielagas {
+    height: 38px;
+  }
+}
+
 @media (min-width: 560px) {
   body { padding: 18px; }
 
@@ -709,7 +789,7 @@ footer {
 
 @media print {
   body { background: #fff; color: #111; padding: 0; }
-  .controls-panel, header, footer, .panel-head .actions, .notice, button { display: none !important; }
+  .controls-panel, header, footer, .top-nav, .panel-head .actions, .notice, button { display: none !important; }
   .layout { display: block; }
   .panel { border: none; box-shadow: none; }
   .report-output { background: #fff; color: #111; padding: 20px; }
@@ -722,6 +802,18 @@ footer {
 </head>
 <body>
   <div class="app">
+
+    <nav class="top-nav" aria-label="Navegación principal">
+      <a class="back-home" href="../" aria-label="Volver al inicio">
+        ← Inicio
+      </a>
+
+      <div class="report-brand" aria-label="Identidad institucional">
+        <img class="logo-fadec" src="../assets/Fadec%20logo.PNG" alt="FADEC">
+        <img class="logo-murcielagas" src="../assets/logo%20las%20murcielagas%20nuevo.png" alt="Las Murciélagas">
+      </div>
+    </nav>
+
     <header>
       <div>
         <div class="eyebrow">Las Murciélagas · Reportes de entrenamiento</div>
