@@ -40,7 +40,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 #app{
   display:grid;
   grid-template-rows:auto 1fr auto;
-  grid-template-columns:56px 1fr;
+  grid-template-columns:60px 1fr;
   height:100vh;height:100dvh;
 }
 
@@ -66,21 +66,21 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   background:var(--blanco);
   border-right:2px solid var(--border2);
   display:flex;flex-direction:column;align-items:center;
-  padding:6px 0;gap:4px;
+  padding:6px 0;gap:5px;
   overflow:hidden;
   box-shadow:3px 0 12px rgba(74,159,212,.1);
   z-index:10;
 }
 .sb-btn{
-  width:44px;height:44px;border-radius:10px;border:2px solid var(--border);
+  width:50px;height:50px;border-radius:12px;border:2px solid var(--border);
   background:var(--blanco);color:var(--celeste2);
-  font-family:'Barlow Condensed',sans-serif;font-size:9.5px;font-weight:700;
+  font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:800;
   cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
   transition:all .15s;flex-shrink:0;
   letter-spacing:.3px;text-align:center;line-height:1.1;
 }
 .sb-btn:active{transform:scale(.90)}
-.sb-btn .sb-icon{font-size:16px;line-height:1}
+.sb-btn .sb-icon{font-size:19px;line-height:1}
 .sb-btn.team-a{border-color:#4a9fd4;color:#4a9fd4}
 .sb-btn.team-a.sel{background:#4a9fd4;color:#fff}
 .sb-btn.team-b{border-color:#1a2a4a;color:#1a2a4a}
@@ -88,7 +88,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 .sb-btn.primary{background:var(--celeste);border-color:var(--celeste);color:#fff}
 .sb-btn.danger{border-color:#ffb3a0;color:var(--red)}
 .sb-btn.arrow-on{background:var(--celeste-light);border-color:var(--celeste);color:var(--celeste2)}
-.sb-sep{width:36px;height:1px;background:var(--border);flex-shrink:0;margin:2px 0}
+.sb-sep{width:44px;height:1px;background:var(--border);flex-shrink:0;margin:2px 0}
 .phase-badge{
   width:44px;height:22px;border-radius:8px;border:2px solid var(--border);
   background:var(--surface);color:var(--text-dim);
@@ -127,8 +127,8 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 }
 #statusbar{
   background:var(--celeste-light);border-bottom:1px solid var(--border);
-  padding:3px 12px;font-family:'Barlow Condensed',sans-serif;
-  font-size:11px;color:var(--celeste2);letter-spacing:.3px;
+  padding:4px 12px;font-family:'Barlow Condensed',sans-serif;
+  font-size:12.5px;color:var(--celeste2);letter-spacing:.3px;
   text-align:center;min-height:20px;
 }
 /* Barra de flechas: siempre visible */
@@ -137,11 +137,11 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   flex-wrap:nowrap;min-width:0;
 }
 #arrow-bar::-webkit-scrollbar{display:none}
-.chip{padding:5px 10px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.chip{padding:7px 12px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
 .chip.active{background:var(--celeste-light);border-color:var(--celeste);color:var(--celeste2)}
 .chip.arrow-on{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
 .vsep{width:1px;height:28px;background:var(--border);flex-shrink:0}
-.bar-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--text-dim);letter-spacing:.8px;flex-shrink:0;text-transform:uppercase}
+.bar-label{font-family:'Barlow Condensed',sans-serif;font-size:10.5px;color:var(--text-dim);letter-spacing:.8px;flex-shrink:0;text-transform:uppercase}
 /* Fila animación: aparece cuando hay flechas con fases */
 #anim-bar{
   padding:5px 8px;display:flex;gap:5px;align-items:center;border-top:1px solid var(--border);
@@ -150,15 +150,15 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 #anim-bar::-webkit-scrollbar{display:none}
 
 /* Botones generales */
-.btn{padding:6px 12px;border-radius:18px;border:2px solid var(--border2);background:var(--blanco);color:var(--celeste2);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;letter-spacing:.3px;display:flex;align-items:center;gap:4px;flex-shrink:0}
+.btn{padding:8px 14px;border-radius:18px;border:2px solid var(--border2);background:var(--blanco);color:var(--celeste2);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .15s;letter-spacing:.3px;display:flex;align-items:center;gap:4px;flex-shrink:0}
 .btn:active{transform:scale(.94)}
 .btn-primary{background:var(--celeste);border-color:var(--celeste);color:#fff}
 .btn-danger{border-color:#ffb3a0;color:var(--red);background:#fff8f6}
-.btn-sm{padding:5px 9px;font-size:11px;border-radius:14px}
+.btn-sm{padding:7px 11px;font-size:12.5px;border-radius:15px}
 
 /* POPUP EDICIÓN */
-#edit-popup{display:none;position:fixed;z-index:300;background:var(--blanco);border:2px solid var(--celeste);border-radius:14px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:180px}
-.einput{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;width:100%;outline:none;margin-bottom:6px}
+#edit-popup,#arrow-edit-popup{display:none;position:fixed;z-index:300;background:var(--blanco);border:2px solid var(--celeste);border-radius:16px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:220px}
+.einput{background:var(--surface);border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;width:100%;outline:none;margin-bottom:8px}
 .einput:focus{border-color:var(--celeste)}
 
 /* MODALES */
@@ -201,24 +201,6 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 #hint-toast{display:none;position:fixed;bottom:22%;left:50%;transform:translateX(-50%);background:rgba(26,58,92,.92);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;z-index:400;text-align:center;pointer-events:none;max-width:82vw;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 #hint-toast.show{display:block}
 
-
-/* NAVEGACIÓN EDITABLE POR FASES */
-#phase-nav{
-  padding:6px 8px;
-  display:flex;
-  gap:6px;
-  align-items:center;
-  overflow-x:auto;
-  flex-wrap:nowrap;
-  border-bottom:1px solid var(--border);
-  background:rgba(255,255,255,.84);
-}
-#phase-nav::-webkit-scrollbar{display:none}
-.phase-chip-current{
-  min-width:76px;
-  justify-content:center;
-  text-align:center;
-}
 
 @media (min-width:900px) and (orientation:landscape){
   #app{grid-template-columns:64px 1fr;}
@@ -276,6 +258,25 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 
 .back-home:hover {
   background: rgba(255,255,255,.24);
+}
+
+.arrow-action-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.arrow-action-grid .btn{
+  justify-content:center;
+  min-height:42px;
+}
+@media (max-width:520px){
+  #app{grid-template-columns:64px 1fr;}
+  .sb-btn{width:54px;height:54px;font-size:11px;}
+  .sb-btn .sb-icon{font-size:21px;}
+  #mode-toggle-chip{width:54px!important;height:64px!important;font-size:11px!important;}
+  .chip{font-size:13.5px;padding:8px 14px;}
+  .bar-label{font-size:11px;}
+  #statusbar{font-size:13px;}
 }
 
 </style>
@@ -339,20 +340,14 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
     <span class="sb-icon">📋</span>Nóm.
   </button>
   <div class="sb-sep"></div>
-  <!-- Fases -->
-  <div class="phase-badge active" id="ph-badge" title="Fase actual">F1</div>
-  <button class="sb-btn" onclick="newPhase()" title="Nueva fase (separador manual)" style="font-size:9px">
-    <span class="sb-icon">＋</span>Fase
-  </button>
-  <div class="sb-sep"></div>
   <!-- Modo mover / flecha — botón grande -->
   <button id="mode-toggle-chip" onclick="toggleArrowMode()"
-    style="width:44px;height:56px;border-radius:12px;border:2px solid var(--celeste);
+    style="width:50px;height:60px;border-radius:12px;border:2px solid var(--celeste);
       background:var(--blanco);color:var(--celeste2);cursor:pointer;
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-      font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;
+      font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:800;
       letter-spacing:.3px;transition:all .2s;flex-shrink:0;line-height:1.1;">
-    <span style="font-size:20px;line-height:1">🏃</span>
+    <span style="font-size:23px;line-height:1">🏃</span>
     <span>MOVER</span>
   </button>
   <div class="sb-sep"></div>
@@ -385,14 +380,6 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 <div id="bottom">
   <div id="statusbar"><span id="status-text">Seleccioná un modo y agregá jugadoras</span></div>
 
-  <!-- Navegación editable por fases -->
-  <div id="phase-nav" aria-label="Navegación editable por fases">
-    <span class="bar-label">Fases</span>
-    <button class="btn btn-sm" onclick="movePhaseView(-1)" title="Fase anterior">←</button>
-    <div class="chip active phase-chip-current" id="phase-view-chip" onclick="showAllPhases()" title="Tocar para ver todas las fases">Todas</div>
-    <button class="btn btn-sm" onclick="movePhaseView(1)" title="Fase siguiente">→</button>
-    <button class="btn btn-primary btn-sm" onclick="newPhase()" title="Crear y editar una nueva fase">+ Fase</button>
-  </div>
   
   <!-- Barra de flechas (siempre visible) -->
   <div id="arrow-bar">
@@ -468,9 +455,23 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   <input class="einput" id="edit-num" type="text" placeholder="Número" inputmode="numeric">
   <input class="einput" id="edit-name" type="text" placeholder="Apellido / rol">
   <div style="display:flex;gap:6px">
-    <button class="btn btn-primary" style="flex:1;font-size:12px;justify-content:center" onclick="applyEdit()">OK</button>
-    <button class="btn btn-danger" style="font-size:12px" onclick="closeEdit()">✕</button>
+    <button class="btn btn-primary" style="flex:1;font-size:13px;justify-content:center" onclick="applyEdit()">OK</button>
+    <button class="btn btn-danger" style="font-size:13px" onclick="closeEdit()">✕</button>
   </div>
+</div>
+
+<!-- ARROW EDIT POPUP -->
+<div id="arrow-edit-popup">
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--celeste2);margin-bottom:10px">Editar acción</div>
+  <div class="arrow-action-grid">
+    <button class="btn btn-sm" onclick="changeArrowType('pass')">→ Pase</button>
+    <button class="btn btn-sm" onclick="changeArrowType('run')">⟶ Carrera</button>
+    <button class="btn btn-sm" onclick="changeArrowType('press')">↯ Presión</button>
+    <button class="btn btn-sm" onclick="changeArrowType('shot')">⚡ Disparo</button>
+    <button class="btn btn-sm" onclick="changeArrowType('dribble')">◎ C/pelota</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteSelectedArrow()">Eliminar</button>
+  </div>
+  <button class="btn btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="closeArrowEdit()">Cerrar</button>
 </div>
 
 <!-- SAVE MODAL -->
@@ -620,6 +621,10 @@ let editingIdx=null;
 let placedMur=new Set();
 let lastTap=0,lastTapIdx=-1;
 let longPressTimer=null;
+let touchStartPos=null;
+const LONG_PRESS_MS=1000;
+const LONG_PRESS_MOVE_TOLERANCE=14;
+let selectedArrowIdx=null;
 
 // Sistema de fases
 let currentPhase=1;
@@ -643,10 +648,8 @@ function toast(msg,ms=2200){
 }
 function status(msg){document.getElementById('status-text').textContent=msg;}
 function updatePhaseBadge(){
-  const max=getMaxPhase();
-  const badge=document.getElementById('ph-badge');
-  if(badge) badge.textContent=phaseView==='all'?'Todas':'F'+currentPhase;
-  updatePhaseViewUI();
+  // Las fases quedan como lógica interna de animación. No se muestran en la botonera.
+  currentPhase=Math.max(1,getMaxPhase());
 }
 
 // =============================================
@@ -875,7 +878,7 @@ function toggleArrowMode(){
       btn.style.borderColor='var(--celeste2)';
       btn.style.boxShadow='0 3px 12px rgba(40,120,176,.4)';
     } else {
-      btn.innerHTML='<span style="font-size:20px;line-height:1">🏃</span><span>MOVER</span>';
+      btn.innerHTML='<span style="font-size:23px;line-height:1">🏃</span><span>MOVER</span>';
       btn.style.background='var(--blanco)';
       btn.style.color='var(--celeste2)';
       btn.style.borderColor='var(--celeste)';
@@ -926,8 +929,94 @@ function applyEdit(){
   closeEdit();draw();
 }
 function closeEdit(){editingIdx=null;document.getElementById('edit-popup').style.display='none';}
+
+
+// =============================================
+// EDITAR ACCIONES / FLECHAS
+// =============================================
+function distancePointToSegment(px,py,x1,y1,x2,y2){
+  const dx=x2-x1, dy=y2-y1;
+  const len2=dx*dx+dy*dy || 1;
+  let t=((px-x1)*dx+(py-y1)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  const qx=x1+t*dx, qy=y1+t*dy;
+  return Math.hypot(px-qx,py-qy);
+}
+
+function getArrowAt(x,y){
+  const threshold=24;
+  for(let ai=arrows.length-1;ai>=0;ai--){
+    const a=arrows[ai];
+    if(!a) continue;
+    if(a.kind==='straight'){
+      const pFrom=players[a.from]; if(!pFrom) continue;
+      const fp=resolvedPos(a.from,ai); if(!fp) continue;
+      let tx=null,ty=null;
+      if(a.to!=null && players[a.to]){tx=players[a.to].x;ty=players[a.to].y;}
+      else if(a.toX!=null){tx=a.toX;ty=a.toY;}
+      if(tx==null) continue;
+      if(distancePointToSegment(x,y,fp.x,fp.y,tx,ty)<=threshold) return ai;
+    } else if(a.kind==='curve'){
+      const cfp=a.from!=null?resolvedPos(a.from,ai):null;
+      const x1=cfp?cfp.x:a.x1, y1=cfp?cfp.y:a.y1;
+      let last={x:x1,y:y1};
+      for(let i=1;i<=24;i++){
+        const t=i/24, mt=1-t;
+        const q={x:mt*mt*x1+2*mt*t*a.cx+t*t*a.x2, y:mt*mt*y1+2*mt*t*a.cy+t*t*a.y2};
+        if(distancePointToSegment(x,y,last.x,last.y,q.x,q.y)<=threshold) return ai;
+        last=q;
+      }
+    } else if(a.kind==='free' && a.path && a.path.length>1){
+      let path=a.path;
+      const ffp=a.from!=null?resolvedPos(a.from,ai):null;
+      if(ffp) path=[{x:ffp.x,y:ffp.y},...a.path];
+      for(let i=1;i<path.length;i++){
+        if(distancePointToSegment(x,y,path[i-1].x,path[i-1].y,path[i].x,path[i].y)<=threshold) return ai;
+      }
+    }
+  }
+  return -1;
+}
+
+function openArrowEdit(idx,clientX,clientY){
+  selectedArrowIdx=idx;
+  const pop=document.getElementById('arrow-edit-popup');
+  if(!pop) return;
+  pop.style.display='block';
+  const pad=10;
+  const left=Math.min(window.innerWidth-pop.offsetWidth-pad,Math.max(pad,clientX||window.innerWidth/2));
+  const top=Math.min(window.innerHeight-pop.offsetHeight-pad,Math.max(pad,clientY||window.innerHeight/2));
+  pop.style.left=left+'px';
+  pop.style.top=top+'px';
+  pop.style.transform='none';
+}
+
+function closeArrowEdit(){
+  selectedArrowIdx=null;
+  const pop=document.getElementById('arrow-edit-popup');
+  if(pop) pop.style.display='none';
+}
+
+function changeArrowType(type){
+  if(selectedArrowIdx===null || !arrows[selectedArrowIdx]) return;
+  saveHistory();
+  arrows[selectedArrowIdx].type=type;
+  closeArrowEdit();
+  draw();
+  status('Acción modificada');
+}
+
+function deleteSelectedArrow(){
+  if(selectedArrowIdx===null || !arrows[selectedArrowIdx]) return;
+  saveHistory();
+  arrows.splice(selectedArrowIdx,1);
+  closeArrowEdit();
+  draw();
+  status('Acción eliminada');
+}
+
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') closeEdit();
+  if(e.key==='Escape'){ closeEdit(); closeArrowEdit(); }
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
 });
 
@@ -1132,16 +1221,15 @@ function handleDown(x,y,isDouble){
         if(arrowFrom===null){arrowFrom=idx;status('Origen → tocá destino');}
         else if(arrowFrom!==idx){
           saveHistory();
-          const ph=getActivePhaseForNewArrow();
-          arrows.push({kind:'straight',from:arrowFrom,to:idx,type:arrowType,phase:ph});
+          arrows.push({kind:'straight',from:arrowFrom,to:idx,type:arrowType});
           arrowFrom=null;status('Flecha agregada');
         }
       }else{
         if(arrowFrom!==null){
-          saveHistory();const ph=getActivePhaseForNewArrow();
+          saveHistory();
           const gi=addGhost(arrowType,players[arrowFrom],x,y);
-          if(gi!=null)arrows.push({kind:'straight',from:arrowFrom,to:gi,type:arrowType,phase:ph});
-          else arrows.push({kind:'straight',from:arrowFrom,toX:x,toY:y,type:arrowType,phase:ph});
+          if(gi!=null)arrows.push({kind:'straight',from:arrowFrom,to:gi,type:arrowType});
+          else arrows.push({kind:'straight',from:arrowFrom,toX:x,toY:y,type:arrowType});
           arrowFrom=null;status('Flecha agregada');
         }else arrowFrom=null;
       }
@@ -1153,8 +1241,8 @@ function handleDown(x,y,isDouble){
         curveP1={x,y};curveStep=1;status('Curva · tocá punto de control');
       } else if(curveStep===1){curveP2={x,y};curveStep=2;status('Curva · tocá punto final');}
       else{
-        saveHistory();const ph=getActivePhaseForNewArrow();
-        arrows.push({kind:'curve',from:arrowFrom,x1:curveP1.x,y1:curveP1.y,cx:curveP2.x,cy:curveP2.y,x2:x,y2:y,type:arrowType,phase:ph});
+        saveHistory();
+        arrows.push({kind:'curve',from:arrowFrom,x1:curveP1.x,y1:curveP1.y,cx:curveP2.x,cy:curveP2.y,x2:x,y2:y,type:arrowType});
         curveStep=0;curveP1=null;curveP2=null;arrowFrom=null;status('Curva agregada');
       }
     }
@@ -1172,36 +1260,59 @@ canvas.addEventListener('mousemove',e=>{
   players[dragging].y=Math.max(fy+20,Math.min(fy+fh-20,y+dragOffY));draw();
 });
 canvas.addEventListener('mouseup',()=>{
-  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){const ph=getActivePhaseForNewArrow();arrows.push({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType,phase:ph});}freePath=[];arrowFrom=null;draw();return;}
+  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){arrows.push({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 });
 canvas.addEventListener('mouseleave',()=>{if(freeDrawing){freeDrawing=false;freePath=[];draw();};dragging=null;});
-canvas.addEventListener('contextmenu',e=>{e.preventDefault();const{x,y}=getPos(e);const idx=getPlayerAt(x,y);if(idx>=0)removePlayer(idx);});
+canvas.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const{x,y}=getPos(e);
+  const ai=getArrowAt(x,y);
+  if(ai>=0){openArrowEdit(ai,e.clientX,e.clientY);return;}
+  const idx=getPlayerAt(x,y);
+  if(idx>=0){openEdit(idx);return;}
+});
 canvas.addEventListener('touchstart',e=>{
-  e.preventDefault();const{x,y}=getPos(e);
-  longPressTimer=setTimeout(()=>{const idx=getPlayerAt(x,y);if(idx>=0)removePlayer(idx);},700);
+  e.preventDefault();
+  const{x,y}=getPos(e);
+  const src=e.touches[0];
+  touchStartPos={x,y,clientX:src.clientX,clientY:src.clientY};
+
   if(arrowMode&&drawMode==='free'){
     saveHistory();
     freeDrawing=true;freePath=[{x,y}];
-    // Capturar jugador origen si el toque empieza sobre uno
     const fidx=getPlayerAt(x,y);
     arrowFrom=fidx>=0?fidx:null;
     return;
   }
-  const now=Date.now();const idx=getPlayerAt(x,y);
-  const isDouble=(now-lastTap<350&&idx===lastTapIdx&&idx>=0);
-  lastTap=now;lastTapIdx=idx;handleDown(x,y,isDouble);
+
+  clearTimeout(longPressTimer);
+  longPressTimer=setTimeout(()=>{
+    if(!touchStartPos) return;
+    const ai=getArrowAt(touchStartPos.x,touchStartPos.y);
+    if(ai>=0){openArrowEdit(ai,touchStartPos.clientX,touchStartPos.clientY);return;}
+    const idx=getPlayerAt(touchStartPos.x,touchStartPos.y);
+    if(idx>=0){openEdit(idx);return;}
+  },LONG_PRESS_MS);
+
+  const idx=getPlayerAt(x,y);
+  lastTap=Date.now();lastTapIdx=idx;
+  handleDown(x,y,false);
 },{passive:false});
 canvas.addEventListener('touchmove',e=>{
-  e.preventDefault();clearTimeout(longPressTimer);const{x,y}=getPos(e);
+  e.preventDefault();
+  const{x,y}=getPos(e);
+  if(touchStartPos && Math.hypot(x-touchStartPos.x,y-touchStartPos.y)>LONG_PRESS_MOVE_TOLERANCE){
+    clearTimeout(longPressTimer);
+  }
   if(arrowMode&&drawMode==='free'&&freeDrawing){freePath.push({x,y});draw();return;}
   if(dragging===null)return;
   players[dragging].x=Math.max(fx+20,Math.min(fx+fw-20,x+dragOffX));
   players[dragging].y=Math.max(fy+20,Math.min(fy+fh-20,y+dragOffY));draw();
 },{passive:false});
 canvas.addEventListener('touchend',e=>{
-  e.preventDefault();clearTimeout(longPressTimer);
-  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){const ph=getActivePhaseForNewArrow();arrows.push({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType,phase:ph});}freePath=[];arrowFrom=null;draw();return;}
+  e.preventDefault();clearTimeout(longPressTimer);touchStartPos=null;
+  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){arrows.push({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 },{passive:false});
 
@@ -1330,7 +1441,7 @@ function drawPlayerGhost(p, px, py){
   ctx.setLineDash([]);
   ctx.fillStyle=textC;
   ctx.save();ctx.translate(px,py);ctx.rotate(-Math.PI/2);
-  ctx.font="bold 12px 'Barlow Condensed',sans-serif";
+  ctx.font="bold 14px 'Barlow Condensed',sans-serif";
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.num,0,0);
   ctx.restore();
   ctx.restore();
@@ -1419,14 +1530,10 @@ function draw(animOverride){
   if(!pos) updatePhaseBadge();
   drawField();
 
-  // Flechas con opacidad por fase. En modo edición se destaca la fase activa.
-  const phaseOpacity=[1,0.7,0.5];
+  // Flechas: las fases quedan internas para animación; en edición se muestra toda la jugada.
   arrows.forEach((a,ai)=>{
     const ph=computePhase(arrows,ai);
-    if(!pos && phaseView!=='all' && ph>Number(phaseView)) return;
-    let op=phaseOpacity[Math.min(ph-1,2)];
-    if(!pos && phaseView!=='all') op = ph===Number(phaseView) ? 1 : 0.22;
-    ctx.save();ctx.globalAlpha=op;
+    ctx.save();ctx.globalAlpha=1;
     const color=arrowColor(a.type),dash=arrowDash(a.type);
     let mx=0,my=0; // para label
     if(a.kind==='curve'){
@@ -1472,8 +1579,6 @@ function draw(animOverride){
       }
     }
     ctx.restore();
-    // Label de fase
-    if(getMaxPhase()>1) drawPhaseLabel(mx,my,ph);
   });
 
   // Preview curva
@@ -1523,13 +1628,13 @@ function draw(animOverride){
         ctx.beginPath();ctx.arc(px,py,p.r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
       }
       ctx.save();ctx.translate(px,py);ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=textC;ctx.font="bold 15px 'Barlow Condensed', sans-serif";
+      ctx.fillStyle=textC;ctx.font="bold 18px 'Barlow Condensed', sans-serif";
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(p.num,0,0);
       if(p.role&&p.role!==String(p.num)){
-        const short=p.role.split(',')[0].split(' ')[0].substring(0,8);
+        const short=p.role.split(',')[0].split(' ')[0].substring(0,10);
         ctx.fillStyle=isA?'rgba(139,37,0,0.8)':'rgba(13,58,110,0.8)';
-        ctx.font="500 9px 'Barlow', sans-serif";ctx.fillText(short,0,11);
+        ctx.font="700 10.5px 'Barlow', sans-serif";ctx.fillText(short,0,12);
       }
       ctx.restore();
       if(arrowFrom===i){
@@ -1840,7 +1945,7 @@ function drawAnimPlayersGroup(group,moverStarts,pos){
     // Número siempre visible (con el alpha del contexto), vertical
     ctx.save();ctx.translate(px,py);ctx.rotate(-Math.PI/2);
     ctx.fillStyle=textC;
-    ctx.font=dashed?"bold 12px 'Barlow Condensed',sans-serif":"bold 15px 'Barlow Condensed',sans-serif";
+    ctx.font=dashed?"bold 14px 'Barlow Condensed',sans-serif":"bold 18px 'Barlow Condensed',sans-serif";
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(p.num,0,0);
     ctx.restore();
@@ -2137,7 +2242,7 @@ function drawFinalPlayer(px,py,p,alpha,dashed){
   }
   ctx.save();ctx.translate(px,py);ctx.rotate(-Math.PI/2);
   ctx.fillStyle=textC;
-  ctx.font=`bold ${dashed?12:15}px 'Barlow Condensed',sans-serif`;
+  ctx.font=`bold ${dashed?14:18}px 'Barlow Condensed',sans-serif`;
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(p.num,0,0);
   ctx.restore();
