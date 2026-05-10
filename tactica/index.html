@@ -67,10 +67,73 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   border-right:2px solid var(--border2);
   display:flex;flex-direction:column;align-items:center;
   padding:6px 0;gap:5px;
-  overflow:hidden;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
   box-shadow:3px 0 12px rgba(74,159,212,.1);
   z-index:10;
 }
+
+#sidebar::-webkit-scrollbar{width:0;height:0}
+
+/* COLUMNA DERECHA DE CONTROLES EN PC */
+#right-rail{
+  display:none;
+  grid-column:3;
+  grid-row:2;
+  background:rgba(255,255,255,.96);
+  border-left:2px solid var(--border2);
+  box-shadow:-3px 0 12px rgba(74,159,212,.10);
+  padding:8px 6px;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  overflow-y:auto;
+  z-index:10;
+}
+#right-rail::-webkit-scrollbar{width:0;height:0}
+.rail-group{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.rail-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10.5px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  margin-top:2px;
+}
+.rail-btn{
+  width:64px;
+  min-height:54px;
+  border-radius:14px;
+  border:2px solid var(--border);
+  background:var(--blanco);
+  color:var(--celeste2);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11.5px;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  line-height:1.05;
+  text-align:center;
+  transition:all .15s;
+}
+.rail-btn:active{transform:scale(.93)}
+.rail-btn:hover{background:var(--celeste-light);border-color:var(--celeste)}
+.rail-btn.primary{background:var(--celeste);border-color:var(--celeste);color:#fff}
+.rail-btn.danger{border-color:#ffb3a0;color:var(--red);background:#fff8f6}
+.rail-icon{font-size:20px;line-height:1}
+
 .sb-btn{
   width:50px;height:50px;border-radius:12px;border:2px solid var(--border);
   background:var(--blanco);color:var(--celeste2);
@@ -232,7 +295,8 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 
 
 @media (min-width:900px) and (orientation:landscape){
-  #app{grid-template-columns:64px 1fr;}
+  #app{grid-template-columns:64px minmax(0,1fr) 82px;}
+  #right-rail{display:flex;}
   #header{min-height:60px;padding:7px 10px;}
   .header-logo-wrap{width:50px;height:50px;}
   .header-logo{max-width:50px;max-height:50px;}
@@ -404,6 +468,37 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   </div>
 
 </div>
+
+<!-- COLUMNA DERECHA: CONTROLES DE ARCHIVO Y ANIMACIÓN PARA PC -->
+<aside id="right-rail" aria-label="Controles rápidos de archivo y animación">
+  <div class="rail-group">
+    <div class="rail-label">Archivo</div>
+    <button class="rail-btn" onclick="showSaveModal()" title="Guardar ejercicio">
+      <span class="rail-icon">💾</span><span>Guardar</span>
+    </button>
+  </div>
+
+  <div class="sb-sep"></div>
+
+  <div class="rail-group">
+    <div class="rail-label">Animación</div>
+    <button class="rail-btn primary" onclick="startAnimation()" title="Iniciar animación">
+      <span class="rail-icon">▶</span><span>Animar</span>
+    </button>
+    <button class="rail-btn" onclick="playPauseAnim()" title="Pausar o continuar animación">
+      <span class="rail-icon">⏸</span><span>Pausa</span>
+    </button>
+    <button class="rail-btn" onclick="resetAnim()" title="Reiniciar animación">
+      <span class="rail-icon">↺</span><span>Reset</span>
+    </button>
+    <button class="rail-btn" onclick="exportVideo()" title="Descargar video generado">
+      <span class="rail-icon">⬇</span><span>Video</span>
+    </button>
+    <button class="rail-btn danger" onclick="stopAnimation()" title="Cerrar animación">
+      <span class="rail-icon">✕</span><span>Cerrar</span>
+    </button>
+  </div>
+</aside>
 
 <!-- BARRA INFERIOR -->
 <div id="bottom">
@@ -2356,7 +2451,10 @@ function stopRecording(){
     mediaRecorder.stop();
   }
 }
-function exportVideo(){doDownload();}
+function exportVideo(){
+  if(!downloadBlob){status('Primero ejecutá la animación completa para generar el video');return;}
+  doDownload();
+}
 function doDownload(){
   if(!downloadBlob)return;
   const url=URL.createObjectURL(downloadBlob);
