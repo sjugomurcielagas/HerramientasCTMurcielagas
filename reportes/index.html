@@ -1591,9 +1591,10 @@ console.log('JSONP URL:', script.src);
     };
 
     script.onerror = () => {
-      cleanup();
-      reject(new Error('No se pudo cargar la respuesta de la API.'));
-    };
+  const failedUrl = script.src;
+  cleanup();
+  reject(new Error('No se pudo cargar la respuesta de la API. URL usada: ' + failedUrl));
+};
 
     document.body.appendChild(script);
   });
