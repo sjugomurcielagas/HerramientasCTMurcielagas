@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <a class="back-home" href="../" aria-label="Volver al inicio">
+  ← Volver al inicio
+</a>
   <title>Herramientas CT · Las Murciélagas</title>
 
   <style>
@@ -147,6 +150,32 @@
         min-height: 210px;
       }
     }
+
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-hi);
+  background: var(--surface-2);
+  color: var(--accent-soft);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+
+.back-home:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+    
   </style>
 </head>
 
