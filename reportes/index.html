@@ -1393,12 +1393,11 @@ document.addEventListener('click', handleSortableHeaderClick);
   const day = d.getDay(); // domingo 0, lunes 1...
   const daysSinceMonday = (day + 6) % 7;
 
-  // Lógica operativa del reporte:
-  // las cargas realizadas durante una semana de control corresponden
-  // al período trabajado inmediatamente anterior.
-  // Ejemplo: lunes 11/05 muestra 04/05 al 10/05;
-  // lunes 18/05 muestra 11/05 al 17/05.
-  d.setDate(d.getDate() - daysSinceMonday - 7);
+  // lunes de la semana de carga
+  d.setDate(d.getDate() - daysSinceMonday);
+
+  // lunes de la semana trabajada anterior
+  d.setDate(d.getDate() - 7);
 
   return d;
 }
@@ -1409,38 +1408,6 @@ function trainingPeriodKey(date) {
 
 function trainingPeriodLabelFromDate(date) {
   const start = getTrainingPeriodStart(date);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-
-  return formatShortDate(start) + ' al ' + formatShortDate(end);
-}
-
-function getCurrentTrainingWeekKey() {
-  return trainingPeriodKey(new Date());
-}
-
-function getIsoWeekStartFromKey(weekKey) {
-  const match = String(weekKey || '').match(/^(\d{4})-S(\d{2})$/);
-  if (!match) return null;
-
-  const year = Number(match[1]);
-  const week = Number(match[2]);
-
-  // Semana ISO: la semana 1 es la que contiene el 4 de enero.
-  const jan4 = new Date(year, 0, 4, 12);
-  const jan4Day = jan4.getDay() || 7;
-
-  const start = new Date(jan4);
-  start.setDate(jan4.getDate() - jan4Day + 1 + ((week - 1) * 7));
-  start.setHours(12, 0, 0, 0);
-
-  return start;
-}
-
-function formatWeekRangeFromKey(weekKey) {
-  const start = getIsoWeekStartFromKey(weekKey);
-  if (!start) return String(weekKey || '').replace(/^\d+-S/, 'Semana ');
-
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
 
@@ -1596,20 +1563,25 @@ function populateWeeks() {
   const select = $('week-select');
   if (!select || !rows.length) return;
 
-  const currentValue = select.value || 'latest';
+  const currentOperationalWeek = getCurrentOperationalWeekKey();
+  const currentValue = select.value && select.value !== 'latest'
+    ? select.value
+    : currentOperationalWeek;
   const allWeeks = getAllWeeks();
 
   select.innerHTML = '';
 
   const latestOpt = document.createElement('option');
   latestOpt.value = 'latest';
-  latestOpt.textContent = 'Último período informado';
+  latestOpt.textContent = 'Último período con datos';
   select.appendChild(latestOpt);
 
   allWeeks.slice().reverse().forEach(w => {
     const opt = document.createElement('option');
     opt.value = w;
-    opt.textContent = formatWeekLabel(w);
+    opt.textContent = w === currentOperationalWeek
+      ? `${formatWeekLabel(w)} · período actual`
+      : formatWeekLabel(w);
     select.appendChild(opt);
   });
 
@@ -1617,6 +1589,8 @@ function populateWeeks() {
 
   if (availableValues.includes(currentValue)) {
     select.value = currentValue;
+  } else if (availableValues.includes(currentOperationalWeek)) {
+    select.value = currentOperationalWeek;
   } else {
     select.value = 'latest';
   }
@@ -1625,12 +1599,19 @@ function populateWeeks() {
 }
 
 function formatWeekLabel(weekKey) {
-  if (weekKey === 'latest') return 'Último período informado';
+  if (weekKey === 'latest') return 'Último período con datos';
 
   const match = rows.find(r => r.week === weekKey && r.weekLabel);
   if (match) return match.weekLabel;
 
-  return formatWeekRangeFromKey(weekKey);
+  const start = getIsoWeekStartDate(weekKey);
+  if (start) {
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return formatShortDate(start) + ' al ' + formatShortDate(end);
+  }
+
+  return String(weekKey || '').replace(/^\d+-S/, 'Semana ');
 }
 
 function setTemporalMode(mode, shouldRender = true) {
@@ -1652,31 +1633,60 @@ function setTemporalMode(mode, shouldRender = true) {
   }
 }
 
-function getAllWeeks() {
-  // Incluye siempre el período operativo actual aunque todavía no haya cargas.
-  // Esto permite que los lunes el control semanal muestre el período que acaba de cerrar
-  // y deje visibles como "No cargó" a quienes aún no reportaron.
-  const currentWeek = getCurrentTrainingWeekKey();
+function getCurrentOperationalWeekKey() {
+  // Regla operativa del cuerpo técnico:
+  // durante la semana de carga se observa la semana trabajada anterior.
+  // Ejemplo: lunes 11/05 muestra el período 04/05 al 10/05.
+  return trainingPeriodKey(new Date());
+}
 
-  return [...new Set([
-    ...rows.map(r => r.week),
-    currentWeek
-  ])]
+function getIsoWeekStartDate(weekKey) {
+  const match = String(weekKey || '').match(/^(\d{4})-S(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+
+  // ISO week: semana 1 es la que contiene el 4 de enero.
+  const simple = new Date(Date.UTC(year, 0, 4));
+  const dayNum = simple.getUTCDay() || 7;
+  const monday = new Date(simple);
+  monday.setUTCDate(simple.getUTCDate() - dayNum + 1 + (week - 1) * 7);
+
+  return new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate(), 12);
+}
+
+function getDataWeeks() {
+  return [...new Set(rows.map(r => r.week))]
+    .filter(Boolean)
+    .sort();
+}
+
+function getAllWeeks() {
+  const weekSet = new Set(getDataWeeks());
+  weekSet.add(getCurrentOperationalWeekKey());
+
+  return [...weekSet]
     .filter(Boolean)
     .sort();
 }
 
 function getSelectedWeek() {
+  const dataWeeks = getDataWeeks();
   const allWeeks = getAllWeeks();
   const select = $('week-select');
 
-  if (!allWeeks.length) return '';
+  if (!allWeeks.length) return getCurrentOperationalWeekKey();
 
-  if (!select || select.value === 'latest') {
-    return allWeeks[allWeeks.length - 1];
+  if (!select) {
+    return getCurrentOperationalWeekKey();
   }
 
-  return select.value;
+  if (select.value === 'latest') {
+    return dataWeeks.length ? dataWeeks[dataWeeks.length - 1] : getCurrentOperationalWeekKey();
+  }
+
+  return select.value || getCurrentOperationalWeekKey();
 }
 
 function moveWeek(direction) {
@@ -1699,13 +1709,14 @@ function goCurrentWeek() {
   const select = $('week-select');
   if (!select) return;
 
-  const currentWeek = getCurrentTrainingWeekKey();
+  const currentOperationalWeek = getCurrentOperationalWeekKey();
   const availableValues = [...select.options].map(o => o.value);
 
-  select.value = availableValues.includes(currentWeek)
-    ? currentWeek
-    : 'latest';
+  if (!availableValues.includes(currentOperationalWeek)) {
+    populateWeeks();
+  }
 
+  select.value = currentOperationalWeek;
   renderLocalReport();
 }
 
