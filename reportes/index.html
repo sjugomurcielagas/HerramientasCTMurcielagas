@@ -1393,11 +1393,10 @@ document.addEventListener('click', handleSortableHeaderClick);
   const day = d.getDay(); // domingo 0, lunes 1...
   const daysSinceMonday = (day + 6) % 7;
 
-  // lunes de la semana de carga
+  // Lunes de la semana actual de control.
+  // Antes se restaban 7 días para mostrar la semana trabajada anterior.
+  // Ahora, desde el lunes, el sistema debe abrir la semana actual para controlar quién ya cargó.
   d.setDate(d.getDate() - daysSinceMonday);
-
-  // lunes de la semana trabajada anterior
-  d.setDate(d.getDate() - 7);
 
   return d;
 }
@@ -1408,6 +1407,38 @@ function trainingPeriodKey(date) {
 
 function trainingPeriodLabelFromDate(date) {
   const start = getTrainingPeriodStart(date);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return formatShortDate(start) + ' al ' + formatShortDate(end);
+}
+
+function getCurrentTrainingWeekKey() {
+  return trainingPeriodKey(new Date());
+}
+
+function getIsoWeekStartFromKey(weekKey) {
+  const match = String(weekKey || '').match(/^(\d{4})-S(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+
+  // Semana ISO: la semana 1 es la que contiene el 4 de enero.
+  const jan4 = new Date(year, 0, 4, 12);
+  const jan4Day = jan4.getDay() || 7;
+
+  const start = new Date(jan4);
+  start.setDate(jan4.getDate() - jan4Day + 1 + ((week - 1) * 7));
+  start.setHours(12, 0, 0, 0);
+
+  return start;
+}
+
+function formatWeekRangeFromKey(weekKey) {
+  const start = getIsoWeekStartFromKey(weekKey);
+  if (!start) return String(weekKey || '').replace(/^\d+-S/, 'Semana ');
+
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
 
@@ -1597,7 +1628,7 @@ function formatWeekLabel(weekKey) {
   const match = rows.find(r => r.week === weekKey && r.weekLabel);
   if (match) return match.weekLabel;
 
-  return String(weekKey || '').replace(/^\d+-S/, 'Semana ');
+  return formatWeekRangeFromKey(weekKey);
 }
 
 function setTemporalMode(mode, shouldRender = true) {
@@ -1620,7 +1651,15 @@ function setTemporalMode(mode, shouldRender = true) {
 }
 
 function getAllWeeks() {
-  return [...new Set(rows.map(r => r.week))]
+  // Incluye siempre la semana actual aunque todavía no haya cargas.
+  // Esto permite que los lunes el control semanal muestre la semana nueva
+  // y deje visibles como "No cargó" a quienes aún no reportaron.
+  const currentWeek = getCurrentTrainingWeekKey();
+
+  return [...new Set([
+    ...rows.map(r => r.week),
+    currentWeek
+  ])]
     .filter(Boolean)
     .sort();
 }
@@ -1658,7 +1697,13 @@ function goCurrentWeek() {
   const select = $('week-select');
   if (!select) return;
 
-  select.value = 'latest';
+  const currentWeek = getCurrentTrainingWeekKey();
+  const availableValues = [...select.options].map(o => o.value);
+
+  select.value = availableValues.includes(currentWeek)
+    ? currentWeek
+    : 'latest';
+
   renderLocalReport();
 }
 
