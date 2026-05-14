@@ -47,13 +47,11 @@
 
     .hero {
       position: relative;
-      min-height: 250px;
       min-height: 330px;
       background: rgba(255,255,255,.42);
       border: 1px solid rgba(216, 229, 239, .9);
       border-radius: 28px;
       box-shadow: var(--shadow-soft);
-      padding: 34px 190px 30px;
       padding: 42px 330px 38px;
       margin-bottom: 18px;
       backdrop-filter: blur(3px);
@@ -87,15 +85,11 @@
     }
 
     .hero-logo.fadec {
-      left: 34px;
-      height: 170px;
       left: 28px;
       height: 340px;
     }
 
     .hero-logo.murcielagas {
-      right: 34px;
-      height: 190px;
       right: 24px;
       height: 380px;
     }
@@ -238,28 +232,21 @@
 
     @media (min-width: 700px) and (max-width: 1099px) {
       .hero {
-        min-height: 230px;
-        padding: 30px 160px 28px;
         min-height: 300px;
         padding: 36px 250px 34px;
       }
 
       .hero-logo.fadec {
-        left: 26px;
-        height: 140px;
         left: 18px;
         height: 280px;
       }
 
       .hero-logo.murcielagas {
-        right: 26px;
-        height: 158px;
         right: 16px;
         height: 316px;
       }
 
       h1 {
-        font-size: clamp(42px, 6vw, 62px);
         font-size: clamp(40px, 5.4vw, 58px);
       }
 
@@ -303,13 +290,11 @@
         position: static;
         transform: none;
         display: inline-block;
-        margin: 0 10px 12px;
         margin: 0 8px 12px;
         vertical-align: middle;
       }
 
       .hero-logo.fadec {
-        height: 94px;
         height: 145px;
       }
 
@@ -365,12 +350,10 @@
 
     @media (max-width: 420px) {
       .hero-logo.fadec {
-        height: 82px;
         height: 125px;
       }
 
       .hero-logo.murcielagas {
-        height: 96px;
         height: 145px;
       }
 
@@ -389,12 +372,6 @@
         class="hero-logo fadec"
         src="./assets/Fadec%20logo.PNG"
         alt="FADEC"
-      >
-
-      <img
-        class="hero-logo murcielagas"
-        src="./assets/logo%20las%20murcielagas%20nuevo.png"
-        alt="Las Murciélagas"
       >
 
       <div class="hero-text">
@@ -434,13 +411,7 @@
         </div>
       </a>
 
-      <a
-        class="tool-card tool-card-disabled"
-        href="#"
-        aria-label="Base de datos en construcción"
-        aria-disabled="true"
-        onclick="return false;"
-      >
+      <a class="tool-card" href="./base-datos/" aria-label="Abrir base de datos del plantel">
         <div>
           <div class="tool-label">Gestión del plantel</div>
           <div class="tool-title">Base de datos</div>
@@ -448,8 +419,6 @@
             Datos, documentación, fotos y registros del plantel.
           </p>
         </div>
-
-        <span class="badge">En construcción</span>
       </a>
 
     </section>
