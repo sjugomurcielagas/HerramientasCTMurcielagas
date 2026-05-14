@@ -1110,6 +1110,7 @@ footer {
 
   </div>
 
+  <script src="../assets/config.js"></script>
   <script>
     const DEMO_ROWS = [];
 
@@ -1137,14 +1138,12 @@ let temporalMode = 'weekly';
 let blockOffset = 0;
 let customRange = null;
 
-let includedPlayers = new Set(
-  JSON.parse(localStorage.getItem('murcielagasIncludedPlayers') || '[]')
-);
+function lsGet(key,fallback){try{return JSON.parse(localStorage.getItem(key)??JSON.stringify(fallback));}catch{return fallback;}}
+let includedPlayers = new Set(lsGet('murcielagasIncludedPlayers', []));
 
     const $ = (id) => document.getElementById(id);
     const fmtDate = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
 
     async function callBackend(action, payload = {}, options = {}) {
       const method = options.method || (payload && Object.keys(payload).length ? 'POST' : 'GET');
