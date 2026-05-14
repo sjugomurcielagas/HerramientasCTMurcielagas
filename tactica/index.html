@@ -51,10 +51,10 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   padding:6px 8px;
   display:flex;align-items:center;justify-content:space-between;gap:6px;
   box-shadow:0 3px 16px rgba(0,0,0,.3);
-  min-height:62px;
+  min-height:76px;
 }
-.header-logo-wrap{display:flex;align-items:center;justify-content:center;width:50px;height:50px;flex-shrink:0}
-.header-logo{max-width:48px;max-height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+.header-logo-wrap{display:flex;align-items:center;justify-content:center;width:64px;height:64px;flex-shrink:0}
+.header-logo{max-width:62px;max-height:62px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
 .header-center{text-align:center;flex:1}
 .header-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:2.4px;color:#fff;text-transform:uppercase;line-height:1.05}
 .header-sub{display:none}
@@ -298,11 +298,11 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   #app{grid-template-columns:64px minmax(0,1fr) 82px;}
   #right-rail{display:flex;}
   #header{min-height:60px;padding:7px 10px;}
-  .header-logo-wrap{width:56px;height:56px;}
-  .header-logo{max-width:54px;max-height:54px;}
-  .header-title{font-size:28px;letter-spacing:2.4px;}
+  .header-logo-wrap{width:70px;height:70px;}
+  .header-logo{max-width:68px;max-height:68px;}
+  .header-title{font-size:26px;letter-spacing:2.4px;}
   .header-sub{display:none;}
-  .back-home{height:36px;min-width:64px;font-size:11px;padding:0 10px;}
+  .back-home{height:38px;min-width:auto;font-size:11px;padding:0 14px;}
   #sidebar{padding:7px 0;gap:5px;}
   .sb-btn{width:52px;height:50px;font-size:10.5px;border-radius:12px;}
   .sb-btn .sb-icon{font-size:18px;}
@@ -316,11 +316,11 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 }
 
 @media (max-width:520px){
-  .back-home{min-width:58px;height:32px;font-size:10px;padding:0 7px;}
+  .back-home{min-width:auto;height:32px;font-size:10px;padding:0 10px;}
   .header-title{font-size:23px;}
   .header-sub{display:none;}
-  .header-logo-wrap{width:52px;height:52px;}
-  .header-logo{max-width:50px;max-height:50px;}
+  .header-logo-wrap{width:66px;height:66px;}
+  .header-logo{max-width:64px;max-height:64px;}
   .chip{font-size:12px;padding:7px 12px;border-radius:16px;}
   .btn-sm{font-size:12px;padding:6px 10px;}
 }
@@ -333,9 +333,9 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   justify-content: center;
   flex-shrink: 0;
   width: auto;
-  min-width: 54px;
+  min-width: auto;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,.45);
   background: rgba(255,255,255,.14);
@@ -399,7 +399,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 <div id="app">
 
 <div id="header">
-  <a class="back-home" href="../" aria-label="Volver al inicio">← Inicio</a>
+  <a class="back-home" href="../" aria-label="Volver al inicio">← Volver al inicio</a>
   <div class="header-logo-wrap">
     <img class="header-logo" src="../assets/Fadec%20logo.PNG" alt="FADEC">
   </div>
