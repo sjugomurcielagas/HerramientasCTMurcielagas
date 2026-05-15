@@ -255,11 +255,11 @@
     function renderConvocatoria(){
       const c=currentConc(),cont=document.getElementById('convocatoriaList');
       const selected=new Set(parseConvocadas(c).map(String));
-      const jugadoras=state.plantel.filter(p=>String(p.Tipo_Integrante||p.tipoIntegrante||p.tipo_integrante||'').trim()==='Jugadora');
-      if(!jugadoras.length){cont.innerHTML='<div class="empty">No hay jugadoras disponibles en el plantel.</div>';updateConvCount();return}
-      cont.innerHTML=jugadoras.map(p=>{
-        const dni=String(p.DNI||p.dni||'').trim(),nombre=nombrePersona(p);
-        return `<label class="check-item"><input type="checkbox" value="${esc(dni)}" ${selected.has(dni)?'checked':''}><span><strong>${esc(nombre)}</strong><br><span class="muted">DNI ${esc(dni||'sin cargar')}</span></span></label>`;
+      const convocables=state.plantel.filter(isConvocable).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
+      if(!convocables.length){cont.innerHTML='<div class="empty">No hay integrantes disponibles en el plantel.</div>';updateConvCount();return}
+      cont.innerHTML=convocables.map(p=>{
+        const dni=String(p.DNI||p.dni||'').trim(),nombre=nombrePersona(p),tipo=tipoIntegrante(p),rol=rolIntegrante(p),etiqueta=tipo||rol||'Integrante';
+        return `<label class="check-item"><input type="checkbox" value="${esc(dni)}" ${selected.has(dni)?'checked':''}><span><strong>${esc(nombre)}</strong> <span class="badge info" style="font-size:.68rem">${esc(etiqueta)}</span><br><span class="muted">${rol&&rol!==tipo?esc(rol)+' · ':''}DNI ${esc(dni||'sin cargar')}</span></span></label>`;
       }).join('');
       cont.querySelectorAll('input').forEach(input=>input.addEventListener('change',updateConvCount));
       updateConvCount();
@@ -337,6 +337,10 @@
     function dateValue(obj,...keys){for(const key of keys){if(obj&&obj[key])return String(obj[key]).slice(0,10)}return''}
     function dateRange(inicio,fin){if(inicio&&fin&&inicio!==fin)return`${formatDate(inicio)} al ${formatDate(fin)}`;return formatDate(inicio||fin)||'Sin fecha'}
     function statusBadge(inicio,fin){const today=new Date().toISOString().slice(0,10),end=fin||inicio||'';if(!end)return'';return end<today?'<span class="badge">Pasada</span>':'<span class="badge ok">Actual/próxima</span>'}
+    function tipoIntegrante(p){return String(p.Tipo_Integrante||p.tipoIntegrante||p.tipo_integrante||p['Tipo Integrante']||'').trim()}
+    function rolIntegrante(p){return String(p.Rol||p.rol||'').trim()}
+    function normalizarTipo(v){return norm(v).trim().replace(/\s+/g,' ').replace(/\s*\/\s*/g,' / ')}
+    function isConvocable(p){const permitidos=['jugadora','arquera','cuerpo tecnico','ct','cuerpo tecnico / ct'];return permitidos.includes(normalizarTipo(tipoIntegrante(p)))||permitidos.includes(normalizarTipo(rolIntegrante(p)))}
     function nombrePersona(p){return[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||p.Nombre||p.DNI||p.dni||'Sin nombre'}
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function norm(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
