@@ -350,8 +350,15 @@
     const BYPASS_LOGIN_EN_PRUEBA=true;
     const state={plantel:[],sesiones:[],penales:[],sesionActualId:null,zona:null,resultado:null,potencia:null};
 
-    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const res=await fetch(url.toString());const data=await res.json();if(!data||!data.ok)throw new Error(data?.error||'Error de API');return data.data}
-    async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json();if(!data||!data.ok)throw new Error(data?.error||'Error de API');return data.data}
+    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const res=await fetch(url.toString(),{headers:{Accept:'application/json'}});return parseApiResponse(res,action)}
+    async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});return parseApiResponse(res,payload?.action)}
+    async function parseApiResponse(res,action){
+      const text=await res.text();
+      let data=null;
+      try{data=text?JSON.parse(text):null}catch(err){console.error('Respuesta no JSON en Penales',action,{status:res.status,text,error:err});throw new Error(`Respuesta no JSON del servidor (${res.status}).`)}
+      if(!res.ok||!data||data.ok===false){console.error('Error API Penales',action,{status:res.status,data});throw new Error(data?.error||`Error de API (${res.status})`)}
+      return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
+    }
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('loginBtn').addEventListener('click',login);
@@ -434,11 +441,16 @@
 
     function renderPlantelSelects(){
       const toOpt=p=>{const dni=p.DNI||p.dni||'';const nombre=[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||dni;return `<option value="${esc(dni)}">${esc(nombre)}</option>`};
-      const jugadoras=state.plantel.filter(p=>String(p.Tipo_Integrante||p.tipoIntegrante||'').trim()==='Jugadora');
-      const arqueras=state.plantel.filter(p=>String(p.Tipo_Integrante||p.tipoIntegrante||'').trim()==='Arquera');
+      const jugadoras=state.plantel.filter(esJugadoraCampo).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
+      const arqueras=state.plantel.filter(esArquera).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       document.getElementById('jugadoraSelect').innerHTML='<option value="">— Jugadora —</option>'+jugadoras.map(toOpt).join('');
       document.getElementById('arqueraSelect').innerHTML='<option value="">— Arquera —</option>'+arqueras.map(toOpt).join('');
     }
+
+    function valoresRolPlantel(p){return [p.Tipo_Integrante,p.tipo_integrante,p.tipoIntegrante,p['Tipo Integrante'],p.Rol,p.rol,p.Puesto,p.puesto].map(normalizeText).filter(Boolean)}
+    function esArquera(p){return valoresRolPlantel(p).some(v=>v.includes('arquera'))}
+    function esJugadoraCampo(p){return valoresRolPlantel(p).some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo'))&&!esArquera(p)}
+    function nombrePersona(p){return [p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||p.Nombre||p.DNI||p.dni||''}
 
     function renderSesionSelector(){
       const sel=document.getElementById('sesionSelect');
