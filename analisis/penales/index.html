@@ -77,6 +77,11 @@
     .res-btn.sel.afuera{background:#fef3c7;border-color:#d97706;color:#92400e}
     .res-btn.sel.palo{background:#f1f5f9;border-color:#64748b;color:#334155}
 
+    /* Potencia buttons */
+    .pot-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .pot-btn{border:2px solid var(--borde);background:#fff;color:var(--texto);border-radius:12px;padding:11px 6px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;font-size:1rem;font-weight:700;text-align:center;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .pot-btn:active{transform:scale(.95)}.pot-btn.sel.fuerte{background:#fee2e2;border-color:#dc2626;color:#b91c1c}.pot-btn.sel.medio{background:#fef3c7;border-color:#d97706;color:#92400e}.pot-btn.sel.debil{background:var(--celeste-100);border-color:var(--celeste);color:var(--azul-800)}
+
     /* Penal rows */
     .penal-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde)}.penal-row:last-child{border-bottom:none}
     .penal-info{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-width:0;font-size:.9rem}
@@ -256,6 +261,14 @@
                     <button class="res-btn palo" data-res="palo" type="button">| Palo</button>
                   </div>
                 </div>
+                <div class="form-row">
+                  <label>Potencia del remate</label>
+                  <div class="pot-btns" id="potenciaBtns" role="group" aria-label="Potencia del remate">
+                    <button class="pot-btn fuerte" data-pot="fuerte" type="button">Fuerte</button>
+                    <button class="pot-btn medio" data-pot="medio" type="button">Medio</button>
+                    <button class="pot-btn debil" data-pot="debil" type="button">Débil</button>
+                  </div>
+                </div>
                 <div class="btn-row">
                   <button id="registrarBtn" class="btn" disabled>Registrar penal</button>
                 </div>
@@ -269,7 +282,10 @@
             <div class="panel">
               <div class="panel-head">
                 <h2>Penales de la sesión</h2>
-                <span id="sesionSummary" class="badge info"></span>
+                <div style="display:flex;gap:7px;align-items:center">
+                  <span id="sesionSummary" class="badge info"></span>
+                  <button id="refreshPenalesBtn" class="btn ghost small">Actualizar</button>
+                </div>
               </div>
               <div class="panel-body" id="listaPenalesBody">
                 <div class="empty">Seleccioná o creá una sesión para empezar.</div>
@@ -316,6 +332,10 @@
           </div>
         </div>
         <div class="panel" style="margin-bottom:13px">
+          <div class="panel-head"><h2>Potencia del remate</h2><span class="badge info" style="font-size:.74rem">Fuerte / Medio / Débil</span></div>
+          <div class="panel-body" id="statsPotencia"><div class="empty">Sin datos.</div></div>
+        </div>
+        <div class="panel" style="margin-bottom:13px">
           <div class="panel-head"><h2>Cruce jugadora × arquera</h2></div>
           <div class="panel-body" id="statsCruces"><div class="empty">Sin datos.</div></div>
         </div>
@@ -327,7 +347,7 @@
   <script src="../../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],sesiones:[],penales:[],sesionActualId:null,zona:null,resultado:null};
+    const state={plantel:[],sesiones:[],penales:[],sesionActualId:null,zona:null,resultado:null,potencia:null};
 
     async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const res=await fetch(url.toString());const data=await res.json();if(!data||!data.ok)throw new Error(data?.error||'Error de API');return data.data}
     async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json();if(!data||!data.ok)throw new Error(data?.error||'Error de API');return data.data}
@@ -344,7 +364,9 @@
       document.getElementById('arqueraSelect').addEventListener('change',checkRegistrarBtn);
       document.getElementById('zonaSelector').addEventListener('click',e=>{const b=e.target.closest('[data-zona]');if(b)setZona(b.dataset.zona)});
       document.getElementById('resultadoBtns').addEventListener('click',e=>{const b=e.target.closest('.res-btn');if(b)setResultado(b.dataset.res)});
+      document.getElementById('potenciaBtns').addEventListener('click',e=>{const b=e.target.closest('[data-pot]');if(b)setPotencia(b.dataset.pot)});
       document.getElementById('registrarBtn').addEventListener('click',registrarPenal);
+      document.getElementById('refreshPenalesBtn').addEventListener('click',actualizarPenales);
       document.getElementById('nsFecha').valueAsDate=new Date();
     });
 
@@ -388,8 +410,18 @@
       document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
-      if(id==='statsView')renderStats();
+      if(id==='statsView')loadAndRenderStats();
       window.scrollTo({top:0,behavior:'smooth'});
+    }
+    async function loadAndRenderStats(){
+      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales:[];renderListaPenales()}catch(e){}
+      renderStats();
+    }
+    async function actualizarPenales(){
+      const btn=document.getElementById('refreshPenalesBtn');
+      btn.disabled=true;btn.textContent='...';
+      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales:[];renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
+      finally{btn.disabled=false;btn.textContent='Actualizar'}
     }
 
     function renderPlantelSelects(){
@@ -458,9 +490,14 @@
       document.querySelectorAll('.res-btn').forEach(b=>b.classList.toggle('sel',b.dataset.res===r));
       checkRegistrarBtn();
     }
+    function setPotencia(p){
+      state.potencia=p;
+      document.querySelectorAll('.pot-btn').forEach(b=>b.classList.toggle('sel',b.dataset.pot===p));
+      checkRegistrarBtn();
+    }
 
     function checkRegistrarBtn(){
-      const ok=state.sesionActualId&&document.getElementById('jugadoraSelect').value&&document.getElementById('arqueraSelect').value&&state.zona&&state.resultado;
+      const ok=state.sesionActualId&&document.getElementById('jugadoraSelect').value&&document.getElementById('arqueraSelect').value&&state.zona&&state.resultado&&state.potencia;
       document.getElementById('registrarBtn').disabled=!ok;
     }
 
@@ -475,11 +512,12 @@
       const arquera_nombre=aSel.selectedOptions[0]?.text||arquera_dni;
       btn.disabled=true;status.textContent='Registrando...';status.className='status-line';
       try{
-        const result=await apiPost({action:'penales_registrarPenal',sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado});
-        state.penales.push({id:result.id,sesion_id:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,ts:new Date().toISOString()});
-        state.zona=null;state.resultado=null;
+        const result=await apiPost({action:'penales_registrarPenal',sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado,potencia:state.potencia});
+        state.penales.push({id:result.id,sesion_id:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,ts:new Date().toISOString()});
+        state.zona=null;state.resultado=null;state.potencia=null;
         document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
         document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
+        document.querySelectorAll('.pot-btn').forEach(b=>b.classList.remove('sel'));
         status.textContent='✓ Registrado';status.className='status-line ok';
         renderListaPenales();
         checkRegistrarBtn();
@@ -518,6 +556,7 @@
           <span class="penal-arquera">${esc(p.arquera_nombre||p.arquera_dni)}</span>
           <span class="badge">${esc(zonaLabel(p.zona))}</span>
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
+          ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
         </div>
         <button class="btn small danger" onclick="eliminarPenal(${p.id})">×</button>
       </div>`).join('');
@@ -553,7 +592,7 @@
     function renderStats(){
       const penales=state.penales;
       if(!penales.length){
-        ['statsJugadoras','statsArqueras','statsZonas','statsCruces','statsEvolucion'].forEach(id=>{document.getElementById(id).innerHTML='<div class="empty">Sin datos suficientes.</div>'});
+        ['statsJugadoras','statsArqueras','statsZonas','statsCruces','statsEvolucion','statsPotencia'].forEach(id=>{document.getElementById(id).innerHTML='<div class="empty">Sin datos suficientes.</div>'});
         return;
       }
       renderStatsJugadoras(penales);
@@ -561,6 +600,7 @@
       renderStatsZonas(penales);
       renderStatsCruces(penales);
       renderStatsEvolucion(penales);
+      renderStatsPotencia(penales);
     }
 
     function calcEfect(arr){const total=arr.length,goles=arr.filter(p=>p.resultado==='gol').length;return{total,goles,pct:total?Math.round(goles/total*100):0}}
@@ -583,13 +623,17 @@
         const e=calcEfect(x.todos);
         const entries=Object.entries(x.zonaMap);
         const topEntry=entries.length?entries.reduce((a,b)=>b[1]>a[1]?b:a):null;
-        return{...e,nombre:x.nombre,zonaTop:topEntry?topEntry[0]:null};
+        const potMap={};x.todos.forEach(p=>{if(p.potencia)potMap[p.potencia]=(potMap[p.potencia]||0)+1});
+        const potEntries=Object.entries(potMap);
+        const potTop=potEntries.length?potEntries.reduce((a,b)=>b[1]>a[1]?b:a):null;
+        return{...e,nombre:x.nombre,zonaTop:topEntry?topEntry[0]:null,potTop:potTop?potTop[0]:null};
       }).sort((a,b)=>b.total-a.total);
       document.getElementById('statsJugadoras').innerHTML=rows.map(r=>`<div class="stat-row">
         <div class="stat-nombre">${esc(r.nombre)}</div>
         <div class="stat-bar-wrap"><div class="stat-bar" style="width:${r.pct}%"></div></div>
         <div class="stat-nums">${r.goles}/${r.total} goles · <strong>${r.pct}%</strong></div>
         ${r.zonaTop?`<div class="stat-hint">Zona preferida: ${esc(zonaLabel(r.zonaTop))}</div>`:''}
+        ${r.potTop?`<div class="stat-hint">Potencia preferida: <span class="badge ${potBadge(r.potTop)}" style="font-size:.72rem">${esc(potLabel(r.potTop))}</span></div>`:''}
       </div>`).join('');
     }
 
@@ -665,10 +709,29 @@
       </div>`).join('');
     }
 
+    function renderStatsPotencia(penales){
+      const niveles=['fuerte','medio','debil'];
+      const conPot=penales.filter(p=>p.potencia);
+      if(!conPot.length){document.getElementById('statsPotencia').innerHTML='<div class="empty">Sin datos de potencia aún.</div>';return}
+      const total=conPot.length;
+      const rows=niveles.map(niv=>{
+        const arr=conPot.filter(p=>p.potencia===niv);
+        const e=calcEfect(arr);
+        return{niv,total:arr.length,goles:e.goles,pct:e.pct,share:total?Math.round(arr.length/total*100):0};
+      }).filter(r=>r.total>0);
+      document.getElementById('statsPotencia').innerHTML=rows.map(r=>`<div class="stat-row">
+        <div class="stat-nombre" style="display:flex;align-items:center;gap:7px"><span class="badge ${potBadge(r.niv)}">${esc(potLabel(r.niv))}</span><span style="font-size:.84rem;color:var(--muted)">${r.share}% de los disparos</span></div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${r.pct}%"></div></div>
+        <div class="stat-nums">${r.goles}/${r.total} goles · <strong>${r.pct}%</strong> efectividad</div>
+      </div>`).join('');
+    }
+
     /* ===== HELPERS ===== */
     function zonaLabel(z){const m={'palo-izq':'Palo izq.','palo-der':'Palo der.','travesano':'Travesaño','fuera-izq':'Fuera izq.','fuera-arr':'Fuera arr.','fuera-der':'Fuera der.'};return m[z]?m[z]:`Z${z}`}
     function resBadge(res){return{gol:'ok',atajado:'danger',afuera:'warn',palo:''}[res]||''}
     function resLabel(res){return{gol:'Gol',atajado:'Atajado',afuera:'Afuera',palo:'Palo'}[res]||res}
+    function potLabel(p){return{fuerte:'Fuerte',medio:'Medio',debil:'Débil'}[p]||p||'—'}
+    function potBadge(p){return{fuerte:'danger',medio:'warn',debil:'info'}[p]||''}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
