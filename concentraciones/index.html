@@ -201,15 +201,15 @@
     async function crearConcentracion(){
       const nombre=document.getElementById('newNombre').value.trim();
       const lugar=document.getElementById('newLugar').value.trim();
-      const fecha_inicio=document.getElementById('newInicio').value;
-      const fecha_fin=document.getElementById('newFin').value;
+      const fechaInicio=document.getElementById('newInicio').value;
+      const fechaFin=document.getElementById('newFin').value;
       const notas=document.getElementById('newNotas').value.trim();
       const st=document.getElementById('crearStatus'),btn=document.getElementById('crearBtn');
       if(!nombre){st.textContent='Ingresá un nombre.';st.className='status-line error';return}
-      if(!fecha_inicio){st.textContent='Seleccioná la fecha de inicio.';st.className='status-line error';return}
+      if(!fechaInicio){st.textContent='Seleccioná la fecha de inicio.';st.className='status-line error';return}
       st.textContent='Creando...';st.className='status-line';btn.disabled=true;
       try{
-        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,fecha_inicio,fecha_fin,notas,convocadas_json:'[]'});
+        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,fechaInicio,fechaFin,notas,convocadas_json:'[]'});
         const id=result?.id||result?.concentracion_id;
         await loadAll();
         clearNewForm();
@@ -249,7 +249,7 @@
       finally{btn.disabled=false}
     }
     function detailPayload(c){
-      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),fecha_inicio:document.getElementById('editInicio').value,fecha_fin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(parseConvocadas(c))};
+      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),fechaInicio:document.getElementById('editInicio').value,fechaFin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(parseConvocadas(c))};
     }
 
     function renderConvocatoria(){
@@ -267,7 +267,7 @@
     async function guardarConvocatoria(){
       const c=currentConc();if(!c)return;
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
-      const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',fecha_inicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fecha_fin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
+      const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
       const st=document.getElementById('convStatus'),btn=document.getElementById('guardarConvBtn');
       st.textContent='Guardando convocatoria...';st.className='status-line';btn.disabled=true;
       try{await apiPost(payload);mergeConc({id:concId(c),convocadas_json:payload.convocadas_json});st.textContent='Convocatoria guardada.';st.className='status-line ok';renderLista();updateConvCount()}
