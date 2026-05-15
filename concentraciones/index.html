@@ -70,7 +70,7 @@
               <h3>Convocatoria</h3>
               <div class="actions" style="margin-bottom:10px"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
-              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="generarConvBtn" class="btn secondary small" type="button" disabled>Generar convocatoria</button><span id="convCount" class="badge info"></span></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="generarConvBtn" class="btn secondary small" type="button">Generar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
             </div>
           </div>
@@ -118,6 +118,7 @@
       document.getElementById('crearBtn').addEventListener('click',crearConcentracion);
       document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
       document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
+      document.getElementById('generarConvBtn').addEventListener('click',generarConvocatoriaDocumental);
       document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
@@ -285,6 +286,23 @@
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }
+    async function generarConvocatoriaDocumental(){
+      const c=currentConc();if(!c)return;
+      const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const payload={action:'concentraciones_generarConvocatoria',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
+      const st=document.getElementById('convStatus'),btn=document.getElementById('generarConvBtn');
+      if(!convocadas.length){st.textContent='Seleccioná al menos una persona antes de generar la convocatoria.';st.className='status-line error';return}
+      st.textContent='Generando documento...';st.className='status-line';btn.disabled=true;
+      try{
+        const result=await apiPost(payload);
+        const url=documentUrl(result);
+        st.className='status-line ok';
+        st.innerHTML=url?`Convocatoria generada. <a href="${esc(url)}" target="_blank" rel="noopener">Abrir documento</a>`:'Convocatoria generada. El backend no devolvió un enlace de documento.';
+      }catch(err){
+        st.textContent='La generación documental todavía no está disponible o falló en el backend. La convocatoria guardada no se modificó. Detalle: '+err.message;
+        st.className='status-line error';
+      }finally{btn.disabled=false}
+    }
     function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=value});updateConvCount()}
     function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}
 
@@ -364,6 +382,7 @@
     function mergeConc(values){const c=currentConc();if(c)Object.assign(c,values)}
     function parseConvocadas(c){const raw=c?.convocadas_json??c?.convocadasJson??c?.convocadas??'[]';if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
     function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
+    function documentUrl(result){if(!result)return'';return result.url||result.documentUrl||result.document_url||result.pdfUrl||result.pdf_url||result.link||''}
     function activityTipo(a){return a.tipo||a.Tipo||a.categoria||a.Categoria||a.tipoActividad||a.tipo_actividad||''}
     function tipoLabel(tipo){return ({entrenamiento:'Entrenamiento',charla_tactica:'Charla táctica',partido:'Partido',recuperacion:'Recuperación',medica:'Médica',comida:'Comida',libre:'Libre',otro:'Otro'})[tipo]||tipo}
     function dateValue(obj,...keys){for(const key of keys){if(obj&&obj[key])return String(obj[key]).slice(0,10)}return''}
