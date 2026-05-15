@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concentraciones · Las Murciélagas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select,textarea{font-family:inherit}button{font-weight:800}.hidden{display:none!important}.loading{opacity:.72;pointer-events:none}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}.home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}.brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:56px;max-width:76px}.brand img:nth-child(2){height:66px;max-width:90px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand-subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
+    main{max-width:1180px;margin:0 auto;padding:16px 14px 90px}.panel,.login-card,.item-card,.section-card{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}.login-card{max-width:540px;margin:54px auto;padding:24px}h1,h2,h3{font-family:"Barlow Condensed",sans-serif;color:var(--azul-950);margin:0;line-height:1.05}p{line-height:1.42}.muted{color:var(--muted)}
+    .form-row{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}label{font-size:.92rem;font-weight:800;color:#334155}input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.98rem}textarea{min-height:92px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 4px rgba(34,168,232,.15)}
+    .btn{border:0;border-radius:13px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:7px;text-decoration:none;transition:.12s ease}.btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.86rem;padding:8px 10px;border-radius:11px}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}.status-line{margin-top:10px;color:var(--muted);font-weight:700}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
+    .tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 0 13px;position:sticky;top:70px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.94) 100%)}.tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:800}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.fields-grid{display:grid;gap:10px}.toolbar{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:13px}.item-list{display:grid;gap:10px}.item-card{padding:13px;display:grid;gap:10px;box-shadow:none}.item-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.item-meta{font-size:.92rem;color:var(--muted);margin-top:2px}.actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
+    .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.section-card{padding:14px;margin-bottom:12px;box-shadow:none}.section-card h3{font-size:1.32rem;margin-bottom:11px}.check-grid{display:grid;gap:8px;max-height:360px;overflow:auto;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:10px}.check-item{display:flex;gap:8px;align-items:flex-start;background:#fff;border:1px solid var(--borde);border-radius:12px;padding:9px}.check-item input{width:auto;margin-top:2px}.activity-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.activity-title{font-weight:800;color:var(--azul-950)}.activity-meta{font-size:.9rem;color:var(--muted);margin-top:3px}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
+    @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 180px}.item-card{grid-template-columns:1fr auto;align-items:center}.fields-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(min-width:1040px){.fields-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){main{padding:12px 11px 70px}.topbar-inner{align-items:flex-start}.home-link{font-size:.81rem;padding:8px 9px}.brand img:first-child{height:46px;max-width:62px}.brand img:nth-child(2){height:54px;max-width:74px}.brand-subtitle{display:none}.panel,.login-card{padding:14px}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner"><a class="home-link" href="../index.html">← Volver al inicio</a><div class="brand"><img src="../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'"><img src="../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'"><div><div class="brand-title">Concentraciones</div><div class="brand-subtitle">Planificación, convocatoria y actividades · Las Murciélagas</div></div></div></div></header>
+  <main>
+    <section id="loginView" class="login-card"><h1>Ingreso interno</h1><p class="muted">Acceso para gestionar concentraciones, convocatorias y actividades.</p><div class="form-row"><label for="passInput">Contraseña</label><input id="passInput" type="password" placeholder="Contraseña del equipo" autocomplete="current-password"></div><button id="loginBtn" class="btn">Ingresar</button><div id="loginStatus" class="status-line"></div></section>
+    <section id="appView" class="hidden">
+      <nav class="tabs" aria-label="Navegación interna"><button class="tab-btn active" data-view="listaView">Concentraciones</button><button class="tab-btn" data-view="nuevaView">Nueva</button><button class="tab-btn hidden" data-view="detalleView">Detalle</button></nav>
+
+      <section id="listaView" class="app-section">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Concentraciones</h2><p>Listado de concentraciones registradas.</p></div><button id="refreshBtn" class="btn secondary small">Actualizar</button></div>
+          <div class="toolbar"><input id="searchInput" type="search" placeholder="Buscar por nombre, lugar o notas"><select id="estadoFilter"><option value="">Todas</option><option value="actual">Actuales y próximas</option><option value="pasada">Pasadas</option></select></div>
+          <div id="listaConcentraciones" class="item-list"><div class="empty">Sin datos cargados.</div></div>
+        </div>
+      </section>
+
+      <section id="nuevaView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Nueva concentración</h2><p>Creá el registro general. La convocatoria se carga desde el detalle.</p></div></div>
+          <div class="fields-grid">
+            <div class="form-row"><label for="newNombre">Nombre *</label><input id="newNombre" placeholder="Ej: Campus Cenard · Mayo"></div>
+            <div class="form-row"><label for="newLugar">Lugar</label><input id="newLugar" placeholder="Sede o ciudad"></div>
+            <div class="form-row"><label for="newInicio">Inicio *</label><input id="newInicio" type="date"></div>
+            <div class="form-row"><label for="newFin">Fin</label><input id="newFin" type="date"></div>
+          </div>
+          <div class="form-row"><label for="newNotas">Notas</label><textarea id="newNotas" placeholder="Objetivos, logística o referencias internas"></textarea></div>
+          <div class="actions"><button id="crearBtn" class="btn">Crear concentración</button><button class="btn ghost" type="button" onclick="showView('listaView')">Cancelar</button></div>
+          <div id="crearStatus" class="status-line"></div>
+        </div>
+      </section>
+
+      <section id="detalleView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head"><div><h2 id="detalleTitulo">Concentración</h2><p id="detalleSubtitulo">Detalle operativo.</p></div><div class="actions"><button class="btn ghost small" type="button" onclick="showView('listaView')">← Volver</button><button id="eliminarConcBtn" class="btn danger small" type="button">Eliminar</button></div></div>
+          <div class="split">
+            <div class="section-card">
+              <h3>Datos generales</h3>
+              <div class="fields-grid">
+                <div class="form-row"><label for="editNombre">Nombre</label><input id="editNombre"></div>
+                <div class="form-row"><label for="editLugar">Lugar</label><input id="editLugar"></div>
+                <div class="form-row"><label for="editInicio">Inicio</label><input id="editInicio" type="date"></div>
+                <div class="form-row"><label for="editFin">Fin</label><input id="editFin" type="date"></div>
+              </div>
+              <div class="form-row"><label for="editNotas">Notas</label><textarea id="editNotas"></textarea></div>
+              <div class="actions"><button id="guardarDatosBtn" class="btn small">Guardar datos</button></div>
+              <div id="datosStatus" class="status-line"></div>
+            </div>
+            <div class="section-card">
+              <h3>Convocatoria</h3>
+              <div class="actions" style="margin-bottom:10px"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
+              <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><span id="convCount" class="badge info"></span></div>
+              <div id="convStatus" class="status-line"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><h2>Días y actividades</h2><p>Planificación operativa por jornada.</p></div><button id="recargarDiasBtn" class="btn secondary small">Recargar días</button></div>
+          <div class="split">
+            <div class="section-card">
+              <h3>Nueva actividad</h3>
+              <div class="fields-grid">
+                <div class="form-row"><label for="actFecha">Fecha</label><input id="actFecha" type="date"></div>
+                <div class="form-row"><label for="actHora">Hora</label><input id="actHora" type="time"></div>
+                <div class="form-row"><label for="actTipo">Tipo</label><input id="actTipo" placeholder="Entrenamiento, reunión, viaje"></div>
+                <div class="form-row"><label for="actTitulo">Título *</label><input id="actTitulo" placeholder="Nombre de la actividad"></div>
+              </div>
+              <div class="form-row"><label for="actDetalle">Detalle</label><textarea id="actDetalle" placeholder="Lugar, responsables, materiales o notas"></textarea></div>
+              <div class="actions"><button id="agregarActBtn" class="btn small">Agregar actividad</button></div>
+              <div id="actStatus" class="status-line"></div>
+            </div>
+            <div>
+              <div id="diasList" class="grid"><div class="empty">Seleccioná una concentración.</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-note">Herramienta interna · Cuerpo técnico Las Murciélagas</div>
+      </section>
+    </section>
+  </main>
+
+  <script src="../assets/config.js"></script>
+  <script>
+    const API_URL=API_BASE_URL;
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null};
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.getElementById('loginBtn').addEventListener('click',login);
+      document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+      document.getElementById('refreshBtn').addEventListener('click',loadAll);
+      document.getElementById('searchInput').addEventListener('input',renderLista);
+      document.getElementById('estadoFilter').addEventListener('change',renderLista);
+      document.getElementById('crearBtn').addEventListener('click',crearConcentracion);
+      document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
+      document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
+      document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
+      document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
+      document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
+      document.getElementById('agregarActBtn').addEventListener('click',agregarActividad);
+      document.getElementById('eliminarConcBtn').addEventListener('click',eliminarConcentracion);
+      document.getElementById('newInicio').valueAsDate=new Date();
+      document.getElementById('actFecha').valueAsDate=new Date();
+    });
+
+    async function apiGet(action,params={}){
+      const url=new URL(API_URL);
+      url.searchParams.set('action',action);
+      Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,v)});
+      const res=await fetch(url.toString(),{headers:{Accept:'application/json'}});
+      return parseApiResponse(res);
+    }
+    async function apiPost(payload){
+      const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});
+      return parseApiResponse(res);
+    }
+    async function parseApiResponse(res){
+      const text=await res.text();
+      let data=null;
+      try{data=text?JSON.parse(text):null}catch(e){throw new Error(`Respuesta no JSON. Estado ${res.status}. ${text.slice(0,180)}`)}
+      if(!res.ok||!data||data.ok===false)throw new Error(data?.error||`Error HTTP ${res.status}`);
+      return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
+    }
+
+    async function login(){
+      const password=document.getElementById('passInput').value.trim();
+      const status=document.getElementById('loginStatus');
+      status.textContent='Verificando...';status.className='status-line';
+      try{
+        const ok=await apiPost({action:'base_verificarPassword',password});
+        if(ok!==true){status.textContent='Contraseña incorrecta.';status.className='status-line error';return}
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+        await loadAll();
+      }catch(err){status.textContent='Error: '+err.message;status.className='status-line error'}
+    }
+
+    async function loadAll(){
+      const app=document.getElementById('appView');app.classList.add('loading');
+      try{
+        const [plantel,concentraciones]=await Promise.all([apiGet('base_getPlantel'),apiGet('concentraciones_getConcentraciones')]);
+        state.plantel=Array.isArray(plantel)?plantel:[];
+        state.concentraciones=(Array.isArray(concentraciones)?concentraciones:[]).sort((a,b)=>String(dateValue(b,'fecha_inicio','fechaInicio','inicio')).localeCompare(String(dateValue(a,'fecha_inicio','fechaInicio','inicio'))));
+        renderLista();
+        if(state.actualId)renderDetalle();
+      }catch(err){alert('Error al cargar datos: '+err.message)}
+      finally{app.classList.remove('loading')}
+    }
+
+    function showView(id){
+      document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function renderLista(){
+      const cont=document.getElementById('listaConcentraciones');
+      const q=norm(document.getElementById('searchInput').value);
+      const filtro=document.getElementById('estadoFilter').value;
+      const today=new Date().toISOString().slice(0,10);
+      const items=state.concentraciones.filter(c=>{
+        const text=norm([c.nombre,c.lugar,c.notas,c.observaciones].join(' '));
+        if(q&&!text.includes(q))return false;
+        const fin=dateValue(c,'fecha_fin','fechaFin','fin')||dateValue(c,'fecha_inicio','fechaInicio','inicio')||'';
+        if(filtro==='actual'&&fin<today)return false;
+        if(filtro==='pasada'&&fin>=today)return false;
+        return true;
+      });
+      if(!items.length){cont.innerHTML='<div class="empty">No hay concentraciones para mostrar.</div>';return}
+      cont.innerHTML=items.map(c=>{
+        const id=concId(c),inicio=dateValue(c,'fecha_inicio','fechaInicio','inicio'),fin=dateValue(c,'fecha_fin','fechaFin','fin');
+        const convocadas=parseConvocadas(c);
+        return `<article class="item-card"><div><div class="item-title">${esc(c.nombre||'Concentración sin nombre')}</div><div class="item-meta">${dateRange(inicio,fin)}${c.lugar?' · '+esc(c.lugar):''}</div><div class="badge-row"><span class="badge info">${convocadas.length} convocada${convocadas.length===1?'':'s'}</span>${statusBadge(inicio,fin)}</div></div><div class="actions"><button class="btn small" data-open="${esc(id)}">Abrir</button></div></article>`;
+      }).join('');
+      cont.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openConcentracion(btn.dataset.open)));
+    }
+
+    async function crearConcentracion(){
+      const nombre=document.getElementById('newNombre').value.trim();
+      const lugar=document.getElementById('newLugar').value.trim();
+      const fecha_inicio=document.getElementById('newInicio').value;
+      const fecha_fin=document.getElementById('newFin').value;
+      const notas=document.getElementById('newNotas').value.trim();
+      const st=document.getElementById('crearStatus'),btn=document.getElementById('crearBtn');
+      if(!nombre){st.textContent='Ingresá un nombre.';st.className='status-line error';return}
+      if(!fecha_inicio){st.textContent='Seleccioná la fecha de inicio.';st.className='status-line error';return}
+      st.textContent='Creando...';st.className='status-line';btn.disabled=true;
+      try{
+        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,fecha_inicio,fecha_fin,notas,convocadas_json:'[]'});
+        const id=result?.id||result?.concentracion_id;
+        await loadAll();
+        clearNewForm();
+        st.textContent='Concentración creada.';st.className='status-line ok';
+        if(id)openConcentracion(String(id));else showView('listaView');
+      }catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+
+    function openConcentracion(id){
+      state.actualId=String(id);
+      renderDetalle();
+      loadDias();
+      showView('detalleView');
+    }
+    function renderDetalle(){
+      const c=currentConc();if(!c)return;
+      const inicio=dateValue(c,'fecha_inicio','fechaInicio','inicio'),fin=dateValue(c,'fecha_fin','fechaFin','fin');
+      document.getElementById('detalleTitulo').textContent=c.nombre||'Concentración';
+      document.getElementById('detalleSubtitulo').textContent=`${dateRange(inicio,fin)}${c.lugar?' · '+c.lugar:''}`;
+      document.getElementById('editNombre').value=c.nombre||'';
+      document.getElementById('editLugar').value=c.lugar||'';
+      document.getElementById('editInicio').value=inicio||'';
+      document.getElementById('editFin').value=fin||'';
+      document.getElementById('editNotas').value=c.notas||c.observaciones||'';
+      document.getElementById('actFecha').value=inicio||new Date().toISOString().slice(0,10);
+      renderConvocatoria();
+    }
+
+    async function guardarDatos(){
+      const c=currentConc();if(!c)return;
+      const payload=detailPayload(c);
+      const st=document.getElementById('datosStatus'),btn=document.getElementById('guardarDatosBtn');
+      st.textContent='Guardando...';st.className='status-line';btn.disabled=true;
+      try{await apiPost(payload);mergeConc(payload);st.textContent='Datos guardados.';st.className='status-line ok';renderLista();renderDetalle()}
+      catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+    function detailPayload(c){
+      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),fecha_inicio:document.getElementById('editInicio').value,fecha_fin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(parseConvocadas(c))};
+    }
+
+    function renderConvocatoria(){
+      const c=currentConc(),cont=document.getElementById('convocatoriaList');
+      const selected=new Set(parseConvocadas(c).map(String));
+      const jugadoras=state.plantel.filter(p=>String(p.Tipo_Integrante||p.tipoIntegrante||p.tipo_integrante||'').trim()==='Jugadora');
+      if(!jugadoras.length){cont.innerHTML='<div class="empty">No hay jugadoras disponibles en el plantel.</div>';updateConvCount();return}
+      cont.innerHTML=jugadoras.map(p=>{
+        const dni=String(p.DNI||p.dni||'').trim(),nombre=nombrePersona(p);
+        return `<label class="check-item"><input type="checkbox" value="${esc(dni)}" ${selected.has(dni)?'checked':''}><span><strong>${esc(nombre)}</strong><br><span class="muted">DNI ${esc(dni||'sin cargar')}</span></span></label>`;
+      }).join('');
+      cont.querySelectorAll('input').forEach(input=>input.addEventListener('change',updateConvCount));
+      updateConvCount();
+    }
+    async function guardarConvocatoria(){
+      const c=currentConc();if(!c)return;
+      const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',fecha_inicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fecha_fin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
+      const st=document.getElementById('convStatus'),btn=document.getElementById('guardarConvBtn');
+      st.textContent='Guardando convocatoria...';st.className='status-line';btn.disabled=true;
+      try{await apiPost(payload);mergeConc({id:concId(c),convocadas_json:payload.convocadas_json});st.textContent='Convocatoria guardada.';st.className='status-line ok';renderLista();updateConvCount()}
+      catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+    function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=value});updateConvCount()}
+    function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}
+
+    async function loadDias(){
+      const c=currentConc();if(!c)return;
+      const cont=document.getElementById('diasList');cont.innerHTML='<div class="empty">Cargando días...</div>';
+      try{
+        const data=await apiGet('concentraciones_getDias',{id:concId(c),concentracion_id:concId(c)});
+        state.dias=Array.isArray(data)?data:[];
+        renderDias();
+      }catch(err){cont.innerHTML=`<div class="empty">Error al cargar días: ${esc(err.message)}</div>`}
+    }
+    function renderDias(){
+      const cont=document.getElementById('diasList');
+      if(!state.dias.length){cont.innerHTML='<div class="empty">No hay días o actividades cargadas.</div>';return}
+      cont.innerHTML=state.dias.map(d=>{
+        const actividades=normalizeActivities(d);
+        return `<section class="section-card"><h3>${esc(formatDate(d.fecha||d.dia||d.date)||'Día')}</h3>${d.notas?`<p class="muted">${esc(d.notas)}</p>`:''}<div class="grid">${actividades.length?actividades.map(a=>activityHtml(a,d)).join(''):'<div class="empty">Sin actividades.</div>'}</div></section>`;
+      }).join('');
+      cont.querySelectorAll('[data-del-act]').forEach(btn=>btn.addEventListener('click',()=>eliminarActividad(btn.dataset.delAct)));
+    }
+    function activityHtml(a,dia){
+      const id=a.id||a.actividad_id||a.uuid||'';
+      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.nombre||a.tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(a.tipo||'')}</div>${a.detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
+    }
+
+    async function agregarActividad(){
+      const c=currentConc();if(!c)return;
+      const fecha=document.getElementById('actFecha').value;
+      const hora=document.getElementById('actHora').value;
+      const tipo=document.getElementById('actTipo').value.trim();
+      const titulo=document.getElementById('actTitulo').value.trim();
+      const detalle=document.getElementById('actDetalle').value.trim();
+      const st=document.getElementById('actStatus'),btn=document.getElementById('agregarActBtn');
+      if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
+      if(!titulo){st.textContent='Ingresá un título.';st.className='status-line error';return}
+      st.textContent='Agregando...';st.className='status-line';btn.disabled=true;
+      try{await apiPost({action:'concentraciones_agregarActividad',id:concId(c),concentracion_id:concId(c),fecha,hora,tipo,titulo,detalle});document.getElementById('actHora').value='';document.getElementById('actTipo').value='';document.getElementById('actTitulo').value='';document.getElementById('actDetalle').value='';st.textContent='Actividad agregada.';st.className='status-line ok';await loadDias()}
+      catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+    async function eliminarActividad(id){
+      const c=currentConc();if(!c||!id)return;
+      if(!confirm('¿Eliminar esta actividad?'))return;
+      try{await apiPost({action:'concentraciones_eliminarActividad',id,actividad_id:id,concentracion_id:concId(c)});await loadDias()}
+      catch(err){alert('Error al eliminar actividad: '+err.message)}
+    }
+    async function eliminarConcentracion(){
+      const c=currentConc();if(!c)return;
+      if(!confirm('¿Eliminar esta concentración y sus actividades?'))return;
+      try{await apiPost({action:'concentraciones_eliminarConcentracion',id:concId(c)});state.actualId=null;await loadAll();showView('listaView')}
+      catch(err){alert('Error al eliminar concentración: '+err.message)}
+    }
+
+    function clearNewForm(){['newNombre','newLugar','newFin','newNotas'].forEach(id=>document.getElementById(id).value='');document.getElementById('newInicio').valueAsDate=new Date()}
+    function currentConc(){return state.concentraciones.find(c=>String(concId(c))===String(state.actualId))}
+    function concId(c){return c?.id??c?.ID??c?.concentracion_id??c?.concentracionId??''}
+    function mergeConc(values){const c=currentConc();if(c)Object.assign(c,values)}
+    function parseConvocadas(c){const raw=c?.convocadas_json??c?.convocadasJson??c?.convocadas??'[]';if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
+    function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
+    function dateValue(obj,...keys){for(const key of keys){if(obj&&obj[key])return String(obj[key]).slice(0,10)}return''}
+    function dateRange(inicio,fin){if(inicio&&fin&&inicio!==fin)return`${formatDate(inicio)} al ${formatDate(fin)}`;return formatDate(inicio||fin)||'Sin fecha'}
+    function statusBadge(inicio,fin){const today=new Date().toISOString().slice(0,10),end=fin||inicio||'';if(!end)return'';return end<today?'<span class="badge">Pasada</span>':'<span class="badge ok">Actual/próxima</span>'}
+    function nombrePersona(p){return[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||p.Nombre||p.DNI||p.dni||'Sin nombre'}
+    function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+    function norm(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+    function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+  </script>
+</body>
+</html>
