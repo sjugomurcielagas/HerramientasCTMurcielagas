@@ -58,6 +58,15 @@
     .zona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;background:#1b5e2f;border:2px solid #134722;border-radius:12px;padding:7px;max-width:252px}
     .zona-btn{background:rgba(255,255,255,.17);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:15px 4px;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;font-weight:700;cursor:pointer;text-align:center;line-height:1;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
     .zona-btn:active{background:rgba(255,255,255,.38)}.zona-btn.sel{background:rgba(255,255,255,.9);color:#1b5e2f;border-color:transparent}
+    .zona-ext-wrap{margin-top:7px;max-width:252px}
+    .zona-ext-section{margin-bottom:6px}
+    .zona-ext-section-label{font-size:.73rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+    .zona-ext-row{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+    .zona-ext-btn{background:rgba(0,0,0,.06);border:1.5px solid rgba(0,0,0,.15);color:var(--texto);border-radius:9px;padding:8px 3px;font-family:"Barlow Condensed",sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;text-align:center;line-height:1.2;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .zona-ext-btn:active{background:rgba(0,0,0,.14)}.zona-ext-btn.sel{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .zona-ext-btn.fuera{background:rgba(180,83,9,.08);border-color:rgba(180,83,9,.25);color:#92400e}.zona-ext-btn.fuera.sel{background:#d97706;color:#fff;border-color:#d97706}
+    .zona-ext-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px}
+    .zona-ext-stat-cell{background:#f1f5f9;border:1px solid var(--borde);border-radius:9px;padding:7px 4px;text-align:center}
 
     /* Resultado buttons */
     .resultado-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -205,18 +214,38 @@
                 </div>
                 <div class="form-row">
                   <label>Zona del arco</label>
-                  <div class="zona-grid" id="zonaGrid" role="group" aria-label="Zonas del arco">
-                    <button class="zona-btn" data-zona="1" type="button" aria-label="Zona 1">1</button>
-                    <button class="zona-btn" data-zona="2" type="button" aria-label="Zona 2">2</button>
-                    <button class="zona-btn" data-zona="3" type="button" aria-label="Zona 3">3</button>
-                    <button class="zona-btn" data-zona="4" type="button" aria-label="Zona 4">4</button>
-                    <button class="zona-btn" data-zona="5" type="button" aria-label="Zona 5">5</button>
-                    <button class="zona-btn" data-zona="6" type="button" aria-label="Zona 6">6</button>
-                    <button class="zona-btn" data-zona="7" type="button" aria-label="Zona 7">7</button>
-                    <button class="zona-btn" data-zona="8" type="button" aria-label="Zona 8">8</button>
-                    <button class="zona-btn" data-zona="9" type="button" aria-label="Zona 9">9</button>
+                  <div id="zonaSelector">
+                    <div class="zona-grid" id="zonaGrid" role="group" aria-label="Zonas del arco">
+                      <button class="zona-btn" data-zona="1" type="button" aria-label="Zona 1">1</button>
+                      <button class="zona-btn" data-zona="2" type="button" aria-label="Zona 2">2</button>
+                      <button class="zona-btn" data-zona="3" type="button" aria-label="Zona 3">3</button>
+                      <button class="zona-btn" data-zona="4" type="button" aria-label="Zona 4">4</button>
+                      <button class="zona-btn" data-zona="5" type="button" aria-label="Zona 5">5</button>
+                      <button class="zona-btn" data-zona="6" type="button" aria-label="Zona 6">6</button>
+                      <button class="zona-btn" data-zona="7" type="button" aria-label="Zona 7">7</button>
+                      <button class="zona-btn" data-zona="8" type="button" aria-label="Zona 8">8</button>
+                      <button class="zona-btn" data-zona="9" type="button" aria-label="Zona 9">9</button>
+                    </div>
+                    <div class="zona-label-hint">1–3 arriba · 4–6 medio · 7–9 abajo (vista del tirador)</div>
+                    <div class="zona-ext-wrap">
+                      <div class="zona-ext-section">
+                        <div class="zona-ext-section-label">En los palos</div>
+                        <div class="zona-ext-row">
+                          <button class="zona-ext-btn" data-zona="palo-izq" type="button">| Palo izq.</button>
+                          <button class="zona-ext-btn" data-zona="travesano" type="button">— Travesaño</button>
+                          <button class="zona-ext-btn" data-zona="palo-der" type="button">Palo der. |</button>
+                        </div>
+                      </div>
+                      <div class="zona-ext-section">
+                        <div class="zona-ext-section-label">Fuera</div>
+                        <div class="zona-ext-row">
+                          <button class="zona-ext-btn fuera" data-zona="fuera-izq" type="button">← Izquierda</button>
+                          <button class="zona-ext-btn fuera" data-zona="fuera-arr" type="button">↑ Arriba</button>
+                          <button class="zona-ext-btn fuera" data-zona="fuera-der" type="button">Derecha →</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="zona-label-hint">1–3 arriba · 4–6 medio · 7–9 abajo (vista del tirador)</div>
                 </div>
                 <div class="form-row">
                   <label>Resultado</label>
@@ -313,7 +342,7 @@
       document.getElementById('sesionSelect').addEventListener('change',onSesionChange);
       document.getElementById('jugadoraSelect').addEventListener('change',checkRegistrarBtn);
       document.getElementById('arqueraSelect').addEventListener('change',checkRegistrarBtn);
-      document.getElementById('zonaGrid').addEventListener('click',e=>{const b=e.target.closest('.zona-btn');if(b)setZona(parseInt(b.dataset.zona))});
+      document.getElementById('zonaSelector').addEventListener('click',e=>{const b=e.target.closest('[data-zona]');if(b)setZona(b.dataset.zona)});
       document.getElementById('resultadoBtns').addEventListener('click',e=>{const b=e.target.closest('.res-btn');if(b)setResultado(b.dataset.res)});
       document.getElementById('registrarBtn').addEventListener('click',registrarPenal);
       document.getElementById('nsFecha').valueAsDate=new Date();
@@ -416,9 +445,11 @@
       finally{btn.disabled=false}
     }
 
-    function setZona(n){
-      state.zona=n;
-      document.querySelectorAll('.zona-btn').forEach(b=>b.classList.toggle('sel',parseInt(b.dataset.zona)===n));
+    function setZona(z){
+      state.zona=z;
+      document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.toggle('sel',b.dataset.zona===String(z)));
+      if(String(z).startsWith('fuera-'))setResultado('afuera');
+      else if(z==='palo-izq'||z==='palo-der'||z==='travesano')setResultado('palo');
       checkRegistrarBtn();
     }
 
@@ -447,7 +478,7 @@
         const result=await apiPost({action:'penales_registrarPenal',sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado});
         state.penales.push({id:result.id,sesion_id:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,ts:new Date().toISOString()});
         state.zona=null;state.resultado=null;
-        document.querySelectorAll('.zona-btn').forEach(b=>b.classList.remove('sel'));
+        document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
         document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
         status.textContent='✓ Registrado';status.className='status-line ok';
         renderListaPenales();
@@ -485,7 +516,7 @@
           <span class="penal-jugadora">${esc(p.jugadora_nombre||p.jugadora_dni)}</span>
           <span class="penal-vs">vs</span>
           <span class="penal-arquera">${esc(p.arquera_nombre||p.arquera_dni)}</span>
-          <span class="badge">Z${p.zona}</span>
+          <span class="badge">${esc(zonaLabel(p.zona))}</span>
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
         </div>
         <button class="btn small danger" onclick="eliminarPenal(${p.id})">×</button>
@@ -544,20 +575,21 @@
       const m={};
       penales.forEach(p=>{
         const k=p.jugadora_dni;
-        if(!m[k])m[k]={nombre:p.jugadora_nombre||resolveNombre(k),todos:[],zonas:Array(9).fill(0)};
+        if(!m[k])m[k]={nombre:p.jugadora_nombre||resolveNombre(k),todos:[],zonaMap:{}};
         m[k].todos.push(p);
-        const z=parseInt(p.zona);if(z>=1&&z<=9)m[k].zonas[z-1]++;
+        if(p.zona)m[k].zonaMap[p.zona]=(m[k].zonaMap[p.zona]||0)+1;
       });
       const rows=Object.values(m).map(x=>{
         const e=calcEfect(x.todos);
-        const maxZ=Math.max(...x.zonas);
-        return{...e,nombre:x.nombre,zonaTop:maxZ>0?x.zonas.indexOf(maxZ)+1:null};
+        const entries=Object.entries(x.zonaMap);
+        const topEntry=entries.length?entries.reduce((a,b)=>b[1]>a[1]?b:a):null;
+        return{...e,nombre:x.nombre,zonaTop:topEntry?topEntry[0]:null};
       }).sort((a,b)=>b.total-a.total);
       document.getElementById('statsJugadoras').innerHTML=rows.map(r=>`<div class="stat-row">
         <div class="stat-nombre">${esc(r.nombre)}</div>
         <div class="stat-bar-wrap"><div class="stat-bar" style="width:${r.pct}%"></div></div>
         <div class="stat-nums">${r.goles}/${r.total} goles · <strong>${r.pct}%</strong></div>
-        ${r.zonaTop?`<div class="stat-hint">Zona preferida: Z${r.zonaTop}</div>`:''}
+        ${r.zonaTop?`<div class="stat-hint">Zona preferida: ${esc(zonaLabel(r.zonaTop))}</div>`:''}
       </div>`).join('');
     }
 
@@ -565,33 +597,41 @@
       const m={};
       penales.forEach(p=>{
         const k=p.arquera_dni;
-        if(!m[k])m[k]={nombre:p.arquera_nombre||resolveNombre(k),todos:[],zonas:Array(9).fill(0)};
+        if(!m[k])m[k]={nombre:p.arquera_nombre||resolveNombre(k),todos:[],zonaMap:{}};
         m[k].todos.push(p);
-        const z=parseInt(p.zona);if(z>=1&&z<=9)m[k].zonas[z-1]++;
+        if(p.zona)m[k].zonaMap[p.zona]=(m[k].zonaMap[p.zona]||0)+1;
       });
       const rows=Object.values(m).map(x=>{
         const atajados=x.todos.filter(p=>p.resultado==='atajado').length;
         const pct=x.todos.length?Math.round(atajados/x.todos.length*100):0;
-        const maxZ=Math.max(...x.zonas);
-        return{nombre:x.nombre,total:x.todos.length,atajados,pct,zonaMas:maxZ>0?x.zonas.indexOf(maxZ)+1:null};
+        const entries=Object.entries(x.zonaMap);
+        const topEntry=entries.length?entries.reduce((a,b)=>b[1]>a[1]?b:a):null;
+        return{nombre:x.nombre,total:x.todos.length,atajados,pct,zonaMas:topEntry?topEntry[0]:null};
       }).sort((a,b)=>b.total-a.total);
       document.getElementById('statsArqueras').innerHTML=rows.map(r=>`<div class="stat-row">
         <div class="stat-nombre">${esc(r.nombre)}</div>
         <div class="stat-bar-wrap"><div class="stat-bar tap" style="width:${r.pct}%"></div></div>
         <div class="stat-nums">${r.atajados}/${r.total} atajados · <strong>${r.pct}%</strong></div>
-        ${r.zonaMas?`<div class="stat-hint">Zona más recibida: Z${r.zonaMas}</div>`:''}
+        ${r.zonaMas?`<div class="stat-hint">Zona más recibida: ${esc(zonaLabel(r.zonaMas))}</div>`:''}
       </div>`).join('');
     }
 
     function renderStatsZonas(penales){
       const zones=Array.from({length:9},(_,i)=>{const zp=penales.filter(p=>parseInt(p.zona)===i+1);return{zona:i+1,...calcEfect(zp)}});
       function zColor(pct,total){if(!total)return'rgba(255,255,255,0.1)';if(pct>=60)return'rgba(4,120,87,0.84)';if(pct>=35)return'rgba(180,83,9,0.84)';return'rgba(185,28,28,0.78)'}
-      document.getElementById('statsZonas').innerHTML=`<div class="zona-stats-grid">
+      const extDefs=[{id:'palo-izq',label:'Palo izq.'},{id:'travesano',label:'Travesaño'},{id:'palo-der',label:'Palo der.'},{id:'fuera-izq',label:'Fuera izq.'},{id:'fuera-arr',label:'Fuera arr.'},{id:'fuera-der',label:'Fuera der.'}];
+      const extData=extDefs.map(d=>({...d,total:penales.filter(p=>p.zona===d.id).length}));
+      const extTotal=extData.reduce((s,z)=>s+z.total,0);
+      let html=`<div class="zona-stats-grid">
         ${zones.map(z=>`<div class="zona-stat-cell" style="background:${zColor(z.pct,z.total)}">
           <div class="zsn">Z${z.zona}</div>
           ${z.total?`<div class="zsp">${z.pct}%</div><div class="zst">${z.goles}/${z.total}</div>`:'<div class="zst">—</div>'}
         </div>`).join('')}
       </div><div class="zona-legend">Verde ≥60% · Naranja 35–59% · Rojo &lt;35%</div>`;
+      if(extTotal>0){html+=`<div style="margin-top:12px"><div class="zona-ext-section-label">Palos y fuera</div><div class="zona-ext-stats-grid">
+        ${extData.filter(z=>z.total>0).map(z=>`<div class="zona-ext-stat-cell"><div class="zsn">${esc(z.label)}</div><div class="zsp" style="font-size:1.1rem">${z.total}</div></div>`).join('')}
+      </div></div>`}
+      document.getElementById('statsZonas').innerHTML=html;
     }
 
     function renderStatsCruces(penales){
@@ -626,6 +666,7 @@
     }
 
     /* ===== HELPERS ===== */
+    function zonaLabel(z){const m={'palo-izq':'Palo izq.','palo-der':'Palo der.','travesano':'Travesaño','fuera-izq':'Fuera izq.','fuera-arr':'Fuera arr.','fuera-der':'Fuera der.'};return m[z]?m[z]:`Z${z}`}
     function resBadge(res){return{gol:'ok',atajado:'danger',afuera:'warn',palo:''}[res]||''}
     function resLabel(res){return{gol:'Gol',atajado:'Atajado',afuera:'Afuera',palo:'Palo'}[res]||res}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
