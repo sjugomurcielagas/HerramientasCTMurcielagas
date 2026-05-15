@@ -70,6 +70,7 @@
   <script src="../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
+    const BYPASS_LOGIN_EN_PRUEBA=true;
     const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina'];
     const state={frecuentes:[],historial:[]};
 
@@ -82,6 +83,7 @@
       document.getElementById('queryInput').addEventListener('keydown',e=>{if(e.key==='Enter')buscar()});
       document.getElementById('recargarFrecuentesBtn').addEventListener('click',loadFrecuentes);
       document.getElementById('recargarHistorialBtn').addEventListener('click',loadHistorial);
+      if(BYPASS_LOGIN_EN_PRUEBA)entrarEnPrueba();
     });
 
     async function apiGet(action,params={}){
@@ -113,6 +115,12 @@
         document.getElementById('appView').classList.remove('hidden');
         await Promise.all([loadFrecuentes(),loadHistorial()]);
       }catch(err){status.textContent='Error: '+err.message;status.className='status-line error'}
+    }
+
+    async function entrarEnPrueba(){
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('appView').classList.remove('hidden');
+      await Promise.all([loadFrecuentes(),loadHistorial()]);
     }
 
     function showView(id){
