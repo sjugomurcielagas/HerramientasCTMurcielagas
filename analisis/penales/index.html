@@ -752,6 +752,7 @@
     function resLabel(res){return{gol:'Gol',atajado:'Atajado',afuera:'Afuera',palo:'Palo'}[res]||res}
     function potLabel(p){return{fuerte:'Fuerte',medio:'Medio',debil:'Débil'}[p]||p||'—'}
     function potBadge(p){return{fuerte:'danger',medio:'warn',debil:'info'}[p]||''}
+    function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ')}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
