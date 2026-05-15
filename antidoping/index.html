@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antidoping · Las Murciélagas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select,textarea{font-family:inherit}button{font-weight:800}.hidden{display:none!important}.loading{opacity:.72;pointer-events:none}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}.home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}.brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:56px;max-width:76px}.brand img:nth-child(2){height:66px;max-width:90px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand-subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
+    main{max-width:1180px;margin:0 auto;padding:16px 14px 90px}.panel,.login-card,.result-card,.med-card,.section-card{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}.login-card{max-width:540px;margin:54px auto;padding:24px}h1,h2,h3{font-family:"Barlow Condensed",sans-serif;color:var(--azul-950);margin:0;line-height:1.05}p{line-height:1.42}.muted{color:var(--muted)}
+    .form-row{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}label{font-size:.92rem;font-weight:800;color:#334155}input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.98rem}textarea{min-height:82px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 4px rgba(34,168,232,.15)}
+    .btn{border:0;border-radius:13px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:7px;text-decoration:none;transition:.12s ease}.btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.small{font-size:.86rem;padding:8px 10px;border-radius:11px}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}.status-line{margin-top:10px;color:var(--muted);font-weight:700}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
+    .tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 0 13px;position:sticky;top:70px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.94) 100%)}.tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:800}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}.badge.dark{background:#e2e8f0;color:#0f172a}
+    .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.notice{border:1px solid #fde68a;background:#fffbeb;color:#7c2d12;border-radius:14px;padding:12px;font-weight:700}.result-card,.med-card{padding:14px;box-shadow:none}.result-title,.med-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.meta{color:var(--muted);font-size:.92rem;margin-top:4px}.source-grid{display:grid;gap:8px;margin-top:10px}.source-row{border:1px solid var(--borde);border-radius:12px;background:#f8fbfd;padding:10px}.source-k{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.source-v{font-weight:700;margin-top:2px}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
+    @media(min-width:760px){.split{grid-template-columns:1fr 1fr}.source-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){main{padding:12px 11px 70px}.topbar-inner{align-items:flex-start}.home-link{font-size:.81rem;padding:8px 9px}.brand img:first-child{height:46px;max-width:62px}.brand img:nth-child(2){height:54px;max-width:74px}.brand-subtitle{display:none}.panel,.login-card{padding:14px}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner"><a class="home-link" href="../index.html">← Volver al inicio</a><div class="brand"><img src="../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'"><img src="../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'"><div><div class="brand-title">Antidoping</div><div class="brand-subtitle">Consulta orientativa con fuentes internas y trazabilidad</div></div></div></div></header>
+  <main>
+    <section id="loginView" class="login-card"><h1>Ingreso interno</h1><p class="muted">Acceso para consultar revisiones antidopaje registradas por el equipo.</p><div class="form-row"><label for="passInput">Contraseña</label><input id="passInput" type="password" placeholder="Contraseña del equipo" autocomplete="current-password"></div><button id="loginBtn" class="btn">Ingresar</button><div id="loginStatus" class="status-line"></div></section>
+    <section id="appView" class="hidden">
+      <nav class="tabs" aria-label="Navegación interna"><button class="tab-btn active" data-view="consultaView">Consulta</button><button class="tab-btn" data-view="frecuentesView">Frecuentes revisados</button><button class="tab-btn" data-view="historialView">Historial</button><button class="tab-btn" data-view="criteriosView">Criterios</button></nav>
+
+      <section id="consultaView" class="app-section">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Consultar medicamento</h2><p>Buscá por nombre comercial, medicamento o principio activo.</p></div></div>
+          <div class="notice">La ausencia de coincidencia en WADA no autoriza el uso. Si no hay revisión guardada, el resultado debe tratarse como orientativo y requiere verificación.</div>
+          <div class="form-row" style="margin-top:13px"><label for="queryInput">Medicamento o principio activo</label><input id="queryInput" placeholder="Ej: salbutamol, paracetamol, ibuprofeno"></div>
+          <div class="actions"><button id="buscarBtn" class="btn">Buscar</button><button id="limpiarBtn" class="btn ghost" type="button">Limpiar</button></div>
+          <div id="buscarStatus" class="status-line"></div>
+        </div>
+        <div id="resultados" class="grid"><div class="empty">Ingresá una consulta para ver resultados.</div></div>
+      </section>
+
+      <section id="frecuentesView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Medicamentos frecuentes</h2><p>Lista inicial para revisión manual y seguimiento de fuentes.</p></div><button id="recargarFrecuentesBtn" class="btn secondary small">Recargar</button></div>
+          <div id="frecuentesList" class="grid"><div class="empty">Cargando frecuentes...</div></div>
+        </div>
+      </section>
+
+      <section id="historialView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Historial de consultas</h2><p>Últimas consultas registradas por la base interna.</p></div><button id="recargarHistorialBtn" class="btn secondary small">Recargar</button></div>
+          <div id="historialList" class="grid"><div class="empty">Sin historial cargado.</div></div>
+        </div>
+      </section>
+
+      <section id="criteriosView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Criterios del módulo</h2><p>Reglas de interpretación y fuentes aceptadas.</p></div></div>
+          <div class="grid">
+            <article class="source-row"><div class="source-k">Fuente antidopaje principal</div><div class="source-v">Lista Prohibida WADA vigente, procesada en base interna.</div></article>
+            <article class="source-row"><div class="source-k">Fuente argentina farmacológica</div><div class="source-v">ANMAT/VNM, PAMI u otra fuente argentina confiable para identificar medicamento y principio activo.</div></article>
+            <article class="source-row"><div class="source-k">Fuente secundaria</div><div class="source-v">Global DRO solo si hay integración estable. Si no, NADAmed u otra base oficial nacional, por principio activo.</div></article>
+            <article class="source-row"><div class="source-k">Regla crítica</div><div class="source-v">Si no aparece en WADA, no decir permitido. Mostrar “No figura como prohibido...” solo si también se consultó fuente secundaria.</div></article>
+          </div>
+        </div>
+      </section>
+      <div class="footer-note">Herramienta interna · No reemplaza criterio médico, TUE ni revisión formal ante competencia.</div>
+    </section>
+  </main>
+
+  <script src="../assets/config.js"></script>
+  <script>
+    const API_URL=API_BASE_URL;
+    const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina'];
+    const state={frecuentes:[],historial:[]};
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.getElementById('loginBtn').addEventListener('click',login);
+      document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+      document.getElementById('buscarBtn').addEventListener('click',buscar);
+      document.getElementById('limpiarBtn').addEventListener('click',limpiarBusqueda);
+      document.getElementById('queryInput').addEventListener('keydown',e=>{if(e.key==='Enter')buscar()});
+      document.getElementById('recargarFrecuentesBtn').addEventListener('click',loadFrecuentes);
+      document.getElementById('recargarHistorialBtn').addEventListener('click',loadHistorial);
+    });
+
+    async function apiGet(action,params={}){
+      const url=new URL(API_URL);
+      url.searchParams.set('action',action);
+      Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,v)});
+      const res=await fetch(url.toString(),{headers:{Accept:'application/json'}});
+      return parseApiResponse(res);
+    }
+    async function apiPost(payload){
+      const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});
+      return parseApiResponse(res);
+    }
+    async function parseApiResponse(res){
+      const text=await res.text();
+      let data=null;
+      try{data=text?JSON.parse(text):null}catch(e){throw new Error(`Respuesta no JSON. Estado ${res.status}. ${text.slice(0,180)}`)}
+      if(!res.ok||!data||data.ok===false)throw new Error(data?.error||`Error HTTP ${res.status}`);
+      return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
+    }
+
+    async function login(){
+      const password=document.getElementById('passInput').value.trim(),status=document.getElementById('loginStatus');
+      status.textContent='Verificando...';status.className='status-line';
+      try{
+        const ok=await apiPost({action:'base_verificarPassword',password});
+        if(ok!==true){status.textContent='Contraseña incorrecta.';status.className='status-line error';return}
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+        await Promise.all([loadFrecuentes(),loadHistorial()]);
+      }catch(err){status.textContent='Error: '+err.message;status.className='status-line error'}
+    }
+
+    function showView(id){
+      document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    async function buscar(){
+      const q=document.getElementById('queryInput').value.trim(),status=document.getElementById('buscarStatus');
+      if(!q){status.textContent='Ingresá un medicamento o principio activo.';status.className='status-line error';return}
+      status.textContent='Consultando base interna...';status.className='status-line';
+      document.getElementById('resultados').innerHTML='<div class="empty">Buscando coincidencias...</div>';
+      try{
+        const data=await apiPost({action:'antidoping_buscarMedicamento',consulta:q});
+        const items=Array.isArray(data)?data:(Array.isArray(data?.resultados)?data.resultados:[data]);
+        renderResultados(items.filter(Boolean));
+        status.textContent='Consulta completada.';status.className='status-line ok';
+        loadHistorial();
+      }catch(err){
+        status.textContent='No se pudo consultar la API interna: '+err.message;status.className='status-line error';
+        renderResultados([fallbackResultado(q)]);
+      }
+    }
+
+    function renderResultados(items){
+      const cont=document.getElementById('resultados');
+      if(!items.length){cont.innerHTML='<div class="empty">No encontrado / requiere verificación.</div>';return}
+      cont.innerHTML=items.map(resultCard).join('');
+    }
+    function resultCard(r){
+      const estado=estadoNormalizado(r.estado||r.resultado||'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
+      const fuentes=fuentesHtml(r);
+      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div></div>${estadoBadge(estado)}</div>${r.observaciones?`<p>${esc(r.observaciones)}</p>`:''}${fuentes}</article>`;
+    }
+    function fuentesHtml(r){
+      const rows=[
+        ['Fuente argentina',r.fuente_argentina||r.fuenteMedicamento||r.fuente_medicamento],
+        ['WADA',r.fuente_wada||r.fuenteAntidopajePrincipal||r.categoria_wada],
+        ['Fuente secundaria',r.fuente_secundaria||r.fuenteAntidopajeSecundaria],
+        ['Fecha de revisión',r.fecha_revision||r.fechaRevision]
+      ].filter(x=>x[1]);
+      if(!rows.length)return'<div class="source-grid"><div class="source-row"><div class="source-k">Trazabilidad</div><div class="source-v">Sin fuente registrada. Requiere revisión.</div></div></div>';
+      return `<div class="source-grid">${rows.map(([k,v])=>`<div class="source-row"><div class="source-k">${esc(k)}</div><div class="source-v">${esc(v)}</div></div>`).join('')}</div>`;
+    }
+
+    async function loadFrecuentes(){
+      const cont=document.getElementById('frecuentesList');
+      cont.innerHTML='<div class="empty">Cargando frecuentes...</div>';
+      try{
+        const data=await apiGet('antidoping_getFrecuentes');
+        state.frecuentes=Array.isArray(data)?data:[];
+      }catch(err){
+        state.frecuentes=FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual y carga en base interna.'}));
+      }
+      renderFrecuentes();
+    }
+    function renderFrecuentes(){
+      const cont=document.getElementById('frecuentesList');
+      cont.innerHTML=state.frecuentes.map(m=>`<article class="med-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(m.medicamento||m.nombre_comercial||m.nombre)}</div><div class="meta">${esc(m.principio_activo||m.principioActivo||'Pendiente de identificar')}</div></div>${estadoBadge(estadoNormalizado(m.estado||'REQUIERE REVISIÓN'))}</div>${m.observaciones?`<p>${esc(m.observaciones)}</p>`:''}</article>`).join('');
+    }
+
+    async function loadHistorial(){
+      const cont=document.getElementById('historialList');
+      try{
+        const data=await apiGet('antidoping_getHistorial');
+        state.historial=Array.isArray(data)?data:[];
+      }catch(err){state.historial=[]}
+      cont.innerHTML=state.historial.length?state.historial.map(h=>`<article class="med-card"><div class="med-title">${esc(h.medicamento||h.consulta||'Consulta')}</div><div class="meta">${esc(h.principio_activo||h.principioActivo||'')} · ${esc(h.fecha_revision||h.fechaRevision||'sin fecha')}</div>${estadoBadge(estadoNormalizado(h.estado||h.resultado||'REQUIERE REVISIÓN'))}</article>`).join(''):'<div class="empty">Sin historial disponible en la API interna.</div>';
+    }
+
+    function limpiarBusqueda(){document.getElementById('queryInput').value='';document.getElementById('buscarStatus').textContent='';document.getElementById('resultados').innerHTML='<div class="empty">Ingresá una consulta para ver resultados.</div>'}
+    function fallbackResultado(q){return{consulta:q,estado:'NO ENCONTRADO / REQUIERE VERIFICACIÓN',observaciones:'La API interna antidoping no devolvió una revisión registrada. No se debe interpretar como permitido.'}}
+    function estadoNormalizado(v){return String(v||'').trim().toUpperCase()}
+    function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')?'danger':estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado)}</span>`}
+    function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+  </script>
+</body>
+</html>
