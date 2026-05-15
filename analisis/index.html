@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Análisis · Las Murciélagas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}
+    .home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}
+    .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:56px;max-width:76px}.brand img:nth-child(2){height:66px;max-width:90px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand-subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
+    main{max-width:1180px;margin:0 auto;padding:24px 14px 60px}
+    .intro{margin-bottom:22px}.intro h1{font-family:"Barlow Condensed",sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:700;color:var(--azul-950);line-height:1;margin:0 0 7px}.intro p{color:var(--muted);margin:0}
+    .grid{display:grid;gap:14px;grid-template-columns:1fr}
+    .tool-card{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;min-height:156px;text-decoration:none;color:inherit;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+    .tool-card:hover:not(.disabled){transform:translateY(-2px);border-color:var(--celeste);box-shadow:0 22px 50px rgba(6,23,47,.17)}
+    .tool-card.disabled{opacity:.62;cursor:not-allowed;pointer-events:none}
+    .tool-label{font-family:"Barlow Condensed",sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--celeste);margin-bottom:7px}
+    .tool-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.9rem,4vw,2.7rem);font-weight:700;line-height:.93;text-transform:uppercase;color:var(--azul-950);margin-bottom:9px}
+    .tool-desc{color:var(--muted);font-size:.95rem;line-height:1.45;max-width:380px}
+    .tool-badge{display:inline-flex;margin-top:14px;padding:5px 11px;border-radius:999px;border:1px solid var(--borde);background:var(--celeste-100);color:var(--azul-800);font-family:"Barlow Condensed",sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .footer{margin-top:28px;text-align:center;color:var(--muted);font-size:.88rem;border-top:1px solid var(--borde);padding-top:16px}
+    @media(min-width:640px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:540px){main{padding:16px 12px 48px}.tool-card{min-height:auto}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="home-link" href="../index.html">← Inicio</a>
+      <div class="brand">
+        <img src="../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'">
+        <img src="../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'">
+        <div>
+          <div class="brand-title">Análisis</div>
+          <div class="brand-subtitle">Estadísticas y registros · Las Murciélagas</div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="intro">
+      <h1>Módulo de Análisis</h1>
+      <p>Registro estadístico y análisis de rendimiento del plantel.</p>
+    </div>
+    <div class="grid">
+      <a class="tool-card" href="./penales/">
+        <div>
+          <div class="tool-label">Rendimiento</div>
+          <div class="tool-title">Penales</div>
+          <p class="tool-desc">Registro de series por sesión, efectividad por jugadora y arquera, zonas del arco y evolución.</p>
+        </div>
+        <span class="tool-badge">Disponible</span>
+      </a>
+      <div class="tool-card disabled">
+        <div>
+          <div class="tool-label">Competencia</div>
+          <div class="tool-title">Partidos</div>
+          <p class="tool-desc">Registro de partidos oficiales y amistosos con estadísticas por encuentro.</p>
+        </div>
+        <span class="tool-badge">Próximamente</span>
+      </div>
+    </div>
+    <div class="footer">Herramienta interna · Cuerpo técnico Las Murciélagas</div>
+  </main>
+</body>
+</html>

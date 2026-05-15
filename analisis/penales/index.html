@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Penales · Las Murciélagas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select{font-family:inherit}button{font-weight:700}.hidden{display:none!important}.loading{opacity:.7;pointer-events:none}
+
+    /* Topbar */
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:10px;align-items:center}
+    .home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:8px 11px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.85rem}
+    .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:52px;max-width:68px}.brand img:nth-child(2){height:60px;max-width:80px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.2rem,3.5vw,1.85rem);font-weight:700;color:var(--azul-950);line-height:1}.brand-subtitle{color:var(--muted);font-size:.84rem;margin-top:2px}
+
+    /* Layout */
+    main{max-width:1180px;margin:0 auto;padding:14px 14px 72px}
+
+    /* Cards / panels */
+    .login-card{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);max-width:520px;margin:44px auto;padding:22px}
+    .panel{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:13px;overflow:hidden}
+    .panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 15px;border-bottom:1px solid var(--borde)}
+    .panel-head h2{font-family:"Barlow Condensed",sans-serif;font-size:1.22rem;color:var(--azul-950);margin:0;line-height:1}
+    .panel-body{padding:14px 15px}
+
+    /* Forms */
+    .form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+    label{font-size:.86rem;font-weight:800;color:#334155}
+    input,select{width:100%;border:1px solid var(--borde);border-radius:11px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.97rem}
+    input:focus,select:focus{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(34,168,232,.13)}
+
+    /* Buttons */
+    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem}
+    .btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.83rem;padding:7px 10px;border-radius:10px}.btn:disabled{opacity:.48;cursor:not-allowed;transform:none}
+    .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+    /* Status */
+    .status-line{margin-top:8px;font-weight:700;font-size:.88rem;color:var(--muted)}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}.status-line.warn{color:var(--warn)}
+
+    /* Tabs */
+    .tabs{display:flex;gap:7px;overflow-x:auto;padding:3px 0 12px;position:sticky;top:66px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.94) 100%)}
+    .tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:8px 13px;border-radius:999px;cursor:pointer;font-weight:800;font-size:.88rem}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+
+    /* Badges */
+    .badge{display:inline-flex;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:800;color:#334155;background:#eef3f7}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
+
+    /* Empty */
+    .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:14px;padding:16px;text-align:center;font-weight:700;font-size:.92rem}
+
+    /* Split */
+    .split{display:grid;gap:13px;margin-bottom:0}
+
+    /* Zona grid */
+    .zona-label-hint{font-size:.78rem;color:var(--muted);margin-top:5px}
+    .zona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;background:#1b5e2f;border:2px solid #134722;border-radius:12px;padding:7px;max-width:252px}
+    .zona-btn{background:rgba(255,255,255,.17);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:15px 4px;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;font-weight:700;cursor:pointer;text-align:center;line-height:1;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .zona-btn:active{background:rgba(255,255,255,.38)}.zona-btn.sel{background:rgba(255,255,255,.9);color:#1b5e2f;border-color:transparent}
+
+    /* Resultado buttons */
+    .resultado-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .res-btn{border:2px solid var(--borde);background:#fff;color:var(--texto);border-radius:12px;padding:13px 8px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;font-size:1.05rem;font-weight:700;text-align:center;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .res-btn:active{transform:scale(.95)}
+    .res-btn.sel.gol{background:#dcfce7;border-color:#16a34a;color:#15803d}
+    .res-btn.sel.atajado{background:#fee2e2;border-color:#dc2626;color:#b91c1c}
+    .res-btn.sel.afuera{background:#fef3c7;border-color:#d97706;color:#92400e}
+    .res-btn.sel.palo{background:#f1f5f9;border-color:#64748b;color:#334155}
+
+    /* Penal rows */
+    .penal-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde)}.penal-row:last-child{border-bottom:none}
+    .penal-info{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-width:0;font-size:.9rem}
+    .penal-jugadora{font-weight:800;color:var(--azul-950)}.penal-vs{color:var(--muted);font-size:.8rem}.penal-arquera{color:var(--azul-800)}
+
+    /* Session cards */
+    .sesion-card{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--borde)}.sesion-card:last-child{border-bottom:none}
+    .sesion-nombre{font-weight:800;color:var(--azul-950)}.sesion-meta{color:var(--muted);font-size:.86rem;margin-top:2px}
+
+    /* Stats: bars */
+    .stat-row{padding:10px 0;border-bottom:1px solid var(--borde)}.stat-row:last-child{border-bottom:none}
+    .stat-nombre{font-weight:800;color:var(--azul-950);margin-bottom:5px;font-size:.95rem}
+    .stat-bar-wrap{height:8px;background:var(--borde);border-radius:999px;overflow:hidden;margin:4px 0}
+    .stat-bar{height:100%;background:var(--celeste);border-radius:999px;transition:width .3s ease}.stat-bar.tap{background:var(--azul-800)}
+    .stat-nums{font-size:.86rem;color:var(--texto)}.stat-hint{font-size:.8rem;color:var(--muted);margin-top:2px}
+
+    /* Stats: zona grid */
+    .zona-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#1b5e2f;border:2px solid #134722;border-radius:12px;padding:8px;max-width:252px}
+    .zona-stat-cell{border-radius:9px;padding:11px 6px;text-align:center;color:#fff}
+    .zsn{font-family:"Barlow Condensed",sans-serif;font-size:.76rem;opacity:.78;margin-bottom:2px}
+    .zsp{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;font-weight:700;line-height:1}
+    .zst{font-size:.76rem;opacity:.72}
+    .zona-legend{margin-top:9px;font-size:.8rem;color:var(--muted)}
+
+    /* Stats: table */
+    .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--borde);background:#fff}
+    table{width:100%;border-collapse:collapse;font-size:.87rem}
+    th,td{padding:9px 11px;border-bottom:1px solid var(--borde);text-align:left;vertical-align:middle}
+    th{color:var(--muted);font-family:"Barlow Condensed",sans-serif;font-size:.76rem;letter-spacing:.07em;text-transform:uppercase;background:#f8fbfd;position:sticky;top:0;z-index:1}
+    tr:last-child td{border-bottom:none}
+
+    /* Stats: evolución */
+    .evol-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--borde)}.evol-row:last-child{border-bottom:none}
+    .evol-meta{min-width:0;flex:1}.evol-nombre{font-weight:800;color:var(--azul-950);font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .evol-fecha{font-size:.8rem;color:var(--muted)}
+    .evol-bar-wrap{width:80px;flex-shrink:0;height:8px;background:var(--borde);border-radius:999px;overflow:hidden}
+    .evol-bar{height:100%;background:var(--celeste);border-radius:999px}
+    .evol-pct{font-weight:800;font-size:.9rem;color:var(--azul-800);min-width:36px;text-align:right}
+
+    /* Nueva sesión inline separator */
+    .form-separator{border-top:1px solid var(--borde);margin:12px 0;padding-top:12px}
+
+    /* Footer */
+    .footer-note{margin-top:18px;text-align:center;color:var(--muted);font-size:.86rem}
+
+    /* Responsive */
+    @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.registro-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px;align-items:start}}
+    @media(max-width:540px){main{padding:12px 11px 64px}.panel-head h2{font-size:1.08rem}.res-btn{font-size:.96rem;padding:12px 6px}.zona-btn{padding:13px 4px}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="home-link" href="../index.html">← Análisis</a>
+      <div class="brand">
+        <img src="../../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'">
+        <img src="../../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'">
+        <div>
+          <div class="brand-title">Penales</div>
+          <div class="brand-subtitle">Registro y análisis · Las Murciélagas</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Login -->
+    <section id="loginView" class="login-card">
+      <h1 style="font-family:'Barlow Condensed',sans-serif;color:var(--azul-950);margin:0 0 7px;font-size:1.8rem">Acceso</h1>
+      <p style="color:var(--muted);margin:0 0 18px;font-size:.95rem">Módulo de penales · Las Murciélagas</p>
+      <div class="form-row">
+        <label for="passInput">Contraseña</label>
+        <input id="passInput" type="password" placeholder="Contraseña del equipo" autocomplete="current-password">
+      </div>
+      <button id="loginBtn" class="btn">Ingresar</button>
+      <div id="loginStatus" class="status-line"></div>
+    </section>
+
+    <!-- App -->
+    <section id="appView" class="hidden">
+      <nav class="tabs" aria-label="Secciones">
+        <button class="tab-btn active" data-view="registroView">Registrar</button>
+        <button class="tab-btn" data-view="sesionesView">Sesiones</button>
+        <button class="tab-btn" data-view="statsView">Estadísticas</button>
+      </nav>
+
+      <!-- TAB: REGISTRAR -->
+      <section id="registroView" class="app-section">
+        <div class="registro-layout">
+          <!-- Columna izquierda: sesión + formulario -->
+          <div>
+            <!-- Sesión activa -->
+            <div class="panel">
+              <div class="panel-head">
+                <h2>Sesión activa</h2>
+                <button id="nuevaSesionToggle" class="btn secondary small">+ Nueva</button>
+              </div>
+              <div class="panel-body">
+                <div class="form-row">
+                  <label for="sesionSelect">Sesión</label>
+                  <select id="sesionSelect"><option value="">— Seleccioná una sesión —</option></select>
+                </div>
+                <!-- Formulario nueva sesión (oculto por defecto) -->
+                <div id="nuevaSesionForm" class="hidden">
+                  <div class="form-separator">
+                    <div class="form-row">
+                      <label for="nsNombre">Nombre</label>
+                      <input id="nsNombre" type="text" placeholder="Ej: Miércoles · Penales">
+                    </div>
+                    <div class="form-row">
+                      <label for="nsFecha">Fecha</label>
+                      <input id="nsFecha" type="date">
+                    </div>
+                    <div class="btn-row">
+                      <button id="crearSesionBtn" class="btn">Crear sesión</button>
+                      <button id="cancelarSesionBtn" class="btn ghost">Cancelar</button>
+                    </div>
+                    <div id="crearSesionStatus" class="status-line"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Formulario nuevo penal -->
+            <div class="panel">
+              <div class="panel-head"><h2>Nuevo penal</h2></div>
+              <div class="panel-body">
+                <div class="form-row">
+                  <label for="jugadoraSelect">Jugadora</label>
+                  <select id="jugadoraSelect"><option value="">— Seleccioná jugadora —</option></select>
+                </div>
+                <div class="form-row">
+                  <label for="arqueraSelect">Arquera</label>
+                  <select id="arqueraSelect"><option value="">— Seleccioná arquera —</option></select>
+                </div>
+                <div class="form-row">
+                  <label>Zona del arco</label>
+                  <div class="zona-grid" id="zonaGrid" role="group" aria-label="Zonas del arco">
+                    <button class="zona-btn" data-zona="1" type="button" aria-label="Zona 1">1</button>
+                    <button class="zona-btn" data-zona="2" type="button" aria-label="Zona 2">2</button>
+                    <button class="zona-btn" data-zona="3" type="button" aria-label="Zona 3">3</button>
+                    <button class="zona-btn" data-zona="4" type="button" aria-label="Zona 4">4</button>
+                    <button class="zona-btn" data-zona="5" type="button" aria-label="Zona 5">5</button>
+                    <button class="zona-btn" data-zona="6" type="button" aria-label="Zona 6">6</button>
+                    <button class="zona-btn" data-zona="7" type="button" aria-label="Zona 7">7</button>
+                    <button class="zona-btn" data-zona="8" type="button" aria-label="Zona 8">8</button>
+                    <button class="zona-btn" data-zona="9" type="button" aria-label="Zona 9">9</button>
+                  </div>
+                  <div class="zona-label-hint">1–3 arriba · 4–6 medio · 7–9 abajo (vista del tirador)</div>
+                </div>
+                <div class="form-row">
+                  <label>Resultado</label>
+                  <div class="resultado-btns" id="resultadoBtns" role="group" aria-label="Resultado del penal">
+                    <button class="res-btn gol" data-res="gol" type="button">⚽ Gol</button>
+                    <button class="res-btn atajado" data-res="atajado" type="button">🧤 Atajado</button>
+                    <button class="res-btn afuera" data-res="afuera" type="button">↗ Afuera</button>
+                    <button class="res-btn palo" data-res="palo" type="button">| Palo</button>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button id="registrarBtn" class="btn" disabled>Registrar penal</button>
+                </div>
+                <div id="registrarStatus" class="status-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna derecha: lista de penales de la sesión -->
+          <div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>Penales de la sesión</h2>
+                <span id="sesionSummary" class="badge info"></span>
+              </div>
+              <div class="panel-body" id="listaPenalesBody">
+                <div class="empty">Seleccioná o creá una sesión para empezar.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-note">Herramienta interna · Cuerpo técnico Las Murciélagas</div>
+      </section>
+
+      <!-- TAB: SESIONES -->
+      <section id="sesionesView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Todas las sesiones</h2>
+            <span id="totalSesiones" class="badge info"></span>
+          </div>
+          <div class="panel-body" id="listaSesionesBody">
+            <div class="empty">Sin sesiones registradas.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: ESTADÍSTICAS -->
+      <section id="statsView" class="app-section hidden">
+        <div class="split" style="margin-bottom:13px">
+          <div class="panel">
+            <div class="panel-head"><h2>Por jugadora</h2><span class="badge info" style="font-size:.74rem">Efectividad</span></div>
+            <div class="panel-body" id="statsJugadoras"><div class="empty">Sin datos.</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Por arquera</h2><span class="badge info" style="font-size:.74rem">Penales atajados</span></div>
+            <div class="panel-body" id="statsArqueras"><div class="empty">Sin datos.</div></div>
+          </div>
+        </div>
+        <div class="split" style="margin-bottom:13px">
+          <div class="panel">
+            <div class="panel-head"><h2>Zonas del arco</h2></div>
+            <div class="panel-body" id="statsZonas"><div class="empty">Sin datos.</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Evolución por sesión</h2></div>
+            <div class="panel-body" id="statsEvolucion"><div class="empty">Sin datos.</div></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:13px">
+          <div class="panel-head"><h2>Cruce jugadora × arquera</h2></div>
+          <div class="panel-body" id="statsCruces"><div class="empty">Sin datos.</div></div>
+        </div>
+        <div class="footer-note">Estadísticas calculadas sobre todos los penales registrados.</div>
+      </section>
+    </section>
+  </main>
+
+  <script src="../../assets/config.js"></script>
+  <script>
+    const API_URL=API_BASE_URL;
+    const state={plantel:[],sesiones:[],penales:[],sesionActualId:null,zona:null,resultado:null};
+
+    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const res=await fetch(url.toString());const data=await res.json();if(!data||!data.ok)throw new Error(data?.error||'Error de API');return data.data}
+    async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json();if(!data||!data.ok)throw new Error(data?.error||'Error de API');return data.data}
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.getElementById('loginBtn').addEventListener('click',login);
+      document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+      document.getElementById('nuevaSesionToggle').addEventListener('click',toggleNuevaSesionForm);
+      document.getElementById('crearSesionBtn').addEventListener('click',crearSesion);
+      document.getElementById('cancelarSesionBtn').addEventListener('click',()=>showNuevaSesionForm(false));
+      document.getElementById('sesionSelect').addEventListener('change',onSesionChange);
+      document.getElementById('jugadoraSelect').addEventListener('change',checkRegistrarBtn);
+      document.getElementById('arqueraSelect').addEventListener('change',checkRegistrarBtn);
+      document.getElementById('zonaGrid').addEventListener('click',e=>{const b=e.target.closest('.zona-btn');if(b)setZona(parseInt(b.dataset.zona))});
+      document.getElementById('resultadoBtns').addEventListener('click',e=>{const b=e.target.closest('.res-btn');if(b)setResultado(b.dataset.res)});
+      document.getElementById('registrarBtn').addEventListener('click',registrarPenal);
+      document.getElementById('nsFecha').valueAsDate=new Date();
+    });
+
+    async function login(){
+      const pass=document.getElementById('passInput').value.trim();
+      const status=document.getElementById('loginStatus');
+      status.textContent='Verificando...';status.className='status-line';
+      try{
+        const ok=await apiPost({action:'base_verificarPassword',password:pass});
+        if(ok!==true){status.textContent='Contraseña incorrecta.';status.className='status-line error';return}
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+        await loadAll();
+      }catch(err){status.textContent='Error: '+err.message;status.className='status-line error'}
+    }
+
+    async function loadAll(){
+      const app=document.getElementById('appView');
+      app.classList.add('loading');
+      try{
+        const [plantel,sesiones,penales]=await Promise.all([
+          apiGet('base_getPlantel'),
+          apiGet('penales_getSesiones'),
+          apiGet('penales_getPenales')
+        ]);
+        state.plantel=Array.isArray(plantel)?plantel:[];
+        state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
+        state.penales=Array.isArray(penales)?penales:[];
+        if(!state.sesionActualId&&state.sesiones.length){
+          state.sesionActualId=state.sesiones[state.sesiones.length-1].id;
+        }
+        renderPlantelSelects();
+        renderSesionSelector();
+        renderListaPenales();
+        renderSesiones();
+      }catch(err){alert('Error al cargar datos: '+err.message)}
+      finally{app.classList.remove('loading')}
+    }
+
+    function showView(id){
+      document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
+      if(id==='statsView')renderStats();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function renderPlantelSelects(){
+      const toOpt=p=>{const dni=p.DNI||p.dni||'';const nombre=[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||dni;return `<option value="${esc(dni)}">${esc(nombre)}</option>`};
+      const jugadoras=state.plantel.filter(p=>String(p.Tipo_Integrante||p.tipoIntegrante||'').trim()==='Jugadora');
+      const arqueras=state.plantel.filter(p=>String(p.Tipo_Integrante||p.tipoIntegrante||'').trim()==='Arquera');
+      document.getElementById('jugadoraSelect').innerHTML='<option value="">— Jugadora —</option>'+jugadoras.map(toOpt).join('');
+      document.getElementById('arqueraSelect').innerHTML='<option value="">— Arquera —</option>'+arqueras.map(toOpt).join('');
+    }
+
+    function renderSesionSelector(){
+      const sel=document.getElementById('sesionSelect');
+      sel.innerHTML='<option value="">— Sin sesión activa —</option>'+
+        state.sesiones.slice().reverse().map(s=>`<option value="${esc(String(s.id))}" ${String(s.id)===String(state.sesionActualId)?'selected':''}>${esc(s.nombre)} · ${formatDate(s.fecha)}</option>`).join('');
+    }
+
+    function onSesionChange(){
+      state.sesionActualId=document.getElementById('sesionSelect').value||null;
+      renderListaPenales();
+    }
+
+    function toggleNuevaSesionForm(){
+      const f=document.getElementById('nuevaSesionForm');
+      showNuevaSesionForm(f.classList.contains('hidden'));
+    }
+    function showNuevaSesionForm(show){
+      document.getElementById('nuevaSesionForm').classList.toggle('hidden',!show);
+      if(show)document.getElementById('nsNombre').focus();
+    }
+
+    async function crearSesion(){
+      const nombre=document.getElementById('nsNombre').value.trim();
+      const fecha=document.getElementById('nsFecha').value;
+      const status=document.getElementById('crearSesionStatus');
+      const btn=document.getElementById('crearSesionBtn');
+      if(!nombre){status.textContent='Ingresá un nombre.';status.className='status-line error';return}
+      if(!fecha){status.textContent='Seleccioná una fecha.';status.className='status-line error';return}
+      status.textContent='Creando...';status.className='status-line';btn.disabled=true;
+      try{
+        const result=await apiPost({action:'penales_crearSesion',nombre,fecha});
+        const sesion={id:result.id,nombre,fecha};
+        state.sesiones.push(sesion);
+        state.sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1);
+        state.sesionActualId=sesion.id;
+        document.getElementById('nsNombre').value='';
+        document.getElementById('nsFecha').valueAsDate=new Date();
+        showNuevaSesionForm(false);
+        status.textContent='';status.className='status-line';
+        renderSesionSelector();
+        renderListaPenales();
+        renderSesiones();
+      }catch(err){status.textContent='Error: '+err.message;status.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+
+    function setZona(n){
+      state.zona=n;
+      document.querySelectorAll('.zona-btn').forEach(b=>b.classList.toggle('sel',parseInt(b.dataset.zona)===n));
+      checkRegistrarBtn();
+    }
+
+    function setResultado(r){
+      state.resultado=r;
+      document.querySelectorAll('.res-btn').forEach(b=>b.classList.toggle('sel',b.dataset.res===r));
+      checkRegistrarBtn();
+    }
+
+    function checkRegistrarBtn(){
+      const ok=state.sesionActualId&&document.getElementById('jugadoraSelect').value&&document.getElementById('arqueraSelect').value&&state.zona&&state.resultado;
+      document.getElementById('registrarBtn').disabled=!ok;
+    }
+
+    async function registrarPenal(){
+      const btn=document.getElementById('registrarBtn');
+      const status=document.getElementById('registrarStatus');
+      const jSel=document.getElementById('jugadoraSelect');
+      const aSel=document.getElementById('arqueraSelect');
+      const jugadora_dni=jSel.value;
+      const arquera_dni=aSel.value;
+      const jugadora_nombre=jSel.selectedOptions[0]?.text||jugadora_dni;
+      const arquera_nombre=aSel.selectedOptions[0]?.text||arquera_dni;
+      btn.disabled=true;status.textContent='Registrando...';status.className='status-line';
+      try{
+        const result=await apiPost({action:'penales_registrarPenal',sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado});
+        state.penales.push({id:result.id,sesion_id:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,ts:new Date().toISOString()});
+        state.zona=null;state.resultado=null;
+        document.querySelectorAll('.zona-btn').forEach(b=>b.classList.remove('sel'));
+        document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
+        status.textContent='✓ Registrado';status.className='status-line ok';
+        renderListaPenales();
+        checkRegistrarBtn();
+        setTimeout(()=>{status.textContent='';status.className='status-line'},1800);
+      }catch(err){
+        status.textContent='Error: '+err.message;status.className='status-line error';
+        btn.disabled=false;
+      }
+    }
+
+    async function eliminarPenal(id){
+      if(!confirm('¿Eliminar este penal?'))return;
+      try{
+        await apiPost({action:'penales_eliminarPenal',id});
+        state.penales=state.penales.filter(p=>p.id!==id);
+        renderListaPenales();
+      }catch(err){alert('Error al eliminar: '+err.message)}
+    }
+
+    function renderListaPenales(){
+      const cont=document.getElementById('listaPenalesBody');
+      const sum=document.getElementById('sesionSummary');
+      if(!state.sesionActualId){
+        cont.innerHTML='<div class="empty">Seleccioná o creá una sesión para empezar.</div>';
+        sum.textContent='';return;
+      }
+      const sp=state.penales.filter(p=>String(p.sesion_id)===String(state.sesionActualId)).slice().reverse();
+      const goles=sp.filter(p=>p.resultado==='gol').length;
+      const pct=sp.length?Math.round(goles/sp.length*100):0;
+      sum.textContent=sp.length?`${sp.length} pen. · ${goles} gol${goles!==1?'es':''} · ${pct}%`:'Sin penales';
+      if(!sp.length){cont.innerHTML='<div class="empty">No hay penales en esta sesión todavía.</div>';return}
+      cont.innerHTML=sp.map(p=>`<div class="penal-row">
+        <div class="penal-info">
+          <span class="penal-jugadora">${esc(p.jugadora_nombre||p.jugadora_dni)}</span>
+          <span class="penal-vs">vs</span>
+          <span class="penal-arquera">${esc(p.arquera_nombre||p.arquera_dni)}</span>
+          <span class="badge">Z${p.zona}</span>
+          <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
+        </div>
+        <button class="btn small danger" onclick="eliminarPenal(${p.id})">×</button>
+      </div>`).join('');
+    }
+
+    function renderSesiones(){
+      const cont=document.getElementById('listaSesionesBody');
+      const total=document.getElementById('totalSesiones');
+      total.textContent=`${state.sesiones.length} sesión${state.sesiones.length!==1?'es':''}`;
+      if(!state.sesiones.length){cont.innerHTML='<div class="empty">No hay sesiones registradas todavía.</div>';return}
+      cont.innerHTML=state.sesiones.slice().reverse().map(s=>{
+        const sp=state.penales.filter(p=>String(p.sesion_id)===String(s.id));
+        const goles=sp.filter(p=>p.resultado==='gol').length;
+        const pct=sp.length?Math.round(goles/sp.length*100):null;
+        return `<div class="sesion-card">
+          <div>
+            <div class="sesion-nombre">${esc(s.nombre)}</div>
+            <div class="sesion-meta">${formatDate(s.fecha)} · ${sp.length} penal${sp.length!==1?'es':''}${pct!==null?' · '+pct+'% efectividad':''}</div>
+          </div>
+          <button class="btn small secondary" onclick="activarSesion(${s.id})">Activar</button>
+        </div>`;
+      }).join('');
+    }
+
+    function activarSesion(id){
+      state.sesionActualId=id;
+      renderSesionSelector();
+      renderListaPenales();
+      showView('registroView');
+    }
+
+    /* ===== ESTADÍSTICAS ===== */
+    function renderStats(){
+      const penales=state.penales;
+      if(!penales.length){
+        ['statsJugadoras','statsArqueras','statsZonas','statsCruces','statsEvolucion'].forEach(id=>{document.getElementById(id).innerHTML='<div class="empty">Sin datos suficientes.</div>'});
+        return;
+      }
+      renderStatsJugadoras(penales);
+      renderStatsArqueras(penales);
+      renderStatsZonas(penales);
+      renderStatsCruces(penales);
+      renderStatsEvolucion(penales);
+    }
+
+    function calcEfect(arr){const total=arr.length,goles=arr.filter(p=>p.resultado==='gol').length;return{total,goles,pct:total?Math.round(goles/total*100):0}}
+
+    function resolveNombre(dni){
+      const p=state.plantel.find(x=>(x.DNI||x.dni)===dni);
+      if(!p)return dni;
+      return[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||dni;
+    }
+
+    function renderStatsJugadoras(penales){
+      const m={};
+      penales.forEach(p=>{
+        const k=p.jugadora_dni;
+        if(!m[k])m[k]={nombre:p.jugadora_nombre||resolveNombre(k),todos:[],zonas:Array(9).fill(0)};
+        m[k].todos.push(p);
+        const z=parseInt(p.zona);if(z>=1&&z<=9)m[k].zonas[z-1]++;
+      });
+      const rows=Object.values(m).map(x=>{
+        const e=calcEfect(x.todos);
+        const maxZ=Math.max(...x.zonas);
+        return{...e,nombre:x.nombre,zonaTop:maxZ>0?x.zonas.indexOf(maxZ)+1:null};
+      }).sort((a,b)=>b.total-a.total);
+      document.getElementById('statsJugadoras').innerHTML=rows.map(r=>`<div class="stat-row">
+        <div class="stat-nombre">${esc(r.nombre)}</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${r.pct}%"></div></div>
+        <div class="stat-nums">${r.goles}/${r.total} goles · <strong>${r.pct}%</strong></div>
+        ${r.zonaTop?`<div class="stat-hint">Zona preferida: Z${r.zonaTop}</div>`:''}
+      </div>`).join('');
+    }
+
+    function renderStatsArqueras(penales){
+      const m={};
+      penales.forEach(p=>{
+        const k=p.arquera_dni;
+        if(!m[k])m[k]={nombre:p.arquera_nombre||resolveNombre(k),todos:[],zonas:Array(9).fill(0)};
+        m[k].todos.push(p);
+        const z=parseInt(p.zona);if(z>=1&&z<=9)m[k].zonas[z-1]++;
+      });
+      const rows=Object.values(m).map(x=>{
+        const atajados=x.todos.filter(p=>p.resultado==='atajado').length;
+        const pct=x.todos.length?Math.round(atajados/x.todos.length*100):0;
+        const maxZ=Math.max(...x.zonas);
+        return{nombre:x.nombre,total:x.todos.length,atajados,pct,zonaMas:maxZ>0?x.zonas.indexOf(maxZ)+1:null};
+      }).sort((a,b)=>b.total-a.total);
+      document.getElementById('statsArqueras').innerHTML=rows.map(r=>`<div class="stat-row">
+        <div class="stat-nombre">${esc(r.nombre)}</div>
+        <div class="stat-bar-wrap"><div class="stat-bar tap" style="width:${r.pct}%"></div></div>
+        <div class="stat-nums">${r.atajados}/${r.total} atajados · <strong>${r.pct}%</strong></div>
+        ${r.zonaMas?`<div class="stat-hint">Zona más recibida: Z${r.zonaMas}</div>`:''}
+      </div>`).join('');
+    }
+
+    function renderStatsZonas(penales){
+      const zones=Array.from({length:9},(_,i)=>{const zp=penales.filter(p=>parseInt(p.zona)===i+1);return{zona:i+1,...calcEfect(zp)}});
+      function zColor(pct,total){if(!total)return'rgba(255,255,255,0.1)';if(pct>=60)return'rgba(4,120,87,0.84)';if(pct>=35)return'rgba(180,83,9,0.84)';return'rgba(185,28,28,0.78)'}
+      document.getElementById('statsZonas').innerHTML=`<div class="zona-stats-grid">
+        ${zones.map(z=>`<div class="zona-stat-cell" style="background:${zColor(z.pct,z.total)}">
+          <div class="zsn">Z${z.zona}</div>
+          ${z.total?`<div class="zsp">${z.pct}%</div><div class="zst">${z.goles}/${z.total}</div>`:'<div class="zst">—</div>'}
+        </div>`).join('')}
+      </div><div class="zona-legend">Verde ≥60% · Naranja 35–59% · Rojo &lt;35%</div>`;
+    }
+
+    function renderStatsCruces(penales){
+      const m={};
+      penales.forEach(p=>{
+        const key=p.jugadora_dni+'|'+p.arquera_dni;
+        if(!m[key])m[key]={jugadora:p.jugadora_nombre||resolveNombre(p.jugadora_dni),arquera:p.arquera_nombre||resolveNombre(p.arquera_dni),todos:[]};
+        m[key].todos.push(p);
+      });
+      const rows=Object.values(m).map(x=>{const e=calcEfect(x.todos);return{...e,jugadora:x.jugadora,arquera:x.arquera}}).sort((a,b)=>b.total-a.total);
+      if(!rows.length){document.getElementById('statsCruces').innerHTML='<div class="empty">Sin datos.</div>';return}
+      document.getElementById('statsCruces').innerHTML=`<div class="table-wrap"><table>
+        <thead><tr><th>Jugadora</th><th>Arquera</th><th>Intentos</th><th>Goles</th><th>Efect.</th></tr></thead>
+        <tbody>${rows.map(r=>`<tr>
+          <td>${esc(r.jugadora)}</td><td>${esc(r.arquera)}</td><td>${r.total}</td><td>${r.goles}</td>
+          <td><span class="badge ${r.pct>=60?'ok':r.pct>=35?'warn':'danger'}">${r.pct}%</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    }
+
+    function renderStatsEvolucion(penales){
+      const rows=state.sesiones.map(s=>{
+        const sp=penales.filter(p=>String(p.sesion_id)===String(s.id));
+        return{nombre:s.nombre,fecha:s.fecha,...calcEfect(sp)};
+      }).filter(r=>r.total>0);
+      if(!rows.length){document.getElementById('statsEvolucion').innerHTML='<div class="empty">Sin datos.</div>';return}
+      document.getElementById('statsEvolucion').innerHTML=rows.map(r=>`<div class="evol-row">
+        <div class="evol-meta"><div class="evol-nombre">${esc(r.nombre)}</div><div class="evol-fecha">${formatDate(r.fecha)} · ${r.total} pen.</div></div>
+        <div class="evol-bar-wrap"><div class="evol-bar" style="width:${r.pct}%"></div></div>
+        <div class="evol-pct">${r.pct}%</div>
+      </div>`).join('');
+    }
+
+    /* ===== HELPERS ===== */
+    function resBadge(res){return{gol:'ok',atajado:'danger',afuera:'warn',palo:''}[res]||''}
+    function resLabel(res){return{gol:'Gol',atajado:'Atajado',afuera:'Afuera',palo:'Palo'}[res]||res}
+    function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+    function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+  </script>
+</body>
+</html>
