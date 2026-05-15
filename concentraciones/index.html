@@ -70,7 +70,7 @@
               <h3>Convocatoria</h3>
               <div class="actions" style="margin-bottom:10px"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
-              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><span id="convCount" class="badge info"></span></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="generarConvBtn" class="btn secondary small" type="button" disabled>Generar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
             </div>
           </div>
@@ -84,8 +84,8 @@
               <div class="fields-grid">
                 <div class="form-row"><label for="actFecha">Fecha</label><input id="actFecha" type="date"></div>
                 <div class="form-row"><label for="actHora">Hora</label><input id="actHora" type="time"></div>
-                <div class="form-row"><label for="actTipo">Tipo</label><select id="actTipo"><option value="">Seleccionar tipo</option><option value="entrenamiento">Entrenamiento</option><option value="charla_tactica">Charla táctica</option><option value="partido">Partido</option><option value="recuperacion">Recuperación</option><option value="medica">Médica</option><option value="libre">Libre</option><option value="otro">Otro</option></select></div>
-                <div class="form-row"><label for="actTitulo">Título *</label><input id="actTitulo" placeholder="Nombre de la actividad"></div>
+                <div class="form-row"><label for="actTipo">Tipo</label><select id="actTipo"><option value="">Seleccionar tipo</option><option value="entrenamiento">Entrenamiento</option><option value="charla_tactica">Charla táctica</option><option value="partido">Partido</option><option value="recuperacion">Recuperación</option><option value="medica">Médica</option><option value="comida">Comida</option><option value="libre">Libre</option><option value="otro">Otro</option></select></div>
+                <div class="form-row"><label for="actTitulo">Título *</label><input id="actTitulo" list="actTituloOpciones" placeholder="Nombre de la actividad"><datalist id="actTituloOpciones"></datalist></div>
                 <div class="form-row"><label for="actDuracion">Duración</label><input id="actDuracion" type="number" min="0" step="5" placeholder="Minutos"></div>
               </div>
               <div class="form-row"><label for="actDetalle">Detalle</label><textarea id="actDetalle" placeholder="Lugar, responsables, materiales o notas"></textarea></div>
@@ -121,9 +121,11 @@
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
       document.getElementById('agregarActBtn').addEventListener('click',agregarActividad);
+      document.getElementById('actTipo').addEventListener('change',actualizarTitulosActividad);
       document.getElementById('eliminarConcBtn').addEventListener('click',eliminarConcentracion);
       document.getElementById('newInicio').valueAsDate=new Date();
       document.getElementById('actFecha').valueAsDate=new Date();
+      actualizarTitulosActividad();
     });
 
     async function apiGet(action,params={}){
@@ -298,7 +300,24 @@
     }
     function activityHtml(a,dia){
       const id=a.id||a.actividad_id||a.uuid||'';
-      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.nombre||a.tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(a.tipo||'')}</div>${a.detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
+      const tipo=activityTipo(a),duracion=a.duracion||a.Duracion||a.duration||'';
+      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.Titulo||a.nombre||tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(tipoLabel(tipo))}${duracion?' · '+esc(duracion)+' min':''}</div>${a.detalle||a.Detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.Detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
+    }
+
+    function actualizarTitulosActividad(){
+      const tipo=document.getElementById('actTipo').value;
+      const opciones={
+        entrenamiento:['Entrenamiento cancha','Entrenamiento técnico','Entrenamiento táctico','Pelota parada','Arqueras','Gimnasio'],
+        charla_tactica:['Charla táctica','Análisis de rival','Video','Plan de partido'],
+        partido:['Partido oficial','Partido amistoso','Entrada en calor','Activación pre partido'],
+        recuperacion:['Recuperación','Fisioterapia','Movilidad','Pileta'],
+        medica:['Control médico','Kinesiología','Evaluación física'],
+        comida:['Desayuno','Almuerzo','Merienda','Cena'],
+        libre:['Libre','Descanso'],
+        otro:['Llegada','Traslado','Acreditación','Reunión logística']
+      };
+      document.getElementById('actTituloOpciones').innerHTML=(opciones[tipo]||[]).map(v=>`<option value="${esc(v)}"></option>`).join('');
+      document.getElementById('actTitulo').placeholder=tipo==='otro'?'Llegada, Traslado u otra actividad logística':'Nombre de la actividad';
     }
 
     async function agregarActividad(){
@@ -314,7 +333,7 @@
       if(!tipo){st.textContent='Seleccioná un tipo.';st.className='status-line error';return}
       if(!titulo){st.textContent='Ingresá un título.';st.className='status-line error';return}
       st.textContent='Agregando...';st.className='status-line';btn.disabled=true;
-      try{await apiPost({action:'concentraciones_agregarActividad',concentracionId:concId(c),fecha,hora,tipo,titulo,detalle,duracion});document.getElementById('actHora').value='';document.getElementById('actTipo').value='';document.getElementById('actTitulo').value='';document.getElementById('actDetalle').value='';document.getElementById('actDuracion').value='';st.textContent='Actividad agregada.';st.className='status-line ok';await loadDias()}
+      try{await apiPost({action:'concentraciones_agregarActividad',concentracionId:concId(c),fecha,hora,tipo,categoria:tipo,titulo,detalle,duracion});document.getElementById('actHora').value='';document.getElementById('actTipo').value='';document.getElementById('actTitulo').value='';document.getElementById('actDetalle').value='';document.getElementById('actDuracion').value='';actualizarTitulosActividad();st.textContent='Actividad agregada.';st.className='status-line ok';await loadDias()}
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }
@@ -337,6 +356,8 @@
     function mergeConc(values){const c=currentConc();if(c)Object.assign(c,values)}
     function parseConvocadas(c){const raw=c?.convocadas_json??c?.convocadasJson??c?.convocadas??'[]';if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
     function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
+    function activityTipo(a){return a.tipo||a.Tipo||a.categoria||a.Categoria||a.tipoActividad||a.tipo_actividad||''}
+    function tipoLabel(tipo){return ({entrenamiento:'Entrenamiento',charla_tactica:'Charla táctica',partido:'Partido',recuperacion:'Recuperación',medica:'Médica',comida:'Comida',libre:'Libre',otro:'Otro'})[tipo]||tipo}
     function dateValue(obj,...keys){for(const key of keys){if(obj&&obj[key])return String(obj[key]).slice(0,10)}return''}
     function dateRange(inicio,fin){if(inicio&&fin&&inicio!==fin)return`${formatDate(inicio)} al ${formatDate(fin)}`;return formatDate(inicio||fin)||'Sin fecha'}
     function statusBadge(inicio,fin){const today=new Date().toISOString().slice(0,10),end=fin||inicio||'';if(!end)return'';return end<today?'<span class="badge">Pasada</span>':'<span class="badge ok">Actual/próxima</span>'}
