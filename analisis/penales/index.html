@@ -532,7 +532,7 @@
       const arquera_nombre=aSel.selectedOptions[0]?.text||arquera_dni;
       btn.disabled=true;status.textContent='Registrando...';status.className='status-line';
       try{
-        const result=await apiPost({action:'penales_registrarPenal',sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado,potencia:state.potencia});
+        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora:jugadora_dni,arquera:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado,potencia:state.potencia});
         state.penales.push({id:result.id,sesion_id:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,ts:new Date().toISOString()});
         state.zona=null;state.resultado=null;state.potencia=null;
         document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
