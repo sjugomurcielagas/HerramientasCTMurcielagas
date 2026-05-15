@@ -84,8 +84,9 @@
               <div class="fields-grid">
                 <div class="form-row"><label for="actFecha">Fecha</label><input id="actFecha" type="date"></div>
                 <div class="form-row"><label for="actHora">Hora</label><input id="actHora" type="time"></div>
-                <div class="form-row"><label for="actTipo">Tipo</label><input id="actTipo" placeholder="Entrenamiento, reunión, viaje"></div>
+                <div class="form-row"><label for="actTipo">Tipo</label><select id="actTipo"><option value="">Seleccionar tipo</option><option value="entrenamiento">Entrenamiento</option><option value="charla_tactica">Charla táctica</option><option value="partido">Partido</option><option value="recuperacion">Recuperación</option><option value="medica">Médica</option><option value="libre">Libre</option><option value="otro">Otro</option></select></div>
                 <div class="form-row"><label for="actTitulo">Título *</label><input id="actTitulo" placeholder="Nombre de la actividad"></div>
+                <div class="form-row"><label for="actDuracion">Duración</label><input id="actDuracion" type="number" min="0" step="5" placeholder="Minutos"></div>
               </div>
               <div class="form-row"><label for="actDetalle">Detalle</label><textarea id="actDetalle" placeholder="Lugar, responsables, materiales o notas"></textarea></div>
               <div class="actions"><button id="agregarActBtn" class="btn small">Agregar actividad</button></div>
@@ -307,11 +308,13 @@
       const tipo=document.getElementById('actTipo').value.trim();
       const titulo=document.getElementById('actTitulo').value.trim();
       const detalle=document.getElementById('actDetalle').value.trim();
+      const duracion=document.getElementById('actDuracion').value;
       const st=document.getElementById('actStatus'),btn=document.getElementById('agregarActBtn');
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
+      if(!tipo){st.textContent='Seleccioná un tipo.';st.className='status-line error';return}
       if(!titulo){st.textContent='Ingresá un título.';st.className='status-line error';return}
       st.textContent='Agregando...';st.className='status-line';btn.disabled=true;
-      try{await apiPost({action:'concentraciones_agregarActividad',id:concId(c),concentracion_id:concId(c),fecha,hora,tipo,titulo,detalle});document.getElementById('actHora').value='';document.getElementById('actTipo').value='';document.getElementById('actTitulo').value='';document.getElementById('actDetalle').value='';st.textContent='Actividad agregada.';st.className='status-line ok';await loadDias()}
+      try{await apiPost({action:'concentraciones_agregarActividad',concentracionId:concId(c),fecha,hora,tipo,titulo,detalle,duracion});document.getElementById('actHora').value='';document.getElementById('actTipo').value='';document.getElementById('actTitulo').value='';document.getElementById('actDetalle').value='';document.getElementById('actDuracion').value='';st.textContent='Actividad agregada.';st.className='status-line ok';await loadDias()}
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }
