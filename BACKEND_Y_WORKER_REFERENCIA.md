@@ -4,6 +4,14 @@ Fecha de corte: 2026-05-15
 
 Objetivo: arrancar por backend antes de tocar más frontend, porque hay scripts repartidos entre varias hojas y el contrato real puede estar fragmentado.
 
+## Nueva estructura de referencia
+
+- [Cloudflare Worker Referencia.md](./Cloudflare%20Worker%20Referencia.md)
+- [Reportes Script.md](./Reportes%20Script.md)
+- [Base Script.md](./Base%20Script.md)
+
+Este archivo queda como índice histórico y contexto de trabajo. La documentación operativa de cada bloque vive en los tres archivos de arriba.
+
 ## Prioridad de trabajo
 
 1. Ordenar contratos backend.
