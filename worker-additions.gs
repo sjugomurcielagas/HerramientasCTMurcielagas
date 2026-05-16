@@ -210,7 +210,7 @@ function base_agregarColumna(p) {
 //   id | nombre | fecha | arquera | notas | timestamp
 //
 // Hoja Penales:
-//   id | sesionId | jugadora | zona | potencia | resultado | timestamp
+//   id | sesionId | jugadora | arquera | zona | potencia | resultado | timestamp
 //   potencia: 'fuerte' | 'medio' | 'debil'
 //   resultado: 'gol' | 'atajado' | 'afuera' | 'palo'
 //   zona: '1'-'9' | 'palo-izq' | 'palo-der' | 'travesano' |
@@ -218,7 +218,7 @@ function base_agregarColumna(p) {
 //
 
 function penales_getSesiones() {
-  return ok(true, sheetToObjects(getSheet(SHEETS.sesionesPenales)));
+  return ok(true, sheetToObjects(getSheet(SHEETS.sesionesPenales)).map(_normalizeSesionPenales));
 }
 
 function penales_crearSesion(p) {
@@ -243,22 +243,26 @@ function penales_editarSesion(p) {
 
 // Si se omite sesionId devuelve todos los penales (útil para stats globales)
 function penales_getPenales(p) {
-  const all = sheetToObjects(getSheet(SHEETS.penales));
-  const data = p.sesionId
-    ? all.filter(r => String(r.sesionId) === String(p.sesionId))
+  const all = sheetToObjects(_ensurePenalesSheetSchema());
+  const sesionId = p && (p.sesionId || p.sesion_id);
+  const data = sesionId
+    ? all.filter(r => String(r.sesionId) === String(sesionId))
     : all;
-  return ok(true, data);
+  return ok(true, data.map(_normalizePenalPenales));
 }
 
 function penales_registrarPenal(p) {
-  if (!p.sesionId || !p.jugadora) throw new Error('sesionId y jugadora son requeridos');
+  const sesionId = p.sesionId || p.sesion_id;
+  const jugadora = p.jugadora || p.jugadora_dni;
+  const arquera = p.arquera || p.arquera_dni || '';
+  if (!sesionId || !jugadora) throw new Error('sesionId y jugadora son requeridos');
   const id = newId();
-  getSheet(SHEETS.penales).appendRow([
-    id, p.sesionId, p.jugadora,
+  _ensurePenalesSheetSchema().appendRow([
+    id, sesionId, jugadora, arquera,
     p.zona || '', p.potencia || '', p.resultado || '',
     new Date().toISOString()
   ]);
-  return ok(true, { id });
+  return ok(true, { id, sesionId, jugadora, arquera });
 }
 
 function penales_eliminarPenal(p) {
@@ -268,6 +272,57 @@ function penales_eliminarPenal(p) {
   if (row === -1) throw new Error('Penal no encontrado');
   sheet.deleteRow(row);
   return ok(true, { id: p.id });
+}
+
+function _normalizeSesionPenales(r) {
+  return {
+    ...r,
+    id: r.id,
+    nombre: r.nombre || '',
+    fecha: r.fecha || '',
+    arquera: r.arquera || '',
+    notas: r.notas || '',
+    timestamp: r.timestamp || r.ts || '',
+  };
+}
+
+function _normalizePenalPenales(r) {
+  return {
+    ...r,
+    sesionId: r.sesionId || r.sesion_id || '',
+    sesion_id: r.sesionId || r.sesion_id || '',
+    jugadora_dni: r.jugadora || r.jugadora_dni || '',
+    jugadora: r.jugadora || r.jugadora_dni || '',
+    arquera_dni: r.arquera || r.arquera_dni || '',
+    arquera: r.arquera || r.arquera_dni || '',
+    zona: r.zona || '',
+    potencia: r.potencia || '',
+    resultado: r.resultado || '',
+    timestamp: r.timestamp || r.ts || '',
+  };
+}
+
+function _ensurePenalesSheetSchema() {
+  const sheet = getSheet(SHEETS.penales);
+  const lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    sheet.appendRow(['id', 'sesionId', 'jugadora', 'arquera', 'zona', 'potencia', 'resultado', 'timestamp']);
+    return sheet;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(String);
+  if (headers.includes('arquera')) return sheet;
+
+  const zonaIdx = headers.indexOf('zona');
+  if (zonaIdx === -1) {
+    sheet.insertColumnAfter(3);
+    sheet.getRange(1, 4).setValue('arquera');
+    return sheet;
+  }
+
+  sheet.insertColumnBefore(zonaIdx + 1);
+  sheet.getRange(1, zonaIdx + 1).setValue('arquera');
+  return sheet;
 }
 
 
@@ -719,7 +774,7 @@ function inicializarHojas() {
     },
     {
       nombre: 'Penales',
-      headers: ['id', 'sesionId', 'jugadora', 'zona', 'potencia', 'resultado', 'timestamp']
+      headers: ['id', 'sesionId', 'jugadora', 'arquera', 'zona', 'potencia', 'resultado', 'timestamp']
     },
     {
       nombre: 'Partidos',

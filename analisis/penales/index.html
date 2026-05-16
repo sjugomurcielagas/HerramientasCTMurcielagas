@@ -409,7 +409,7 @@
         ]);
         state.plantel=Array.isArray(plantel)?plantel:[];
         state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
-        state.penales=Array.isArray(penales)?penales:[];
+        state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];
         if(!state.sesionActualId&&state.sesiones.length){
           state.sesionActualId=state.sesiones[state.sesiones.length-1].id;
         }
@@ -429,13 +429,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
     async function loadAndRenderStats(){
-      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales:[];renderListaPenales()}catch(e){}
+      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];renderListaPenales()}catch(e){}
       renderStats();
     }
     async function actualizarPenales(){
       const btn=document.getElementById('refreshPenalesBtn');
       btn.disabled=true;btn.textContent='...';
-      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales:[];renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
+      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
       finally{btn.disabled=false;btn.textContent='Actualizar'}
     }
 
@@ -533,7 +533,7 @@
       btn.disabled=true;status.textContent='Registrando...';status.className='status-line';
       try{
         const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora:jugadora_dni,arquera:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado,potencia:state.potencia});
-        state.penales.push({id:result.id,sesion_id:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,ts:new Date().toISOString()});
+        state.penales.push(normalizePenalRecord({id:result.id,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,timestamp:new Date().toISOString()}));
         state.zona=null;state.resultado=null;state.potencia=null;
         document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
         document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
@@ -564,7 +564,7 @@
         cont.innerHTML='<div class="empty">Seleccioná o creá una sesión para empezar.</div>';
         sum.textContent='';return;
       }
-      const sp=state.penales.filter(p=>String(p.sesion_id)===String(state.sesionActualId)).slice().reverse();
+      const sp=state.penales.filter(p=>String(p.sesionId)===String(state.sesionActualId)).slice().reverse();
       const goles=sp.filter(p=>p.resultado==='gol').length;
       const pct=sp.length?Math.round(goles/sp.length*100):0;
       sum.textContent=sp.length?`${sp.length} pen. · ${goles} gol${goles!==1?'es':''} · ${pct}%`:'Sin penales';
@@ -578,7 +578,7 @@
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
           ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
         </div>
-        <button class="btn small danger" onclick="eliminarPenal(${p.id})">×</button>
+        <button class="btn small danger" onclick="eliminarPenal(${JSON.stringify(String(p.id))})">×</button>
       </div>`).join('');
     }
 
@@ -588,7 +588,7 @@
       total.textContent=`${state.sesiones.length} sesión${state.sesiones.length!==1?'es':''}`;
       if(!state.sesiones.length){cont.innerHTML='<div class="empty">No hay sesiones registradas todavía.</div>';return}
       cont.innerHTML=state.sesiones.slice().reverse().map(s=>{
-        const sp=state.penales.filter(p=>String(p.sesion_id)===String(s.id));
+        const sp=state.penales.filter(p=>String(p.sesionId)===String(s.id));
         const goles=sp.filter(p=>p.resultado==='gol').length;
         const pct=sp.length?Math.round(goles/sp.length*100):null;
         return `<div class="sesion-card">
@@ -596,7 +596,7 @@
             <div class="sesion-nombre">${esc(s.nombre)}</div>
             <div class="sesion-meta">${formatDate(s.fecha)} · ${sp.length} penal${sp.length!==1?'es':''}${pct!==null?' · '+pct+'% efectividad':''}</div>
           </div>
-          <button class="btn small secondary" onclick="activarSesion(${s.id})">Activar</button>
+          <button class="btn small secondary" onclick="activarSesion(${JSON.stringify(String(s.id))})">Activar</button>
         </div>`;
       }).join('');
     }
@@ -718,7 +718,7 @@
 
     function renderStatsEvolucion(penales){
       const rows=state.sesiones.map(s=>{
-        const sp=penales.filter(p=>String(p.sesion_id)===String(s.id));
+        const sp=penales.filter(p=>String(p.sesionId)===String(s.id));
         return{nombre:s.nombre,fecha:s.fecha,...calcEfect(sp)};
       }).filter(r=>r.total>0);
       if(!rows.length){document.getElementById('statsEvolucion').innerHTML='<div class="empty">Sin datos.</div>';return}
@@ -752,6 +752,24 @@
     function resLabel(res){return{gol:'Gol',atajado:'Atajado',afuera:'Afuera',palo:'Palo'}[res]||res}
     function potLabel(p){return{fuerte:'Fuerte',medio:'Medio',debil:'Débil'}[p]||p||'—'}
     function potBadge(p){return{fuerte:'danger',medio:'warn',debil:'info'}[p]||''}
+    function normalizePenalRecord(p){
+      if(!p)return p;
+      const sesionId=p.sesionId??p.sesion_id??p.sesionID??p.sesionid??'';
+      const jugadoraDni=p.jugadora_dni??p.jugadora??p.jugadoraDNI??'';
+      const arqueraDni=p.arquera_dni??p.arquera??p.arqueraDNI??'';
+      return {
+        ...p,
+        sesionId,
+        sesion_id: sesionId,
+        jugadora_dni: jugadoraDni,
+        jugadora: jugadoraDni,
+        arquera_dni: arqueraDni,
+        arquera: arqueraDni,
+        zona:p.zona??'',
+        resultado:p.resultado??'',
+        potencia:p.potencia??'',
+      };
+    }
     function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ')}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
