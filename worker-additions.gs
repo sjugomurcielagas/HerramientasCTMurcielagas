@@ -33,6 +33,11 @@
 //   testeos:             'Testeos',           // ← NUEVO
 //   testeosMediciones:   'TesteosMediciones', // ← NUEVO
 //   columnasDinamicas:   'ColumnasDinamicas', // ← NUEVO
+//   configPlantillas:    'Config_Plantillas', // ← NUEVO
+//   configCarpetas:      'Config_Carpetas',   // ← NUEVO
+//   documentosGenerados: 'Documentos_Generados', // ← NUEVO
+//   antidopingFrecuentes:'Antidoping_Frecuentes', // ← NUEVO
+//   antidopingHistorial: 'Antidoping_Historial',  // ← NUEVO
 // };
 
 
@@ -58,6 +63,11 @@
 //   case 'penales_getPenales':         return penales_getPenales(p);
 //   case 'penales_registrarPenal':     return penales_registrarPenal(p);
 //   case 'penales_eliminarPenal':      return penales_eliminarPenal(p);
+//   case 'concentraciones_generarConvocatoria': return concentraciones_generarConvocatoria(p);
+//   case 'concentraciones_getTiposDocumento':   return concentraciones_getTiposDocumento();
+//   case 'concentraciones_validarDatosDocumentos': return concentraciones_validarDatosDocumentos(p);
+//   case 'concentraciones_generarDocumentos':    return concentraciones_generarDocumentos(p);
+//   case 'concentraciones_getDocumentosGenerados': return concentraciones_getDocumentosGenerados(p);
 //
 //   // ── PARTIDOS ──────────────────────────────────────────────
 //   case 'partidos_getPartidos':       return partidos_getPartidos();
@@ -80,6 +90,11 @@
 //   case 'concentraciones_agregarActividad':    return concentraciones_agregarActividad(p);
 //   case 'concentraciones_editarActividad':     return concentraciones_editarActividad(p);
 //   case 'concentraciones_eliminarActividad':   return concentraciones_eliminarActividad(p);
+
+//   // ── ANTIDOPING ────────────────────────────────────────────
+//   case 'antidoping_buscarMedicamento':        return antidoping_buscarMedicamento(p);
+//   case 'antidoping_getFrecuentes':            return antidoping_getFrecuentes();
+//   case 'antidoping_getHistorial':             return antidoping_getHistorial();
 //
 //   // ── TESTEOS FÍSICOS ───────────────────────────────────────
 //   case 'testeos_getTesteos':         return testeos_getTesteos();
@@ -107,6 +122,15 @@ function getColIndex(sheet, colName) {
 function parseJson(val) {
   if (!val) return null;
   try { return JSON.parse(val); } catch (_) { return null; }
+}
+
+function normalizeText(v) {
+  return String(v || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 // Devuelve el número de fila (1-indexed) donde idColName === idValue, o -1
@@ -145,6 +169,10 @@ function getSheet(name) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name);
   if (!sheet) throw new Error('Hoja no encontrada: ' + name);
   return sheet;
+}
+
+function tryGetSheet(name) {
+  try { return getSheet(name); } catch (_) { return null; }
 }
 
 // Genera un UUID v4
@@ -662,6 +690,343 @@ function concentraciones_eliminarActividad(p) {
   return ok(true, { actividadId: p.actividadId });
 }
 
+// Parámetros: { concentracionId, id, nombre, lugar, fechaInicio, fechaFin, notas, convocadas_json }
+// Mantiene el contrato del frontend actual, pero deja listo el punto único
+// para el flujo documental de concentraciones.
+function concentraciones_generarConvocatoria(p) {
+  return concentraciones_generarDocumentos({
+    ...p,
+    tiposDocumento: ['convocatoria_fadec']
+  });
+}
+
+function concentraciones_getTiposDocumento() {
+  return ok(true, _tiposDocumentoConcentraciones());
+}
+
+function concentraciones_validarDatosDocumentos(p) {
+  return ok(true, _validarDatosDocumentosConcentracion(p));
+}
+
+function concentraciones_generarDocumentos(p) {
+  const conc = _getConcentracionParaDocumentos(p);
+  if (!conc) throw new Error('Concentración no encontrada');
+  const tipos = _normalizarTiposDocumento(p.tiposDocumento || p.tipoDocumento || p.tipos_documento || (p.tipoDocumento ? [p.tipoDocumento] : []));
+  const tiposFinales = tipos.length ? tipos : ['convocatoria_fadec'];
+  const convocadas = _convocadasConcentracion(conc, p);
+  const validacionData = _validarDatosDocumentosConcentracion({
+    ...p,
+    concentracionId: conc.id,
+    tiposDocumento: tiposFinales
+  });
+  const documentosSheet = _ensureHojaDocumentosGenerados();
+  const generados = tiposFinales.map(tipo => {
+    const cfg = _tiposDocumentoConcentraciones().find(t => t.clave === tipo) || {};
+    const id = newId();
+    const url = '';
+    const nombre = _nombreDocumentoConcentraciones(tipo, conc);
+    const registro = [
+      id,
+      conc.id,
+      tipo,
+      nombre,
+      url,
+      validacionData.valido ? 'generado' : 'pendiente',
+      validacionData.faltantes.join(', '),
+      new Date().toISOString()
+    ];
+    documentosSheet.appendRow(registro);
+    return {
+      id,
+      concentracionId: conc.id,
+      tipoDocumento: tipo,
+      nombre,
+      url,
+      estado: validacionData.valido ? 'generado' : 'pendiente',
+      faltantes: validacionData.faltantes,
+      convocadas,
+      plantillaId: cfg.plantillaId || '',
+      carpetaId: cfg.carpetaId || ''
+    };
+  });
+  const primerUrl = generados.find(d => d.url)?.url || '';
+  return ok(true, {
+    concentracionId: conc.id,
+    url: primerUrl,
+    documentUrl: primerUrl,
+    pdfUrl: primerUrl,
+    documentos: generados,
+    validacion: validacionData
+  });
+}
+
+function _validarDatosDocumentosConcentracion(p) {
+  const conc = _getConcentracionParaDocumentos(p);
+  const tipos = _normalizarTiposDocumento(p.tiposDocumento || p.tipoDocumento || p.tipos_documento || []);
+  const convocadas = _convocadasConcentracion(conc, p);
+  const faltantes = [];
+  if (!conc) faltantes.push('concentracion');
+  if (tipos.includes('convocatoria_fadec') && !convocadas.length) faltantes.push('convocadas');
+  tipos.forEach(tipo => {
+    const cfg = _tiposDocumentoConcentraciones().find(t => t.clave === tipo);
+    if (!cfg) faltantes.push(`tipo:${tipo}`);
+    if (cfg && cfg.requiereNombre && !(conc && conc.nombre)) faltantes.push('nombre');
+    if (cfg && cfg.requiereFecha && !(conc && conc.fechaInicio)) faltantes.push('fechaInicio');
+    if (cfg && cfg.requiereConvocadas && !convocadas.length) faltantes.push('convocadas');
+  });
+  return {
+    concentracionId: conc ? conc.id : (p.concentracionId || p.id || ''),
+    tiposDocumento: tipos,
+    convocadas,
+    faltantes: Array.from(new Set(faltantes)),
+    valido: faltantes.length === 0
+  };
+}
+
+function concentraciones_getDocumentosGenerados(p) {
+  const sheet = _ensureHojaDocumentosGenerados();
+  const all = sheetToObjects(sheet).map(_normalizarDocumentoGenerado);
+  const concId = p && (p.concentracionId || p.id);
+  const data = concId ? all.filter(d => String(d.concentracionId) === String(concId)) : all;
+  return ok(true, data);
+}
+
+function _tiposDocumentoConcentraciones() {
+  return [
+    {
+      clave: 'convocatoria_fadec',
+      nombre: 'Convocatoria FADEC',
+      plantillaId: _leerPlantillaDoc('convocatoria_fadec').plantillaId || '',
+      carpetaId: _leerCarpetaDoc('convocatoria_fadec').folderId || _leerPlantillaDoc('convocatoria_fadec').carpetaId || '',
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: true
+    },
+    {
+      clave: 'licencia_agencia_cordoba',
+      nombre: 'Licencia Agencia Córdoba',
+      plantillaId: _leerPlantillaDoc('licencia_agencia_cordoba').plantillaId || '',
+      carpetaId: _leerCarpetaDoc('licencia_agencia_cordoba').folderId || _leerPlantillaDoc('licencia_agencia_cordoba').carpetaId || '',
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: false
+    },
+    {
+      clave: 'licencia_municipalidad_cordoba',
+      nombre: 'Licencia Municipalidad Córdoba',
+      plantillaId: _leerPlantillaDoc('licencia_municipalidad_cordoba').plantillaId || '',
+      carpetaId: _leerCarpetaDoc('licencia_municipalidad_cordoba').folderId || _leerPlantillaDoc('licencia_municipalidad_cordoba').carpetaId || '',
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: false
+    },
+    {
+      clave: 'certificacion_participacion',
+      nombre: 'Certificación de participación',
+      plantillaId: _leerPlantillaDoc('certificacion_participacion').plantillaId || '',
+      carpetaId: _leerCarpetaDoc('certificacion_participacion').folderId || _leerPlantillaDoc('certificacion_participacion').carpetaId || '',
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: true
+    }
+  ];
+}
+
+function _normalizarTiposDocumento(v) {
+  const arr = Array.isArray(v) ? v : (v ? [v] : []);
+  return arr.map(x => String(x || '').trim()).filter(Boolean);
+}
+
+function _getConcentracionParaDocumentos(p) {
+  const id = p && (p.concentracionId || p.id);
+  if (!id) return null;
+  const conc = sheetToObjects(getSheet(SHEETS.concentraciones)).find(r => String(r.id) === String(id));
+  if (!conc) return null;
+  return {
+    ...conc,
+    id: conc.id,
+    nombre: conc.nombre || '',
+    fechaInicio: conc.fechaInicio || conc.fecha_inicio || '',
+    fechaFin: conc.fechaFin || conc.fecha_fin || '',
+    lugar: conc.lugar || '',
+    notas: conc.notas || '',
+    convocadas_json: conc.convocadas_json || conc.convocadasJson || conc.convocadas || '[]'
+  };
+}
+
+function _convocadasConcentracion(conc, p) {
+  const raw = (p && (p.convocadas_json || p.convocadasJson || p.convocadas)) || (conc && (conc.convocadas_json || conc.convocadasJson || conc.convocadas)) || '[]';
+  const parsed = parseJson(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+function _nombreDocumentoConcentraciones(tipo, conc) {
+  const base = conc && conc.nombre ? conc.nombre : 'Concentración';
+  const mapa = {
+    convocatoria_fadec: 'Convocatoria FADEC',
+    licencia_agencia_cordoba: 'Licencia Agencia Córdoba',
+    licencia_municipalidad_cordoba: 'Licencia Municipalidad Córdoba',
+    certificacion_participacion: 'Certificación de participación'
+  };
+  return `${mapa[tipo] || tipo} · ${base}`;
+}
+
+function _normalizarDocumentoGenerado(r) {
+  return {
+    ...r,
+    concentracionId: r.concentracionId || r.concentracion_id || '',
+    tipoDocumento: r.tipoDocumento || r.tipo_documento || '',
+    nombre: r.nombre || '',
+    url: r.url || '',
+    estado: r.estado || '',
+    error: r.error || '',
+    timestamp: r.timestamp || r.ts || '',
+  };
+}
+
+function _ensureHojaDocumentosGenerados() {
+  let sheet = tryGetSheet(SHEETS.documentosGenerados);
+  if (!sheet) {
+    sheet = SpreadsheetApp.openById(SPREADSHEET_ID).insertSheet(SHEETS.documentosGenerados);
+    sheet.getRange(1, 1, 1, 8).setValues([['id', 'concentracionId', 'tipoDocumento', 'nombre', 'url', 'estado', 'error', 'timestamp']]);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+  const lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    sheet.appendRow(['id', 'concentracionId', 'tipoDocumento', 'nombre', 'url', 'estado', 'error', 'timestamp']);
+    return sheet;
+  }
+  return sheet;
+}
+
+function _leerPlantillaDoc(clave) {
+  const sheet = tryGetSheet(SHEETS.configPlantillas);
+  if (!sheet) return {};
+  const match = sheetToObjects(sheet).find(r => normalizeText(r.clave) === normalizeText(clave));
+  return match || {};
+}
+
+function _leerCarpetaDoc(clave) {
+  const sheet = tryGetSheet(SHEETS.configCarpetas);
+  if (!sheet) return {};
+  const match = sheetToObjects(sheet).find(r => normalizeText(r.clave) === normalizeText(clave));
+  return match || {};
+}
+
+// ────────────────────────────────────────────────────────────────
+// ANTIDOPING
+// ────────────────────────────────────────────────────────────────
+//
+// Contrato de referencia para consultas internas. La lógica real puede
+// apoyarse en una hoja de revisión o en una base externa.
+//
+
+const _ANTIDOPING_FALLBACK_FRECUENTES = [
+  { medicamento: 'Paracetamol', principioActivo: 'Paracetamol', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Usar criterio clínico y revisar vía de administración.' },
+  { medicamento: 'Ibuprofeno', principioActivo: 'Ibuprofeno', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Revisar contexto y dosis.' },
+  { medicamento: 'Loratadina', principioActivo: 'Loratadina', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Confirmar principio activo y formulación.' },
+  { medicamento: 'Cetirizina', principioActivo: 'Cetirizina', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Confirmar principio activo y formulación.' },
+  { medicamento: 'Amoxicilina', principioActivo: 'Amoxicilina', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Antibiótico, revisar indicación médica.' },
+  { medicamento: 'Omeprazol', principioActivo: 'Omeprazol', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Verificar presentación comercial.' }
+];
+
+function antidoping_buscarMedicamento(p) {
+  const consulta = String(p.consulta || p.q || p.medicamento || '').trim();
+  if (!consulta) throw new Error('consulta es requerida');
+
+  const resultados = _buscarEnCatalogoAntidoping(consulta);
+  _antidopingRegistrarHistorial({
+    consulta,
+    resultado: resultados[0] || null
+  });
+
+  return ok(true, resultados.length === 1 ? resultados[0] : resultados);
+}
+
+function antidoping_getFrecuentes() {
+  const sheet = tryGetSheet(SHEETS.antidopingFrecuentes);
+  if (!sheet) return ok(true, _ANTIDOPING_FALLBACK_FRECUENTES.map(_normalizarAntidoping));
+  const data = sheetToObjects(sheet);
+  if (data.length) return ok(true, data.map(_normalizarAntidoping));
+  return ok(true, _ANTIDOPING_FALLBACK_FRECUENTES.map(_normalizarAntidoping));
+}
+
+function antidoping_getHistorial() {
+  const sheet = tryGetSheet(SHEETS.antidopingHistorial);
+  if (!sheet) return ok(true, []);
+  return ok(true, sheetToObjects(sheet).map(_normalizarAntidopingHistorial));
+}
+
+function _buscarEnCatalogoAntidoping(consulta) {
+  const q = normalizeText(consulta);
+  const catalogo = [
+    ..._ANTIDOPING_FALLBACK_FRECUENTES,
+    { medicamento: 'Salbutamol', principioActivo: 'Salbutamol', estado: 'CONDICIONADO / REQUIERE REVISIÓN', observaciones: 'Verificar inhalador y dosis.' },
+    { medicamento: 'Budesonida', principioActivo: 'Budesonida', estado: 'NO FIGURA COMO PROHIBIDO / REQUIERE VERIFICACIÓN', observaciones: 'Revisar contexto clínico.' },
+    { medicamento: 'Dexametasona', principioActivo: 'Dexametasona', estado: 'CONDICIONADO / REQUIERE REVISIÓN', observaciones: 'Revisar vía, dosis y ventana de competencia.' }
+  ];
+  return catalogo.filter(item => {
+    const hay = [item.medicamento, item.principioActivo, item.observaciones].map(normalizeText).join(' ');
+    return hay.includes(q);
+  }).map(_normalizarAntidoping);
+}
+
+function _antidopingRegistrarHistorial(entry) {
+  const sheet = _ensureHojaAntidopingHistorial();
+  const id = newId();
+  const resultado = entry.resultado || {};
+  sheet.appendRow([
+    id,
+    entry.consulta || '',
+    resultado.medicamento || '',
+    resultado.principioActivo || resultado.principio_activo || '',
+    resultado.estado || '',
+    resultado.observaciones || '',
+    new Date().toISOString()
+  ]);
+}
+
+function _ensureHojaAntidopingHistorial() {
+  let sheet = tryGetSheet(SHEETS.antidopingHistorial);
+  if (!sheet) {
+    sheet = SpreadsheetApp.openById(SPREADSHEET_ID).insertSheet(SHEETS.antidopingHistorial);
+    sheet.getRange(1, 1, 1, 7).setValues([['id', 'consulta', 'medicamento', 'principioActivo', 'estado', 'observaciones', 'timestamp']]);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+  if (sheet.getLastColumn() === 0) {
+    sheet.appendRow(['id', 'consulta', 'medicamento', 'principioActivo', 'estado', 'observaciones', 'timestamp']);
+  }
+  return sheet;
+}
+
+function _normalizarAntidoping(r) {
+  return {
+    ...r,
+    medicamento: r.medicamento || r.nombre_comercial || '',
+    principioActivo: r.principioActivo || r.principio_activo || '',
+    estado: r.estado || r.resultado || '',
+    observaciones: r.observaciones || '',
+    fuente_argentina: r.fuente_argentina || r.fuenteArgentina || 'Referencia interna',
+    fuente_wada: r.fuente_wada || r.fuenteWada || 'Referencia interna',
+    fuente_secundaria: r.fuente_secundaria || r.fuenteSecundaria || 'Referencia interna',
+    fecha_revision: r.fecha_revision || r.fechaRevision || new Date().toISOString().slice(0, 10)
+  };
+}
+
+function _normalizarAntidopingHistorial(r) {
+  return {
+    ...r,
+    consulta: r.consulta || '',
+    medicamento: r.medicamento || '',
+    principioActivo: r.principioActivo || r.principio_activo || '',
+    estado: r.estado || '',
+    observaciones: r.observaciones || '',
+    timestamp: r.timestamp || r.ts || ''
+  };
+}
+
 
 // ────────────────────────────────────────────────────────────────
 // TESTEOS FÍSICOS
@@ -809,6 +1174,26 @@ function inicializarHojas() {
     {
       nombre: 'ColumnasDinamicas',
       headers: ['id', 'nombre', 'tipo', 'grupo', 'timestamp']
+    },
+    {
+      nombre: 'Config_Plantillas',
+      headers: ['id', 'clave', 'nombre', 'plantillaId', 'carpetaId', 'activo', 'notas', 'timestamp']
+    },
+    {
+      nombre: 'Config_Carpetas',
+      headers: ['id', 'clave', 'nombre', 'folderId', 'activo', 'notas', 'timestamp']
+    },
+    {
+      nombre: 'Documentos_Generados',
+      headers: ['id', 'concentracionId', 'tipoDocumento', 'nombre', 'url', 'estado', 'error', 'timestamp']
+    },
+    {
+      nombre: 'Antidoping_Frecuentes',
+      headers: ['id', 'medicamento', 'principioActivo', 'estado', 'observaciones', 'fuenteArg', 'fuenteWada', 'fuenteSecundaria', 'timestamp']
+    },
+    {
+      nombre: 'Antidoping_Historial',
+      headers: ['id', 'consulta', 'medicamento', 'principioActivo', 'estado', 'observaciones', 'timestamp']
     },
   ];
 
