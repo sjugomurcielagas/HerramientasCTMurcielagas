@@ -46,11 +46,21 @@ const ANTIDOPING_PREFIXES = [
   'antidoping_'
 ];
 
+const ANTIDOPING_ACTIONS_REFERENCIA = [
+  'antidoping_buscarMedicamento',
+  'antidoping_getFrecuentes',
+  'antidoping_getHistorial',
+  'antidoping_importarCatalogo',
+  'antidoping_importarWada',
+  'antidoping_getBackendStatus'
+];
+
 // El Worker decide el destino por acción:
 // - REPORTES_ACTIONS -> gas/reportes
 // - BASE_ACTION_MAP   -> gas/base-deporte (alias base_* hacia funciones legacy)
 // - DEPORTES_PREFIXES -> gas/base-deporte (módulos deportivos)
 // - ANTIDOPING_PREFIXES -> gas/base-deporte (módulo antidoping)
+// Nota: ANTIDOPING_ACTIONS_REFERENCIA es documental; el ruteo real se hace por prefijo.
 
 export default {
   async fetch(request) {
@@ -209,3 +219,20 @@ function jsonResponse(data, status = 200) {
     }
   });
 }
+
+// ============================================================
+// VERIFICACIÓN POST-DEPLOY (manual)
+// ============================================================
+//
+// 1) Confirmar GAS de base-deporte actualizado (ej. versión 66 o superior).
+// 2) Publicar este Worker en Cloudflare.
+// 3) Validar en producción:
+//
+// curl -s -X POST "https://murcielagas-reportes-api.sjugomurcielagas.workers.dev" \
+//   -H "Content-Type: application/json" \
+//   -d '{"action":"antidoping_getBackendStatus"}'
+//
+// Respuesta esperada:
+// - ok: true
+// - data.backend_version: string (ej. "2026-05-17.2")
+// - data.wada_loaded: boolean
