@@ -2701,7 +2701,7 @@ TIPOS DE MOVIMIENTO:
 - "free": irregular (conducción con cambio de dirección)
 
 REGLAS IMPORTANTES:
-1. Si se menciona número ("la 7"), usá num:7. Si se menciona apellido, buscalo en el plantel.
+1. Si se menciona número ("la 7"), usá num:7. Si se menciona apellido, buscalo en el plantel y agregá el campo "apellido" en el JSON solo cuando el usuario lo menciona explícitamente. Si solo se menciona número, NO incluyas "apellido".
 2. Solo usá el plantel real si el texto menciona explícitamente un apellido o número de jugadora. Si no se nombra nadie específico, usá SIEMPRE jugadoras genéricas con num:21, 22, 23, 24, 25 para campo y num:1 para arquera. Nunca asignes números del plantel real (1,4,6,7,8,9,10,11,12,14,15) si el texto no los menciona.
 3. Las flechas tipo "press" van SIEMPRE desde una jugadora del equipo A hacia una jugadora del equipo B (rival). Nunca de A a A. Si hay presión en el texto, obligatoriamente incluí jugadoras con team:"B" como destino de esas flechas.
 4. Si el texto menciona "pase", "toca", "da la pelota" o similar entre dos jugadoras del mismo equipo, usá type:"pass".
@@ -2743,7 +2743,7 @@ ESQUEMA (presión sobre rival): {"players":[{"num":21,"team":"A","x":600,"y":200
   const baseIdx=players.length;
   (parsed.players||[]).forEach((p,i)=>{
     const num=p.num||counterA++;
-    const role=MURCIELAGAS.find(m=>m.num===num)?MURCIELAGAS.find(m=>m.num===num).apellido:String(num);
+    const role=p.apellido?p.apellido:String(num);
     const px=Math.max(90,Math.min(830,Number(p.x)||450));
     const py=Math.max(75,Math.min(445,Number(p.y)||260));
     players.push({x:px,y:py,team:p.team||'A',num,role,r:18,ghost:false,gk:!!p.gk});
