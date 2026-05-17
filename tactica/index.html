@@ -2702,18 +2702,22 @@ TIPOS DE MOVIMIENTO:
 
 REGLAS IMPORTANTES:
 1. Si se menciona número ("la 7"), usá num:7. Si se menciona apellido, buscalo en el plantel.
-2. Solo usá el plantel real si el texto menciona explícitamente un apellido o número de jugadora. Si no se nombra nadie específico, usá jugadoras genéricas: num:21, 22, 23, 24, 25 para campo y num:1 para arquera. No inventes apellidos ni asignes números del plantel real.
-3. Si el texto menciona "rivales", "marcación" o "presión rival", agregá jugadoras con team:"B" en posiciones opuestas.
-4. Si el texto dice "desde posición inicial", "formación" o "arrancan", usá los valores exactos de una de las formaciones arriba.
-5. Para rematar al arco rival: toX=810, toY=260 (o 215/305 para los palos).
-6. Coordenadas válidas: x entre 90 y 820, y entre 75 y 445.
-7. fromNum y toNum corresponden al campo "num" del array players generado.
-8. Si el destino es un punto del campo libre, usá toX/toY en lugar de toNum.
-9. Siempre poné al menos 2 jugadoras para que se entienda la relación táctica.
+2. Solo usá el plantel real si el texto menciona explícitamente un apellido o número de jugadora. Si no se nombra nadie específico, usá SIEMPRE jugadoras genéricas con num:21, 22, 23, 24, 25 para campo y num:1 para arquera. Nunca asignes números del plantel real (1,4,6,7,8,9,10,11,12,14,15) si el texto no los menciona.
+3. Las flechas tipo "press" van SIEMPRE desde una jugadora del equipo A hacia una jugadora del equipo B (rival). Nunca de A a A. Si hay presión en el texto, obligatoriamente incluí jugadoras con team:"B" como destino de esas flechas.
+4. Si el texto menciona "pase", "toca", "da la pelota" o similar entre dos jugadoras del mismo equipo, usá type:"pass".
+5. Si el texto menciona "corre", "se desmarca", "baja" o movimiento sin pelota, usá type:"run".
+6. Si el texto dice "desde posición inicial", "formación" o "arrancan", usá los valores exactos de una de las formaciones arriba.
+7. Para rematar al arco rival: toX=810, toY=260 (o 215/305 para los palos).
+8. Coordenadas válidas: x entre 90 y 820, y entre 75 y 445.
+9. fromNum y toNum corresponden al campo "num" del array players generado.
+10. Si el destino es un punto del campo libre, usá toX/toY en lugar de toNum.
+11. Siempre poné al menos 2 jugadoras para que se entienda la relación táctica.
 
 RESPONDÉ ÚNICAMENTE con JSON válido. Sin texto, sin markdown, sin explicaciones.
 
-ESQUEMA: {"players":[{"num":9,"team":"A","x":500,"y":260,"gk":false},{"num":7,"team":"A","x":350,"y":160,"gk":false}],"arrows":[{"kind":"straight","fromNum":7,"toNum":9,"type":"pass"},{"kind":"straight","fromNum":9,"toX":810,"toY":260,"type":"shot"}]}`;
+ESQUEMA (pase entre compañeras): {"players":[{"num":21,"team":"A","x":500,"y":260,"gk":false},{"num":22,"team":"A","x":350,"y":160,"gk":false}],"arrows":[{"kind":"straight","fromNum":22,"toNum":21,"type":"pass"}]}
+
+ESQUEMA (presión sobre rival): {"players":[{"num":21,"team":"A","x":600,"y":200,"gk":false},{"num":51,"team":"B","x":650,"y":200,"gk":false}],"arrows":[{"kind":"straight","fromNum":21,"toNum":51,"type":"press"}]}`;
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
