@@ -12,30 +12,39 @@
   <title>Murciélagas Analytics · Reportes de Entrenamiento</title>
   <style>
 :root {
-  --bg: #f4f8fc;
-  --surface: #ffffff;
+  /* === Sistema de diseño estándar CT Murciélagas === */
+  --azul-950: #06172f;
+  --azul-800: #0b2f5f;
+  --azul-700: #0f4c81;
+  --celeste: #118ac0;
+  --celeste-100: rgba(17, 138, 192, .10);
+  --fondo: #f4f8fc;
+  --card: #ffffff;
+  --borde: #d5e6f1;
+  --texto: #12283a;
+  --muted: #4f7188;
+  --ok: #16834a;
+  --warn: #b7791f;
+  --danger: #c24141;
+  --shadow: 0 10px 30px rgba(18, 40, 58, .10);
+  --radius: 16px;
+
+  /* === Aliases internos del módulo Reportes === */
+  --bg: var(--fondo);
+  --surface: var(--card);
   --surface-2: #eaf4fb;
   --surface-3: #f7fbfe;
-  --border: #d5e6f1;
+  --border: var(--borde);
   --border-hi: #9ccbe5;
-
-  --text: #12283a;
-  --muted: #4f7188;
+  --text: var(--texto);
   --dim: #7f9caf;
-
-  --accent: #118ac0;
-  --accent-dim: rgba(17, 138, 192, .10);
-  --accent-soft: #0b6f9c;
-
-  --warn: #b7791f;
+  --accent: var(--celeste);
+  --accent-dim: var(--celeste-100);
+  --accent-soft: var(--azul-700);
   --warn-dim: rgba(183, 121, 31, .12);
-  --danger: #c24141;
   --danger-dim: rgba(194, 65, 65, .10);
-  --good: #16834a;
+  --good: var(--ok);
   --good-dim: rgba(22, 131, 74, .10);
-
-  --shadow: 0 10px 30px rgba(18, 40, 58, .10);
-
   --mono: 'Barlow Condensed', sans-serif;
   --sans: 'Barlow', sans-serif;
 }
