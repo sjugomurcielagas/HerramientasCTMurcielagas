@@ -41,6 +41,7 @@ var SHEETS = {
 
 var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
+var ANTIDOPING_BACKEND_VERSION = '2026-05-17.2';
 
 // Campos críticos para calcular completitud y alertas.
 // Nota: Titulo_Educativo se agrega cuando se cree la columna en Sheets.
@@ -666,6 +667,36 @@ function antidoping_importarWada(payload) {
   });
 }
 
+function antidoping_getBackendStatus() {
+  var cacheSheet = antidoping_getCacheSheet_();
+  var wadaSheet = antidoping_getOrCreateSheet_(SHEETS.wadaSustancias, ['sustancia', 'estado', 'categoria', 'en_competencia', 'fuera_competencia', 'umbral', 'nota', 'version']);
+  var histSheet = antidoping_getOrCreateSheet_(SHEETS.antidopingHistorial, ['fecha_revision', 'consulta', 'medicamento', 'principio_activo', 'estado', 'fuente_argentina', 'fuente_wada', 'fuente_secundaria', 'observaciones']);
+
+  var wadaRows = Math.max(0, wadaSheet.getLastRow() - 1);
+  var cacheRows = Math.max(0, cacheSheet.getLastRow() - 1);
+  var histRows = Math.max(0, histSheet.getLastRow() - 1);
+
+  var latestWadaVersion = '';
+  if (wadaRows > 0) {
+    var versionCol = getColIndex(wadaSheet, 'version');
+    if (versionCol > 0) {
+      var vals = wadaSheet.getRange(2, versionCol, wadaRows, 1).getValues().map(function(r) { return String(r[0] || '').trim(); }).filter(Boolean);
+      if (vals.length) latestWadaVersion = vals[vals.length - 1];
+    }
+  }
+
+  return ok(true, {
+    backend_version: ANTIDOPING_BACKEND_VERSION,
+    generated_at: antidoping_nowIso_(),
+    cache_ttl_days: ANTIDOPING_CACHE_TTL_DAYS,
+    cache_rows: cacheRows,
+    historial_rows: histRows,
+    wada_rows: wadaRows,
+    wada_loaded: wadaRows > 0,
+    wada_version: latestWadaVersion || 'N/D'
+  });
+}
+
 // ── FUNCIONES PÚBLICAS ────────────────────────────────────────────────────────
 
 /**
@@ -1161,6 +1192,7 @@ function doPost(e) {
       case 'antidoping_getHistorial':      result = antidoping_getHistorial(); break;
       case 'antidoping_importarCatalogo':  result = antidoping_importarCatalogo(payload); break;
       case 'antidoping_importarWada':      result = antidoping_importarWada(payload); break;
+      case 'antidoping_getBackendStatus':  result = antidoping_getBackendStatus(); break;
 
       default:
         result = ok(false, null, 'Acción no reconocida: ' + action);
