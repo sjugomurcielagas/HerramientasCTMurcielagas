@@ -340,7 +340,9 @@ function antidoping_evalWada_(principioActivo) {
     return {
       estado: 'REQUIERE REVISIÓN',
       fuente_wada: 'WADA_Sustancias sin datos',
-      observaciones_wada: 'Cargar reglas WADA para dictamen automático.'
+      observaciones_wada: 'Cargar reglas WADA para dictamen automático.',
+      en_competencia: 'N/D',
+      fuera_competencia: 'N/D'
     };
   }
   var activos = String(principioActivo || '')
@@ -362,7 +364,9 @@ function antidoping_evalWada_(principioActivo) {
     return {
       estado: 'NO FIGURA COMO PROHIBIDO (REVISAR CONTEXTO)',
       fuente_wada: 'WADA_Sustancias',
-      observaciones_wada: 'Sin coincidencia exacta en reglas cargadas.'
+      observaciones_wada: 'Sin coincidencia exacta en reglas cargadas.',
+      en_competencia: 'NO',
+      fuera_competencia: 'NO'
     };
   }
   var h = hits[0];
@@ -379,8 +383,22 @@ function antidoping_evalWada_(principioActivo) {
     fuente_wada: 'WADA_Sustancias' + (h.version ? (' v' + h.version) : ''),
     observaciones_wada: hits.slice(0, 3).map(function(x) {
       return [x.sustancia, x.categoria, x.umbral, x.nota].filter(Boolean).join(' | ');
-    }).join(' || ')
+    }).join(' || '),
+    en_competencia: hits.map(function(x) { return x.en_competencia; }).filter(Boolean).join(' / ') || 'N/D',
+    fuera_competencia: hits.map(function(x) { return x.fuera_competencia; }).filter(Boolean).join(' / ') || 'N/D'
   };
+}
+
+function antidoping_knownCommercialActive_(nombre) {
+  var n = normalizeText(nombre);
+  var map = {
+    'tafirol': 'paracetamol',
+    'ibupirac': 'ibuprofeno',
+    'actron': 'ibuprofeno',
+    'buscapina': 'butilhioscina',
+    'refrianex': 'pseudoefedrina'
+  };
+  return map[n] || '';
 }
 
 function antidoping_scrapePrVademecum_(queryRaw) {
@@ -543,10 +561,11 @@ function antidoping_buscarMedicamento(payload) {
   }
 
   var enriquecidos = matches.map(function(item) {
-    var evalWada = antidoping_evalWada_(item.principio_activo || item.medicamento || '');
+    var principio = item.principio_activo || antidoping_knownCommercialActive_(item.medicamento || '') || item.medicamento || '';
+    var evalWada = antidoping_evalWada_(principio);
     return {
       medicamento: item.medicamento || consulta,
-      principio_activo: item.principio_activo || '',
+      principio_activo: principio || '',
       presentacion: item.presentacion || '',
       laboratorio: item.laboratorio || '',
       estado: evalWada.estado || item.estado || 'REQUIERE REVISIÓN',
@@ -554,6 +573,8 @@ function antidoping_buscarMedicamento(payload) {
       fuente_argentina: item.fuente_argentina || 'PR Vademecum',
       fuente_wada: item.fuente_wada || evalWada.fuente_wada || 'Pendiente de revisión',
       fuente_secundaria: item.fuente_secundaria || '',
+      en_competencia: evalWada.en_competencia || '',
+      fuera_competencia: evalWada.fuera_competencia || '',
       fuente_url: item.fuente_url || '',
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
     };
@@ -781,6 +802,97 @@ function antidoping_getBackendStatus() {
     wada_loaded: wadaRows > 0,
     wada_version: latestWadaVersion || 'N/D'
   });
+}
+
+function base_crearHojaWADA_() {
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sh = ss.getSheetByName('WADA_Sustancias');
+  var headers = ['sustancia', 'estado', 'categoria', 'en_competencia', 'fuera_competencia', 'umbral', 'nota', 'version'];
+  if (!sh) {
+    sh = ss.insertSheet('WADA_Sustancias');
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  var currentHeaders = [];
+  if (sh.getLastRow() >= 1 && sh.getLastColumn() > 0) {
+    currentHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  }
+  if (!currentHeaders.length) {
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else {
+    headers.forEach(function(h) {
+      if (currentHeaders.indexOf(h) === -1) {
+        sh.getRange(1, sh.getLastColumn() + 1).setValue(h);
+        currentHeaders.push(h);
+      }
+    });
+  }
+  sh.setFrozenRows(1);
+  return sh;
+}
+
+function base_importarWADA(rows, modo) {
+  var items = Array.isArray(rows) ? rows : [];
+  var importMode = String(modo || 'replace').toLowerCase();
+  if (importMode !== 'replace' && importMode !== 'append') importMode = 'replace';
+  var sh = base_crearHojaWADA_();
+  var headers = ['sustancia', 'estado', 'categoria', 'en_competencia', 'fuera_competencia', 'umbral', 'nota', 'version'];
+
+  if (importMode === 'replace' && sh.getLastRow() > 1) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
+  }
+
+  var rejected = 0;
+  var values = [];
+  items.forEach(function(it) {
+    var r = it || {};
+    var sustancia = String(r.sustancia || '').trim();
+    if (!sustancia) {
+      rejected++;
+      return;
+    }
+    values.push([
+      sustancia,
+      String(r.estado || 'REQUIERE REVISIÓN').trim(),
+      String(r.categoria || '').trim(),
+      String(r.en_competencia || '').trim(),
+      String(r.fuera_competencia || '').trim(),
+      String(r.umbral || '').trim(),
+      String(r.nota || '').trim(),
+      String(r.version || '').trim()
+    ]);
+  });
+
+  if (values.length) {
+    var startRow = sh.getLastRow() + 1;
+    sh.getRange(startRow, 1, values.length, headers.length).setValues(values);
+  }
+
+  return {
+    importados: values.length,
+    rechazados: rejected
+  };
+}
+
+function base_getWADAStatus() {
+  var sh = base_crearHojaWADA_();
+  var rows = Math.max(0, sh.getLastRow() - 1);
+  var version = '';
+  if (rows > 0) {
+    var colVersion = getColIndex(sh, 'version');
+    if (colVersion > 0) {
+      var vals = sh.getRange(2, colVersion, rows, 1).getValues()
+        .map(function(r) { return String(r[0] || '').trim(); })
+        .filter(Boolean);
+      if (vals.length) version = vals[vals.length - 1];
+    }
+  }
+  return {
+    wada_loaded: rows > 0,
+    wada_rows: rows,
+    version: version
+  };
 }
 
 // ── FUNCIONES PÚBLICAS ────────────────────────────────────────────────────────
@@ -1279,6 +1391,12 @@ function doPost(e) {
       case 'antidoping_importarCatalogo':  result = antidoping_importarCatalogo(payload); break;
       case 'antidoping_importarWada':      result = antidoping_importarWada(payload); break;
       case 'antidoping_getBackendStatus':  result = antidoping_getBackendStatus(); break;
+      case 'importarWADA':
+        result = ok(true, base_importarWADA(payload.rows || [], payload.modo || 'replace'));
+        break;
+      case 'getWADAStatus':
+        result = ok(true, base_getWADAStatus());
+        break;
 
       default:
         result = ok(false, null, 'Acción no reconocida: ' + action);

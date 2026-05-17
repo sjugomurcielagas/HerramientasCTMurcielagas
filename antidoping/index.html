@@ -15,6 +15,10 @@
     main{max-width:1180px;margin:0 auto;padding:16px 14px 90px}.panel,.login-card,.result-card,.med-card,.section-card{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}.login-card{max-width:540px;margin:54px auto;padding:24px}h1,h2,h3{font-family:"Barlow Condensed",sans-serif;color:var(--azul-950);margin:0;line-height:1.05}p{line-height:1.42}.muted{color:var(--muted)}
     .form-row{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}label{font-size:.92rem;font-weight:800;color:#334155}input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.98rem}textarea{min-height:82px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 4px rgba(34,168,232,.15)}
     .btn{border:0;border-radius:13px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:7px;text-decoration:none;transition:.12s ease}.btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.small{font-size:.86rem;padding:8px 10px;border-radius:11px}.btn.tiny{font-size:.77rem;padding:6px 8px;border-radius:9px}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}.status-line{margin-top:10px;color:var(--muted);font-weight:700}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
+    .decision-btn{margin-top:10px;border-radius:12px;padding:11px 14px;font-size:.95rem;font-weight:800;display:inline-flex;align-items:center;gap:8px}
+    .decision-btn.ok{background:#dcfce7;color:#14532d;border:1px solid #86efac}
+    .decision-btn.warn{background:#fef3c7;color:#78350f;border:1px solid #fcd34d}
+    .decision-btn.block{background:#fee2e2;color:#7f1d1d;border:1px solid #fca5a5}
     .tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 0 13px;position:sticky;top:70px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.94) 100%)}.tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:800}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
     .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}.badge.dark{background:#e2e8f0;color:#0f172a}
     .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.notice{border:1px solid #fde68a;background:#fffbeb;color:#7c2d12;border-radius:14px;padding:12px;font-weight:700}.result-card,.med-card{padding:14px;box-shadow:none}.result-title,.med-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.meta{color:var(--muted);font-size:.92rem;margin-top:4px}.source-grid{display:grid;gap:8px;margin-top:10px}.source-row{border:1px solid var(--borde);border-radius:12px;background:#f8fbfd;padding:10px}.source-k{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.source-v{font-weight:700;margin-top:2px}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
@@ -160,7 +164,22 @@
       const fuentes=fuentesHtml(r);
       const presentacion=r.presentacion?`<div class="meta">Presentación: ${esc(r.presentacion)}</div>`:'';
       const laboratorio=r.laboratorio?`<div class="meta">Laboratorio: ${esc(r.laboratorio)}</div>`:'';
-      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${presentacion}${laboratorio}</div>${estadoBadge(estado)}</div>${r.observaciones?`<p>${esc(r.observaciones)}</p>`:''}${fuentes}</article>`;
+      const contexto=(r.en_competencia||r.fuera_competencia)?`<div class="meta">En competencia: ${esc(r.en_competencia||'N/D')} · Fuera de competencia: ${esc(r.fuera_competencia||'N/D')}</div>`:'';
+      const decision=decisionBlock(r,estado);
+      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${presentacion}${laboratorio}${contexto}</div>${estadoBadge(estado)}</div>${decision}${r.observaciones?`<p>${esc(r.observaciones)}</p>`:''}${fuentes}</article>`;
+    }
+    function decisionBlock(r,estado){
+      const s=estadoNormalizado(estado||'');
+      if(s.includes('PROHIBIDO')){
+        return `<div class="decision-btn block">🔴 No habilitar uso</div>`;
+      }
+      if(s.includes('CONDICIONADO')||s.includes('REQUIERE')||s.includes('UMBRAL')||s.includes('DEPORTE ESPECÍFICO')){
+        return `<div class="decision-btn warn">🟡 Uso con advertencia / revisar dosis, vía y competencia</div>`;
+      }
+      if(s.includes('NO FIGURA')||s.includes('PERMITIDO')){
+        return `<div class="decision-btn ok">🟢 Habilitar uso</div>`;
+      }
+      return `<div class="decision-btn warn">🟡 Requiere revisión médica</div>`;
     }
     function fuentesHtml(r){
       const rows=[
