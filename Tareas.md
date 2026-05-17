@@ -1,6 +1,6 @@
 # Estado y pendientes
 
-Fecha de corte: 2026-05-17
+Fecha de corte: 2026-05-17 (actualizado 2026-05-17)
 
 ## Ya implementado
 
@@ -19,6 +19,18 @@ Fecha de corte: 2026-05-17
   - Upload de archivo `TUE_Archivo`.
   - Tablero de TUE vigentes / vencidas / pendientes de envío a IBSA.
 
+### Táctico — IA generadora de jugadas
+
+- [x] Modal IA en `tactica/index.html` con configuración de API key vía `localStorage('mrcl_claude_key')`.
+- [x] Verificación de key antes de guardar (llamada real a la API con max_tokens:5).
+- [x] Generación de jugadas desde texto libre: llama a `claude-haiku-4-5-20251001`, parsea JSON, inserta jugadoras y flechas en el canvas.
+- [x] Opción de reemplazar o agregar sobre el tablero existente.
+- [x] System prompt con: sectores por profundidad y carril, tres formaciones base con coordenadas, contexto IBSA Blind Football 5v5.
+- [x] Jugadoras genéricas (num 21-25) cuando no se menciona nombre ni número en el texto.
+- [x] Apellido en canvas solo si el usuario lo menciona explícitamente en el prompt.
+- [x] Flechas `press` siempre de equipo A hacia equipo B (rivales obligatorios como destino).
+- [x] Ejemplos de jugadas multi-paso en el system prompt (run + pass + dribble + shot desde la misma jugadora).
+
 ### Base de datos
 
 - [x] Sección `IBSA y elegibilidad` visible en la ficha.
@@ -26,6 +38,17 @@ Fecha de corte: 2026-05-17
 - [x] Sección `TUE y antidopaje` en la ficha individual del plantel.
 
 ## Pendientes reales
+
+### Táctico — IA (pendientes)
+
+- [ ] **Jugadas multi-paso encadenadas**: la IA no genera bien secuencias como "corre hasta el tercio, pasa, la receptora conduce y remata". El system prompt tiene el ejemplo, pero Haiku no lo aplica consistentemente. Opciones a evaluar:
+  - Probar con `claude-sonnet-4-6` para jugadas complejas (más caro pero más fiel).
+  - Reformular el prompt con chain-of-thought explícito ("primero listá las acciones, luego generá el JSON").
+  - Agregar más ejemplos de secuencias en el system prompt.
+- [ ] **Posicionamiento espacial**: el modelo a veces ignora referencias como "banda izquierda" o "zona alta". Mejorar mapping de términos en español a rangos de coordenadas en el prompt.
+- [ ] **Números fuera de rango**: cuando el usuario pide "la 2" (número no en el plantel real), la IA a veces asigna números del plantel real en lugar de usar el número pedido. Clarificar que los números del usuario son exactos aunque no estén en el roster.
+- [ ] **Flechas de conducción**: `dribble + curve` no siempre se genera; la IA tiende a usar `run` en su lugar. Reforzar en el prompt la distinción conducción (con pelota) vs carrera (sin pelota).
+- [ ] Evaluar si conviene un paso intermedio: mostrar el JSON antes de aplicarlo al canvas para que el CT lo pueda corregir manualmente.
 
 ### Antidoping
 
