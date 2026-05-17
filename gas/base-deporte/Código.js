@@ -511,7 +511,7 @@ function doPost(e) {
      
   // ── BASE ──
   case 'verificarPassword':
-    result = verificarPassword(payload.pwd || payload.password || '');
+    result = ok(true, verificarPassword(payload.pwd || payload.password || ''));
     break;
 
   case 'getPlantel':
@@ -1552,7 +1552,7 @@ function ok(success, data, error) {
  */
 function FORZAR_AUTORIZACION() {
   var carpeta = DriveApp.getFolderById(CONFIG.DRIVE_RAIZ_ID);
-  var hoja    = getSheet_();
+  var hoja    = getSheet(SHEETS.plantel);
   Logger.log('Drive OK: ' + carpeta.getName());
   Logger.log('Sheets OK: ' + hoja.getName());
 }
