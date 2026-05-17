@@ -125,7 +125,8 @@
     const WADA_LISTA_VIGENTE_URL='https://drive.google.com/file/d/1vuOT1Yclhb0c_m6P5r1PUyAHb6FlZRX2/view?usp=drive_link';
     const TUE_FORM_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
     const TUE_GUIDE_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
-    const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina'];
+    const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina','Novalgina'];
+    const SEARCH_ALIASES={novalgina:['novalgina','dipirona','metamizol'],dipirona:['dipirona','metamizol','novalgina'],metamizol:['metamizol','dipirona','novalgina']};
     const state={frecuentes:[],historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null};
 
     document.addEventListener('DOMContentLoaded',()=>{
@@ -180,10 +181,9 @@
       status.textContent='Consultando base interna...';status.className='status-line';
       document.getElementById('resultados').innerHTML='<div class="empty">Buscando coincidencias...</div>';
       try{
-        const data=await apiPost({action:'antidoping_buscarMedicamento',consulta:q});
-        const items=Array.isArray(data)?data:(Array.isArray(data?.resultados)?data.resultados:[data]);
-        renderResultados(items.filter(Boolean));
-        status.textContent='Consulta completada.';status.className='status-line ok';
+        const resolved=await buscarConAliases(q);
+        renderResultados(resolved.items.filter(Boolean));
+        status.textContent=resolved.usedAlias?`Consulta completada usando alias: ${resolved.usedAlias}.`:'Consulta completada.';status.className='status-line ok';
         loadHistorial();
       }catch(err){
         status.textContent='No se pudo consultar la API interna: '+err.message;status.className='status-line error';
@@ -254,6 +254,42 @@
     function renderFrecuentes(){
       const cont=document.getElementById('frecuentesList');
       cont.innerHTML=state.frecuentes.map(m=>`<article class="med-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(m.medicamento||m.nombre_comercial||m.nombre)}</div><div class="meta">${esc(m.principio_activo||m.principioActivo||'Pendiente de identificar')}</div></div>${estadoBadge(estadoNormalizado(m.estado||'REQUIERE REVISIÓN'))}</div>${m.observaciones?`<p>${esc(m.observaciones)}</p>`:''}</article>`).join('');
+    }
+
+    async function buscarConAliases(query){
+      const variantes=searchVariants(query);
+      let mejor={items:[fallbackResultado(query)],usedAlias:''},mejorScore=-1;
+      for(const variante of variantes){
+        try{
+          const data=await apiPost({action:'antidoping_buscarMedicamento',consulta:variante});
+          const items=(Array.isArray(data)?data:(Array.isArray(data?.resultados)?data.resultados:[data])).filter(Boolean);
+          const score=resultadoScore(items);
+          if(score>mejorScore){
+            mejor={items:items.length?items:[fallbackResultado(query)],usedAlias:variante!==query?variante:''};
+            mejorScore=score;
+          }
+          if(score>=4)break;
+        }catch(err){}
+      }
+      return mejor;
+    }
+    function searchVariants(query){
+      const normalized=norm(query).replace(/[^a-z0-9]+/g,' ').trim();
+      const direct=String(query||'').trim();
+      const extras=SEARCH_ALIASES[normalized]||[];
+      return Array.from(new Set([direct,...extras].filter(Boolean)));
+    }
+    function resultadoScore(items){
+      if(!Array.isArray(items)||!items.length)return 0;
+      return Math.max(...items.map(item=>{
+        const estado=estadoNormalizado(item.estado||item.resultado||'');
+        let score=0;
+        if(item.principio_activo||item.principioActivo)score+=2;
+        if(item.fuente_argentina||item.fuente_wada||item.fuente_secundaria)score+=1;
+        if(estado.includes('PERMITIDO')||estado.includes('PROHIBIDO')||estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO'))score+=2;
+        if(estado.includes('NO ENCONTRADO')||estado.includes('REQUIERE VERIFICACION'))score-=2;
+        return score;
+      }));
     }
 
     async function loadHistorial(){

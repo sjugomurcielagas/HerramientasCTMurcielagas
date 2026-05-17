@@ -75,14 +75,13 @@
             <div class="section-card">
               <h3>Convocatoria</h3>
               <div class="docs-block">
-                <div class="card-title" style="margin-bottom:12px">Otros documentos</div>
+                <div class="card-title" style="margin-bottom:12px">Documentos generales de la concentración</div>
                 <div class="actions">
                   <button id="validarDocsBtn" class="btn ghost small" type="button">Validar datos</button>
-                  <button class="btn ghost small" type="button" data-doc="licencia_agencia_cordoba">Licencia Agencia Córdoba</button>
-                  <button class="btn ghost small" type="button" data-doc="licencia_municipalidad_cordoba">Licencia Municipalidad Córdoba</button>
                   <button class="btn ghost small" type="button" data-doc="certificacion_participacion">Certificación participación</button>
                   <button class="btn secondary small" type="button" data-doc="todos">Generar todos</button>
                 </div>
+                <div class="muted" style="margin-top:8px;font-size:.92rem">Las licencias de Agencia Córdoba y Municipalidad Córdoba no se generan acá en lote: son trámites personales de Santiago y Gonzalo.</div>
                 <div id="docsStatus" class="status-line"></div>
                 <div id="docsHistory" class="grid" style="margin-top:10px"><div class="empty">Sin documentos generados todavía.</div></div>
               </div>
@@ -298,7 +297,7 @@
     async function generarDocumentosDesdeBoton(tipoDoc){
       const c=currentConc();if(!c)return;
       const tipos=tipoDoc==='todos'
-        ? ['convocatoria_fadec','licencia_agencia_cordoba','licencia_municipalidad_cordoba','certificacion_participacion']
+        ? ['convocatoria_fadec','certificacion_participacion']
         : [tipoDoc];
       const requiereConvocadas=tipos.some(t=>t==='convocatoria_fadec'||t==='certificacion_participacion');
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
@@ -332,7 +331,7 @@
       const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
       st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
       try{
-        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:['convocatoria_fadec','licencia_agencia_cordoba','licencia_municipalidad_cordoba','certificacion_participacion']});
+        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:['convocatoria_fadec','certificacion_participacion']});
         if(data?.valido){st.textContent='Validación OK. No se detectaron faltantes para los documentos configurados.';st.className='status-line ok'}
         else{st.textContent='Faltantes detectados: '+(Array.isArray(data?.faltantes)&&data.faltantes.length?data.faltantes.join(', '):'sin detalle');st.className='status-line error'}
       }catch(err){st.textContent='Error al validar documentos: '+err.message;st.className='status-line error'}
