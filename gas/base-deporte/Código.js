@@ -208,6 +208,216 @@ function darDeBaja(dni) {
   return guardarCambios(dni, { 'Estado_Convocatoria': 'Baja' }, 'Sistema — Baja');
 }
 
+// ── ALERTAS ───────────────────────────────────────────────────────────────────
+
+var DIAS_PREAVISO_VTO_ = 60;
+
+var LABELS_CAMPO_ALERTAS_ = {
+  DNI_Vto:                'Vencimiento DNI',
+  Pasaporte_Vto:          'Vencimiento pasaporte',
+  CUD_Vto:                'Vencimiento CUD',
+  Apto_Medico_Vto:        'Vencimiento apto médico',
+  Clasif_Visual_Revision: 'Revisión clasificación visual',
+  Apto_Medico_Vigente:    'Apto médico vigente',
+  Clasif_Visual_Estado:   'Clasificación visual IBSA',
+  Telefono:               'Teléfono',
+  Email:                  'Email',
+  Emergencia_Nombre:      'Contacto de emergencia',
+  Emergencia_Tel:         'Teléfono de emergencia',
+  Foto_Link:              'Foto',
+};
+
+/**
+ * base_getAlertas — devuelve { faltantes, vencimientos } para el dashboard.
+ * Solo evalúa integrantes con Activo = "SI".
+ */
+function base_getAlertas() {
+  var filas = getAllRows_();
+  var hoy   = fechaHoyArgentina_();
+  var alertas = [];
+
+  filas.forEach(function(r) {
+    if (String(r.Activo || '').toUpperCase() !== 'SI') return;
+
+    var apellido = String(r.Apellido || '').trim();
+    var nombre   = String(r.Nombre   || '').trim();
+    var nombreCompleto = apellido ? apellido + ', ' + nombre : nombre;
+    var dni = r.DNI || '';
+
+    // Regla 1: documentos con fecha de vencimiento
+    ['DNI_Vto', 'Pasaporte_Vto', 'CUD_Vto', 'Apto_Medico_Vto'].forEach(function(campo) {
+      var alerta = evaluarVencimientoCampo_(r[campo], campo, nombreCompleto, dni, hoy);
+      if (alerta) alertas.push(alerta);
+    });
+
+    // Regla 1b: Clasif_Visual_Revision tratada como documento si tiene fecha parseable
+    var alertaRev = evaluarVencimientoCampo_(
+      r.Clasif_Visual_Revision, 'Clasif_Visual_Revision', nombreCompleto, dni, hoy
+    );
+    if (alertaRev) alertas.push(alertaRev);
+
+    // Regla 2: apto médico sin vigencia
+    if (String(r.Apto_Medico_Vigente || '').toUpperCase() !== 'SI') {
+      alertas.push({
+        tipo:           'ROJA',
+        categoria:      'medico',
+        jugadora:       nombreCompleto,
+        dni:            dni,
+        campo:          'Apto_Medico_Vigente',
+        mensaje:        'Apto médico no vigente.',
+        dias_restantes: null,
+        fecha:          null,
+      });
+    }
+
+    // Regla 3: clasificación IBSA por estado
+    var estadoClasif = String(r.Clasif_Visual_Estado || '').trim();
+    if (!estadoClasif) {
+      alertas.push({
+        tipo:           'ROJA',
+        categoria:      'clasificacion',
+        jugadora:       nombreCompleto,
+        dni:            dni,
+        campo:          'Clasif_Visual_Estado',
+        mensaje:        'Clasificación visual IBSA sin completar.',
+        dias_restantes: null,
+        fecha:          null,
+      });
+    } else if (estadoClasif.toLowerCase().indexOf('proximo torneo') !== -1 ||
+               estadoClasif.toLowerCase().indexOf('próximo torneo') !== -1) {
+      alertas.push({
+        tipo:           'AMARILLA',
+        categoria:      'clasificacion',
+        jugadora:       nombreCompleto,
+        dni:            dni,
+        campo:          'Clasif_Visual_Estado',
+        mensaje:        'Clasificación visual pendiente para el próximo torneo.',
+        dias_restantes: null,
+        fecha:          null,
+      });
+    }
+    // "Confirmada" → sin alerta; otros valores no especificados → sin alerta
+
+    // Regla 4: datos críticos faltantes
+    ['Telefono', 'Email', 'Emergencia_Nombre', 'Emergencia_Tel', 'Foto_Link'].forEach(function(campo) {
+      var val = String(r[campo] || '').trim();
+      if (!val || val === 'PENDIENTE') {
+        alertas.push({
+          tipo:           'AMARILLA',
+          categoria:      'datos',
+          jugadora:       nombreCompleto,
+          dni:            dni,
+          campo:          campo,
+          mensaje:        (LABELS_CAMPO_ALERTAS_[campo] || campo) + ' sin completar.',
+          dias_restantes: null,
+          fecha:          null,
+        });
+      }
+    });
+  });
+
+  return agruparAlertas_(alertas);
+}
+
+// Evalúa un campo de fecha y devuelve una alerta si está vencido o próximo a vencer.
+// Retorna null si el valor está vacío, no es una fecha, o no genera alerta.
+function evaluarVencimientoCampo_(valor, campo, jugadora, dni, hoy) {
+  var str = String(valor || '').trim();
+  if (!str || str === 'PENDIENTE') return null;
+
+  var fecha = parseFechaHoja_(str);
+  if (!fecha) return null;
+
+  var diasRestantes = Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+  if (diasRestantes > DIAS_PREAVISO_VTO_) return null;
+
+  var tipo = diasRestantes < 0 ? 'ROJA' : 'AMARILLA';
+  var abs  = Math.abs(diasRestantes);
+  var sufijo = abs === 1 ? ' día.' : ' días.';
+  var mensaje = (LABELS_CAMPO_ALERTAS_[campo] || campo) + (diasRestantes < 0
+    ? ' vencido hace '  + abs + sufijo
+    : ' vence en '      + diasRestantes + sufijo);
+
+  return {
+    tipo:           tipo,
+    categoria:      'documento',
+    jugadora:       jugadora,
+    dni:            dni,
+    campo:          campo,
+    mensaje:        mensaje,
+    dias_restantes: diasRestantes,
+    fecha:          str,
+  };
+}
+
+// Parsea "dd/MM/yyyy" (formato de formatearFecha_) o "yyyy-MM-dd" (ISO).
+// Retorna un objeto Date sin componente horario, o null si no puede parsear.
+function parseFechaHoja_(str) {
+  if (!str) return null;
+
+  var pp = str.split('/');
+  if (pp.length === 3) {
+    var d = parseInt(pp[0], 10), m = parseInt(pp[1], 10) - 1, y = parseInt(pp[2], 10);
+    if (!isNaN(d) && !isNaN(m) && !isNaN(y) && y > 1900) return new Date(y, m, d);
+  }
+
+  var pi = str.split('-');
+  if (pi.length === 3) {
+    var y2 = parseInt(pi[0], 10), m2 = parseInt(pi[1], 10) - 1, d2 = parseInt(pi[2], 10);
+    if (!isNaN(d2) && !isNaN(m2) && !isNaN(y2) && y2 > 1900) return new Date(y2, m2, d2);
+  }
+
+  return null;
+}
+
+// Devuelve la fecha local en Argentina (UTC-3 fijo, sin horario de verano).
+function fechaHoyArgentina_() {
+  var ahora = new Date();
+  var local = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
+  return new Date(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate());
+}
+
+// Agrupa el array plano de alertas en { faltantes, vencimientos } para el frontend.
+function agruparAlertas_(alertas) {
+  var faltantesMap = {};
+  var vencimientos = [];
+
+  alertas.forEach(function(a) {
+    if (a.categoria === 'datos') {
+      var key = a.dni || a.jugadora;
+      if (!faltantesMap[key]) {
+        faltantesMap[key] = { nombre: a.jugadora, dni: a.dni, faltantes: [] };
+      }
+      faltantesMap[key].faltantes.push(a.campo);
+    } else {
+      vencimientos.push({
+        nombre:    a.jugadora,
+        dni:       a.dni,
+        tipo:      LABELS_CAMPO_ALERTAS_[a.campo] || a.campo,
+        nivel:     a.tipo,
+        fecha:     a.fecha  || null,
+        dias:      a.dias_restantes,
+        detalle:   a.mensaje,
+        categoria: a.categoria,
+      });
+    }
+  });
+
+  // Ordenar: ROJA primero, luego por días_restantes ascendente
+  vencimientos.sort(function(a, b) {
+    if (a.nivel === 'ROJA' && b.nivel !== 'ROJA') return -1;
+    if (a.nivel !== 'ROJA' && b.nivel === 'ROJA') return  1;
+    var da = (typeof a.dias === 'number') ? a.dias : 9999;
+    var db = (typeof b.dias === 'number') ? b.dias : 9999;
+    return da - db;
+  });
+
+  return {
+    faltantes:    Object.values(faltantesMap),
+    vencimientos: vencimientos,
+  };
+}
+
 // ── GESTIÓN DE ARCHIVOS EN DRIVE ──────────────────────────────────────────────
 var CATEGORIAS_DRIVE_ = {
   'foto':        '01_Fotos',
@@ -330,6 +540,10 @@ function doPost(e) {
 
   case 'base_agregarColumna':
     result = base_agregarColumna(payload);
+    break;
+
+  case 'base_getAlertas':
+    result = ok(true, base_getAlertas());
     break;
 
         // ── PENALES ──
