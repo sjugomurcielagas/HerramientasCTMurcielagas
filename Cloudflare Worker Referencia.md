@@ -1,6 +1,6 @@
 // ============================================================
 // Murciélagas · Cloudflare Worker
-// Versión: 2.1 — Reportes + Base/Deportes unificados
+// Versión: 2.2 — Reportes + Base/Deportes unificados
 // ============================================================
 
 const REPORTES_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIdqciZ_o_YVS_EYV2xYCMyrRLhEXCyd9s0gxeuiGX9YwvwHtiPYPO3hUUKc7Y-kBe/exec';
@@ -41,6 +41,11 @@ const DEPORTES_PREFIXES = [
   'concentraciones_',
   'testeos_'
 ];
+
+// El Worker decide el destino por acción:
+// - REPORTES_ACTIONS -> gas/reportes
+// - BASE_ACTION_MAP   -> gas/base-deporte (alias base_* hacia funciones legacy)
+// - DEPORTES_PREFIXES -> gas/base-deporte (módulos deportivos)
 
 export default {
   async fetch(request) {

@@ -31,3 +31,4 @@ El frontend de reportes lee `text()` + `JSON.parse()` con manejo de error.
 ## Separación con base-deporte
 
 Este script es independiente de `gas/base-deporte/Código.js`. El Worker los diferencia por `REPORTES_ACTIONS` (lista fija) vs prefijos de módulo deportivo.
+No comparte resolver de plantillas ni lógica de concentración: `reportes` sigue siendo un backend separado.
