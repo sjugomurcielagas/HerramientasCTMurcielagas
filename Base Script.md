@@ -55,7 +55,11 @@ Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`,
 - `concentraciones_agregarActividad`
 - `concentraciones_editarActividad`
 - `concentraciones_eliminarActividad`
-- `concentraciones_generarConvocatoria` — genera copia del template Drive con placeholders reemplazados y anexo tabular con DNI, nombre y rol; incluye cuerpo técnico automáticamente
+- `concentraciones_generarConvocatoria` — genera la convocatoria FADEC
+- `concentraciones_getTiposDocumento`
+- `concentraciones_validarDatosDocumentos`
+- `concentraciones_generarDocumentos` — genera convocatoria, licencias y certificación según `tiposDocumento`
+- `concentraciones_getDocumentosGenerados`
 
 ## Acciones — Testeos
 
@@ -93,7 +97,7 @@ Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`,
 - Template: ID `1foA1M0ftQz7KAOWRgBHCRcewgdCJFdUPynpMYdyEmZM`
 - Carpeta de generados: ID `1HtxDxNOxjm3xKs6N5t2SzDlp3TlXf8P1`
 - Placeholders: `{{FECHA_EMISION}}`, `{{LUGAR}}`, `{{DIRECCION_LUGAR}}`, `{{CIUDAD}}`, `{{FECHA_INICIO_TEXTO}}`, `{{FECHA_FIN_TEXTO}}`, `{{TABLA_CONVOCADAS}}`, `{{TIPO_ACTIVIDAD}}`
-- `{{TABLA_CONVOCADAS}}` se reemplaza por una tabla de Google Docs con columnas `DNI`, `Apellido y nombre` y `Rol`.
+- `{{TABLA_CONVOCADAS}}` se reemplaza por una tabla de Google Docs con columnas `Nombre y apellido`, `DNI` y `Provincia de procedencia`.
 
 ## Antidoping
 

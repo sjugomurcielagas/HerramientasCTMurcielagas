@@ -27,6 +27,9 @@ var SHEETS = {
   partidos:          'Partidos',
   concentraciones:   'Concentraciones',
   concentracionDias: 'ConcentracionDias',
+  configPlantillas:  'Config_Plantillas',
+  configCarpetas:    'Config_Carpetas',
+  documentosGenerados: 'Documentos_Generados',
   testeos:           'Testeos',
   testeosMediciones: 'TesteosMediciones',
   columnasDinamicas: 'ColumnasDinamicas',
@@ -112,6 +115,23 @@ function getRowByDNI_(dni) {
     if (filas[i].DNI === dniLimpio) return filas[i];
   }
   return null;
+}
+
+function tryGetSheet(name) {
+  try {
+    return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(name);
+  } catch (err) {
+    return null;
+  }
+}
+
+function normalizeText(v) {
+  return String(v || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 // ── FUNCIONES PÚBLICAS ────────────────────────────────────────────────────────
@@ -587,6 +607,10 @@ function doPost(e) {
       case 'concentraciones_editarActividad':       result = concentraciones_editarActividad(payload); break;
       case 'concentraciones_eliminarActividad':      result = concentraciones_eliminarActividad(payload); break;
       case 'concentraciones_generarConvocatoria':   result = concentraciones_generarConvocatoria(payload); break;
+      case 'concentraciones_getTiposDocumento':     result = concentraciones_getTiposDocumento(); break;
+      case 'concentraciones_validarDatosDocumentos':result = concentraciones_validarDatosDocumentos(payload); break;
+      case 'concentraciones_generarDocumentos':     result = concentraciones_generarDocumentos(payload); break;
+      case 'concentraciones_getDocumentosGenerados':result = concentraciones_getDocumentosGenerados(payload); break;
 
       // ── TESTEOS ──
       case 'testeos_getTesteos':         result = testeos_getTesteos(); break;
@@ -1311,43 +1335,366 @@ function concentraciones_eliminarActividad(p) {
 //   {{FECHA_EMISION}} {{LUGAR}} {{DIRECCION_LUGAR}} {{CIUDAD}}
 //   {{FECHA_INICIO_TEXTO}} {{FECHA_FIN_TEXTO}} {{TABLA_CONVOCADAS}}
 function concentraciones_generarConvocatoria(p) {
-  var concId = p.concentracionId || p.id;
-  if (!concId) throw new Error('concentracionId es requerido');
+  return concentraciones_generarDocumentos({
+    ...p,
+    tiposDocumento: ['convocatoria_fadec']
+  });
+}
 
-  var concs = sheetToObjects(getSheet(SHEETS.concentraciones));
-  var conc  = concs.find(function(c) { return String(c.id) === String(concId); });
+function concentraciones_getTiposDocumento() {
+  return ok(true, _tiposDocumentoConcentraciones());
+}
+
+function concentraciones_validarDatosDocumentos(p) {
+  return ok(true, _validarDatosDocumentosConcentracion(p));
+}
+
+function concentraciones_getDocumentosGenerados(p) {
+  var sheet = _ensureHojaDocumentosGenerados();
+  var all = sheetToObjects(sheet);
+  var concId = p && (p.concentracionId || p.id);
+  var data = concId ? all.filter(function(d) { return String(d.concentracionId) === String(concId); }) : all;
+  return ok(true, data);
+}
+
+function concentraciones_generarDocumentos(p) {
+  var conc = _getConcentracionParaDocumentos(p);
   if (!conc) throw new Error('Concentración no encontrada');
 
-  var convDnis = parseJson(conc.convocadas_json) || [];
-  var plantel  = sheetToObjects(getSheet(SHEETS.plantel));
-  var convocadas = _armarConvocatoriaParticipantes_(plantel, convDnis);
+  var tipos = _normalizarTiposDocumento(p.tiposDocumento || p.tipoDocumento || p.tipos_documento || (p.tipoDocumento ? [p.tipoDocumento] : []));
+  if (!tipos.length) tipos = ['convocatoria_fadec'];
 
-  var fechaEmision  = formatFechaTextoGas_(new Date());
-  var fechaInicio   = formatFechaTextoGas_(conc.fechaInicio);
-  var fechaFin      = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
-  var lugar         = String(conc.lugar     || conc.nombre || '').trim();
-  var direccion     = String(conc.direccion || '').trim();
-  var ciudad        = String(conc.ciudad    || '').trim();
+  var validacion = _validarDatosDocumentosConcentracion({
+    ...p,
+    concentracionId: conc.id,
+    tiposDocumento: tipos
+  });
+
+  var plantel = sheetToObjects(getSheet(SHEETS.plantel));
+  var convocadas = _convocadasConcentracion(conc, p);
+  var fechaEmision = formatFechaTextoGas_(new Date());
+  var fechaInicio = formatFechaTextoGas_(conc.fechaInicio);
+  var fechaFin = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
+  var lugar = String(conc.lugar || conc.nombre || '').trim();
+  var direccion = String(conc.direccion || '').trim();
+  var ciudad = String(conc.ciudad || '').trim();
   var tipoActividad = String(p.tipoActividad || p.tipo || conc.tipoActividad || conc.tipo || 'la concentración').trim();
+  var reemplazos = _reemplazosDocumentoConcentracion_({
+    fechaEmision: fechaEmision,
+    fechaInicio: fechaInicio,
+    fechaFin: fechaFin,
+    lugar: lugar,
+    direccion: direccion,
+    ciudad: ciudad,
+    tipoActividad: tipoActividad,
+    conc: conc,
+    convocadas: convocadas,
+    plantel: plantel
+  });
 
-  var template = DriveApp.getFileById(CONFIG_DOC.PLANTILLA_CONVOCATORIA);
-  var carpeta  = getOrCreateFolder_(CONFIG_DOC.CARPETA_GENERADOS, 'Convocatorias Generadas');
-  var titulo   = 'Convocatoria — ' + conc.nombre + ' — ' + new Date().toISOString().slice(0, 10);
-  var copia    = template.makeCopy(titulo, carpeta);
+  var documentos = tipos.map(function(tipo) {
+    return _generarDocumentoConcentracion_({
+      tipo: tipo,
+      conc: conc,
+      reemplazos: reemplazos,
+      convocadas: convocadas,
+      validacion: validacion
+    });
+  });
 
-  var doc  = DocumentApp.openById(copia.getId());
+  var primerDoc = documentos.find(function(d) { return d.url; });
+  var primerUrl = primerDoc ? primerDoc.url : '';
+  return ok(true, {
+    concentracionId: conc.id,
+    url: primerUrl,
+    documentUrl: primerUrl,
+    pdfUrl: primerUrl,
+    documentos: documentos,
+    validacion: validacion
+  });
+}
+
+function _tiposDocumentoConcentraciones() {
+  return [
+    {
+      clave: 'convocatoria_fadec',
+      nombre: 'Convocatoria FADEC',
+      plantillaId: _resolverPlantillaDocumento_('convocatoria_fadec').plantillaId || CONFIG_DOC.PLANTILLA_CONVOCATORIA,
+      carpetaId: _resolverPlantillaDocumento_('convocatoria_fadec').carpetaId || CONFIG_DOC.CARPETA_GENERADOS,
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: true,
+      requiereTablaConvocadas: true
+    },
+    {
+      clave: 'licencia_agencia_cordoba',
+      nombre: 'Licencia Agencia Córdoba',
+      plantillaId: _resolverPlantillaDocumento_('licencia_agencia_cordoba').plantillaId || '',
+      carpetaId: _resolverPlantillaDocumento_('licencia_agencia_cordoba').carpetaId || CONFIG_DOC.CARPETA_GENERADOS,
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: false,
+      requiereTablaConvocadas: false
+    },
+    {
+      clave: 'licencia_municipalidad_cordoba',
+      nombre: 'Licencia Municipalidad Córdoba',
+      plantillaId: _resolverPlantillaDocumento_('licencia_municipalidad_cordoba').plantillaId || '',
+      carpetaId: _resolverPlantillaDocumento_('licencia_municipalidad_cordoba').carpetaId || CONFIG_DOC.CARPETA_GENERADOS,
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: false,
+      requiereTablaConvocadas: false
+    },
+    {
+      clave: 'certificacion_participacion',
+      nombre: 'Certificación de participación',
+      plantillaId: _resolverPlantillaDocumento_('certificacion_participacion').plantillaId || '',
+      carpetaId: _resolverPlantillaDocumento_('certificacion_participacion').carpetaId || CONFIG_DOC.CARPETA_GENERADOS,
+      requiereNombre: true,
+      requiereFecha: true,
+      requiereConvocadas: true,
+      requiereTablaConvocadas: true
+    }
+  ];
+}
+
+function _normalizarTiposDocumento(v) {
+  var arr = Array.isArray(v) ? v : (v ? [v] : []);
+  return arr.map(function(x) { return String(x || '').trim(); }).filter(Boolean);
+}
+
+function _getConcentracionParaDocumentos(p) {
+  var id = p && (p.concentracionId || p.id);
+  if (!id) return null;
+  var conc = sheetToObjects(getSheet(SHEETS.concentraciones)).find(function(r) { return String(r.id) === String(id); });
+  if (!conc) return null;
+  return {
+    ...conc,
+    id: conc.id,
+    nombre: conc.nombre || '',
+    fechaInicio: conc.fechaInicio || conc.fecha_inicio || '',
+    fechaFin: conc.fechaFin || conc.fecha_fin || '',
+    lugar: conc.lugar || '',
+    direccion: conc.direccion || '',
+    ciudad: conc.ciudad || '',
+    notas: conc.notas || '',
+    convocadas_json: conc.convocadas_json || conc.convocadasJson || conc.convocadas || '[]'
+  };
+}
+
+function _convocadasConcentracion(conc, p) {
+  var raw = (p && (p.convocadas_json || p.convocadasJson || p.convocadas)) || (conc && (conc.convocadas_json || conc.convocadasJson || conc.convocadas)) || '[]';
+  var parsed = parseJson(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+function _validarDatosDocumentosConcentracion(p) {
+  var conc = _getConcentracionParaDocumentos(p);
+  var tipos = _normalizarTiposDocumento(p.tiposDocumento || p.tipoDocumento || p.tipos_documento || []);
+  var convocadas = _convocadasConcentracion(conc, p);
+  var faltantes = [];
+  if (!conc) faltantes.push('concentracion');
+  if (tipos.indexOf('convocatoria_fadec') > -1 && !convocadas.length) faltantes.push('convocadas');
+
+  tipos.forEach(function(tipo) {
+    var cfg = _tiposDocumentoConcentraciones().find(function(t) { return t.clave === tipo; });
+    if (!cfg) faltantes.push('tipo:' + tipo);
+    if (cfg && cfg.requiereNombre && !(conc && conc.nombre)) faltantes.push('nombre');
+    if (cfg && cfg.requiereFecha && !(conc && conc.fechaInicio)) faltantes.push('fechaInicio');
+    if (cfg && cfg.requiereConvocadas && !convocadas.length) faltantes.push('convocadas');
+  });
+
+  return {
+    concentracionId: conc ? conc.id : (p.concentracionId || p.id || ''),
+    tiposDocumento: tipos,
+    convocadas: convocadas,
+    faltantes: Array.from(new Set(faltantes)),
+    valido: faltantes.length === 0
+  };
+}
+
+function _generarDocumentoConcentracion_(ctx) {
+  var cfg = _tiposDocumentoConcentraciones().find(function(t) { return t.clave === ctx.tipo; });
+  if (!cfg) throw new Error('Tipo de documento no reconocido: ' + ctx.tipo);
+  if (!cfg.plantillaId) throw new Error('No hay plantilla configurada para ' + cfg.nombre);
+
+  var nombre = _nombreDocumentoConcentraciones(ctx.tipo, ctx.conc);
+  var plantilla = DriveApp.getFileById(cfg.plantillaId);
+  var carpeta = getOrCreateFolder_(cfg.carpetaId || CONFIG_DOC.CARPETA_GENERADOS, 'Documentos Generados');
+  var copia = plantilla.makeCopy(nombre, carpeta);
+  var doc = DocumentApp.openById(copia.getId());
   var body = doc.getBody();
-  body.replaceText('\\{\\{FECHA_EMISION\\}\\}',    fechaEmision);
-  body.replaceText('\\{\\{LUGAR\\}\\}',             lugar);
-  body.replaceText('\\{\\{DIRECCION_LUGAR\\}\\}',   direccion);
-  body.replaceText('\\{\\{CIUDAD\\}\\}',            ciudad);
-  body.replaceText('\\{\\{FECHA_INICIO_TEXTO\\}\\}',fechaInicio);
-  body.replaceText('\\{\\{FECHA_FIN_TEXTO\\}\\}',   fechaFin);
-  body.replaceText('\\{\\{TIPO_ACTIVIDAD\\}\\}',    tipoActividad);
-  _insertarTablaConvocatoria_(body, convocadas);
+
+  _aplicarReemplazosDocumentoConcentracion_(body, ctx.reemplazos, ctx.tipo, ctx.convocadas);
   doc.saveAndClose();
 
-  return ok(true, { url: copia.getUrl(), nombre: titulo });
+  var estado = 'generado';
+  if (ctx.validacion && !ctx.validacion.valido) estado = 'pendiente';
+
+  _registrarDocumentoGenerado_(ctx.conc.id, ctx.tipo, nombre, copia.getUrl(), estado, ctx.validacion ? ctx.validacion.faltantes.join(', ') : '');
+
+  return {
+    concentracionId: ctx.conc.id,
+    tipoDocumento: ctx.tipo,
+    nombre: nombre,
+    url: copia.getUrl(),
+    estado: estado,
+    faltantes: ctx.validacion ? ctx.validacion.faltantes : [],
+    convocadas: ctx.convocadas,
+    plantillaId: cfg.plantillaId || '',
+    carpetaId: cfg.carpetaId || CONFIG_DOC.CARPETA_GENERADOS
+  };
+}
+
+function _reemplazosDocumentoConcentracion_(data) {
+  var nombres = _armarConvocatoriaParticipantes_(data.plantel, data.convocadas);
+  var tablaTexto = _tablaConvocadasTexto_(nombres);
+  return {
+    '{{FECHA_EMISION}}': data.fechaEmision,
+    '{{LUGAR}}': data.lugar,
+    '{{DIRECCION_LUGAR}}': data.direccion,
+    '{{CIUDAD}}': data.ciudad,
+    '{{FECHA_INICIO_TEXTO}}': data.fechaInicio,
+    '{{FECHA_FIN_TEXTO}}': data.fechaFin,
+    '{{TIPO_ACTIVIDAD}}': data.tipoActividad,
+    '{{NOMBRE_CONCENTRACION}}': data.conc.nombre || '',
+    '{{CONCENTRACION_NOMBRE}}': data.conc.nombre || '',
+    '{{TABLA_CONVOCADAS}}': tablaTexto,
+    '{{CONVOCADAS_TEXTO}}': tablaTexto,
+    '{{CONVOCADAS_CANTIDAD}}': String(nombres.length),
+    '{{CONVOCADAS_NOMBRES}}': nombres.map(function(p) { return p.nombre; }).join(', ')
+  };
+}
+
+function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convocadas) {
+  Object.keys(reemplazos).forEach(function(clave) {
+    if ((tipo === 'convocatoria_fadec' || tipo === 'certificacion_participacion') && clave === '{{TABLA_CONVOCADAS}}') return;
+    body.replaceText(_escapeRegexDocumento_(clave), reemplazos[clave]);
+  });
+  if (tipo === 'convocatoria_fadec' || tipo === 'certificacion_participacion') {
+    _insertarTablaConvocatoria_(body, convocadas);
+  } else {
+    body.replaceText(_escapeRegexDocumento_('{{TABLA_CONVOCADAS}}'), '');
+  }
+}
+
+function _escapeRegexDocumento_(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function _tablaConvocadasTexto_(participantes) {
+  if (!participantes.length) return '(Sin convocadas)';
+  return participantes.map(function(p) {
+    return [p.nombre, p.dni, p.provincia].filter(function(v) { return String(v || '').trim() !== ''; }).join(' | ');
+  }).join('\n');
+}
+
+function _registrarDocumentoGenerado_(concentracionId, tipoDocumento, nombre, url, estado, error) {
+  var sheet = _ensureHojaDocumentosGenerados();
+  sheet.appendRow([newId(), concentracionId, tipoDocumento, nombre, url, estado, error || '', new Date().toISOString()]);
+}
+
+function _ensureHojaDocumentosGenerados() {
+  var sheet = tryGetSheet(SHEETS.documentosGenerados);
+  if (!sheet) {
+    sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).insertSheet(SHEETS.documentosGenerados);
+    sheet.appendRow(['id', 'concentracionId', 'tipoDocumento', 'nombre', 'url', 'estado', 'error', 'timestamp']);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function _leerPlantillaDoc(clave) {
+  var sheet = tryGetSheet(SHEETS.configPlantillas);
+  if (!sheet) return {};
+  var match = sheetToObjects(sheet).find(function(r) { return normalizeText(r.clave) === normalizeText(clave); });
+  return match || {};
+}
+
+function _leerCarpetaDoc(clave) {
+  var sheet = tryGetSheet(SHEETS.configCarpetas);
+  if (!sheet) return {};
+  var match = sheetToObjects(sheet).find(function(r) { return normalizeText(r.clave) === normalizeText(clave); });
+  return match || {};
+}
+
+function _resolverPlantillaDocumento_(clave) {
+  var cfg = _leerPlantillaDoc(clave);
+  if (cfg && cfg.plantillaId) return cfg;
+
+  var candidatos = _candidatosPlantillaDocumento_(clave);
+  if (cfg && cfg.nombreArchivo) candidatos.unshift(cfg.nombreArchivo);
+  var folderId = (cfg && (cfg.folderId || cfg.carpetaId)) || CONFIG_DOC.CARPETA_PLANTILLAS;
+  var encontrado = _buscarArchivoEnCarpeta_(folderId, candidatos);
+  if (encontrado) {
+    return {
+      plantillaId: encontrado.id,
+      carpetaId: folderId
+    };
+  }
+
+  return cfg || {};
+}
+
+function _candidatosPlantillaDocumento_(clave) {
+  var mapa = {
+    convocatoria_fadec: [
+      'Plantilla - Convocatoria oficial FADeC.docx',
+      'Convocatoria oficial FADeC',
+      'convocatoria fadec'
+    ],
+    licencia_agencia_cordoba: [
+      'Plantilla - Licencia deportiva Agencia Córdoba Deportes.docx',
+      'Licencia deportiva Agencia Córdoba Deportes',
+      'licencia agencia cordoba deportes'
+    ],
+    licencia_municipalidad_cordoba: [
+      'Plantilla - Solicitud licencia Municipalidad Córdoba.docx',
+      'Solicitud licencia Municipalidad Córdoba',
+      'licencia municipalidad cordoba'
+    ],
+    certificacion_participacion: [
+      'Certificación de participación',
+      'Certificacion de participacion',
+      'certificacion participacion'
+    ]
+  };
+  return mapa[clave] || [clave];
+}
+
+function _buscarArchivoEnCarpeta_(folderId, candidatos) {
+  try {
+    var folder = DriveApp.getFolderById(folderId);
+    var archivos = folder.getFiles();
+    while (archivos.hasNext()) {
+      var file = archivos.next();
+      var nombre = normalizeText(file.getName());
+      for (var i = 0; i < candidatos.length; i++) {
+        var cand = normalizeText(candidatos[i]);
+        if (cand && (nombre === cand || nombre.indexOf(cand) !== -1 || cand.indexOf(nombre) !== -1)) {
+          return file;
+        }
+      }
+      if (candidatos.some(function(c) { return normalizeText(c).split(' ').every(function(token) { return token && nombre.indexOf(token) !== -1; }); })) {
+        return file;
+      }
+    }
+  } catch (err) {
+    return null;
+  }
+  return null;
+}
+
+function _nombreDocumentoConcentraciones(tipo, conc) {
+  var base = conc && conc.nombre ? conc.nombre : 'Concentración';
+  var mapa = {
+    convocatoria_fadec: 'Convocatoria FADEC',
+    licencia_agencia_cordoba: 'Licencia Agencia Córdoba',
+    licencia_municipalidad_cordoba: 'Licencia Municipalidad Córdoba',
+    certificacion_participacion: 'Certificación de participación'
+  };
+  return (mapa[tipo] || tipo) + ' · ' + base;
 }
 
 function _armarConvocatoriaParticipantes_(plantel, convDnis) {
@@ -1361,6 +1708,7 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
       mapa[dniLimpio] = {
         dni: dniLimpio,
         nombre: 'DNI ' + dniLimpio,
+        provincia: '',
         rol: 'Convocada'
       };
       return;
@@ -1369,6 +1717,7 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
     mapa[dniLimpio] = {
       dni: dniLimpio,
       nombre: _nombreCompletoPersona_(persona),
+      provincia: _provinciaProcedenciaPersona_(persona),
       rol: String(persona.Rol || 'Convocada').trim() || 'Convocada'
     };
   });
@@ -1380,6 +1729,7 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
     mapa[dniLimpio] = {
       dni: dniLimpio,
       nombre: _nombreCompletoPersona_(persona),
+      provincia: _provinciaProcedenciaPersona_(persona),
       rol: String(persona.Rol || 'Cuerpo técnico').trim() || 'Cuerpo técnico'
     };
   });
@@ -1395,7 +1745,20 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
 function _nombreCompletoPersona_(persona) {
   var apellido = String(persona.Apellido || '').trim();
   var nombre   = String(persona.Nombre || '').trim();
-  return apellido ? apellido + ', ' + nombre : nombre;
+  return [nombre, apellido].filter(function(v) { return v; }).join(' ');
+}
+
+function _provinciaProcedenciaPersona_(persona) {
+  var claves = [
+    'Provincia', 'Provincia_Procedencia', 'ProvinciaProcedencia',
+    'Provincia_Origen', 'ProvinciaOrigen', 'Provincia_de_Procedencia',
+    'Provincia de procedencia', 'Provincia de origen'
+  ];
+  for (var i = 0; i < claves.length; i++) {
+    var val = persona[claves[i]];
+    if (val !== undefined && val !== null && String(val).trim() !== '') return String(val).trim();
+  }
+  return '';
 }
 
 function _esCuerpoTecnico_(rol) {
@@ -1428,14 +1791,14 @@ function _insertarTablaConvocatoria_(body, participantes) {
   var paragraph = text.getParent().asParagraph();
   var parent = paragraph.getParent();
   var index = parent.getChildIndex(paragraph);
-  var rows = [['DNI', 'Apellido y nombre', 'Rol']];
+  var rows = [['Nombre y apellido', 'DNI', 'Provincia de procedencia']];
 
   if (participantes.length) {
     participantes.forEach(function(p) {
-      rows.push([p.dni, p.nombre, p.rol]);
+      rows.push([p.nombre, p.dni, p.provincia || '']);
     });
   } else {
-    rows.push(['', '(Sin convocadas)', '']);
+    rows.push(['(Sin convocadas)', '', '']);
   }
 
   parent.insertTable(index, rows);

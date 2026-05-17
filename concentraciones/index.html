@@ -76,6 +76,16 @@
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
               <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="generarConvBtn" class="btn secondary small" type="button">Generar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+                <div class="card-title" style="margin-bottom:12px">Otros documentos</div>
+                <div class="actions">
+                  <button class="btn ghost small" type="button" data-doc="licencia_agencia_cordoba">Licencia Agencia Córdoba</button>
+                  <button class="btn ghost small" type="button" data-doc="licencia_municipalidad_cordoba">Licencia Municipalidad Córdoba</button>
+                  <button class="btn ghost small" type="button" data-doc="certificacion_participacion">Certificación participación</button>
+                  <button class="btn secondary small" type="button" data-doc="todos">Generar todos</button>
+                </div>
+                <div id="docsStatus" class="status-line"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -120,6 +130,7 @@
       document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
       document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
       document.getElementById('generarConvBtn').addEventListener('click',generarConvocatoriaDocumental);
+      document.querySelectorAll('[data-doc]').forEach(btn=>btn.addEventListener('click',()=>generarDocumentosDesdeBoton(btn.dataset.doc)));
       document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
@@ -274,21 +285,35 @@
       finally{btn.disabled=false}
     }
     async function generarConvocatoriaDocumental(){
+      await generarDocumentosDesdeBoton('convocatoria_fadec');
+    }
+    async function generarDocumentosDesdeBoton(tipoDoc){
       const c=currentConc();if(!c)return;
+      const tipos=tipoDoc==='todos'
+        ? ['convocatoria_fadec','licencia_agencia_cordoba','licencia_municipalidad_cordoba','certificacion_participacion']
+        : [tipoDoc];
+      const requiereConvocadas=tipos.some(t=>t==='convocatoria_fadec'||t==='certificacion_participacion');
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
-      const payload={action:'concentraciones_generarConvocatoria',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
-      const st=document.getElementById('convStatus'),btn=document.getElementById('generarConvBtn');
-      if(!convocadas.length){st.textContent='Seleccioná al menos una persona antes de generar la convocatoria.';st.className='status-line error';return}
-      st.textContent='Generando documento...';st.className='status-line';btn.disabled=true;
+      const statusId=tipoDoc==='convocatoria_fadec' ? 'convStatus' : 'docsStatus';
+      const btn=tipoDoc==='convocatoria_fadec' ? document.getElementById('generarConvBtn') : document.querySelector(`[data-doc="${tipoDoc}"]`);
+      const st=document.getElementById(statusId);
+      if(requiereConvocadas&&!convocadas.length){st.textContent='Seleccioná al menos una persona antes de generar estos documentos.';st.className='status-line error';return}
+      st.textContent='Generando documentos...';st.className='status-line';if(btn)btn.disabled=true;
+      const payload={action:'concentraciones_generarDocumentos',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos};
       try{
         const result=await apiPost(payload);
-        const url=documentUrl(result);
+        const docs=Array.isArray(result.documentos)&&result.documentos.length?result.documentos:[result];
+        const links=docs.map(d=>{
+          const url=documentUrl(d)||documentUrl(result);
+          const name=d.nombre||d.tipoDocumento||d.tipo_documento||'Documento';
+          return url?`<li><a href="${esc(url)}" target="_blank" rel="noopener">${esc(name)}</a></li>`:`<li>${esc(name)}</li>`;
+        }).join('');
         st.className='status-line ok';
-        st.innerHTML=url?`Convocatoria generada. <a href="${esc(url)}" target="_blank" rel="noopener">Abrir documento</a>`:'Convocatoria generada. El backend no devolvió un enlace de documento.';
+        st.innerHTML=links?`Documentos generados:<ul style="margin:8px 0 0 18px">${links}</ul>`:'Documentos generados.';
       }catch(err){
         st.textContent='La generación documental todavía no está disponible o falló en el backend. La convocatoria guardada no se modificó. Detalle: '+err.message;
         st.className='status-line error';
-      }finally{btn.disabled=false}
+      }finally{if(btn)btn.disabled=false}
     }
     function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=value});updateConvCount()}
     function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}
