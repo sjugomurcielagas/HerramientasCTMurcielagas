@@ -394,6 +394,20 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
+
+/* MODAL IA */
+#ia-modal{display:none;position:fixed;inset:0;z-index:350;background:rgba(26,58,92,.60);backdrop-filter:blur(5px);align-items:center;justify-content:center}
+#ia-modal.show{display:flex}
+#ia-card{background:var(--blanco);border-radius:16px;padding:20px;width:min(92vw,440px);box-shadow:0 8px 40px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:12px}
+#ia-title{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--celeste2);letter-spacing:.5px}
+#ia-textarea{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;width:100%;outline:none;resize:vertical;min-height:90px;line-height:1.5}
+#ia-textarea:focus{border-color:var(--celeste)}
+.ia-row{display:flex;align-items:center;gap:8px}
+.ia-label{font-family:'Barlow Condensed',sans-serif;font-size:12.5px;font-weight:700;color:var(--text-dim);letter-spacing:.4px}
+#ia-status{font-family:'Barlow Condensed',sans-serif;font-size:12.5px;letter-spacing:.3px;min-height:18px;text-align:center}
+#ia-status.ok{color:var(--ok)}
+#ia-status.err{color:var(--danger)}
+#ia-status.loading{color:var(--celeste2)}
   </style>
 
 <!-- PWA -->
@@ -473,6 +487,11 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   </button>
   <button class="sb-btn" onclick="startAnimation()" title="Animar" id="anim-btn" style="font-size:9px">
     <span class="sb-icon">▶</span>Anim.
+  </button>
+  <div class="sb-sep"></div>
+  <!-- IA -->
+  <button class="sb-btn" onclick="showIAModal()" title="Generar jugada desde texto con IA" style="font-size:9px;border-color:#7c3aed;color:#7c3aed">
+    <span class="sb-icon">✦</span>IA
   </button>
 </div>
 
@@ -632,6 +651,23 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
         <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
       </label>
       <button class="btn btn-danger btn-sm" onclick="closeSaveModal()">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IA -->
+<div id="ia-modal" onclick="closeIAModal(event)">
+  <div id="ia-card">
+    <div id="ia-title">✦ Generar jugada desde texto</div>
+    <textarea id="ia-textarea" placeholder="Ej: La 7 recibe en el lateral, pasa a la 9 que entra al área y remata al arco"></textarea>
+    <div class="ia-row">
+      <input type="checkbox" id="ia-replace" checked style="accent-color:var(--celeste);width:16px;height:16px;cursor:pointer">
+      <label for="ia-replace" class="ia-label" style="cursor:pointer">Reemplazar tablero actual</label>
+    </div>
+    <div id="ia-status"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center" id="ia-gen-btn" onclick="triggerGenerarJugada()">Generar jugada</button>
+      <button class="btn btn-danger btn-sm" onclick="closeIAModal()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2549,6 +2585,116 @@ function doDownload(){
   const a=document.createElement('a');a.href=url;
   a.download='tablero-tactico-'+(new Date().toISOString().slice(0,10))+'.webm';
   a.click();URL.revokeObjectURL(url);
+}
+
+// =============================================
+// GENERACIÓN DE JUGADAS CON IA (Claude)
+// =============================================
+const CLAUDE_API_KEY='CONFIGURAR_API_KEY';// Reemplazar con tu API key de Anthropic
+function showIAModal(){document.getElementById('ia-modal').classList.add('show');document.getElementById('ia-status').textContent='';document.getElementById('ia-status').className='ia-status';}
+function closeIAModal(e){if(!e||e.target===document.getElementById('ia-modal'))document.getElementById('ia-modal').classList.remove('show');}
+function iaStatus(msg,type){const el=document.getElementById('ia-status');el.textContent=msg;el.className='ia-status '+(type||'');}
+async function triggerGenerarJugada(){
+  const texto=document.getElementById('ia-textarea').value.trim();
+  if(!texto){iaStatus('Escribí una descripción de la jugada.','err');return;}
+  if(CLAUDE_API_KEY==='CONFIGURAR_API_KEY'){iaStatus('Configurar API key de Anthropic antes de usar esta función.','err');return;}
+  const reemplazar=document.getElementById('ia-replace').checked;
+  document.getElementById('ia-gen-btn').disabled=true;
+  iaStatus('Interpretando...','loading');
+  try{
+    await generarJugadaDesdeTexto(texto,reemplazar);
+    iaStatus('Jugada generada','ok');
+    document.getElementById('ia-modal').classList.remove('show');
+  }catch(err){
+    const msg=err&&err.message?err.message:'Error al generar la jugada.';
+    iaStatus(msg,'err');
+  }finally{
+    document.getElementById('ia-gen-btn').disabled=false;
+  }
+}
+async function generarJugadaDesdeTexto(texto,reemplazar){
+  const roster=MURCIELAGAS.filter(p=>p.num).map(p=>`{num:${p.num},name:"${p.apellido}"}`).join(',');
+  const systemPrompt=`Sos un asistente táctico para fútbol para personas ciegas (IBSA Blind Football). Generás posiciones y flechas para un tablero táctico digital.
+
+DIMENSIONES DEL CANVAS: IW=900, IH=520.
+ÁREA DE JUEGO: fx=70, fy=55, fw=760, fh=410. Centro: 450, 260.
+
+REFERENCIAS ESPACIALES:
+- Arco propio (izquierdo): x≈90, y≈260
+- Arco rival (derecho): x≈810, y≈260
+- Área propia: x entre 70 y 180
+- Área rival: x entre 720 y 830
+- Mediocampo: x entre 380 y 520
+- Lateral superior (izquierdo): y≈55
+- Lateral inferior (derecho): y≈465
+- Palo izquierdo arco rival: x≈810, y≈215
+- Palo derecho arco rival: x≈810, y≈305
+
+PLANTEL DISPONIBLE (equipo A / Local): [${roster}]
+
+TIPOS DE FLECHA: "pass" (pase), "run" (carrera), "press" (presión), "shot" (disparo), "dribble" (conducción con pelota)
+TIPOS DE MOVIMIENTO: "straight" (recta), "curve" (curva), "free" (libre)
+
+REGLAS:
+- Usá solo jugadoras del plantel si se mencionan por número. Si se habla de "la 7", usá num:7.
+- Si se mencionan jugadoras sin número concreto, asignales números del plantel disponible.
+- Posicioná las jugadoras en coordenadas coherentes con la descripción textual.
+- Todas las coordenadas deben estar dentro del área de juego (x: 90-830, y: 75-445).
+- Los índices fromNum y toNum son el campo "num" de las jugadoras del array players generado.
+- Si el destino es un punto del campo (no una jugadora), usá toX/toY en vez de toNum.
+- Para un disparo al arco, el destino debe ser aproximadamente x≈810, y≈260 (centro arco rival).
+
+RESPONDÉ ÚNICAMENTE con JSON válido sin texto adicional ni bloques de código markdown.
+
+ESQUEMA DE RESPUESTA:
+{"players":[{"num":9,"team":"A","x":500,"y":260,"gk":false}],"arrows":[{"kind":"straight","fromNum":7,"toNum":9,"type":"pass"},{"kind":"straight","fromNum":9,"toX":810,"toY":260,"type":"shot"}]}`;
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,system:systemPrompt,messages:[{role:'user',content:texto}]})
+  });
+  if(!resp.ok){
+    let errMsg='Error de la API de Anthropic ('+resp.status+').';
+    try{const errData=await resp.json();if(errData&&errData.error&&errData.error.message)errMsg=errData.error.message;}catch(e){}
+    throw new Error(errMsg);
+  }
+  const data=await resp.json();
+  let rawText='';
+  if(data&&data.content&&data.content[0]&&data.content[0].text)rawText=data.content[0].text.trim();
+  // Limpiar posible bloque markdown
+  rawText=rawText.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+  let parsed;
+  try{parsed=JSON.parse(rawText);}catch(e){throw new Error('No se pudo interpretar la jugada. Intentá con una descripción más específica.');}
+  if(!parsed||!Array.isArray(parsed.players)){throw new Error('No se pudo interpretar la jugada. Intentá con una descripción más específica.');}
+  saveHistory();
+  if(reemplazar){players=[];arrows=[];counterA=1;counterB=1;placedMur=new Set();manualPhaseBreaks=[];currentPhase=1;phaseView='all';}
+  // Mapa num → índice en players[] NUEVO (para resolver fromNum/toNum)
+  const numToIdx=new Map();
+  const baseIdx=players.length;
+  (parsed.players||[]).forEach((p,i)=>{
+    const num=p.num||counterA++;
+    const role=MURCIELAGAS.find(m=>m.num===num)?MURCIELAGAS.find(m=>m.num===num).apellido:String(num);
+    const px=Math.max(90,Math.min(830,Number(p.x)||450));
+    const py=Math.max(75,Math.min(445,Number(p.y)||260));
+    players.push({x:px,y:py,team:p.team||'A',num,role,r:18,ghost:false,gk:!!p.gk});
+    numToIdx.set(num,baseIdx+i);
+  });
+  (parsed.arrows||[]).forEach(a=>{
+    const fromIdx=numToIdx.has(a.fromNum)?numToIdx.get(a.fromNum):null;
+    if(fromIdx===null)return;
+    const kind=a.kind||'straight';
+    const type=a.type||'pass';
+    if(a.toNum!=null&&numToIdx.has(a.toNum)){
+      arrows.push({kind,from:fromIdx,to:numToIdx.get(a.toNum),type});
+    }else if(a.toX!=null){
+      const tx=Math.max(70,Math.min(830,Number(a.toX)));
+      const ty=Math.max(55,Math.min(465,Number(a.toY)||260));
+      arrows.push({kind,from:fromIdx,toX:tx,toY:ty,type});
+    }
+  });
+  updatePhaseBadge();
+  draw();
+  status('Jugada generada por IA · '+players.length+' jugadoras · '+arrows.length+' acciones');
 }
 
 // =============================================
