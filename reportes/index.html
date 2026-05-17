@@ -2259,6 +2259,103 @@ return {
       return `<div class="metric ${cls}"><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${sub ? `<div class="metric-sub">${sub}</div>` : ''}</div>`;
     }
 
+    function round1(value) {
+      return Math.round(Number(value || 0) * 10) / 10;
+    }
+
+    function getTrendLabel(values) {
+      const clean = (values || []).map(Number).filter(v => Number.isFinite(v));
+      if (clean.length < 2) return 'sin tendencia suficiente';
+      const first = clean[0];
+      const last = clean[clean.length - 1];
+      const diff = round1(last - first);
+      if (Math.abs(diff) < 0.5) return 'estable';
+      return diff > 0 ? `en aumento (${diff > 0 ? '+' + diff : diff})` : `en baja (${diff})`;
+    }
+
+    function topBy(items, key, count = 3, direction = 'desc') {
+      return (items || [])
+        .slice()
+        .sort((a, b) => direction === 'desc' ? Number(b[key] || 0) - Number(a[key] || 0) : Number(a[key] || 0) - Number(b[key] || 0))
+        .slice(0, count);
+    }
+
+    function renderWeekVolumeBars(rows) {
+      const reported = (rows || []).filter(r => r.estado === 'Cargó' && Number.isFinite(Number(r.total)));
+      if (!reported.length) return '<p>No hay cargas suficientes para comparar visualmente esta semana.</p>';
+      const max = Math.max(...reported.map(r => Number(r.total || 0)), 1);
+      return reported
+        .slice()
+        .sort((a, b) => Number(b.total || 0) - Number(a.total || 0))
+        .map(r => `
+          <div class="bar-row">
+            <div class="bar-key">${escapeHtml(shortText(r.jugadora, 12))}</div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${Math.round((Number(r.total || 0) / max) * 100)}%"></div></div>
+            <div class="bar-num">T:${r.total} · F:${r.fisico} · TT:${r.tecnico}</div>
+          </div>
+        `).join('');
+    }
+
+    function renderPeriodicWeekBars(weeks) {
+      if (!weeks || !weeks.length) return '<p>No hay semanas suficientes para comparar el bloque.</p>';
+      const max = Math.max(...weeks.map(w => Number(w.promTotal || 0)), 1);
+      return weeks.map(w => `
+        <div class="bar-row">
+          <div class="bar-key">${escapeHtml(formatWeekLabel(w.week).replace(/^Semana /, 'S. '))}</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.round((Number(w.promTotal || 0) / max) * 100)}%"></div></div>
+          <div class="bar-num">Prom. total ${w.promTotal} · reportaron ${w.reportaron}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildHumanSummaryText(s) {
+      if (!s) return 'Sin datos suficientes.';
+
+      if (s.scope === 'individual') {
+        const trend = getTrendLabel((s.weekly || []).map(w => w.total));
+        const lastWeek = (s.weekly || [])[s.weekly.length - 1];
+        return [
+          `Modo individual.`,
+          `Período analizado: ${s.periodLabel}.`,
+          `${s.player} reportó ${s.reportedWeeks} de ${s.periodWeeks} semanas.`,
+          `Promedio total: ${s.avgTotal}. Promedio físico: ${s.avgFisico}. Promedio técnico-táctico: ${s.avgTecnico}.`,
+          `Comparación con plantel: promedio del equipo ${s.plantelAvg}; ranking ${s.rank || 'sin ranking'} sobre ${s.totalPlayers}.`,
+          `Tendencia semanal del volumen reportado: ${trend}.`,
+          `Última semana observada: ${lastWeek ? `${formatWeekLabel(lastWeek.week)} con total ${lastWeek.total}, físico ${lastWeek.fisico}, técnico ${lastWeek.tecnico}.` : 'sin última semana disponible.'}`,
+          s.alerts && s.alerts.length ? `Alertas detectadas: ${s.alerts.join(' | ')}` : 'Sin alertas relevantes registradas.'
+        ].join('\n');
+      }
+
+      if (s.temporalMode === 'periodic') {
+        const trend = getTrendLabel((s.weekSummary || []).map(w => w.promTotal));
+        const topContinuity = topBy(s.periodicByPlayer, 'semanasReportadas', 3, 'desc').map(p => `${p.jugadora} (${p.semanasReportadas}/${p.semanasTotales})`);
+        const lowContinuity = topBy(s.periodicByPlayer, 'semanasReportadas', 3, 'asc').map(p => `${p.jugadora} (${p.semanasReportadas}/${p.semanasTotales})`);
+        return [
+          `Modo plantel periódico.`,
+          `Período analizado: ${s.periodLabel}.`,
+          `Jugadoras con al menos una carga: ${s.periodicActivePlayers.length} de ${s.periodicByPlayer.length}.`,
+          `Promedio semanal del bloque: total ${s.periodicAvg.total}, físico ${s.periodicAvg.fisico}, técnico-táctico ${s.periodicAvg.tecnico}.`,
+          `Promedio de jugadoras que reportaron por semana: ${s.periodicAvg.reportaron}.`,
+          `Tendencia del promedio semanal del bloque: ${trend}.`,
+          topContinuity.length ? `Mayor continuidad: ${topContinuity.join(' · ')}.` : 'Sin datos de continuidad alta.',
+          lowContinuity.length ? `Menor continuidad: ${lowContinuity.join(' · ')}.` : 'Sin datos de continuidad baja.',
+          s.periodicAlerts && s.periodicAlerts.length ? `Alertas acumuladas: ${s.periodicAlerts.map(p => `${p.jugadora}: ${p.alertas.join(', ')}`).join(' | ')}` : 'Sin alertas acumuladas relevantes.'
+        ].join('\n');
+      }
+
+      const topWeek = topBy((s.selectedWeekByPlayer || []).filter(r => r.estado === 'Cargó'), 'total', 3, 'desc').map(r => `${r.jugadora} (${r.total})`);
+      return [
+        `Modo plantel semanal.`,
+        `Semana analizada: ${s.selectedWeekLabel}.`,
+        `Reportaron ${s.reportedNames.length} de ${s.selectedWeekByPlayer.length}; no reportaron ${s.notReportedNames.length}.`,
+        `Promedio sobre quienes cargaron: total ${s.selectedWeekAvg.total}, físico ${s.selectedWeekAvg.fisico}, técnico-táctico ${s.selectedWeekAvg.tecnico}.`,
+        topWeek.length ? `Mayores volúmenes de la semana: ${topWeek.join(' · ')}.` : 'Sin volúmenes destacados para ordenar.',
+        s.notReportedNames.length ? `Pendientes de carga: ${s.notReportedNames.join(' · ')}.` : 'Sin pendientes de carga.',
+        s.selectedWeekAlerts.length ? `Alertas de la semana: ${s.selectedWeekAlerts.map(a => `${a.jugadora}: ${a.comentario}`).join(' | ')}` : 'Sin alertas relevantes en la semana.',
+        s.selectedWeekComments.length ? `Comentarios cargados: ${s.selectedWeekComments.map(a => `${a.jugadora}: ${a.comentario}`).join(' | ')}` : 'Sin comentarios cargados.'
+      ].join('\n');
+    }
+
 function handleSortableHeaderClick(event) {
   const header = event.target.closest('.sortable-th');
   if (!header) return;
@@ -2440,6 +2537,15 @@ const tableRows = sortTableRows(s.selectedWeekByPlayer, 'weeklyPlayers').map(r =
     </tr>
   `).join('');
 
+  const reportedWeekRows = s.selectedWeekByPlayer.filter(r => r.estado === 'Cargó' && r.total !== null);
+  const topWeek = topBy(reportedWeekRows, 'total', 3, 'desc')
+    .map(r => `${escapeHtml(r.jugadora)} (${r.total})`)
+    .join(' · ');
+
+  const lowWeek = topBy(reportedWeekRows, 'total', 3, 'asc')
+    .map(r => `${escapeHtml(r.jugadora)} (${r.total})`)
+    .join(' · ');
+
   return `
 <h2 class="report-title">${s.temporalMode === 'periodic' ? 'Análisis periódico del cuerpo técnico' : 'Control semanal del cuerpo técnico'}</h2> 
 <div class="report-meta">
@@ -2483,6 +2589,19 @@ ${sortableTh('weeklyPlayers', 'tecnico', 'Técnico-táctico')}
     <div class="section">
       <h2>Promedio del equipo en la semana</h2>
       <p>Sobre las jugadoras que cargaron, el promedio semanal fue de <strong>${s.selectedWeekAvg.total}</strong> estímulos totales, con <strong>${s.selectedWeekAvg.fisico}</strong> físicos y <strong>${s.selectedWeekAvg.tecnico}</strong> técnico-tácticos.</p>
+    </div>
+
+    <div class="section">
+      <h2>Lectura operativa</h2>
+      <p>${reported === 0
+        ? 'No hay cargas informadas en la semana seleccionada, así que no conviene leer tendencias de volumen hasta completar registros.'
+        : `La semana muestra ${reported}/${totalPlayers} jugadoras con carga. ${notReported ? `Todavía quedan ${notReported} pendientes, lo que condiciona la lectura global del plantel.` : 'La cobertura de carga es completa, así que la lectura semanal es más confiable.'}`}</p>
+      <p>${topWeek ? `Los volúmenes más altos reportados fueron ${topWeek}. ` : ''}${lowWeek ? `En el extremo más bajo de las que cargaron quedaron ${lowWeek}.` : ''}</p>
+    </div>
+
+    <div class="section">
+      <h2>Comparación visual de la semana</h2>
+      ${renderWeekVolumeBars(s.selectedWeekByPlayer)}
     </div>
 
     <div class="section">
@@ -2584,6 +2703,9 @@ const weekRows = sortTableRows(s.weekSummary, 'periodicWeeks').map(w => `    <tr
 
   const firstWeek = s.weeks[0] ? formatWeekLabel(s.weeks[0]) : '—';
   const lastWeek = s.weeks[s.weeks.length - 1] ? formatWeekLabel(s.weeks[s.weeks.length - 1]) : '—';
+  const topContinuity = topBy(s.periodicByPlayer, 'semanasReportadas', 3, 'desc').map(p => `${escapeHtml(p.jugadora)} (${p.semanasReportadas}/${p.semanasTotales})`).join(' · ');
+  const lowContinuity = topBy(s.periodicByPlayer, 'semanasReportadas', 3, 'asc').map(p => `${escapeHtml(p.jugadora)} (${p.semanasReportadas}/${p.semanasTotales})`).join(' · ');
+  const trend = getTrendLabel(s.weekSummary.map(w => w.promTotal));
 
   return `
     <h2 class="report-title">Análisis periódico del cuerpo técnico</h2>
@@ -2624,6 +2746,8 @@ ${sortableTh('periodicPlayers', 'alertasCount', 'Alertas')}
 
     <div class="section">
       <h2>Evolución por semanas</h2>
+      <p>La tendencia del promedio total semanal en el bloque es <strong>${escapeHtml(trend)}</strong>.</p>
+      ${renderPeriodicWeekBars(s.weekSummary)}
       <div class="table-wrap">
         <table>
           <thead>
@@ -2648,6 +2772,8 @@ ${sortableTh('periodicWeeks', 'alertas', 'Alertas')}
 
     <div class="section">
       <h2>Lectura del período</h2>
+      <p>${topContinuity ? `Mayor continuidad observada: ${topContinuity}.` : 'Sin continuidad suficiente para destacar jugadoras.'}</p>
+      <p>${lowContinuity ? `Menor continuidad observada: ${lowContinuity}.` : 'No hay casos de baja continuidad para remarcar.'}</p>
       <ul>
         <li>Este modo no evalúa quién cargó “esta semana”, sino la continuidad y evolución dentro del bloque seleccionado.</li>
         <li>Para revisar una semana puntual, usá el modo Control semanal.</li>
@@ -2667,6 +2793,25 @@ function buildPrompt() {
   const estilo = audience === 'jugadora'
     ? 'claro, respetuoso, humano y comprensible, sin infantilizar ni usar tono de reto'
     : 'profesional, claro, operativo, útil para tomar decisiones del cuerpo técnico';
+
+  const humanSummary = buildHumanSummaryText(s);
+  const compactData = {
+    scope: s.scope,
+    temporalMode: s.temporalMode || 'weekly',
+    periodLabel: s.periodLabel || s.selectedWeekLabel || '',
+    player: s.player || '',
+    totalPlayers: s.totalPlayers || s.selectedWeekByPlayer?.length || 0,
+    reportedNames: s.reportedNames || [],
+    notReportedNames: s.notReportedNames || [],
+    selectedWeekAvg: s.selectedWeekAvg || null,
+    periodicAvg: s.periodicAvg || null,
+    topLoad: s.topLoad || [],
+    lowLoad: s.lowLoad || [],
+    alerts: s.alerts || s.selectedWeekAlerts || [],
+    weekSummary: (s.weekSummary || []).slice(-8),
+    periodicByPlayer: (s.periodicByPlayer || []).slice(0, 12),
+    notes: s.notes || ''
+  };
 
   return `Actuá como asistente de análisis deportivo especializado en fútbol para personas ciegas y seguimiento de entrenamiento.
 
@@ -2688,13 +2833,27 @@ Criterios importantes:
 - Si aparecen ejercicios, pesos o referencias de fuerza en los comentarios, no los analices como ejercicios efectivamente realizados ni como evaluación técnica. Tratálos solo como datos reportados o referencias solicitadas por la preparadora física.
 - No hagas inferencias sobre técnica, calidad de ejecución, adaptación de rutinas o planificación de fuerza a partir de esos comentarios.
 - El análisis debe centrarse en: si cargó o no cargó, qué valores reportó, qué promedios aparecen y qué observaciones requieren seguimiento.
+- No conviertas la salida en una lista mecánica de métricas. Primero interpretá qué muestran los datos y recién después redactá.
+- Si hay pendientes de carga, aclará cómo eso limita la lectura del informe.
+- Si el período es semanal, priorizá cobertura de carga, volumen reportado de la semana, alertas y comentarios concretos.
+- Si el período es periódico, priorizá continuidad, tendencia del bloque, semanas con más o menos reporte y alertas acumuladas.
+- Escribí como una persona del CT que leyó la información y la ordenó, no como una IA que comenta un JSON.
 
 Enfoque elegido: ${$('focus') ? $('focus').value : 'general'}.
 
-Datos resumidos:
-${JSON.stringify(s, null, 2)}
+Resumen humano de la vista operativa:
+${humanSummary}
 
-Generá el informe final en español argentino, con títulos breves y párrafos claros.`;
+Datos estructurados de respaldo:
+${JSON.stringify(compactData, null, 2)}
+
+Formato esperado:
+- Un título breve.
+- 3 a 5 subtítulos útiles.
+- Párrafos cortos.
+- Solo bullets si hacen falta para alertas o pendientes concretos.
+
+Generá el informe final en español argentino, con títulos breves, lectura humana y criterio operativo.`;
 }
 
 async function generateWithAI() {
