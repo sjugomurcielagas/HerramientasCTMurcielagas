@@ -154,17 +154,20 @@
     function resultCard(r){
       const estado=estadoNormalizado(r.estado||r.resultado||'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
       const fuentes=fuentesHtml(r);
-      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div></div>${estadoBadge(estado)}</div>${r.observaciones?`<p>${esc(r.observaciones)}</p>`:''}${fuentes}</article>`;
+      const presentacion=r.presentacion?`<div class="meta">Presentación: ${esc(r.presentacion)}</div>`:'';
+      const laboratorio=r.laboratorio?`<div class="meta">Laboratorio: ${esc(r.laboratorio)}</div>`:'';
+      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${presentacion}${laboratorio}</div>${estadoBadge(estado)}</div>${r.observaciones?`<p>${esc(r.observaciones)}</p>`:''}${fuentes}</article>`;
     }
     function fuentesHtml(r){
       const rows=[
         ['Fuente argentina',r.fuente_argentina||r.fuenteMedicamento||r.fuente_medicamento],
         ['WADA',r.fuente_wada||r.fuenteAntidopajePrincipal||r.categoria_wada],
         ['Fuente secundaria',r.fuente_secundaria||r.fuenteAntidopajeSecundaria],
+        ['URL fuente',r.fuente_url||r.fuenteUrl],
         ['Fecha de revisión',r.fecha_revision||r.fechaRevision]
       ].filter(x=>x[1]);
       if(!rows.length)return'<div class="source-grid"><div class="source-row"><div class="source-k">Trazabilidad</div><div class="source-v">Sin fuente registrada. Requiere revisión.</div></div></div>';
-      return `<div class="source-grid">${rows.map(([k,v])=>`<div class="source-row"><div class="source-k">${esc(k)}</div><div class="source-v">${esc(v)}</div></div>`).join('')}</div>`;
+      return `<div class="source-grid">${rows.map(([k,v])=>{const isUrl=String(k)==='URL fuente'&&/^https?:\/\//i.test(String(v));const value=isUrl?`<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">${esc(v)}</a>`:esc(v);return `<div class="source-row"><div class="source-k">${esc(k)}</div><div class="source-v">${value}</div></div>`}).join('')}</div>`;
     }
 
     async function loadFrecuentes(){

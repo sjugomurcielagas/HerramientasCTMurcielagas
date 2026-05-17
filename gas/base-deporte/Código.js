@@ -343,9 +343,20 @@ function antidoping_evalWada_(principioActivo) {
       observaciones_wada: 'Cargar reglas WADA para dictamen automático.'
     };
   }
-  var p = normalizeText(principioActivo);
-  var hits = rules.filter(function(r) {
-    return p === r.sustancia || p.indexOf(r.sustancia) !== -1 || r.sustancia.indexOf(p) !== -1;
+  var activos = String(principioActivo || '')
+    .split(/,|\/|\+|;| y /i)
+    .map(function(x) { return normalizeText(x); })
+    .filter(Boolean);
+  if (!activos.length) activos = [normalizeText(principioActivo)];
+
+  var hits = [];
+  activos.forEach(function(a) {
+    rules.forEach(function(r) {
+      if (!a || !r.sustancia) return;
+      if (a === r.sustancia || a.indexOf(r.sustancia) !== -1 || r.sustancia.indexOf(a) !== -1) {
+        hits.push(r);
+      }
+    });
   });
   if (!hits.length) {
     return {
@@ -355,10 +366,20 @@ function antidoping_evalWada_(principioActivo) {
     };
   }
   var h = hits[0];
+  var hasProhibido = hits.some(function(x) { return normalizeText(x.estado).indexOf('prohibido') !== -1; });
+  var hasCondicionado = hits.some(function(x) {
+    var s = normalizeText(x.estado);
+    return s.indexOf('condicionado') !== -1 || s.indexOf('revision') !== -1;
+  });
+  var estadoFinal = hasProhibido
+    ? 'PROHIBIDO / REQUIERE VERIFICACIÓN MÉDICA'
+    : (hasCondicionado ? 'CONDICIONADO / REQUIERE REVISIÓN MÉDICA' : (h.estado || 'REQUIERE REVISIÓN'));
   return {
-    estado: h.estado || 'CONDICIONADO / REQUIERE REVISIÓN MÉDICA',
+    estado: estadoFinal,
     fuente_wada: 'WADA_Sustancias' + (h.version ? (' v' + h.version) : ''),
-    observaciones_wada: [h.categoria, h.umbral, h.nota].filter(Boolean).join(' | ')
+    observaciones_wada: hits.slice(0, 3).map(function(x) {
+      return [x.sustancia, x.categoria, x.umbral, x.nota].filter(Boolean).join(' | ');
+    }).join(' || ')
   };
 }
 
@@ -388,7 +409,71 @@ function antidoping_scrapePrVademecum_(queryRaw) {
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
     });
   }
-  return matches;
+  var unique = {};
+  return matches.filter(function(x) {
+    var k = (x.fuente_url || '') + '|' + normalizeText(x.medicamento || '');
+    if (unique[k]) return false;
+    unique[k] = true;
+    return true;
+  });
+}
+
+function antidoping_extractText_(html) {
+  return String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function antidoping_parseDetailFromHtml_(html) {
+  var text = antidoping_extractText_(html);
+  var principio = '';
+  var presentacion = '';
+  var laboratorio = '';
+
+  var m1 = text.match(/principio\s*activo\s*[:\-]\s*([^|.]{3,180})/i);
+  if (m1 && m1[1]) principio = m1[1].trim();
+
+  var m2 = text.match(/presentaci[oó]n\s*[:\-]\s*([^|.]{3,180})/i);
+  if (m2 && m2[1]) presentacion = m2[1].trim();
+
+  var m3 = text.match(/laboratorio\s*[:\-]\s*([^|.]{3,140})/i);
+  if (m3 && m3[1]) laboratorio = m3[1].trim();
+
+  if (!principio) {
+    var fallback = text.match(/([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){0,3}\s+\d+(?:[.,]\d+)?\s*(?:mg|mcg|g|ml))/i);
+    if (fallback && fallback[1]) principio = fallback[1].trim();
+  }
+
+  return {
+    principio_activo: principio,
+    presentacion: presentacion,
+    laboratorio: laboratorio
+  };
+}
+
+function antidoping_enrichPrItem_(item) {
+  if (!item || !item.fuente_url) return item;
+  try {
+    var res = UrlFetchApp.fetch(item.fuente_url, { muteHttpExceptions: true, followRedirects: true });
+    if (res.getResponseCode() < 200 || res.getResponseCode() >= 300) return item;
+    var parsed = antidoping_parseDetailFromHtml_(res.getContentText());
+    return {
+      medicamento: item.medicamento || '',
+      principio_activo: parsed.principio_activo || item.principio_activo || '',
+      presentacion: parsed.presentacion || item.presentacion || '',
+      laboratorio: parsed.laboratorio || item.laboratorio || '',
+      fuente_argentina: item.fuente_argentina || 'PR Vademecum',
+      fuente_url: item.fuente_url || '',
+      fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+    };
+  } catch (e) {
+    return item;
+  }
 }
 
 function antidoping_appendHistorial_(query, result) {
@@ -435,7 +520,7 @@ function antidoping_buscarMedicamento(payload) {
   var source = '';
 
   try {
-    matches = antidoping_scrapePrVademecum_(consulta);
+    matches = antidoping_scrapePrVademecum_(consulta).slice(0, 6).map(antidoping_enrichPrItem_);
     source = 'prvademecum_live';
   } catch (e) {
     matches = [];
@@ -463,6 +548,7 @@ function antidoping_buscarMedicamento(payload) {
       medicamento: item.medicamento || consulta,
       principio_activo: item.principio_activo || '',
       presentacion: item.presentacion || '',
+      laboratorio: item.laboratorio || '',
       estado: evalWada.estado || item.estado || 'REQUIERE REVISIÓN',
       observaciones: item.observaciones || evalWada.observaciones_wada || '',
       fuente_argentina: item.fuente_argentina || 'PR Vademecum',
