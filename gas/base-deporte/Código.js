@@ -422,6 +422,27 @@ function antidoping_evalWada_(principioActivo) {
   };
 }
 
+function antidoping_resolveDirectActiveQuery_(consulta) {
+  var consultaNorm = normalizeText(consulta);
+  if (!consultaNorm) return '';
+
+  var rules = antidoping_loadWadaRules_();
+  for (var i = 0; i < rules.length; i++) {
+    var sustancia = normalizeText(rules[i].sustancia || '');
+    if (!sustancia) continue;
+    if (consultaNorm === sustancia) return rules[i].sustancia || consulta;
+  }
+
+  var catalogo = antidoping_readCatalogo_();
+  for (var j = 0; j < catalogo.length; j++) {
+    var activo = normalizeText(catalogo[j].principio_activo || '');
+    if (!activo) continue;
+    if (consultaNorm === activo) return catalogo[j].principio_activo || consulta;
+  }
+
+  return '';
+}
+
 function antidoping_phraseMatch_(text, phrase) {
   var haystack = normalizeText(text || '');
   var needle = normalizeText(phrase || '');
@@ -625,8 +646,9 @@ function antidoping_buscarMedicamento(payload) {
   if (!consulta) throw new Error('consulta es requerida');
   var consultaNorm = normalizeText(consulta);
   var forceRefresh = !!(payload && payload.forceRefresh);
+  var directActiveQuery = antidoping_resolveDirectActiveQuery_(consulta);
   var knownActiveFromQuery = antidoping_knownCommercialActive_(consulta);
-  var shouldBypassCache = !!knownActiveFromQuery;
+  var shouldBypassCache = !!knownActiveFromQuery || !!directActiveQuery;
   if (!forceRefresh && !shouldBypassCache) {
     var cached = antidoping_readCache_(consultaNorm);
     if (cached && cached.length) {
@@ -638,11 +660,28 @@ function antidoping_buscarMedicamento(payload) {
   var matches = [];
   var source = '';
 
-  try {
-    matches = antidoping_scrapePrVademecum_(consulta).slice(0, 6).map(antidoping_enrichPrItem_);
-    source = 'prvademecum_live';
-  } catch (e) {
-    matches = [];
+  if (directActiveQuery) {
+    matches = [{
+      medicamento: consulta,
+      principio_activo: directActiveQuery,
+      presentacion: '',
+      laboratorio: '',
+      observaciones: '',
+      fuente_argentina: 'Consulta directa por principio activo',
+      fuente_secundaria: '',
+      fuente_url: '',
+      fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+    }];
+    source = 'direct_active';
+  }
+
+  if (!matches.length) {
+    try {
+      matches = antidoping_scrapePrVademecum_(consulta).slice(0, 6).map(antidoping_enrichPrItem_);
+      source = 'prvademecum_live';
+    } catch (e) {
+      matches = [];
+    }
   }
 
   if (!matches.length) {
@@ -668,12 +707,12 @@ function antidoping_buscarMedicamento(payload) {
       presentacion: '',
       laboratorio: '',
       observaciones: '',
-      fuente_argentina: knownActiveFromQuery ? 'Marca comercial normalizada' : 'Consulta directa',
+      fuente_argentina: knownActiveFromQuery ? 'Marca comercial normalizada' : 'Consulta directa pendiente de identificar',
       fuente_secundaria: '',
       fuente_url: '',
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
     }];
-    source = knownActiveFromQuery ? 'known_commercial_active' : 'wada_direct';
+    source = knownActiveFromQuery ? 'known_commercial_active' : 'direct_unresolved';
   }
 
   var enriquecidos = matches.map(function(item) {
