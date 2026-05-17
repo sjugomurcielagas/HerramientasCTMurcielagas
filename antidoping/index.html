@@ -166,15 +166,18 @@
       const laboratorio=r.laboratorio?`<div class="meta">Laboratorio: ${esc(r.laboratorio)}</div>`:'';
       const contexto=(r.en_competencia||r.fuera_competencia)?`<div class="meta">En competencia: ${esc(r.en_competencia||'N/D')} · Fuera de competencia: ${esc(r.fuera_competencia||'N/D')}</div>`:'';
       const decision=decisionBlock(r,estado);
-      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${presentacion}${laboratorio}${contexto}</div>${estadoBadge(estado)}</div>${decision}${r.observaciones?`<p>${esc(r.observaciones)}</p>`:''}${fuentes}</article>`;
+      const criterio=r.criterio_wada?`<p><strong>Criterio:</strong> ${esc(r.criterio_wada)}</p>`:'';
+      const observaciones=r.observaciones?`<p>${esc(r.observaciones)}</p>`:'';
+      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${presentacion}${laboratorio}${contexto}</div>${estadoBadge(estado)}</div>${decision}${criterio}${observaciones}${fuentes}</article>`;
     }
     function decisionBlock(r,estado){
       const s=estadoNormalizado(estado||'');
+      const detail=r.advertencia_detalle||'';
       if(s.includes('PROHIBIDO')){
-        return `<div class="decision-btn block">🔴 No habilitar uso</div>`;
+        return `<div class="decision-btn block">🔴 No habilitar uso</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:''}`;
       }
-      if(s.includes('CONDICIONADO')||s.includes('REQUIERE')||s.includes('UMBRAL')||s.includes('DEPORTE ESPECÍFICO')){
-        return `<div class="decision-btn warn">🟡 Uso con advertencia / revisar dosis, vía y competencia</div>`;
+      if(s.includes('ADVERTENCIA')||s.includes('CONDICIONADO')||s.includes('REQUIERE')||s.includes('UMBRAL')||s.includes('DEPORTE ESPECÍFICO')){
+        return `<div class="decision-btn warn">🟡 Uso con advertencia</div>${detail?`<p><strong>Advertencia:</strong> ${esc(detail)}</p>`:'<p><strong>Advertencia:</strong> revisar dosis, vía y contexto de competencia.</p>'}`;
       }
       if(s.includes('NO FIGURA')||s.includes('PERMITIDO')){
         return `<div class="decision-btn ok">🟢 Habilitar uso</div>`;
@@ -221,7 +224,7 @@
     function limpiarBusqueda(){document.getElementById('queryInput').value='';document.getElementById('buscarStatus').textContent='';document.getElementById('resultados').innerHTML='<div class="empty">Ingresá una consulta para ver resultados.</div>'}
     function fallbackResultado(q){return{consulta:q,estado:'NO ENCONTRADO / REQUIERE VERIFICACIÓN',observaciones:'La API interna antidoping no devolvió una revisión registrada. No se debe interpretar como permitido.'}}
     function estadoNormalizado(v){return String(v||'').trim().toUpperCase()}
-    function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')?'danger':estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado)}</span>`}
+    function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')?'danger':estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')||estado.includes('PERMITIDO')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado)}</span>`}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>

@@ -341,6 +341,7 @@ function antidoping_evalWada_(principioActivo) {
       estado: 'REQUIERE REVISIÓN',
       fuente_wada: 'WADA_Sustancias sin datos',
       observaciones_wada: 'Cargar reglas WADA para dictamen automático.',
+      criterio_wada: 'Sin reglas WADA cargadas en la base interna.',
       en_competencia: 'N/D',
       fuera_competencia: 'N/D'
     };
@@ -362,31 +363,94 @@ function antidoping_evalWada_(principioActivo) {
   });
   if (!hits.length) {
     return {
-      estado: 'NO FIGURA COMO PROHIBIDO (REVISAR CONTEXTO)',
+      estado: 'PERMITIDO',
       fuente_wada: 'WADA_Sustancias',
       observaciones_wada: 'Sin coincidencia exacta en reglas cargadas.',
+      criterio_wada: 'No figura como prohibido ni advertido en la base WADA cargada; bajo este criterio operativo se trata como permitido.',
       en_competencia: 'NO',
       fuera_competencia: 'NO'
     };
   }
   var h = hits[0];
   var hasProhibido = hits.some(function(x) { return normalizeText(x.estado).indexOf('prohibido') !== -1; });
-  var hasCondicionado = hits.some(function(x) {
-    var s = normalizeText(x.estado);
-    return s.indexOf('condicionado') !== -1 || s.indexOf('revision') !== -1;
-  });
+  var warningDetails = antidoping_collectWarnings_(hits);
+  var enCompetenciaResumen = hits.map(function(x) { return x.en_competencia; }).filter(Boolean).join(' / ') || 'N/D';
+  var fueraCompetenciaResumen = hits.map(function(x) { return x.fuera_competencia; }).filter(Boolean).join(' / ') || 'N/D';
   var estadoFinal = hasProhibido
-    ? 'PROHIBIDO / REQUIERE VERIFICACIÓN MÉDICA'
-    : (hasCondicionado ? 'CONDICIONADO / REQUIERE REVISIÓN MÉDICA' : (h.estado || 'REQUIERE REVISIÓN'));
+    ? antidoping_resolveExplicitState_(enCompetenciaResumen, fueraCompetenciaResumen)
+    : (warningDetails.length ? 'PERMITIDO CON ADVERTENCIA' : 'PERMITIDO');
+  var criterio = hasProhibido
+    ? 'Figura como prohibido de forma explícita en la base WADA cargada.'
+    : (warningDetails.length
+      ? 'No está prohibido de forma absoluta, pero la base WADA cargada sí marca una condición concreta de uso.'
+      : 'No tiene prohibición ni advertencia explícita en la base WADA cargada; bajo este criterio operativo se trata como permitido.');
   return {
     estado: estadoFinal,
     fuente_wada: 'WADA_Sustancias' + (h.version ? (' v' + h.version) : ''),
     observaciones_wada: hits.slice(0, 3).map(function(x) {
       return [x.sustancia, x.categoria, x.umbral, x.nota].filter(Boolean).join(' | ');
     }).join(' || '),
-    en_competencia: hits.map(function(x) { return x.en_competencia; }).filter(Boolean).join(' / ') || 'N/D',
-    fuera_competencia: hits.map(function(x) { return x.fuera_competencia; }).filter(Boolean).join(' / ') || 'N/D'
+    advertencia_detalle: warningDetails.join(' || '),
+    criterio_wada: criterio,
+    en_competencia: enCompetenciaResumen,
+    fuera_competencia: fueraCompetenciaResumen
   };
+}
+
+function antidoping_resolveExplicitState_(enCompetencia, fueraCompetencia) {
+  var en = normalizeText(enCompetencia || '');
+  var fuera = normalizeText(fueraCompetencia || '');
+  if (en.indexOf('si') !== -1 && fuera.indexOf('no') !== -1) return 'PROHIBIDO EN COMPETENCIA';
+  if (en.indexOf('si') !== -1 && fuera.indexOf('si') !== -1) return 'PROHIBIDO';
+  return 'PROHIBIDO / REVISAR CONTEXTO';
+}
+
+function antidoping_collectWarnings_(hits) {
+  var details = [];
+  hits.forEach(function(rule) {
+    var warnings = antidoping_ruleWarnings_(rule);
+    warnings.forEach(function(msg) {
+      if (details.indexOf(msg) === -1) details.push(msg);
+    });
+  });
+  return details.slice(0, 4);
+}
+
+function antidoping_ruleWarnings_(rule) {
+  var r = rule || {};
+  var estado = normalizeText(r.estado || '');
+  var nota = String(r.nota || '').trim();
+  var notaNorm = normalizeText(nota);
+  var umbral = String(r.umbral || '').trim();
+  var umbralNorm = normalizeText(umbral);
+  var enCompetencia = String(r.en_competencia || '').trim();
+  var fueraCompetencia = String(r.fuera_competencia || '').trim();
+  var enNorm = normalizeText(enCompetencia);
+  var fueraNorm = normalizeText(fueraCompetencia);
+  var sustancia = String(r.sustancia || '').trim() || 'Sustancia';
+  var out = [];
+
+  var isWarningState = estado.indexOf('condicionado') !== -1 ||
+    estado.indexOf('revision') !== -1 ||
+    estado.indexOf('advert') !== -1 ||
+    estado.indexOf('tue') !== -1;
+
+  if (umbral && umbralNorm !== 'n/a') {
+    out.push(sustancia + ': respetar el umbral o límite informado (' + umbral + ').');
+  }
+  if (estado.indexOf('tue') !== -1 || notaNorm.indexOf('tue') !== -1) {
+    out.push(sustancia + ': puede requerir TUE o validación médica previa.');
+  }
+  if (notaNorm.indexOf('via') !== -1 || enNorm.indexOf('segun via') !== -1 || fueraNorm.indexOf('segun via') !== -1) {
+    out.push(sustancia + ': la autorización depende de la vía de administración' + (nota ? ' (' + nota + ').' : '.'));
+  }
+  if (enNorm.indexOf('condicionado') !== -1 || fueraNorm.indexOf('condicionado') !== -1) {
+    out.push(sustancia + ': revisar si la condición cambia según dosis, vía o contexto de competencia.');
+  }
+  if (!out.length && isWarningState) {
+    out.push(sustancia + ': requiere revisión médica o validación operativa antes de habilitar su uso.');
+  }
+  return out;
 }
 
 function antidoping_knownCommercialActive_(nombre) {
@@ -582,7 +646,9 @@ function antidoping_buscarMedicamento(payload) {
       presentacion: item.presentacion || '',
       laboratorio: item.laboratorio || '',
       estado: evalWada.estado || item.estado || 'REQUIERE REVISIÓN',
-      observaciones: item.observaciones || evalWada.observaciones_wada || '',
+      observaciones: item.observaciones || evalWada.advertencia_detalle || evalWada.criterio_wada || evalWada.observaciones_wada || '',
+      advertencia_detalle: evalWada.advertencia_detalle || '',
+      criterio_wada: evalWada.criterio_wada || '',
       fuente_argentina: item.fuente_argentina || 'PR Vademecum',
       fuente_wada: item.fuente_wada || evalWada.fuente_wada || 'Pendiente de revisión',
       fuente_secundaria: item.fuente_secundaria || '',
@@ -600,6 +666,8 @@ function antidoping_buscarMedicamento(payload) {
       presentacion: '',
       estado: 'NO ENCONTRADO / REQUIERE VERIFICACIÓN',
       observaciones: 'Sin coincidencia en fuentes configuradas. Requiere validación manual.',
+      advertencia_detalle: '',
+      criterio_wada: '',
       fuente_argentina: 'PR Vademecum / Catálogo local',
       fuente_wada: 'WADA_Sustancias',
       fuente_secundaria: '',
