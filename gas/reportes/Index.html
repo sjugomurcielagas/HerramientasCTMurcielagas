@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Murciélagas Analytics · Reportes de Entrenamiento</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,600&family=Barlow:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #f4f8fc;
+  --surface: #ffffff;
+  --surface-2: #eaf4fb;
+  --surface-3: #f7fbfe;
+  --border: #d5e6f1;
+  --border-hi: #9ccbe5;
+
+  --text: #12283a;
+  --muted: #4f7188;
+  --dim: #7f9caf;
+
+  --accent: #118ac0;
+  --accent-dim: rgba(17, 138, 192, .10);
+  --accent-soft: #0b6f9c;
+
+  --warn: #b7791f;
+  --warn-dim: rgba(183, 121, 31, .12);
+  --danger: #c24141;
+  --danger-dim: rgba(194, 65, 65, .10);
+  --good: #16834a;
+  --good-dim: rgba(22, 131, 74, .10);
+
+  --shadow: 0 10px 30px rgba(18, 40, 58, .10);
+
+  --mono: 'Barlow Condensed', sans-serif;
+  --sans: 'Barlow', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(17, 138, 192, .13), transparent 30rem),
+    linear-gradient(180deg, #f7fbfe 0%, var(--bg) 100%);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.55;
+  padding: 12px;
+}
+
+.app {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* Mobile first: la vista operativa aparece primero; herramientas después. */
+header {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 12px 4px 14px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  color: var(--accent-soft);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+h1 {
+  font-family: var(--mono);
+  font-size: clamp(28px, 8vw, 46px);
+  letter-spacing: .03em;
+  line-height: .95;
+  font-weight: 800;
+  text-transform: uppercase;
+  max-width: 900px;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: var(--muted);
+  max-width: 820px;
+  font-size: 15px;
+}
+
+.status-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  background: rgba(255,255,255,.84);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: var(--shadow);
+}
+
+.status-line {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.status-k {
+  display: block;
+  color: var(--dim);
+  font-family: var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.status-v {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.main-report-panel { order: 1; }
+.controls-panel { order: 2; }
+
+.panel {
+  background: rgba(255,255,255,.95);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.panel-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #ffffff, var(--surface-3));
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+}
+
+.panel-body { padding: 14px; }
+
+.field { margin-bottom: 16px; }
+
+label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+
+select, textarea, .date-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-family: var(--sans);
+  font-size: 16px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+textarea {
+  min-height: 112px;
+  resize: vertical;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+select:focus, textarea:focus, .date-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.hint {
+  margin-top: 7px;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+button {
+  appearance: none;
+  border: 1px solid var(--border-hi);
+  background: var(--surface-2);
+  color: var(--accent-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 42px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease, color .12s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+button.primary {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+button.primary:hover {
+  background: var(--accent-soft);
+  color: #ffffff;
+}
+
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.notice {
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  border-radius: 12px;
+  padding: 12px 13px;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.notice strong { color: var(--text); font-weight: 600; }
+
+.notice.warn {
+  border-color: rgba(183, 121, 31, .35);
+  background: #fff8e9;
+  color: #7a541a;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.metric {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px;
+  min-height: 86px;
+}
+
+.metric-label {
+  font-family: var(--mono);
+  color: var(--dim);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+
+.metric-sub {
+  color: var(--dim);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.metric.good .metric-value { color: var(--good); }
+.metric.warn .metric-value { color: var(--warn); }
+.metric.danger .metric-value { color: var(--danger); }
+
+.report-output {
+  padding: 14px;
+  min-height: 420px;
+  background: #ffffff;
+}
+
+.report-title {
+  font-family: var(--mono);
+  font-size: clamp(26px, 7vw, 36px);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  line-height: .95;
+  margin-bottom: 6px;
+}
+
+.report-meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--mono);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.section { margin: 22px 0; }
+
+.section h2 {
+  font-size: 13px;
+  font-family: var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.section p {
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.section ul {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.section li {
+  position: relative;
+  padding: 6px 0 6px 24px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.section li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+.section li.alert::before {
+  content: 'Alerta';
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--warn);
+  width: 40px;
+  left: 0;
+}
+
+.section li.alert { padding-left: 58px; }
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 8px;
+  background: #ffffff;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th, td {
+  padding: 10px 11px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--surface-3);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.bar-row:last-child { border-bottom: none; }
+
+.bar-key {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.bar-bg {
+  height: 9px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.bar-num {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+
+.hidden { display: none !important; }
+
+footer {
+  margin-top: 22px;
+  color: var(--dim);
+  font-size: 11px;
+  font-family: var(--mono);
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.audit-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+  font-size: 18px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 10px 26px rgba(17, 138, 192, .28);
+}
+
+.audit-toggle:hover {
+  background: var(--accent-soft);
+  color: #fff;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.status-pill.good {
+  color: var(--good);
+  background: var(--good-dim);
+  border-color: rgba(22, 131, 74, .28);
+}
+
+.status-pill.warn {
+  color: var(--warn);
+  background: var(--warn-dim);
+  border-color: rgba(183, 121, 31, .28);
+}
+
+.ai-report { max-width: 900px; }
+
+.ai-report h2 {
+  margin-top: 22px;
+  margin-bottom: 10px;
+}
+
+.ai-report h2:first-child { margin-top: 0; }
+
+.ai-report p {
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+
+.ai-report ul { margin: 8px 0 16px; }
+.ai-report li { line-height: 1.6; }
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.mode-tab {
+  border-radius: 10px;
+  padding: 10px 8px;
+}
+
+.mode-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.nav-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  gap: 8px;
+  align-items: center;
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.details-summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  color: var(--accent-soft);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 8px 0;
+}
+
+.check-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.check-item input { accent-color: var(--accent); }
+
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable-th:hover {
+  color: var(--accent-soft);
+  background: var(--accent-dim);
+}
+
+.sort-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-icon {
+  font-size: 11px;
+  color: var(--accent-soft);
+  opacity: .9;
+}
+
+@media (min-width: 560px) {
+  body { padding: 18px; }
+
+  .status-panel {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mode-tabs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .date-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bar-row {
+    grid-template-columns: 80px 1fr 120px;
+  }
+
+  .bar-num {
+    grid-column: auto;
+    text-align: right;
+  }
+}
+
+@media (min-width: 980px) {
+  body { padding: 24px 16px; }
+
+  header {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 20px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .controls-panel {
+    order: 1;
+    position: sticky;
+    top: 16px;
+  }
+
+  .main-report-panel { order: 2; }
+
+  .metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .panel-body { padding: 18px; }
+  .report-output { padding: 20px; }
+}
+
+@media print {
+  body { background: #fff; color: #111; padding: 0; }
+  .controls-panel, header, footer, .panel-head .actions, .notice, button { display: none !important; }
+  .layout { display: block; }
+  .panel { border: none; box-shadow: none; }
+  .report-output { background: #fff; color: #111; padding: 20px; }
+  .section h2 { color: #1a6e3a; border-color: #ddd; }
+  .section p, .section li, .metric-value { color: #111 !important; }
+  .metric, .table-wrap { border-color: #ddd; background: #fff; }
+  .report-meta, .metric-label, .metric-sub, th, td { color: #444 !important; }
+}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <div class="eyebrow">Las Murciélagas · Reportes de entrenamiento</div>
+        <h1>Generador interno de reportes deportivos</h1>
+        <p class="subtitle">Seguimiento interno de reportes de entrenamiento · Las Murciélagas</p>
+      </div>
+      <aside class="status-panel" aria-label="Estado del sistema">
+        <div class="status-line"><span class="status-k">Datos</span><span class="status-v" id="status-data">sin cargar</span></div>
+        <div class="status-line"><span class="status-k">Jugadoras</span><span class="status-v" id="status-players">0</span></div>
+        <div class="status-line"><span class="status-k">Registros</span><span class="status-v" id="status-rows">0</span></div>
+        <div class="status-line"><span class="status-k">Actualizado</span><span class="status-v" id="status-date">—</span></div>
+      </aside>
+    </header>
+
+<main class="layout">
+
+  <section class="panel controls-panel" aria-label="Herramientas del reporte">
+    <div class="panel-head">
+      <div class="panel-title">Herramientas</div>
+    </div>
+
+    <div class="panel-body">
+
+      <div class="btn-row" style="margin-top:0;margin-bottom:18px;">
+        <button class="primary" id="btn-load">Actualizar datos</button>
+        <button id="btn-local">Actualizar vista</button>
+      </div>
+
+      <div class="field">
+        <label for="scope">Tipo de análisis</label>
+        <select id="scope">
+          <option value="plantel">Plantel completo</option>
+          <option value="individual">Jugadora individual</option>
+        </select>
+      </div>
+
+<div class="field">
+  <label>Jugadoras analizadas</label>
+  <div class="notice">
+    Seleccioná las jugadoras que forman parte del análisis actual. Las no seleccionadas conservan sus datos en la planilla, pero no se consideran en promedios, pendientes de carga ni continuidad.
+  </div>
+
+  <details>
+    <summary class="details-summary">Configurar jugadoras analizadas</summary>
+    <div id="included-players-list" class="check-list"></div>
+  </details>
+</div>
+
+      <div class="field hidden" id="player-field">
+        <label for="player">Jugadora</label>
+        <select id="player"></select>
+      </div>
+
+      <div class="field">
+  <label>Modo de análisis</label>
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="btn-mode-weekly" type="button">Control semanal</button>
+    <button class="mode-tab" id="btn-mode-periodic" type="button">Análisis periódicos</button>
+  </div>
+</div>
+
+<div id="weekly-tools">
+  <div class="field">
+    <label for="week-select">Control semanal</label>
+
+    <div class="nav-row">
+      <button id="btn-week-prev" type="button">←</button>
+      <select id="week-select">
+        <option value="latest">Último período informado</option>
+      </select>
+      <button id="btn-week-next" type="button">→</button>
+    </div>
+
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="btn-week-current" type="button">Período actual</button>
+    </div>
+
+    <div class="hint">
+      Muestra una semana trabajada concreta: quién cargó, quién no cargó, estímulos y observaciones.
+    </div>
+  </div>
+</div>
+
+<div id="periodic-tools" class="hidden">
+  <div class="field">
+    <label for="weeks">Análisis periódicos</label>
+    <select id="weeks">
+      <option value="4">Bloque de 4 semanas</option>
+      <option value="6" selected>Bloque de 6 semanas</option>
+      <option value="8">Bloque de 8 semanas</option>
+      <option value="12">Bloque de 12 semanas</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Navegación de bloque</label>
+    <div class="btn-row" style="margin-top:0;">
+      <button id="btn-block-prev" type="button">← Bloque anterior</button>
+      <button id="btn-block-current" type="button">Bloque actual</button>
+      <button id="btn-block-next" type="button">Bloque siguiente →</button>
+    </div>
+    <div class="hint" id="block-label">Bloque actual</div>
+  </div>
+
+  <div class="field">
+    <label>Rango personalizado</label>
+    <div class="date-grid">
+      <div>
+        <label for="custom-from">Desde</label>
+        <input id="custom-from" type="date" class="date-input">
+      </div>
+      <div>
+        <label for="custom-to">Hasta</label>
+        <input id="custom-to" type="date" class="date-input">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-apply-custom-range" type="button">Aplicar rango</button>
+      <button id="btn-clear-custom-range" type="button">Limpiar rango</button>
+    </div>
+
+    <div class="hint">
+      Usar para revisar períodos libres, por ejemplo del 1 de enero hasta hoy.
+    </div>
+  </div>
+</div>
+
+      <div class="btn-row">
+        <button id="btn-open-ai">Redactar informe con IA</button>
+      </div>
+
+      <div class="field hidden" id="ai-config-panel">
+        <label>Informe con IA</label>
+
+        <div class="notice">
+          Esta sección permite generar un informe redactado a partir de la vista operativa.
+        </div>
+
+        <div class="field">
+          <label for="audience">Destinatario</label>
+          <select id="audience">
+            <option value="ct_completo">Cuerpo técnico</option>
+            <option value="jugadora">Jugadora</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="focus">Enfoque del informe</label>
+          <select id="focus">
+            <option value="general">Resumen general</option>
+            <option value="semana_actual">Esta semana</option>
+            <option value="comparativo">Comparativo del plantel</option>
+            <option value="alertas">Alertas y disponibilidad</option>
+            <option value="tecnico">Trabajo técnico-táctico</option>
+            <option value="carga">Volumen y continuidad</option>
+          </select>
+        </div>
+
+        <div class="btn-row">
+          <button class="primary" id="btn-ai">Generar informe IA</button>
+          <button id="btn-close-ai">Cerrar</button>
+        </div>
+      </div>
+
+      <div class="field hidden" id="audit-panel">
+        <label>Auditoría interna</label>
+
+        <div class="notice">
+          Revisa inconsistencias de carga y genera la hoja de auditoría en Google Sheets.
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-audit">Ejecutar auditoría</button>
+        </div>
+
+        <div class="hint" id="audit-result"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="panel main-report-panel" aria-label="Vista operativa">
+    <div class="panel-head">
+      <div class="panel-title">Vista operativa</div>
+      <div class="actions btn-row" style="margin:0;">
+        <button id="btn-copy">Copiar</button>
+        <button id="btn-print">Imprimir</button>
+      </div>
+    </div>
+
+    <div class="report-output" id="output">
+      <div class="notice">Cargando vista rápida operativa...</div>
+    </div>
+  </section>
+
+</main>
+
+    <footer>
+      <span>Murciélagas Analytics · uso interno del cuerpo técnico</span>
+      <span id="footer-date"></span>
+    </footer>
+
+<button id="btn-audit-toggle" class="audit-toggle" title="Auditoría interna">
+  ⚙
+</button>
+
+  </div>
+
+  <script>
+
+       const DEMO_ROWS = [];
+
+const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnSEmz__EAyEpluXWPP4yz0MhKhRkJoROeYb9SJXwRnpAOX74_Cm4VR9ng_8atNhWrTVw_h4ARjvZn5frk4WFvuIxj2tLgpdsLvmuw2ruCLEW1ygvTihI4IYHIFpZc7IsL8PeYYpaoUs-zcAhcWM_-ngV2HhpfhpBtEemYKp8pm9aiaNNVdZ8koqxjXuBD5DClfukwRROaU2NzQDkGob8uQEKAWI_tNKURa0lOprLo3WcHfsGlJlVlx8-l4ASwjsS0oP5cxRD4Svrp0MEQDpyB--fM1f5A&lib=ME22HSRQ4oQTvYKgFxRhxhIAakxPI3fty';
+
+ 
+
+  let rawRows = [];
+let rows = [];
+let reportMode = 'ct';
+let lastSourceLabel = 'sin cargar';
+
+const tableSortState = {
+  weeklyPlayers: {
+    key: 'jugadora',
+    direction: 'asc'
+  },
+  periodicPlayers: {
+    key: 'semanasReportadas',
+    direction: 'desc'
+  },
+  periodicWeeks: {
+    key: 'week',
+    direction: 'asc'
+  }
+};
+
+let temporalMode = 'weekly';
+let blockOffset = 0;
+let customRange = null;
+
+let includedPlayers = new Set(
+  JSON.parse(localStorage.getItem('murcielagasIncludedPlayers') || '[]')
+);
+
+    const $ = (id) => document.getElementById(id);
+    const fmtDate = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+
+
+let appStarted = false;
+
+function startApp() {
+  if (appStarted) return;
+  appStarted = true;
+  init();
+
+  setTimeout(() => {
+    if (!rows.length) {
+      loadServerData();
+    }
+  }, 500);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (!rows.length) {
+      loadServerData();
+    }
+  }, 800);
+});
+
+
+ function init() {
+  const footerDate = $('footer-date');
+  if (footerDate) {
+    footerDate.textContent = fmtDate.format(new Date());
+  }
+
+  const scopeEl = $('scope');
+  if (scopeEl) {
+    scopeEl.addEventListener('change', () => {
+      const playerField = $('player-field');
+      if (playerField) {
+        playerField.classList.toggle('hidden', scopeEl.value !== 'individual');
+      }
+
+      if (rows.length) renderLocalReport();
+    });
+  }
+
+  const playerEl = $('player');
+if (playerEl) {
+  playerEl.addEventListener('change', () => {
+    if (rows.length) renderLocalReport();
+  });
+}
+
+  const btnModeWeekly = $('btn-mode-weekly');
+  if (btnModeWeekly) {
+    btnModeWeekly.addEventListener('click', () => setTemporalMode('weekly'));
+  }
+
+  const btnModePeriodic = $('btn-mode-periodic');
+  if (btnModePeriodic) {
+    btnModePeriodic.addEventListener('click', () => setTemporalMode('periodic'));
+  }
+
+  const weekSelect = $('week-select');
+  if (weekSelect) {
+    weekSelect.addEventListener('change', () => {
+      if (rows.length) renderLocalReport();
+    });
+  }
+
+  const btnWeekPrev = $('btn-week-prev');
+  if (btnWeekPrev) {
+    btnWeekPrev.addEventListener('click', () => moveWeek(-1));
+  }
+
+  const btnWeekNext = $('btn-week-next');
+  if (btnWeekNext) {
+    btnWeekNext.addEventListener('click', () => moveWeek(1));
+  }
+
+  const btnWeekCurrent = $('btn-week-current');
+  if (btnWeekCurrent) {
+    btnWeekCurrent.addEventListener('click', goCurrentWeek);
+  }
+
+  const weeksEl = $('weeks');
+  if (weeksEl) {
+    weeksEl.addEventListener('change', () => {
+      blockOffset = 0;
+      customRange = null;
+      updateBlockLabel();
+      if (rows.length) renderLocalReport();
+    });
+  }
+
+  const btnBlockPrev = $('btn-block-prev');
+  if (btnBlockPrev) {
+    btnBlockPrev.addEventListener('click', () => moveBlock(-1));
+  }
+
+  const btnBlockNext = $('btn-block-next');
+  if (btnBlockNext) {
+    btnBlockNext.addEventListener('click', () => moveBlock(1));
+  }
+
+  const btnBlockCurrent = $('btn-block-current');
+  if (btnBlockCurrent) {
+    btnBlockCurrent.addEventListener('click', goCurrentBlock);
+  }
+
+  const btnApplyCustom = $('btn-apply-custom-range');
+  if (btnApplyCustom) {
+    btnApplyCustom.addEventListener('click', applyCustomRange);
+  }
+
+  const btnClearCustom = $('btn-clear-custom-range');
+  if (btnClearCustom) {
+    btnClearCustom.addEventListener('click', clearCustomRange);
+  }
+
+  const btnLoad = $('btn-load');
+  if (btnLoad) {
+    btnLoad.addEventListener('click', loadServerData);
+  }
+
+  const btnLocal = $('btn-local');
+  if (btnLocal) {
+    btnLocal.addEventListener('click', renderLocalReport);
+  }
+
+  const btnOpenAi = $('btn-open-ai');
+  if (btnOpenAi) {
+    btnOpenAi.addEventListener('click', openAiConfigPanel);
+  }
+
+  const btnCloseAi = $('btn-close-ai');
+  if (btnCloseAi) {
+    btnCloseAi.addEventListener('click', closeAiConfigPanel);
+  }
+
+  const btnAi = $('btn-ai');
+  if (btnAi) {
+    btnAi.addEventListener('click', generateWithAI);
+  }
+
+  const btnCopy = $('btn-copy');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', copyReportText);
+  }
+
+  const btnPrint = $('btn-print');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', () => window.print());
+  }
+
+  const btnAudit = $('btn-audit');
+  if (btnAudit) {
+    btnAudit.addEventListener('click', runAudit);
+  }
+
+  const btnAuditToggle = $('btn-audit-toggle');
+  if (btnAuditToggle) {
+    btnAuditToggle.addEventListener('click', toggleAuditPanel);
+  }
+
+document.addEventListener('click', handleSortableHeaderClick);
+
+  setTemporalMode('weekly', false);
+  loadServerData();
+}
+    function normalizeKey(str) {
+      return String(str || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+    }
+
+    function parseDate(value) {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      const s = String(value).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.substring(0,10) + 'T12:00:00');
+
+      const firstPart = s.split(' ')[0];
+      const parts = firstPart.split(/[\/.-]/).map(Number);
+      if (parts.length >= 3) {
+        const [d, m, y] = parts;
+        if (y > 1900) return new Date(y, m - 1, d, 12);
+      }
+
+      const d = new Date(s);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function isoWeekKey(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return `${d.getUTCFullYear()}-S${String(weekNo).padStart(2, '0')}`;
+    }
+
+    function getTrainingPeriodStart(date) {
+  const d = new Date(date);
+  d.setHours(12, 0, 0, 0);
+
+  const day = d.getDay(); // domingo 0, lunes 1...
+  const daysSinceMonday = (day + 6) % 7;
+
+  // lunes de la semana de carga
+  d.setDate(d.getDate() - daysSinceMonday);
+
+  // lunes de la semana trabajada anterior
+  d.setDate(d.getDate() - 7);
+
+  return d;
+}
+
+function trainingPeriodKey(date) {
+  return isoWeekKey(getTrainingPeriodStart(date));
+}
+
+function trainingPeriodLabelFromDate(date) {
+  const start = getTrainingPeriodStart(date);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return formatShortDate(start) + ' al ' + formatShortDate(end);
+}
+
+function formatShortDate(date) {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit'
+  }).format(date);
+}
+
+    function toNumber(v) {
+      const n = Number(String(v ?? '').replace(',', '.').replace(/[^\d.-]/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function mapIncomingRow(r) {
+      const keys = Object.keys(r).reduce((acc, k) => {
+        acc[normalizeKey(k)] = r[k];
+        return acc;
+      }, {});
+
+      const fecha = keys.fecha || keys.date || keys.dia || keys['marca temporal'] || keys.timestamp;
+      const jugadora = keys.jugadora || keys.nombre || keys.deportista || keys.apellido || keys['nombre y apellido'] || '';
+      const total = keys.total || keys.estimulos || keys['total estimulos'] || keys['estimulos totales'] || keys['volumen total'];
+      const fisico = keys.fisico || keys['estimulos fisicos'] || keys['trabajo fisico'] || keys['volumen fisico'];
+      const tecnico = keys.tecnico || keys['tecnico tactico'] || keys['tecnico-tactico'] || keys['trabajo tecnico'] || keys['trabajo tecnico tactico'] || keys['volumen tecnico'];
+      const comentario = keys.comentario || keys.observaciones || keys.observacion || keys.novedades || keys.comentarios || '';
+
+      const d = parseDate(fecha);
+      if (!d || !jugadora) return null;
+
+      return {
+  fecha: d,
+  week: trainingPeriodKey(d),
+  weekLabel: trainingPeriodLabelFromDate(d),
+  jugadora: String(jugadora).trim(),
+  total: toNumber(total),
+  fisico: toNumber(fisico),
+  tecnico: toNumber(tecnico),
+  comentario: String(comentario || '').trim()
+};
+    }
+
+function setRows(inputRows, sourceLabel) {
+  rawRows = inputRows
+    .map(mapIncomingRow)
+    .filter(Boolean)
+    .sort((a, b) => a.fecha - b.fecha);
+
+  // Primera vez: incluye a todas por defecto.
+  if (!includedPlayers.size) {
+    const allPlayers = [...new Set(rawRows.map(r => r.jugadora))]
+      .filter(Boolean);
+
+    includedPlayers = new Set(allPlayers);
+
+    localStorage.setItem(
+      'murcielagasIncludedPlayers',
+      JSON.stringify([...includedPlayers])
+    );
+  }
+
+  rows = rawRows.filter(r => isPlayerIncluded(r.jugadora));
+
+  lastSourceLabel = sourceLabel;
+
+  populateIncludedPlayers();
+  populatePlayers();
+  populateWeeks();
+  updateStatus(sourceLabel);
+  renderLocalReport();
+}
+
+    function populatePlayers() {
+  const playerSelect = $('player');
+  if (!playerSelect) return;
+
+  const currentValue = playerSelect.value;
+  const players = [...new Set(rows.map(r => r.jugadora))]
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  playerSelect.innerHTML = '';
+
+  players.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    playerSelect.appendChild(opt);
+  });
+
+  if (players.includes(currentValue)) {
+    playerSelect.value = currentValue;
+  }
+}
+
+function isPlayerIncluded(name) {
+  return includedPlayers.has(String(name || '').trim());
+}
+
+function populateIncludedPlayers() {
+  const container = $('included-players-list');
+  if (!container) return;
+
+  const allPlayers = [...new Set(rawRows.map(r => r.jugadora))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  if (!allPlayers.length) {
+    container.innerHTML = '<div class="hint">Todavía no hay jugadoras cargadas.</div>';
+    return;
+  }
+
+  container.innerHTML = allPlayers.map(name => {
+    const checked = includedPlayers.has(name) ? 'checked' : '';
+
+    return `
+      <label class="check-item">
+        <input type="checkbox" value="${escapeHtml(name)}" ${checked}>
+        <span>${escapeHtml(name)}</span>
+      </label>
+    `;
+  }).join('');
+
+  container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.addEventListener('change', () => {
+      const name = input.value;
+
+      if (input.checked) {
+        includedPlayers.add(name);
+      } else {
+        includedPlayers.delete(name);
+      }
+
+      localStorage.setItem(
+        'murcielagasIncludedPlayers',
+        JSON.stringify([...includedPlayers])
+      );
+
+      rows = rawRows.filter(r => isPlayerIncluded(r.jugadora));
+
+      populatePlayers();
+      populateWeeks();
+      updateStatus(lastSourceLabel);
+      renderLocalReport();
+    });
+  });
+}
+
+function populateWeeks() {
+  const select = $('week-select');
+  if (!select || !rows.length) return;
+
+  const currentValue = select.value || 'latest';
+  const allWeeks = getAllWeeks();
+
+  select.innerHTML = '';
+
+  const latestOpt = document.createElement('option');
+  latestOpt.value = 'latest';
+  latestOpt.textContent = 'Último período informado';
+  select.appendChild(latestOpt);
+
+  allWeeks.slice().reverse().forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = formatWeekLabel(w);
+    select.appendChild(opt);
+  });
+
+  const availableValues = [...select.options].map(o => o.value);
+
+  if (availableValues.includes(currentValue)) {
+    select.value = currentValue;
+  } else {
+    select.value = 'latest';
+  }
+
+  updateBlockLabel();
+}
+
+function formatWeekLabel(weekKey) {
+  if (weekKey === 'latest') return 'Último período informado';
+
+  const match = rows.find(r => r.week === weekKey && r.weekLabel);
+  if (match) return match.weekLabel;
+
+  return String(weekKey || '').replace(/^\d+-S/, 'Semana ');
+}
+
+function setTemporalMode(mode, shouldRender = true) {
+  temporalMode = mode;
+
+  const weeklyTools = $('weekly-tools');
+  const periodicTools = $('periodic-tools');
+  const btnWeekly = $('btn-mode-weekly');
+  const btnPeriodic = $('btn-mode-periodic');
+
+  if (weeklyTools) weeklyTools.classList.toggle('hidden', mode !== 'weekly');
+  if (periodicTools) periodicTools.classList.toggle('hidden', mode !== 'periodic');
+
+  if (btnWeekly) btnWeekly.classList.toggle('active', mode === 'weekly');
+  if (btnPeriodic) btnPeriodic.classList.toggle('active', mode === 'periodic');
+
+  if (shouldRender && rows.length) {
+    renderLocalReport();
+  }
+}
+
+function getAllWeeks() {
+  return [...new Set(rows.map(r => r.week))]
+    .filter(Boolean)
+    .sort();
+}
+
+function getSelectedWeek() {
+  const allWeeks = getAllWeeks();
+  const select = $('week-select');
+
+  if (!allWeeks.length) return '';
+
+  if (!select || select.value === 'latest') {
+    return allWeeks[allWeeks.length - 1];
+  }
+
+  return select.value;
+}
+
+function moveWeek(direction) {
+  const allWeeks = getAllWeeks();
+  const select = $('week-select');
+  if (!select || !allWeeks.length) return;
+
+  const current = getSelectedWeek();
+  const index = allWeeks.indexOf(current);
+
+  if (index === -1) return;
+
+  const nextIndex = Math.max(0, Math.min(allWeeks.length - 1, index + direction));
+  select.value = allWeeks[nextIndex];
+
+  renderLocalReport();
+}
+
+function goCurrentWeek() {
+  const select = $('week-select');
+  if (!select) return;
+
+  select.value = 'latest';
+  renderLocalReport();
+}
+
+function getPeriodicWeeks() {
+  const allWeeks = getAllWeeks();
+
+  if (customRange) {
+    return rows
+      .filter(r => r.fecha >= customRange.from && r.fecha <= customRange.to)
+      .map(r => r.week)
+      .filter(Boolean)
+      .filter((w, idx, arr) => arr.indexOf(w) === idx)
+      .sort();
+  }
+
+  const size = $('weeks') ? Number($('weeks').value) : 6;
+  const total = allWeeks.length;
+
+  const end = total - (blockOffset * size);
+  const start = Math.max(0, end - size);
+
+  return allWeeks.slice(start, end);
+}
+
+function moveBlock(direction) {
+  customRange = null;
+
+  const size = $('weeks') ? Number($('weeks').value) : 6;
+  const allWeeks = getAllWeeks();
+  const maxOffset = Math.max(0, Math.ceil(allWeeks.length / size) - 1);
+
+  blockOffset = Math.max(0, Math.min(maxOffset, blockOffset - direction));
+
+  updateBlockLabel();
+  renderLocalReport();
+}
+
+function goCurrentBlock() {
+  customRange = null;
+  blockOffset = 0;
+  updateBlockLabel();
+  renderLocalReport();
+}
+
+function applyCustomRange() {
+  const fromEl = $('custom-from');
+  const toEl = $('custom-to');
+
+  if (!fromEl || !toEl || !fromEl.value || !toEl.value) {
+    return;
+  }
+
+  const from = new Date(fromEl.value + 'T00:00:00');
+  const to = new Date(toEl.value + 'T23:59:59');
+
+  customRange = { from, to };
+  updateBlockLabel();
+  renderLocalReport();
+}
+
+function clearCustomRange() {
+  customRange = null;
+
+  const fromEl = $('custom-from');
+  const toEl = $('custom-to');
+
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+
+  updateBlockLabel();
+  renderLocalReport();
+}
+
+function updateBlockLabel() {
+  const label = $('block-label');
+  if (!label) return;
+
+  if (customRange) {
+    label.textContent = 'Rango personalizado: ' +
+      formatShortDate(customRange.from) + ' al ' + formatShortDate(customRange.to);
+    return;
+  }
+
+  const weeks = getPeriodicWeeks();
+
+  if (!weeks.length) {
+    label.textContent = 'Sin datos para este bloque';
+    return;
+  }
+
+  label.textContent = 'Bloque: ' +
+    formatWeekLabel(weeks[0]) + ' al ' + formatWeekLabel(weeks[weeks.length - 1]);
+}
+    function updateStatus(sourceLabel) {
+      const players = new Set(rows.map(r => r.jugadora));
+      $('status-data').textContent = sourceLabel || 'cargados';
+      $('status-players').textContent = players.size;
+      $('status-rows').textContent = rows.length;
+      $('status-date').textContent = rows.length ? fmtDate.format(rows[rows.length - 1].fecha) : '—';
+    }
+
+    async function callReportApi(action, payload = {}) {
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({
+      action,
+      ...payload
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Error HTTP ' + response.status);
+  }
+
+  return response.json();
+}
+
+ async function loadServerData() {
+  const statusData = $('status-data');
+  const output = $('output');
+  const btnLoad = $('btn-load');
+
+  if (statusData) statusData.textContent = 'cargando...';
+  if (btnLoad) btnLoad.disabled = true;
+  if (output) output.innerHTML = '<div class="notice">Cargando planilla...</div>';
+
+  try {
+    const data = await callReportApi('getClientData');
+
+    if (btnLoad) btnLoad.disabled = false;
+
+    if (!data || !data.ok) {
+      const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
+      rows = [];
+      updateStatus('error');
+      output.innerHTML =
+        `<div class="notice warn"><strong>No se pudo cargar la planilla.</strong><br>${escapeHtml(error)}</div>`;
+      return;
+    }
+
+    const parsed = data.rows || [];
+
+    if (!parsed.length) {
+      rows = [];
+      updateStatus('sin datos');
+      output.innerHTML =
+        '<div class="notice warn"><strong>La planilla no devolvió registros.</strong></div>';
+      return;
+    }
+
+    setRows(parsed, 'planilla');
+
+  } catch (error) {
+    if (btnLoad) btnLoad.disabled = false;
+
+    console.error(error);
+    rows = [];
+    updateStatus('error');
+
+    output.innerHTML =
+      `<div class="notice warn"><strong>Error de comunicación con la API.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
+  }
+}
+  function getSelectedSummary() {
+  if (!rows.length) return null;
+
+  const scopeEl = $('scope');
+  const playerEl = $('player');
+
+  const allWeeks = getAllWeeks();
+
+  const selectedWeek = getSelectedWeek();
+
+  const selectedWeeks = temporalMode === 'weekly'
+    ? [selectedWeek]
+    : getPeriodicWeeks();
+
+  const data = rows.filter(r => selectedWeeks.includes(r.week));
+  const selectedWeekData = rows.filter(r => r.week === selectedWeek);
+
+  const scope = scopeEl ? scopeEl.value : 'plantel';
+  const player = playerEl ? playerEl.value : '';
+
+  const filtered = scope === 'individual'
+    ? data.filter(r => r.jugadora === player)
+    : data;
+
+  const grouped = groupByPlayerWeek(filtered);
+  const plantelGrouped = groupByPlayerWeek(data);
+
+
+
+  return buildSummary({
+    scope,
+    player,
+    weeks: selectedWeeks,
+    selectedWeek,
+    selectedWeekData,
+    data: filtered,
+    grouped,
+    plantelGrouped,
+    allDataPeriod: data,
+    allRows: rows,
+    requested: selectedWeeks.length,
+    temporalMode
+  });
+}
+
+    function groupByPlayerWeek(input) {
+      const out = {};
+      input.forEach(r => {
+        out[r.jugadora] ||= {};
+        out[r.jugadora][r.week] ||= { total: 0, fisico: 0, tecnico: 0, comentarios: [], fechas: [] };
+        out[r.jugadora][r.week].total += r.total;
+        out[r.jugadora][r.week].fisico += r.fisico;
+        out[r.jugadora][r.week].tecnico += r.tecnico;
+        if (r.comentario) out[r.jugadora][r.week].comentarios.push(r.comentario);
+        out[r.jugadora][r.week].fechas.push(r.fecha);
+      });
+      return out;
+    }
+
+    function avg(arr) {
+      const clean = arr.filter(v => Number.isFinite(v));
+      return clean.length ? Math.round((clean.reduce((a,b) => a + b, 0) / clean.length) * 10) / 10 : 0;
+    }
+
+    function detectAlerts(comments) {
+      return comments.filter(c => /lesi[oó]n|dolor|molestia|rodilla|isquio|tibia|tendinitis|psoas|espalda|muñeca|kinesi|reposo|carpeta|trauma|resonancia|menisco|otitis|sordera|pubalgia/i.test(c));
+    }
+
+ function buildSummary(ctx) {
+ const {
+  scope,
+  player,
+  weeks,
+  selectedWeek,
+  selectedWeekData,
+  grouped,
+  plantelGrouped,
+  allDataPeriod,
+  allRows,
+  requested,
+  temporalMode
+} = ctx;
+
+  const allActivePlayers = [...new Set((allRows || []).map(r => r.jugadora))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  const plantelPlayers = Object.keys(plantelGrouped);
+  const lastWeek = weeks[weeks.length - 1];
+
+  const playerStats = plantelPlayers.map(j => {
+    const vals = weeks
+      .map(w => plantelGrouped[j]?.[w]?.total)
+      .filter(v => v !== undefined);
+
+    const fis = weeks
+      .map(w => plantelGrouped[j]?.[w]?.fisico)
+      .filter(v => v !== undefined);
+
+    const tec = weeks
+      .map(w => plantelGrouped[j]?.[w]?.tecnico)
+      .filter(v => v !== undefined);
+
+    const comments = weeks.flatMap(w =>
+      plantelGrouped[j]?.[w]?.comentarios || []
+    );
+
+    return {
+      jugadora: j,
+      prom: avg(vals),
+      promFisico: avg(fis),
+      promTecnico: avg(tec),
+      semanas: vals.length,
+      alertas: detectAlerts(comments)
+    };
+  })
+  .filter(p => p.semanas > 0)
+  .sort((a, b) => b.prom - a.prom);
+
+  const plantelAvg = avg(playerStats.map(p => p.prom));
+  const plantelFis = avg(playerStats.map(p => p.promFisico));
+  const plantelTec = avg(playerStats.map(p => p.promTecnico));
+
+  const allComments = allDataPeriod.map(r => r.comentario).filter(Boolean);
+  const allAlerts = detectAlerts(allComments);
+
+  const periodLabel = requested === 999
+    ? 'todo el período'
+    : `${weeks.length} semana${weeks.length === 1 ? '' : 's'}`;
+
+  const weekSummary = weeks.map(w => {
+    const weekRows = allDataPeriod.filter(r => r.week === w);
+    const names = [...new Set(weekRows.map(r => r.jugadora))];
+
+    const totals = names
+      .map(j => plantelGrouped[j]?.[w]?.total ?? 0)
+      .filter(v => v > 0);
+
+    const fis = names
+      .map(j => plantelGrouped[j]?.[w]?.fisico ?? 0)
+      .filter(v => v > 0);
+
+    const tec = names
+      .map(j => plantelGrouped[j]?.[w]?.tecnico ?? 0)
+      .filter(v => v > 0);
+
+    const comments = weekRows.map(r => r.comentario).filter(Boolean);
+
+    return {
+      week: w,
+      reportaron: names.length,
+      promTotal: avg(totals),
+      promFisico: avg(fis),
+      promTecnico: avg(tec),
+      alertas: detectAlerts(comments).length
+    };
+  });
+
+  const currentWeekSummary = weekSummary[weekSummary.length - 1] || {
+    week: '',
+    reportaron: 0,
+    promTotal: 0,
+    promFisico: 0,
+    promTecnico: 0,
+    alertas: 0
+  };
+
+  if (scope === 'individual') {
+    const weekly = weeks.map(w => ({
+      week: w,
+      ...(grouped[player]?.[w] || {
+        total: 0,
+        fisico: 0,
+        tecnico: 0,
+        comentarios: []
+      })
+    }));
+
+    const reported = weekly.filter(w =>
+      w.total || w.fisico || w.tecnico || w.comentarios.length
+    );
+
+    const totals = reported.map(w => w.total);
+    const fis = reported.map(w => w.fisico);
+    const tec = reported.map(w => w.tecnico);
+    const comments = reported.flatMap(w => w.comentarios);
+
+    const playerAvg = avg(totals);
+    const rank = playerStats.findIndex(p => p.jugadora === player) + 1;
+
+    return {
+      scope,
+      player,
+      periodWeeks: weeks.length,
+      periodLabel,
+      weeks,
+      weekly,
+      reportedWeeks: reported.length,
+      avgTotal: playerAvg,
+      avgFisico: avg(fis),
+      avgTecnico: avg(tec),
+      maxTotal: totals.length ? Math.max(...totals) : 0,
+      minTotal: totals.length ? Math.min(...totals) : 0,
+      plantelAvg,
+      plantelFis,
+      plantelTec,
+      rank,
+      totalPlayers: playerStats.length,
+      comments,
+      alerts: detectAlerts(comments),
+      focus: $('focus').value,
+      audience: $('audience').value,
+      notes: getManualContext(),
+      mode: reportMode,
+      source: lastSourceLabel
+    };
+  }
+
+ const selectedWeekRows = selectedWeekData && selectedWeekData.length
+  ? selectedWeekData
+  : [];
+  const reportedNames = [...new Set(selectedWeekRows.map(r => r.jugadora))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  const notReportedNames = allActivePlayers
+    .filter(name => !reportedNames.includes(name));
+
+  const selectedWeekByPlayer = allActivePlayers.map(name => {
+    const playerRows = selectedWeekRows.filter(r => r.jugadora === name);
+
+    if (!playerRows.length) {
+      return {
+        jugadora: name,
+        estado: 'No cargó',
+        total: null,
+        fisico: null,
+        tecnico: null,
+        comentario: ''
+      };
+    }
+
+    const total = playerRows.reduce((acc, r) => acc + Number(r.total || 0), 0);
+    const fisico = playerRows.reduce((acc, r) => acc + Number(r.fisico || 0), 0);
+    const tecnico = playerRows.reduce((acc, r) => acc + Number(r.tecnico || 0), 0);
+    const comentario = playerRows
+      .map(r => r.comentario)
+      .filter(Boolean)
+      .join(' | ');
+
+    return {
+      jugadora: name,
+      estado: 'Cargó',
+      total,
+      fisico,
+      tecnico,
+      comentario
+    };
+  });
+
+  const selectedReportedRows = selectedWeekByPlayer
+    .filter(r => r.estado === 'Cargó');
+
+  const selectedWeekAvg = {
+    total: avg(selectedReportedRows.map(r => r.total)),
+    fisico: avg(selectedReportedRows.map(r => r.fisico)),
+    tecnico: avg(selectedReportedRows.map(r => r.tecnico))
+  };
+
+  const selectedWeekComments = selectedReportedRows
+    .filter(r => r.comentario)
+    .map(r => ({
+      jugadora: r.jugadora,
+      comentario: r.comentario
+    }));
+
+  const selectedWeekAlerts = selectedWeekComments
+    .filter(r => detectAlerts([r.comentario]).length)
+    .map(r => ({
+      jugadora: r.jugadora,
+      comentario: r.comentario
+    }));
+
+    const periodicByPlayer = allActivePlayers.map(name => {
+  const weeksReported = weeks.filter(w => plantelGrouped[name]?.[w]);
+
+  const weeklyValues = weeksReported.map(w => plantelGrouped[name][w]);
+
+  const comments = weeksReported.flatMap(w =>
+    plantelGrouped[name]?.[w]?.comentarios || []
+  );
+
+  return {
+    jugadora: name,
+    semanasReportadas: weeksReported.length,
+    semanasTotales: weeks.length,
+    promedioTotal: avg(weeklyValues.map(v => v.total)),
+    promedioFisico: avg(weeklyValues.map(v => v.fisico)),
+    promedioTecnico: avg(weeklyValues.map(v => v.tecnico)),
+    totalAcumulado: weeklyValues.reduce((acc, v) => acc + Number(v.total || 0), 0),
+    alertas: detectAlerts(comments),
+    comentarios: comments
+  };
+});
+
+const periodicActivePlayers = periodicByPlayer
+  .filter(p => p.semanasReportadas > 0);
+
+const periodicNoDataPlayers = periodicByPlayer
+  .filter(p => p.semanasReportadas === 0);
+
+const periodicAvg = {
+  total: avg(weekSummary.map(w => w.promTotal)),
+  fisico: avg(weekSummary.map(w => w.promFisico)),
+  tecnico: avg(weekSummary.map(w => w.promTecnico)),
+  reportaron: avg(weekSummary.map(w => w.reportaron))
+};
+
+const periodicAlerts = periodicByPlayer
+  .filter(p => p.alertas && p.alertas.length)
+  .map(p => ({
+    jugadora: p.jugadora,
+    alertas: p.alertas
+  }));
+
+return {
+  scope,
+  temporalMode,
+  periodWeeks: weeks.length,
+  periodLabel,
+  weeks,
+  selectedWeek,
+  selectedWeekLabel: formatWeekLabel(selectedWeek),
+  selectedWeekByPlayer,
+  reportedNames,
+  notReportedNames,
+  selectedWeekAvg,
+  selectedWeekComments,
+  selectedWeekAlerts,
+
+  periodicByPlayer,
+  periodicActivePlayers,
+  periodicNoDataPlayers,
+  periodicAvg,
+  periodicAlerts,
+
+  weekSummary,
+  currentWeekSummary,
+  playerStats,
+  plantelAvg,
+  plantelFis,
+  plantelTec,
+  totalPlayers: playerStats.length,
+  reportedLastWeek: playerStats.filter(p =>
+    plantelGrouped[p.jugadora]?.[lastWeek]
+  ).length,
+  topLoad: playerStats.slice(0, 5),
+  lowLoad: [...playerStats].sort((a, b) => a.prom - b.prom).slice(0, 5),
+  alerts: allAlerts,
+  playersWithAlerts: playerStats.filter(p => p.alertas.length),
+  focus: $('focus').value,
+  audience: $('audience').value,
+  notes: getManualContext(),
+  mode: reportMode,
+  source: lastSourceLabel
+};
+
+}
+
+    function renderLocalReport() {
+      const s = getSelectedSummary();
+      if (!s) {
+        $('output').innerHTML = '<div class="notice warn">Todavía no hay datos cargados.</div>';
+        return;
+      }
+      $('output').innerHTML = s.scope === 'individual' ? renderIndividual(s) : renderPlantel(s);
+    }
+
+    function toneLabel(audience = $('audience')?.value) {
+      return audience === 'jugadora' ? 'reporte para jugadora' : 'reporte para cuerpo técnico';
+    }
+
+    function audienceInstructions(audience) {
+      const map = {
+        ct_completo: 'Destinatario: cuerpo técnico. Priorizá esta semana, evolución por semanas, alertas, disponibilidad, continuidad, volumen semanal reportado, distribución físico/técnico-táctica e implicancias para la planificación. El lenguaje debe ser profesional, claro y útil para decidir.',
+        jugadora: 'Destinatario: jugadora. Redactá con claridad y respeto. Explicá la evolución de forma comprensible, sin tono de reto ni rankings duros. Convertí el análisis en orientaciones concretas para sostener o mejorar su proceso.'
+      };
+      return map[audience] || map.ct_completo;
+    }
+
+    function metric(label, value, sub = '', cls = '') {
+      return `<div class="metric ${cls}"><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${sub ? `<div class="metric-sub">${sub}</div>` : ''}</div>`;
+    }
+
+function handleSortableHeaderClick(event) {
+  const header = event.target.closest('.sortable-th');
+  if (!header) return;
+
+  const table = header.dataset.table;
+  const key = header.dataset.key;
+
+  if (!table || !key) return;
+
+  const current = tableSortState[table] || {
+    key,
+    direction: 'asc'
+  };
+
+  if (current.key === key) {
+    current.direction = current.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    current.key = key;
+    current.direction = 'desc';
+  }
+
+  tableSortState[table] = current;
+
+  if (rows.length) {
+    renderLocalReport();
+  }
+}
+
+function sortableTh(table, key, label) {
+  return `
+    <th class="sortable-th" data-table="${table}" data-key="${key}" title="Ordenar por ${escapeHtml(label)}">
+      <span class="sort-label">
+        ${escapeHtml(label)}
+        <span class="sort-icon">${getSortIcon(table, key)}</span>
+      </span>
+    </th>
+  `;
+}
+
+function getSortIcon(table, key) {
+  const state = tableSortState[table];
+
+  if (!state || state.key !== key) {
+    return '↕';
+  }
+
+  return state.direction === 'asc' ? '↑' : '↓';
+}
+
+function sortTableRows(items, table) {
+  const state = tableSortState[table];
+
+  if (!state || !state.key) {
+    return items.slice();
+  }
+
+  const key = state.key;
+  const direction = state.direction === 'asc' ? 1 : -1;
+
+  return items.slice().sort((a, b) => {
+    const va = a[key];
+    const vb = b[key];
+
+    if (va === null || va === undefined || va === '—') return 1;
+    if (vb === null || vb === undefined || vb === '—') return -1;
+
+    if (typeof va === 'number' && typeof vb === 'number') {
+      return (va - vb) * direction;
+    }
+
+    const na = Number(va);
+    const nb = Number(vb);
+
+    if (Number.isFinite(na) && Number.isFinite(nb)) {
+      return (na - nb) * direction;
+    }
+
+    return String(va).localeCompare(String(vb), 'es') * direction;
+  });
+}
+
+    function renderIndividual(s) {
+      const pctFis = s.avgTotal ? Math.round(s.avgFisico / s.avgTotal * 100) : 0;
+      const pctTec = s.avgTotal ? Math.round(s.avgTecnico / s.avgTotal * 100) : 0;
+      const diff = Math.round((s.avgTotal - s.plantelAvg) * 10) / 10;
+      const serieMax = Math.max(...s.weekly.map(w => w.total), 1);
+      const bars = s.weekly.map(w => `
+        <div class="bar-row">
+          <div class="bar-key">${w.week.replace(/^\d+-/, '')}</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(w.total / serieMax * 100)}%"></div></div>
+          <div class="bar-num">T:${w.total} · F:${w.fisico} · TT:${w.tecnico}</div>
+        </div>`).join('');
+
+      const alerts = s.alerts.length
+        ? `<ul>${s.alerts.slice(0, 8).map(a => `<li class="alert">${escapeHtml(a)}</li>`).join('')}</ul>`
+        : '<p>No aparecen alertas clínicas o molestias registradas en este período.</p>';
+
+      return `
+        <h2 class="report-title">Reporte individual · ${escapeHtml(s.player)}</h2>
+        <div class="report-meta">${s.periodLabel} · ${toneLabel(s.audience)} · generado ${fmtDate.format(new Date())}</div>
+        <div class="metrics">
+          ${metric('Volumen semanal', s.avgTotal, 'estímulos promedio', s.avgTotal >= s.plantelAvg ? 'good' : 'warn')}
+          ${metric('Promedio plantel', s.plantelAvg, 'comparación del período')}
+          ${metric('Trabajo físico', pctFis + '%', s.avgFisico + ' estím./sem')}
+          ${metric('Trabajo técnico', pctTec + '%', s.avgTecnico + ' estím./sem')}
+        </div>
+        <div class="section">
+          <h2>Lectura general</h2>
+          <p>En el período analizado, ${escapeHtml(s.player)} promedió <strong>${s.avgTotal} estímulos semanales</strong>. En relación con el plantel, se ubica ${s.rank > 0 ? `en el puesto ${s.rank} de ${s.totalPlayers}` : 'sin ranking suficiente'}, con una diferencia de <strong>${diff >= 0 ? '+' + diff : diff}</strong> estímulos respecto de la media del equipo.</p>
+          <p>Este dato debe leerse como <strong>volumen reportado</strong>, no como carga fisiológica completa.</p>
+        </div>
+        <div class="section">
+          <h2>Distribución del trabajo</h2>
+          <p>La distribución del período muestra ${pctFis}% de trabajo físico y ${pctTec}% de trabajo técnico-táctico.</p>
+        </div>
+        <div class="section">
+          <h2>Evolución semanal</h2>
+          ${bars}
+        </div>
+        <div class="section">
+          <h2>Alertas y disponibilidad</h2>
+          ${alerts}
+        </div>
+      `;
+    }
+
+function renderPlantel(s) {
+  if (s.temporalMode === 'periodic') {
+    return renderPeriodicPlantel(s);
+  }
+
+  // acá sigue todo el código actual de Control semanal
+  const totalPlayers = s.selectedWeekByPlayer.length;
+  const reported = s.reportedNames.length;
+  const notReported = s.notReportedNames.length;
+
+const tableRows = sortTableRows(s.selectedWeekByPlayer, 'weeklyPlayers').map(r => {    const cls = r.estado === 'Cargó' ? 'good' : 'warn';
+    const total = r.total === null ? '—' : r.total;
+    const fisico = r.fisico === null ? '—' : r.fisico;
+    const tecnico = r.tecnico === null ? '—' : r.tecnico;
+    const comment = r.comentario ? escapeHtml(shortText(r.comentario, 90)) : '—';
+
+    return `
+      <tr>
+        <td>${escapeHtml(r.jugadora)}</td>
+        <td><span class="status-pill ${cls}">${r.estado}</span></td>
+        <td>${total}</td>
+        <td>${fisico}</td>
+        <td>${tecnico}</td>
+        <td>${comment}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const notReportedBlock = s.notReportedNames.length
+    ? `<p>${s.notReportedNames.map(escapeHtml).join(' · ')}</p>`
+    : '<p>Todas las jugadoras registradas cargaron esta semana.</p>';
+
+  const alertsBlock = s.selectedWeekAlerts.length
+    ? `<ul>${s.selectedWeekAlerts.map(a => `
+        <li class="alert"><strong>${escapeHtml(a.jugadora)}:</strong> ${escapeHtml(a.comentario)}</li>
+      `).join('')}</ul>`
+    : '<p>No aparecen observaciones de lesiones, molestias, faltas o disponibilidad en la semana seleccionada.</p>';
+
+  const commentsBlock = s.selectedWeekComments.length
+    ? `<ul>${s.selectedWeekComments.map(a => `
+        <li><strong>${escapeHtml(a.jugadora)}:</strong> ${escapeHtml(a.comentario)}</li>
+      `).join('')}</ul>`
+    : '<p>No hay comentarios cargados en la semana seleccionada.</p>';
+
+  const weekRows = s.weekSummary.map(w => `
+    <tr>
+      <td>${escapeHtml(formatWeekLabel(w.week))}</td>
+      <td>${w.reportaron}/${totalPlayers}</td>
+      <td>${w.promTotal}</td>
+      <td>${w.promFisico}</td>
+      <td>${w.promTecnico}</td>
+      <td>${w.alertas}</td>
+    </tr>
+  `).join('');
+
+  return `
+<h2 class="report-title">${s.temporalMode === 'periodic' ? 'Análisis periódico del cuerpo técnico' : 'Control semanal del cuerpo técnico'}</h2> 
+<div class="report-meta">
+  ${s.temporalMode === 'periodic'
+    ? `Período analizado: ${s.periodLabel}`
+    : `Período trabajado: ${escapeHtml(s.selectedWeekLabel)}`}
+  · generado ${fmtDate.format(new Date())}
+</div>
+
+    <div class="metrics">
+      ${metric('Cargaron', `${reported}/${totalPlayers}`, 'jugadoras')}
+      ${metric('No cargaron', notReported, 'pendientes de carga', notReported ? 'warn' : 'good')}
+      ${metric('Prom. total', s.selectedWeekAvg.total, 'estímulos semanales')}
+      ${metric('Prom. físico / técnico', `${s.selectedWeekAvg.fisico} / ${s.selectedWeekAvg.tecnico}`, 'por tipo')}
+    </div>
+
+    <div class="section">
+      <h2>Quiénes no cargaron esta semana</h2>
+      ${notReportedBlock}
+    </div>
+
+    <div class="section">
+      <h2>Carga semanal por jugadora</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              ${sortableTh('weeklyPlayers', 'jugadora', 'Jugadora')}
+${sortableTh('weeklyPlayers', 'estado', 'Estado')}
+${sortableTh('weeklyPlayers', 'total', 'Total')}
+${sortableTh('weeklyPlayers', 'fisico', 'Físico')}
+${sortableTh('weeklyPlayers', 'tecnico', 'Técnico-táctico')}
+<th>Comentario</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Promedio del equipo en la semana</h2>
+      <p>Sobre las jugadoras que cargaron, el promedio semanal fue de <strong>${s.selectedWeekAvg.total}</strong> estímulos totales, con <strong>${s.selectedWeekAvg.fisico}</strong> físicos y <strong>${s.selectedWeekAvg.tecnico}</strong> técnico-tácticos.</p>
+    </div>
+
+    <div class="section">
+      <h2>Observaciones de lesiones, faltas o problemas</h2>
+      ${alertsBlock}
+    </div>
+
+    <div class="section">
+      <h2>Comentarios cargados</h2>
+      ${commentsBlock}
+    </div>
+
+    <div class="section">
+      <h2>Pesos / referencias de fuerza</h2>
+      <p>Sección pendiente de diseño. Por ahora, los pesos y referencias máximas se trabajan por fuera del sistema hasta definir una carga más intuitiva y específica.</p>
+    </div>
+
+    <div class="section">
+      <h2>Navegación por bloque de semanas</h2>
+      <p>El bloque seleccionado permite revisar la evolución general del período y comparar semanas cercanas.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Semana</th>
+              <th>Reportaron</th>
+              <th>Total prom.</th>
+              <th>Físico</th>
+              <th>Técnico</th>
+              <th>Alertas</th>
+            </tr>
+          </thead>
+          <tbody>${weekRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderPeriodicPlantel(s) {
+  const totalPlayers = s.periodicByPlayer.length;
+  const activePlayers = s.periodicActivePlayers.length;
+  const noDataPlayers = s.periodicNoDataPlayers.length;
+
+ const periodicRows = s.periodicByPlayer.map(p => {
+  const continuidad = p.semanasTotales
+    ? Math.round((p.semanasReportadas / p.semanasTotales) * 100)
+    : 0;
+
+  return {
+    ...p,
+    continuidad,
+    alertasCount: p.alertas.length
+  };
+});
+
+const continuityRows = sortTableRows(periodicRows, 'periodicPlayers')
+  .map(p => {
+     const pct = p.continuidad;
+
+      const estado = p.semanasReportadas === 0
+        ? 'Sin cargas'
+        : `${p.semanasReportadas}/${p.semanasTotales}`;
+
+      const cls = p.semanasReportadas === 0 ? 'warn' : 'good';
+
+      return `
+        <tr>
+          <td>${escapeHtml(p.jugadora)}</td>
+          <td><span class="status-pill ${cls}">${estado}</span></td>
+          <td>${pct}%</td>
+          <td>${p.promedioTotal}</td>
+          <td>${p.promedioFisico}</td>
+          <td>${p.promedioTecnico}</td>
+          <td>${p.alertas.length}</td>
+        </tr>
+      `;
+    }).join('');
+
+const weekRows = sortTableRows(s.weekSummary, 'periodicWeeks').map(w => `    <tr>
+      <td>${escapeHtml(formatWeekLabel(w.week))}</td>
+      <td>${w.reportaron}/${totalPlayers}</td>
+      <td>${w.promTotal}</td>
+      <td>${w.promFisico}</td>
+      <td>${w.promTecnico}</td>
+      <td>${w.alertas}</td>
+    </tr>
+  `).join('');
+
+  const noDataBlock = noDataPlayers
+    ? `<p>${s.periodicNoDataPlayers.map(p => escapeHtml(p.jugadora)).join(' · ')}</p>`
+    : '<p>Todas las jugadoras registraron al menos una carga en el período.</p>';
+
+  const alertsBlock = s.periodicAlerts.length
+    ? `<ul>${s.periodicAlerts.map(p => `
+        <li class="alert"><strong>${escapeHtml(p.jugadora)}:</strong> ${escapeHtml(p.alertas[0])}</li>
+      `).join('')}</ul>`
+    : '<p>No aparecen alertas relevantes acumuladas en el período analizado.</p>';
+
+  const firstWeek = s.weeks[0] ? formatWeekLabel(s.weeks[0]) : '—';
+  const lastWeek = s.weeks[s.weeks.length - 1] ? formatWeekLabel(s.weeks[s.weeks.length - 1]) : '—';
+
+  return `
+    <h2 class="report-title">Análisis periódico del cuerpo técnico</h2>
+    <div class="report-meta">Período analizado: ${escapeHtml(firstWeek)} al ${escapeHtml(lastWeek)} · ${s.periodWeeks} semanas · generado ${fmtDate.format(new Date())}</div>
+
+    <div class="metrics">
+      ${metric('Semanas', s.periodWeeks, 'período analizado')}
+      ${metric('Jugadoras con carga', `${activePlayers}/${totalPlayers}`, 'al menos una semana')}
+      ${metric('Prom. total', s.periodicAvg.total, 'promedio semanal del bloque')}
+      ${metric('Prom. físico / técnico', `${s.periodicAvg.fisico} / ${s.periodicAvg.tecnico}`, 'por tipo')}
+    </div>
+
+    <div class="section">
+      <h2>Continuidad del período</h2>
+      <p>En este bloque, el promedio de jugadoras que reportaron por semana fue de <strong>${s.periodicAvg.reportaron}</strong> sobre ${totalPlayers}.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              ${sortableTh('periodicPlayers', 'jugadora', 'Jugadora')}
+${sortableTh('periodicPlayers', 'semanasReportadas', 'Semanas cargadas')}
+${sortableTh('periodicPlayers', 'continuidad', 'Continuidad')}
+${sortableTh('periodicPlayers', 'promedioTotal', 'Prom. total')}
+${sortableTh('periodicPlayers', 'promedioFisico', 'Físico')}
+${sortableTh('periodicPlayers', 'promedioTecnico', 'Técnico')}
+${sortableTh('periodicPlayers', 'alertasCount', 'Alertas')}
+            </tr>
+          </thead>
+          <tbody>${continuityRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Jugadoras sin carga en el período</h2>
+      ${noDataBlock}
+    </div>
+
+    <div class="section">
+      <h2>Evolución por semanas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+             ${sortableTh('periodicWeeks', 'week', 'Semana')}
+${sortableTh('periodicWeeks', 'reportaron', 'Reportaron')}
+${sortableTh('periodicWeeks', 'promTotal', 'Total prom.')}
+${sortableTh('periodicWeeks', 'promFisico', 'Físico')}
+${sortableTh('periodicWeeks', 'promTecnico', 'Técnico')}
+${sortableTh('periodicWeeks', 'alertas', 'Alertas')}
+            </tr>
+          </thead>
+          <tbody>${weekRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Alertas acumuladas</h2>
+      ${alertsBlock}
+    </div>
+
+    <div class="section">
+      <h2>Lectura del período</h2>
+      <ul>
+        <li>Este modo no evalúa quién cargó “esta semana”, sino la continuidad y evolución dentro del bloque seleccionado.</li>
+        <li>Para revisar una semana puntual, usá el modo Control semanal.</li>
+        <li>Los promedios corresponden al período analizado, no a la última semana cargada.</li>
+      </ul>
+    </div>
+  `;
+}
+
+function buildPrompt() {
+  const s = getSelectedSummary();
+  if (!s) return 'No hay datos cargados.';
+
+  const audience = $('audience') ? $('audience').value : 'ct_completo';
+  const destinatario = audience === 'jugadora' ? 'jugadora' : 'cuerpo técnico';
+
+  const estilo = audience === 'jugadora'
+    ? 'claro, respetuoso, humano y comprensible, sin infantilizar ni usar tono de reto'
+    : 'profesional, claro, operativo, útil para tomar decisiones del cuerpo técnico';
+
+  return `Actuá como asistente de análisis deportivo especializado en fútbol para personas ciegas y seguimiento de entrenamiento.
+
+Necesito redactar un informe para: ${destinatario}.
+
+Estilo requerido: ${estilo}.
+
+${audienceInstructions(audience)}
+
+Criterios importantes:
+- No inventes datos.
+- Si el dato disponible es cantidad de estímulos, llamalo "volumen semanal reportado" y no carga fisiológica completa.
+- Diferenciá observaciones de salud de diagnósticos. No diagnostiques.
+- Redactá de manera humana y entendible.
+- Evitá sonar como planilla.
+- Si falta información, decilo con claridad.
+- El informe debe ser breve, ordenado y operativo. Priorizá datos concretos, señales de seguimiento y lectura del volumen semanal reportado. Evitá redactar conclusiones decorativas.
+- No incluyas frases de cierre genéricas, institucionales o de relleno. Evitá cierres como “este informe busca proporcionar...”, “en conclusión...” o similares.
+- Si aparecen ejercicios, pesos o referencias de fuerza en los comentarios, no los analices como ejercicios efectivamente realizados ni como evaluación técnica. Tratálos solo como datos reportados o referencias solicitadas por la preparadora física.
+- No hagas inferencias sobre técnica, calidad de ejecución, adaptación de rutinas o planificación de fuerza a partir de esos comentarios.
+- El análisis debe centrarse en: si cargó o no cargó, qué valores reportó, qué promedios aparecen y qué observaciones requieren seguimiento.
+
+Enfoque elegido: ${$('focus') ? $('focus').value : 'general'}.
+
+Datos resumidos:
+${JSON.stringify(s, null, 2)}
+
+Generá el informe final en español argentino, con títulos breves y párrafos claros.`;
+}
+
+async function generateWithAI() {
+  const summary = getSelectedSummary();
+
+  if (!summary) {
+    $('output').innerHTML =
+      '<div class="notice warn">Todavía no hay datos cargados para generar el informe.</div>';
+    return;
+  }
+
+  const btnAi = $('btn-ai');
+  if (btnAi) btnAi.disabled = true;
+
+  $('output').innerHTML =
+    '<div class="notice">Generando informe con IA...</div>';
+
+  const aiTimeout = setTimeout(() => {
+    if (btnAi) btnAi.disabled = false;
+
+    $('output').innerHTML =
+      '<div class="notice warn"><strong>La generación del informe está tardando demasiado.</strong><br>Probá nuevamente o reducí el período analizado.</div>';
+  }, 90000);
+
+  try {
+    const data = await callReportApi('generateClientReport', {
+      prompt: buildPrompt()
+    });
+
+    clearTimeout(aiTimeout);
+    if (btnAi) btnAi.disabled = false;
+
+    if (!data || !data.ok) {
+      const error = data && data.error
+        ? data.error
+        : 'Respuesta inválida del servidor.';
+
+      $('output').innerHTML =
+        `<div class="notice warn"><strong>No se pudo generar el informe.</strong><br>${escapeHtml(error)}</div>`;
+      return;
+    }
+
+    $('output').innerHTML = markdownToHtml(data.report || '');
+
+  } catch (error) {
+    clearTimeout(aiTimeout);
+    if (btnAi) btnAi.disabled = false;
+
+    $('output').innerHTML =
+      `<div class="notice warn"><strong>Error al generar el informe con IA.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
+  }
+}
+
+function markdownToHtml(md) {
+  const lines = String(md || '').split('\n');
+  const html = [];
+  let inList = false;
+  let paragraph = [];
+
+  function flushParagraph() {
+    if (!paragraph.length) return;
+
+    const text = paragraph.join(' ').trim();
+    if (text) {
+      html.push('<p>' + inlineMarkdownToHtml_(text) + '</p>');
+    }
+
+    paragraph = [];
+  }
+
+  function closeList() {
+    if (inList) {
+      html.push('</ul>');
+      inList = false;
+    }
+  }
+
+  lines.forEach(rawLine => {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      closeList();
+      return;
+    }
+
+    if (/^#{1,4}\s+/.test(line)) {
+      flushParagraph();
+      closeList();
+
+      const level = line.match(/^#+/)[0].length;
+      const text = line.replace(/^#{1,4}\s+/, '').trim();
+
+      if (level === 1) {
+        html.push('<h2 class="report-title">' + inlineMarkdownToHtml_(text) + '</h2>');
+      } else {
+        html.push('<h2>' + inlineMarkdownToHtml_(text) + '</h2>');
+      }
+
+      return;
+    }
+
+    if (/^[-*]\s+/.test(line)) {
+      flushParagraph();
+
+      if (!inList) {
+        html.push('<ul>');
+        inList = true;
+      }
+
+      const item = line.replace(/^[-*]\s+/, '').trim();
+      html.push('<li>' + inlineMarkdownToHtml_(item) + '</li>');
+      return;
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      flushParagraph();
+
+      if (!inList) {
+        html.push('<ul>');
+        inList = true;
+      }
+
+      const item = line.replace(/^\d+\.\s+/, '').trim();
+      html.push('<li>' + inlineMarkdownToHtml_(item) + '</li>');
+      return;
+    }
+
+    closeList();
+    paragraph.push(line);
+  });
+
+  flushParagraph();
+  closeList();
+
+  return '<div class="section ai-report">' + html.join('\n') + '</div>';
+}
+
+function inlineMarkdownToHtml_(text) {
+  return escapeHtml(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+}
+
+  function closeList() {
+    if (inList) {
+      html.push('</ul>');
+      inList = false;
+    }
+  }
+
+  
+    function copyReportText() {
+      const text = $('output').innerText.trim();
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+    }
+
+function shortText(text, maxLength) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  if (clean.length <= maxLength) return clean;
+  return clean.slice(0, maxLength - 1) + '…';
+}
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+
+async function runAudit() {
+  const btnAudit = $('btn-audit');
+  const auditResult = $('audit-result');
+
+  if (btnAudit) btnAudit.disabled = true;
+  if (auditResult) auditResult.textContent = 'Ejecutando auditoría...';
+
+  try {
+    const data = await callReportApi('generarAuditoriaDatos');
+
+    if (btnAudit) btnAudit.disabled = false;
+    if (!auditResult) return;
+
+    if (!data || !data.ok) {
+      const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
+      auditResult.innerHTML =
+        'No se pudo ejecutar la auditoría: ' + escapeHtml(error);
+      return;
+    }
+
+    const total = Number(data.totalIssues || 0);
+    const auditLink = data.auditUrl
+      ? `<a href="${escapeHtml(data.auditUrl)}" target="_blank" rel="noopener">Abrir hoja de auditoría</a>`
+      : '';
+
+    if (total === 0) {
+      auditResult.innerHTML =
+        'No se detectaron inconsistencias pendientes. ' + auditLink;
+      return;
+    }
+
+    auditResult.innerHTML =
+      `Se detectaron ${total} inconsistencias pendientes. ` + auditLink;
+
+  } catch (error) {
+    if (btnAudit) btnAudit.disabled = false;
+
+    if (auditResult) {
+      auditResult.innerHTML =
+        'Error al ejecutar auditoría: ' +
+        escapeHtml(error && error.message ? error.message : error);
+    }
+  }
+}
+function toggleAuditPanel() {
+  const panel = $('audit-panel');
+  const isHidden = panel.classList.contains('hidden');
+
+  panel.classList.toggle('hidden');
+
+  if (isHidden) {
+    $('audit-result').textContent = 'Auditoría interna habilitada.';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function openAiConfigPanel() {
+  const panel = $('ai-config-panel');
+  if (!panel) return;
+
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function closeAiConfigPanel() {
+  const panel = $('ai-config-panel');
+  if (!panel) return;
+
+  panel.classList.add('hidden');
+}
+
+function getManualContext() {
+  const notes = $('notes');
+  return notes ? notes.value.trim() : '';
+}
+  </script>
+</body>
+</html>
