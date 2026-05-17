@@ -419,6 +419,12 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   <button class="sb-btn" onclick="addPlayer(true)" title="Agregar arquera">
     <span class="sb-icon">🧤</span>Arq.
   </button>
+  <button class="sb-btn" onclick="addUtility('coach')" title="Agregar profe">
+    <span class="sb-icon">🧑‍🏫</span>Profe
+  </button>
+  <button class="sb-btn" onclick="addUtility('cone')" title="Agregar cono">
+    <span class="sb-icon">🔺</span>Cono
+  </button>
   <button class="sb-btn primary" onclick="showRoster()" title="Nómina">
     <span class="sb-icon">📋</span>Nóm.
   </button>
@@ -565,7 +571,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 
 <!-- EDIT POPUP -->
 <div id="edit-popup">
-  <div class="popup-title">Editar jugadora</div>
+  <div class="popup-title" id="edit-popup-title">Editar elemento</div>
   <div class="popup-help">Renglón superior: número</div>
   <input class="einput" id="edit-num" type="text" placeholder="Número" inputmode="numeric">
   <div class="popup-help">Renglón inferior: leyenda</div>
@@ -966,6 +972,26 @@ function addPlayer(isGK){
     team:currentTeam,num,role:String(num),r:18,ghost:false,gk:isGK});
   draw();status((isGK?'Arquera':'Jugadora')+' #'+num+' ('+currentTeam+') agregada');
 }
+function addUtility(type){
+  saveHistory();
+  const presets={
+    coach:{num:'PF',role:'Profe',r:20,team:'UTIL',utilityType:'coach'},
+    cone:{num:'C',role:'Cono',r:14,team:'UTIL',utilityType:'cone'}
+  };
+  const cfg=presets[type]; if(!cfg) return;
+  players.push({
+    x:fcx+(Math.random()-.5)*140,
+    y:fcy+(Math.random()-.5)*100,
+    team:cfg.team,
+    num:cfg.num,
+    role:cfg.role,
+    r:cfg.r,
+    ghost:false,
+    gk:false,
+    utilityType:cfg.utilityType
+  });
+  draw();status(cfg.role+' agregado al tablero');
+}
 
 // =============================================
 // FLECHAS
@@ -1032,6 +1058,7 @@ function clearAll(){
 // =============================================
 function openEdit(idx){
   editingIdx=idx;const p=players[idx];
+  document.getElementById('edit-popup-title').textContent=p?.utilityType==='coach'?'Editar profe':(p?.utilityType==='cone'?'Editar cono':'Editar jugadora');
   document.getElementById('edit-num').value=p.num||'';
   document.getElementById('edit-name').value=p.role||'';
   const pop=document.getElementById('edit-popup');pop.style.display='block';
@@ -1741,6 +1768,58 @@ function draw(animOverride){
       if(!!p.ghost!==showGhost) return;
       const px=pos?pos[i].x:p.x;
       const py=pos?pos[i].y:p.y;
+      if(p.utilityType==='cone'){
+        ctx.save();
+        if(p.ghost) ctx.globalAlpha=0.42;
+        const s=(p.r||14)*1.5;
+        ctx.fillStyle='#ff9f1c';
+        ctx.strokeStyle='#c56b00';
+        ctx.lineWidth=p.ghost?2:2.5;
+        ctx.beginPath();
+        ctx.moveTo(px,py-s/2);
+        ctx.lineTo(px-s/2,py+s/2);
+        ctx.lineTo(px+s/2,py+s/2);
+        ctx.closePath();
+        ctx.fill();
+        if(p.ghost)ctx.setLineDash([4,3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle='#fff';
+        ctx.font="800 11px 'Barlow Condensed', sans-serif";
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText((p.num||'C').toString().slice(0,2),px,py+4);
+        if(arrowFrom===i){
+          ctx.strokeStyle='rgba(74,159,212,0.9)';ctx.lineWidth=2;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(px,py,s*.75,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        }
+        ctx.restore();
+        return;
+      }
+      if(p.utilityType==='coach'){
+        ctx.save();
+        if(p.ghost) ctx.globalAlpha=0.42;
+        const w=(p.r||20)*1.9,h=(p.r||20)*1.45;
+        ctx.fillStyle='#f0fdf4';
+        ctx.strokeStyle='#2e7d32';
+        ctx.lineWidth=p.ghost?2:2.5;
+        ctx.beginPath();ctx.roundRect(px-w/2,py-h/2,w,h,8);ctx.fill();
+        if(p.ghost)ctx.setLineDash([4,3]);
+        ctx.stroke();ctx.setLineDash([]);
+        ctx.fillStyle='#1b5e20';
+        ctx.font="800 12px 'Barlow Condensed', sans-serif";
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText((p.num||'PF').toString().slice(0,3),px,py-2);
+        if(p.role&&p.role!==(p.num||'')){
+          ctx.font="700 10px 'Barlow', sans-serif";
+          ctx.fillText(String(p.role).slice(0,10),px,py+10);
+        }
+        if(arrowFrom===i){
+          ctx.strokeStyle='rgba(74,159,212,0.9)';ctx.lineWidth=2;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(px,py,(p.r||20)+6,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        }
+        ctx.restore();
+        return;
+      }
       const isA=p.team==='A';
       const fillC=p.gk?(isA?'#fff9c4':'#c8f0c8'):(isA?'#e8f4ff':'#0d1f3c');
       const strokeC=p.gk?(isA?'#f9a825':'#2e7d32'):(isA?'#4a9fd4':'#1a2a4a');
