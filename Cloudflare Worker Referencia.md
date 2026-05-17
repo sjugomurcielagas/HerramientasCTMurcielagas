@@ -1,167 +1,190 @@
-# Cloudflare Worker Referencia
+// ============================================================
+// Murciélagas · Cloudflare Worker
+// Versión: 2.1 — Reportes + Base/Deportes unificados
+// ============================================================
 
-Fecha de corte: 2026-05-16
+const REPORTES_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIdqciZ_o_YVS_EYV2xYCMyrRLhEXCyd9s0gxeuiGX9YwvwHtiPYPO3hUUKc7Y-kBe/exec';
 
-Documento de referencia del backend compartido. No es el código desplegado: es el contrato consolidado para modificar una sola vez y mantener consistencia entre `reportes`, `base-datos`, `analisis`, `concentraciones` y `antidoping`.
+const BASE_DEPORTE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQO-sm8R29-fLFQ0tSHCGkZSFCLUKH5lvqp6sInQcc7S1WbA5VIKsuFxkt5odS_igX/exec';
 
-## Objetivo
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://sjugomurcielagas.github.io',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400'
+};
 
-- Centralizar el contrato de acciones del Worker.
-- Definir hojas, campos y normalizaciones esperadas.
-- Evitar que cada frontend invente variantes de nombres de campo.
-- Servir como base antes de tocar Apps Script o frontends.
+const REPORTES_ACTIONS = [
+  'getClientData',
+  'generateClientReport',
+  'generarAuditoriaDatos'
+];
 
-## Piezas que integran el contrato
+const BASE_ACTION_MAP = {
+  base_verificarPassword: 'verificarPassword',
+  base_getPlantel: 'getPlantel',
+  base_getFicha: 'getFicha',
+  base_getFaltantes: 'getFaltantes',
+  base_getAlertas: 'getAlertas',
+  base_guardarCambios: 'guardarCambios',
+  base_darDeBaja: 'darDeBaja',
+  base_subirArchivo: 'subirArchivo',
+  base_ordenarColumnasBase: 'ordenarColumnasBase',
 
-- URL base: `https://murcielagas-reportes-api.sjugomurcielagas.workers.dev`
-- Acceso por `action` en `GET` o `POST`
-- Respuesta estándar: `{ ok: true, data: ... }` o `{ ok: false, error: ... }`
-- Convención de acciones: `{modulo}_{verbo}`
+  // En tu Apps Script la función se llama base_agregarColumna
+  base_agregarColumna: 'base_agregarColumna'
+};
 
-## Módulos y acciones
+const DEPORTES_PREFIXES = [
+  'penales_',
+  'partidos_',
+  'concentraciones_',
+  'testeos_'
+];
 
-### Base
+export default {
+  async fetch(request) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders
+      });
+    }
 
-- `base_verificarPassword`
-- `base_getPlantel`
-- `base_getFicha`
-- `base_guardarCambios`
-- `base_subirArchivo`
-- `base_darDeBaja`
-- `base_getAlertas`
-- `base_agregarColumna`
+    try {
+      let action = '';
+      let payload = {};
 
-### Penales
+      if (request.method === 'GET') {
+        const url = new URL(request.url);
+        action = url.searchParams.get('action') || '';
+        payload = Object.fromEntries(url.searchParams.entries());
+      }
 
-- `penales_getSesiones`
-- `penales_crearSesion`
-- `penales_editarSesion`
-- `penales_getPenales`
-- `penales_registrarPenal`
-- `penales_eliminarPenal`
+      if (request.method === 'POST') {
+        const text = await request.text();
 
-Campos esperados:
+        try {
+          payload = text ? JSON.parse(text) : {};
+        } catch (error) {
+          return jsonResponse({
+            ok: false,
+            error: 'El cuerpo del POST no es JSON válido.'
+          }, 400);
+        }
 
-- `sesionId`
-- `jugadora`
-- `arquera`
-- `zona`
-- `potencia`
-- `resultado`
-- `timestamp`
+        action = payload.action || '';
+      }
 
-Compatibilidad:
+      if (!action) {
+        return jsonResponse({
+          ok: false,
+          error: 'Falta action.'
+        }, 400);
+      }
 
-- aceptar `sesion_id` como alias de `sesionId`
-- normalizar `jugadora_dni` y `arquera_dni` cuando vengan desde el frontend
+      let targetResponse;
 
-### Partidos
+      if (REPORTES_ACTIONS.includes(action)) {
+        targetResponse = await handleReportesAction(action, payload);
+      } else if (action in BASE_ACTION_MAP) {
+        targetResponse = await handleBaseAction(action, payload);
+      } else if (DEPORTES_PREFIXES.some(prefix => action.startsWith(prefix))) {
+        targetResponse = await handleDeportesAction(action, payload);
+      } else {
+        return jsonResponse({
+          ok: false,
+          error: 'Acción no reconocida: ' + action
+        }, 400);
+      }
 
-- `partidos_getPartidos`
-- `partidos_getDetalle`
-- `partidos_crearPartido`
-- `partidos_actualizarPartido`
-- `partidos_eliminarPartido`
-- `partidos_guardarDetalle`
-- `partidos_guardarConvocatoria`
-- `partidos_guardarRatings`
-- `partidos_agregarMomento`
-- `partidos_eliminarMomento`
+      const text = await targetResponse.text();
 
-### Concentraciones
+      return new Response(text, {
+        status: targetResponse.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json;charset=utf-8'
+        }
+      });
 
-- `concentraciones_getConcentraciones`
-- `concentraciones_crearConcentracion`
-- `concentraciones_editarConcentracion`
-- `concentraciones_eliminarConcentracion`
-- `concentraciones_getDias`
-- `concentraciones_agregarActividad`
-- `concentraciones_editarActividad`
-- `concentraciones_eliminarActividad`
-- `concentraciones_generarConvocatoria`
-- `concentraciones_getTiposDocumento`
-- `concentraciones_validarDatosDocumentos`
-- `concentraciones_generarDocumentos`
-- `concentraciones_getDocumentosGenerados`
+    } catch (error) {
+      return jsonResponse({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }, 500);
+    }
+  }
+};
 
-Documentos previstos:
+// ============================================================
+// HANDLERS
+// ============================================================
 
-- `convocatoria_fadec`
-- `licencia_agencia_cordoba`
-- `licencia_municipalidad_cordoba`
-- `certificacion_participacion`
+async function handleReportesAction(action, payload) {
+  if (action === 'getClientData') {
+    return fetch(REPORTES_SCRIPT_URL + '?action=getClientData');
+  }
 
-### Antidoping
+  if (action === 'generateClientReport') {
+    return postToAppsScript(REPORTES_SCRIPT_URL, {
+      action: 'generateClientReport',
+      prompt: payload.prompt || ''
+    });
+  }
 
-- `antidoping_buscarMedicamento`
-- `antidoping_getFrecuentes`
-- `antidoping_getHistorial`
+  if (action === 'generarAuditoriaDatos') {
+    return postToAppsScript(REPORTES_SCRIPT_URL, {
+      action: 'generarAuditoriaDatos'
+    });
+  }
 
-### Reportes
+  return jsonResponse({
+    ok: false,
+    error: 'Acción de Reportes no reconocida: ' + action
+  }, 400);
+}
 
-- `getClientData`
+async function handleBaseAction(action, payload) {
+  const mappedAction = BASE_ACTION_MAP[action];
 
-## Hojas y configuración
+  const cleanPayload = {
+    ...payload,
+    action: mappedAction
+  };
 
-### Base estructural
+  return postToAppsScript(BASE_DEPORTE_SCRIPT_URL, cleanPayload);
+}
 
-- `Password`
-- `Plantel`
-- `ColumnasDinamicas`
+async function handleDeportesAction(action, payload) {
+  const cleanPayload = {
+    ...payload,
+    action
+  };
 
-### Penales
+  return postToAppsScript(BASE_DEPORTE_SCRIPT_URL, cleanPayload);
+}
 
-- `SesionesPenales`
-- `Penales`
+// ============================================================
+// UTILIDADES
+// ============================================================
 
-### Partidos
+function postToAppsScript(url, data) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify(data)
+  });
+}
 
-- `Partidos`
-
-### Concentraciones
-
-- `Concentraciones`
-- `ConcentracionDias`
-- `Config_Plantillas`
-- `Config_Carpetas`
-- `Documentos_Generados`
-
-### Testeos
-
-- `Testeos`
-- `TesteosMediciones`
-
-### Antidoping
-
-- `Antidoping_Frecuentes`
-- `Antidoping_Historial`
-
-## Reglas de normalización
-
-- Preferir `sesionId` como campo canónico.
-- Si el frontend manda `sesion_id`, traducirlo sin perder compatibilidad.
-- `Penales` debe conservar `arquera` en persistencia y lectura.
-- Fechas ISO: normalizar a `YYYY-MM-DD` o `timestamp` completo según el caso.
-- Campos vacíos: devolver `''` o `null` de forma consistente, no mezclar tipos.
-
-## Reglas de diseño del backend
-
-- El Worker debe tolerar hojas faltantes cuando la referencia documental todavía no se inicializó.
-- Si una hoja de configuración no existe, el backend debe caer a fallback limpio.
-- Las acciones documentales no deben exigir datos hardcodeados en el frontend.
-- Si el Worker real cambia, este documento es el primero que se actualiza.
-
-## Inicialización sugerida
-
-1. Crear o validar las hojas del contrato.
-2. Cargar configuraciones documentales.
-3. Verificar `base_*`.
-4. Verificar `penales_*`.
-5. Verificar `partidos_*`.
-6. Verificar `concentraciones_*`.
-7. Verificar `antidoping_*`.
-
-## Riesgo actual
-
-- `worker-additions.gs` sigue siendo una referencia de contrato, no una prueba de despliegue.
-- La versión productiva del Worker debe validarse antes de asumir que todo esto está activo.
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json;charset=utf-8'
+    }
+  });
+}

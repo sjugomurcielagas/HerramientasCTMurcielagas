@@ -1,0 +1,696 @@
+Sí, Santy. Te dejo un **mapa ordenado de ideas y módulos**, separando lo que ya está en desarrollo, lo que está iniciado pero falta consolidar, y lo que todavía está en modo idea. Lo armo pensando en que después puedas decidir **qué cerrar primero y qué patear para más adelante**, sin mezclar todo.
+
+---
+
+# Mapa de ideas y pasos pendientes — Herramientas CT Murciélagas
+
+## 1. Núcleo del sistema
+
+### Estado: en desarrollo avanzado
+
+El proyecto ya está pensado como un sitio modular de herramientas internas para el cuerpo técnico de Las Murciélagas, publicado en GitHub Pages, con módulos separados para reportes, táctica, base de datos, concentraciones, antidoping y análisis deportivo. La estructura esperada ya contempla carpetas específicas para cada módulo: `/reportes/`, `/tactica/`, `/base-datos/`, `/concentraciones/`, `/antidoping/`, `/analisis/`, `/analisis/penales/` y `/analisis/partidos/` .
+
+La regla de fondo debería seguir siendo esta:
+
+**un módulo por vez, un problema por vez, un commit por tarea concreta** .
+
+Esto es clave porque ahora el proyecto ya no es “una página suelta”: empieza a comportarse como un sistema.
+
+---
+
+# 2. Ideas o módulos en desarrollo
+
+## A. Hub principal
+
+### Estado: funcionando, pero con mejoras pendientes
+
+El hub es la entrada general al sistema. Ya tiene sentido como puerta de acceso a las herramientas, pero debe seguir creciendo con cards nuevas a medida que los módulos se consoliden.
+
+### Pendientes detectados
+
+Agregar o terminar cards para:
+
+* Concentraciones.
+* Antidoping.
+* Análisis.
+* Submódulos de Penales y Partidos, si se quiere acceso directo o mediante subhub.
+* Eventualmente, Hacedor de tablas.
+* Eventualmente, Documentos institucionales, si no queda integrado dentro de Concentraciones.
+
+El hub debe mantener rutas relativas compatibles con GitHub Pages, como `./reportes/`, `./tactica/`, `./base-datos/`, `./concentraciones/` y `./antidoping/` .
+
+### Prioridad sugerida
+
+**Alta**, pero solo cuando cada módulo exista realmente.
+No conviene agregar cards a herramientas que todavía no tienen mínima funcionalidad, porque genera sensación de sistema roto.
+
+---
+
+## B. Reportes de entrenamiento
+
+### Estado: módulo operativo, con mejoras pendientes
+
+Este parece ser uno de los módulos más avanzados. Ya cumple una función clara: consultar cargas, generar reportes semanales, analizar períodos, auditar datos y producir informes.
+
+### Ideas en desarrollo
+
+1. **Vista rápida operativa como pantalla principal**
+   El cuerpo técnico debería ver primero lo importante: quién cargó, quién no cargó, promedios, alertas y observaciones.
+
+2. **Separar vista rápida de generación con IA**
+   La IA no debería estar mezclada con la pantalla operativa. La generación de reporte debería ser una acción específica, donde se elija destinatario y enfoque.
+
+3. **Control semanal y análisis periódicos como modos separados**
+   No mostrar ambas lógicas a la vez. Conviene que sean pestañas o botones excluyentes.
+
+4. **Auditoría de datos**
+   Detectar inconsistencias entre total, físico y técnico-táctico. También permitir regularizar errores sin romper la base.
+
+5. **Mejorar diseño profesional del reporte**
+   Está registrado que el diseño actual no termina de tener la estética deseada. El criterio visual general del sistema pide modo claro, mobile first, paleta azul/celeste, Barlow/Barlow Condensed, tarjetas limpias y textos breves .
+
+6. **Carga futura de rutinas, pesos y evolución de fuerza**
+   Hay una idea de que el sistema no solo lea comentarios, sino que pueda registrar mejor cargas, pesos de referencia, ejercicios y evolución.
+
+7. **Integración futura con tablero táctico**
+   No como mezcla inmediata, sino como parte de un programa más amplio de herramientas del CT.
+
+### Riesgos técnicos ya detectados
+
+Hay una posible doble carga inicial de datos si `loadServerData()` se dispara más de una vez. La auditoría recomienda agregar un flag de carga antes de tocar lógicas más complejas .
+
+### Prioridad sugerida
+
+**Muy alta**, pero con criterio:
+primero estabilizar lo operativo; después mejorar IA, estética y análisis profundo.
+
+---
+
+## C. Tablero táctico
+
+### Estado: funcionando, con ajustes pendientes
+
+El tablero táctico ya es una herramienta visual fuerte. Tiene lógica local, canvas, localStorage, exportación/importación y animación .
+
+### Ideas en desarrollo
+
+1. **Optimizar versión PC**
+
+   * Mejorar barra lateral.
+   * Que los controles de animación y grabación estén en columna derecha.
+   * Evitar que el sidebar impida scrollear.
+
+2. **Optimizar versión móvil/tablet**
+
+   * Cancha vertical en celular.
+   * Cancha horizontal en PC/tablet horizontal.
+   * Interacciones táctiles claras.
+
+3. **Interacciones ya definidas**
+
+   * Click derecho en jugadora o acción: elimina.
+   * Doble click: edita.
+   * Un click: mueve o da paso a la siguiente acción.
+   * Toque sostenido en táctil: menú contextual.
+
+4. **Animación**
+
+   * Que las primeras acciones de cada jugadora arranquen simultáneamente.
+   * Que las acciones siguientes se encadenen por jugadora.
+
+5. **PWA / instalación**
+   Está detectado que el `manifest.json` referencia `icon-192.png`, pero ese archivo no existe. También hay riesgos con el service worker y rutas en GitHub Pages .
+
+### Prioridad sugerida
+
+**Media-alta**.
+El tablero ya sirve, pero antes de meterle más funciones conviene corregir bugs de interacción y decidir si realmente se quiere sostener como PWA.
+
+---
+
+## D. Base de datos
+
+### Estado: en desarrollo avanzado
+
+El módulo ya tiene sentido como base administrativa del plantel: fichas, alertas, faltantes, vencimientos, subida de archivos y baja lógica. Usa acciones `base_*`, como `base_getPlantel`, `base_getFicha`, `base_getAlertas`, `base_guardarCambios`, `base_darDeBaja` y `base_subirArchivo` .
+
+### Ideas en desarrollo
+
+1. **Ficha individual por jugadora/integrante**
+   Consulta de datos personales, deportivos y administrativos.
+
+2. **Carga de archivos**
+
+   * DNI.
+   * CUD.
+   * Posiblemente otros documentos en el futuro.
+
+3. **Edición de plantel**
+
+   * Agregar jugadoras.
+   * Editar datos.
+   * Sacar o dar de baja integrantes.
+
+4. **Alertas separadas**
+   Diferenciar:
+
+   * Falta de datos.
+   * Vencimientos.
+
+5. **Vencimientos a controlar**
+
+   * CUD.
+   * DNI.
+   * Pasaporte.
+   * Clasificación visual.
+
+6. **Clasificación visual**
+   Para B1, B2 y B3:
+
+   * pendiente;
+   * revisión;
+   * confirmada.
+
+   Si está en revisión:
+
+   * fecha de revisión;
+   * o leyenda “Próximo Torneo”.
+
+7. **Guardado más simple**
+   Está pendiente simplificar la experiencia: un botón de guardado flotante o un guardado menos fragmentado por bloques.
+
+8. **Links clickeables a archivos**
+   Si no se puede hacer vista previa liviana, al menos que los links a documentos sean claramente clickeables.
+
+### Riesgo técnico
+
+La auditoría detectó que la subida de archivos en base64 no tiene límite visible de tamaño. Conviene definir un límite antes de usar `FileReader` y mostrar un mensaje si el archivo supera ese límite .
+
+### Prioridad sugerida
+
+**Muy alta**.
+Este módulo es base para Concentraciones, Documentos, Hacedor de tablas y probablemente Antidoping. Si la base no está ordenada, todo lo demás queda más frágil.
+
+---
+
+## E. Concentraciones
+
+### Estado: en desarrollo activo
+
+El módulo de Concentraciones ya está definido como herramienta para gestionar actividades, fechas, lugar, convocatoria, planificación diaria y estadísticas .
+
+### Ideas en desarrollo
+
+1. **Crear concentración**
+   Campos confirmados:
+
+   * `nombre`
+   * `fechaInicio`
+   * `fechaFin`
+   * `lugar`
+   * `notas`
+   * `convocadas_json`
+
+   El backend espera esos nombres, no variantes como `fecha_inicio`, `fecha_fin`, `inicio` o `fin` .
+
+2. **Convocatoria**
+   Seleccionar personas desde `base_getPlantel`. La lista debe incluir jugadoras, arqueras, cuerpo técnico y CT si existen en la base .
+
+3. **Días y actividades**
+   Campos recomendados:
+
+   * `concentracionId`
+   * `fecha`
+   * `tipo`
+   * `hora`
+   * `titulo`
+   * `detalle`
+   * `duracion`
+   * `notas`
+
+   No usar `concentracion_id`, `concentracionID` ni `categoria` si el backend espera `concentracionId` y `tipo` .
+
+4. **Tipos fijos de actividad**
+   Valores internos:
+
+   * entrenamiento
+   * charla_tactica
+   * partido
+   * recuperacion
+   * medica
+   * libre
+   * otro
+
+   Para actividades logísticas como llegada, traslado o almuerzo, conviene usar `tipo = otro` y completar el título/detalle .
+
+5. **Convocatoria documental**
+   Generar documentos descargables a partir de los datos de la concentración.
+
+6. **Tipo de actividad flexible**
+   No manejarlo como una palabra rígida. Puede ser concentración, torneo, Mundial u otra actividad. Debe integrarse naturalmente en la redacción.
+
+### Prioridad sugerida
+
+**Alta**.
+Es uno de los módulos más útiles a corto plazo, especialmente porque conecta gestión deportiva real con documentación institucional.
+
+---
+
+## F. Generador documental vinculado a Concentraciones
+
+### Estado: idea avanzada / en diseño
+
+Esta idea aparece muy fuerte y conviene tratarla casi como submódulo de Concentraciones.
+
+### Documentos pensados
+
+1. **Convocatoria general**
+   Documento institucional con datos de la actividad, personas convocadas, fechas, lugar y firmas.
+
+2. **Certificación de participación**
+   Documento que certifique que una persona participó de una concentración, torneo, Mundial u otra actividad.
+
+3. **Licencia deportiva para Agencia Córdoba Deportes**
+   Documento específico para justificar participación o licencia.
+
+4. **Solicitud de licencia para Municipalidad de Córdoba**
+   Documento específico para Gonzalo, vos u otras personas que lo necesiten.
+
+### Criterio importante
+
+Los datos generales deben salir de la concentración ya creada. No tiene sentido volver a cargar manualmente nombre del evento, fechas, lugar, ciudad, federación o convocados.
+
+Además, los datos personales deben salir de **Las Murciélagas — Base de Datos Personal**, no duplicarse en una configuración documental. Eso mantiene una única fuente de verdad.
+
+### Prioridad sugerida
+
+**Alta, después de estabilizar Concentraciones y Base de datos**.
+Este módulo te puede ahorrar mucho trabajo repetitivo y tiene un valor institucional enorme.
+
+---
+
+## G. Antidoping
+
+### Estado: idea avanzada / pendiente de backend
+
+El módulo Antidoping está muy bien conceptualizado, pero todavía necesita decisión técnica: si se integra al Apps Script deportivo actual o si tendrá backend propio. El Worker, por ahora, solo funcionará con `antidoping_` si se reconoce ese prefijo; si no, la acción será rechazada .
+
+### Idea central
+
+Consulta orientativa y trazable de medicamentos, nombres comerciales y principios activos, cruzando información argentina con la Lista WADA vigente y, si se puede, una fuente secundaria confiable .
+
+### Flujo conceptual
+
+Medicamento argentino o nombre comercial → identificar principio activo → cruzar con Lista WADA vigente → si aparece prohibido o condicionado, mostrar alerta → si no aparece, consultar fuente secundaria → registrar resultado con prudencia .
+
+### Criterio de lenguaje
+
+No decir “permitido” como autorización absoluta.
+Usar frases prudentes, por ejemplo:
+
+* “No figura como prohibido en la Lista WADA vigente”.
+* “Requiere verificación”.
+* “No figura como prohibido en WADA ni en la base secundaria consultada” .
+
+### Estados posibles
+
+* PROHIBIDO.
+* CONDICIONADO / REQUIERE REVISIÓN.
+* PROHIBIDO EN COMPETICIÓN.
+* PROHIBIDO FUERA DE COMPETICIÓN.
+* PROHIBIDO EN CIERTOS DEPORTES.
+* NO FIGURA COMO PROHIBIDO EN WADA NI EN BASE SECUNDARIA CONSULTADA.
+* NO ENCONTRADO / REQUIERE VERIFICACIÓN.
+* REVISAR COMBINACIÓN COMERCIAL.
+* SUPLEMENTO: NO VERIFICABLE .
+
+### Tabs sugeridos
+
+* Consulta.
+* Frecuentes revisados.
+* Historial.
+* Criterios / Fuentes .
+
+### Medicamentos frecuentes iniciales
+
+Ya hay una lista prioritaria: paracetamol, ibuprofeno, loratadina, cetirizina, amoxicilina, omeprazol, salbutamol, budesonida, diclofenac, dipirona/metamizol, domperidona, betametasona, dexametasona, prednisona, pseudoefedrina y fenilefrina .
+
+### Prioridad sugerida
+
+**Media-alta**, pero no antes de definir fuentes y backend.
+Es una herramienta con mucho valor, pero también con más riesgo de responsabilidad. Tiene que nacer prudente.
+
+---
+
+## H. Análisis deportivo
+
+### Estado: iniciado / en desarrollo parcial
+
+El README ya contempla un módulo `/analisis/` con submódulos para penales y partidos .
+
+## H1. Penales
+
+### Estado: iniciado, con bug detectado
+
+Hay un problema ya mencionado: el módulo no trae correctamente lista de jugadoras ni arqueras.
+
+### Ideas posibles
+
+* Registrar penales ejecutados.
+* Registrar pateadora.
+* Registrar arquera.
+* Registrar zona del arco.
+* Registrar resultado.
+* Analizar tendencias.
+* Visualizar sectores del arco.
+* Separar entrenamiento y competencia.
+
+### Prioridad sugerida
+
+**Media**.
+Conviene corregir primero la carga de jugadoras/arqueras antes de sumar análisis.
+
+---
+
+## H2. Partidos
+
+### Estado: iniciado / requiere limpieza
+
+Se mencionó “limpieza inteligente de Partidos” y métricas automáticas, pero se decidió no avanzar más por ahora.
+
+### Ideas posibles
+
+* Carga de partidos.
+* Registro de rivales.
+* Métricas automáticas.
+* Eventos relevantes.
+* Análisis por jugadora.
+* Análisis por período.
+* Integración futura con tablero táctico.
+
+### Prioridad sugerida
+
+**Media-baja por ahora**.
+No porque no sea importante, sino porque todavía hay módulos más estructurales que ordenar.
+
+---
+
+## H3. Testeos
+
+### Estado: previsto por prefijo técnico, pero no desarrollado
+
+El Worker reconoce prefijos de módulos deportivos como `penales_`, `partidos_`, `concentraciones_` y `testeos_` .
+
+### Ideas posibles
+
+* Registrar evaluaciones físicas.
+* Comparar evolución.
+* Asociar resultados a jugadoras.
+* Integrar con reportes de entrenamiento.
+* Visualizar alertas o tendencias.
+
+### Prioridad sugerida
+
+**Baja-media**.
+Tiene sentido deportivo, pero todavía no parece tan urgente como Base, Concentraciones o Reportes.
+
+---
+
+# 3. Ideas todavía en modo “proyecto futuro”
+
+## I. Hacedor de tablas
+
+### Estado: idea clara, todavía no desarrollada
+
+La idea es tener una base de datos amplia y que el sistema permita seleccionar jugadoras y columnas según un requisito externo. Por ejemplo, si una institución pide ciertos datos, el sistema ayudaría a armar la tabla correcta.
+
+### Función esperada
+
+* Elegir personas.
+* Elegir columnas.
+* Ordenar columnas.
+* Generar spreadsheet.
+* Eventualmente usar IA para interpretar “qué datos me están pidiendo”.
+
+### Dependencias
+
+Este módulo depende de que la **Base de datos** esté bien estructurada.
+No conviene empezarlo antes de consolidar nombres de columnas, datos personales, documentos, roles y vencimientos.
+
+### Prioridad sugerida
+
+**Baja por ahora, alta a futuro**.
+Tiene muchísimo valor como herramienta de gestión, pero necesita una base sólida.
+
+---
+
+## J. Sistema replicable para otras selecciones
+
+### Estado: visión estratégica
+
+Esta no es una herramienta puntual, sino una línea de desarrollo: que lo que hoy se prueba con Las Murciélagas pueda convertirse después en un set exportable a otros seleccionados o instituciones.
+
+### Implica trabajar a futuro en
+
+* Separar datos específicos de Las Murciélagas de la lógica general.
+* Evitar hardcodeos.
+* Documentar bien módulos.
+* Crear plantillas configurables.
+* Pensar permisos y roles.
+* Mejorar backend.
+* Proteger código y propiedad intelectual.
+* Definir qué parte es producto, qué parte es servicio y qué parte es consultoría.
+
+### Prioridad sugerida
+
+**Estratégica, no inmediata**.
+Hay que tenerla como norte, pero si se intenta escalar ahora, puede frenar el avance operativo.
+
+---
+
+## K. Profesionalización técnica del sistema
+
+### Estado: necesidad futura
+
+Hoy el sistema todavía tiene mucho de artesanal, lo cual no está mal para una primera versión. Pero para que sea escalable habría que revisar arquitectura.
+
+### Temas a ordenar más adelante
+
+* Backend más robusto.
+* Control de usuarios y permisos.
+* Logs.
+* Versionado.
+* Seguridad de datos.
+* Protección de propiedad intelectual.
+* Documentación técnica.
+* Separación entre entorno de prueba y producción.
+* Posible migración parcial desde Apps Script hacia backend más profesional.
+
+### Prioridad sugerida
+
+**Media a futuro**.
+No es lo primero para cerrar la herramienta del CT, pero sí será central si querés ofrecer esto como parte de tu caja profesional.
+
+---
+
+# 4. Mejoras transversales del sistema
+
+Estas ideas no pertenecen a un solo módulo, sino a todo el proyecto.
+
+## A. UI/UX común
+
+### Estado: criterio definido
+
+El sistema debe mantener:
+
+* modo claro;
+* mobile first;
+* paleta azul/celeste;
+* tipografías Barlow y Barlow Condensed;
+* tarjetas limpias;
+* bordes suaves;
+* botones claros;
+* jerarquía visual simple;
+* pocos textos extensos dentro de la interfaz .
+
+### Prioridad
+
+**Constante**.
+Cada módulo nuevo debería respetar esto desde el inicio.
+
+---
+
+## B. Manejo robusto de errores API
+
+### Estado: pendiente transversal
+
+Varios módulos todavía usan o podrían usar `res.json()` directo. Eso puede fallar mal si la API devuelve HTML, texto, CORS o error 500.
+
+La recomendación es leer primero `text()`, intentar parsear JSON y mostrar errores claros al usuario, dejando el detalle técnico en consola .
+
+### Prioridad
+
+**Alta**.
+Esto evita horas perdidas con errores confusos.
+
+---
+
+## C. Accesibilidad básica
+
+### Estado: criterio definido
+
+El sistema debería cuidar:
+
+* botones con texto claro;
+* `aria-label` cuando haga falta;
+* modales con título visible;
+* no depender solo de íconos;
+* no depender solo del color;
+* buen contraste;
+* navegación razonable con teclado .
+
+### Prioridad
+
+**Media**, pero conviene incorporarlo mientras se construye, no al final.
+
+---
+
+## D. Auditoría técnica periódica
+
+### Estado: ya existe una auditoría estática inicial
+
+La auditoría detectó módulos, riesgos, problemas de PWA, posibles incompatibilidades frontend/backend, manejo de errores y correcciones pequeñas seguras .
+
+### Ideas pendientes
+
+* Revisar rutas.
+* Revisar links del hub.
+* Revisar assets.
+* Revisar acciones API.
+* Revisar nombres de campos.
+* Revisar responsive.
+* Revisar accesibilidad.
+* Corregir bugs confirmados de bajo riesgo.
+
+### Prioridad
+
+**Media-alta**, especialmente antes de compartir el sistema con más gente.
+
+---
+
+# 5. Orden sugerido de trabajo
+
+Para no quemarte ni romper lo que ya funciona, yo lo ordenaría así:
+
+## Etapa 1 — Cerrar base operativa
+
+1. **Base de datos**
+
+   * Guardado simple.
+   * Archivos DNI/CUD.
+   * Alertas separadas.
+   * Vencimientos.
+   * Clasificación visual.
+   * Edición de plantel.
+
+2. **Concentraciones**
+
+   * Crear/editar concentración.
+   * Convocatoria desde Base.
+   * Actividades por día.
+   * Tipos controlados.
+   * Validar payloads.
+
+3. **Documentos desde Concentraciones**
+
+   * Convocatoria.
+   * Certificación de participación.
+   * Licencias específicas.
+
+Esta etapa es la más importante porque te arma el corazón administrativo del sistema.
+
+---
+
+## Etapa 2 — Consolidar lo que ya usa el CT
+
+4. **Reportes**
+
+   * Vista rápida definitiva.
+   * Auditoría de datos.
+   * Reporte IA separado.
+   * Mejor estética.
+   * Manejo robusto de errores.
+
+5. **Tablero táctico**
+
+   * Bugs de PC y táctil.
+   * Scroll/sidebar.
+   * Menú contextual.
+   * Animación.
+   * Decidir PWA sí/no.
+
+---
+
+## Etapa 3 — Módulos deportivos específicos
+
+6. **Penales**
+
+   * Corregir carga de jugadoras/arqueras.
+   * Definir datos mínimos.
+   * Recién después métricas.
+
+7. **Partidos**
+
+   * Limpieza inteligente.
+   * Métricas automáticas.
+   * Integración con análisis.
+
+8. **Testeos**
+
+   * Diseñar datos mínimos.
+   * Vincular con reportes.
+
+---
+
+## Etapa 4 — Herramientas de gestión avanzada
+
+9. **Antidoping**
+
+   * Definir fuentes.
+   * Definir backend.
+   * Importar WADA a base interna.
+   * Crear consulta prudente.
+   * Registrar historial.
+
+10. **Hacedor de tablas**
+
+* Requiere base consolidada.
+* Selección de personas.
+* Selección de columnas.
+* Exportación a spreadsheet.
+
+11. **Escalabilidad**
+
+* Documentación.
+* Configuración multi-institución.
+* Seguridad.
+* Permisos.
+* Protección intelectual.
+* Backend más profesional.
+
+---
+
+# 6. Resumen ejecutivo
+
+Hoy el proyecto tiene tres niveles:
+
+**Lo urgente y operativo:**
+Base de datos, Concentraciones, Documentos, Reportes.
+
+**Lo importante pero secundario:**
+Tablero táctico, Penales, Partidos, Testeos.
+
+**Lo estratégico a futuro:**
+Antidoping, Hacedor de tablas, escalabilidad, producto replicable para otras selecciones.
+
+Mi recomendación honesta: no abrir más módulos nuevos hasta dejar **Base de datos + Concentraciones + Documentos** funcionando de manera confiable. Ese bloque es el que más te ordena la gestión real del seleccionado y, además, después alimenta al resto del sistema.

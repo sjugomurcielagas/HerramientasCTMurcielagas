@@ -1,28 +1,26 @@
 # Base Script
 
-Fecha de corte: 2026-05-16
+Fecha de corte: 2026-05-17
 
-Documento de referencia del Google Apps Script de `base-datos`. También cubre las extensiones compartidas que hoy se usan para archivos, penales y otras hojas del backend común.
+Documento de referencia del Google Apps Script `gas/base-deporte/Código.js`. Cubre base administrativa, penales, partidos, concentraciones y testeos.
 
-## Qué resuelve
+## Acciones — Base
 
-- Gestión de ficha individual.
-- Carga y reemplazo de archivos.
-- Baja lógica de integrantes.
-- Alertas de faltantes y vencimientos.
-- Contratos compartidos que el resto del sitio consume.
+Ruteadas por el Worker via `BASE_ACTION_MAP` (el prefijo `base_` se convierte al nombre corto antes de llegar al GAS).
 
-## Acciones principales
+- `base_verificarPassword` → `verificarPassword`
+- `base_getPlantel` → `getPlantel`
+- `base_getFicha` → `getFicha`
+- `base_getFaltantes` → `getFaltantes`
+- `base_getAlertas` → `getAlertas`
+- `base_guardarCambios` → `guardarCambios`
+- `base_darDeBaja` → `darDeBaja`
+- `base_subirArchivo` → `subirArchivo`
+- `base_agregarColumna` → `base_agregarColumna` (nombre completo, sin stripping)
 
-- `base_verificarPassword`
-- `base_getPlantel`
-- `base_getFicha`
-- `base_guardarCambios`
-- `base_subirArchivo`
-- `base_darDeBaja`
-- `base_getAlertas`
+> Nota: `base_ordenarColumnasBase` está mapeada en el Worker pero no tiene `case` en el GAS.
 
-## Contratos compartidos que puede alojar
+## Acciones — Penales
 
 - `penales_getSesiones`
 - `penales_crearSesion`
@@ -30,64 +28,72 @@ Documento de referencia del Google Apps Script de `base-datos`. También cubre l
 - `penales_getPenales`
 - `penales_registrarPenal`
 - `penales_eliminarPenal`
-- `partidos_*`
-- `concentraciones_*`
-- `antidoping_*`
 
-## Responsabilidad de datos
+Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`, `potencia`, `resultado`, `timestamp`.
 
-### Plantel
+## Acciones — Partidos
 
-- Fuente canónica de personas.
-- Ficha editable.
-- Archivos vinculados a `Foto_Link`, `DNI_Completo_Link`, `Pasaporte_Scan_Link`, `CUD_Link`, `Apto_Medico_Link` y `Anti_Doping_Link`.
+- `partidos_getPartidos`
+- `partidos_getDetalle`
+- `partidos_crearPartido`
+- `partidos_actualizarPartido`
+- `partidos_eliminarPartido`
+- `partidos_guardarDetalle`
+- `partidos_guardarConvocatoria`
+- `partidos_guardarRatings`
+- `partidos_agregarMomento`
+- `partidos_eliminarMomento`
+- `partidos_getMetricas`
 
-### Penales
+## Acciones — Concentraciones
 
-- Debe conservar `SesionesPenales` y `Penales` si este script comparte el backend.
-- `Penales` debe persistir `sesionId`, `jugadora` y `arquera`.
-- Los alias `sesion_id`, `jugadora_dni` y `arquera_dni` se aceptan solo como compatibilidad.
+- `concentraciones_getConcentraciones`
+- `concentraciones_crearConcentracion`
+- `concentraciones_editarConcentracion`
+- `concentraciones_eliminarConcentracion`
+- `concentraciones_getDias`
+- `concentraciones_agregarActividad`
+- `concentraciones_editarActividad`
+- `concentraciones_eliminarActividad`
+- `concentraciones_generarConvocatoria` — genera copia del template Drive con placeholders reemplazados
 
-### Archivos
+## Acciones — Testeos
 
-- El script es responsable de devolver links nuevos cuando se sube un archivo.
-- La respuesta de subida debe ser estable y reutilizable por el frontend.
+- `testeos_getTesteos`
+- `testeos_crearTesteo`
+- `testeos_agregarMedicion`
+- `testeos_editarMedicion`
+- `testeos_eliminarMedicion`
 
-### Alertas
+## Hojas reales (nombre exacto en Sheets)
 
-- `base_getAlertas` debe devolver al menos:
-  - `faltantes`
-  - `vencimientos`
+| Clave interna       | Nombre real en Sheets              |
+|---------------------|------------------------------------|
+| `plantel`           | `Las_Murcielagas_Base_Personal`    |
+| `sesionesPenales`   | `SesionesPenales`                  |
+| `penales`           | `Penales`                          |
+| `partidos`          | `Partidos`                         |
+| `concentraciones`   | `Concentraciones`                  |
+| `concentracionDias` | `ConcentracionDias`                |
+| `testeos`           | `Testeos`                          |
+| `testeosMediciones` | `TesteosMediciones`                |
+| `columnasDinamicas` | `ColumnasDinamicas`                |
 
-## Reglas de edición
+> No existe hoja `Password`. La verificación de contraseña lee la hoja `Las_Murcielagas_Base_Personal`.
 
-- La ficha individual es el lugar principal para editar datos.
-- `base_guardarCambios` aplica cambios parciales, no reemplazos totales.
-- La baja lógica no borra historial.
-- Los archivos se reemplazan, no se destruyen en silencio.
+## Helpers internos relevantes
 
-## Hojas esperadas
+- `ensureColumn_(sheet, colName)` — agrega columna al final si no existe. Permite auto-extender el esquema sin tocar Sheets manualmente.
+- `getOrCreateFolder_(parentId, nombre)` — crea subcarpeta en Drive si no existe.
+- `formatFechaTextoGas_(fecha)` — convierte `yyyy-MM-dd` a texto natural (ej: "17 de mayo de 2026").
+- `FORZAR_AUTORIZACION()` — función manual a ejecutar desde el editor una sola vez para pre-autorizar DriveApp y DocumentApp.
 
-- `Password`
-- `Plantel`
-- `ColumnasDinamicas`
-- `SesionesPenales`
-- `Penales`
-- `Partidos`
-- `Concentraciones`
-- `ConcentracionDias`
-- `Testeos`
-- `TesteosMediciones`
+## Generación de convocatoria (Drive)
 
-## Criterios de mantenimiento
+- Template: ID `1foA1M0ftQz7KAOWRgBHCRcewgdCJFdUPynpMYdyEmZM`
+- Carpeta de generados: ID `1HtxDxNOxjm3xKs6N5t2SzDlp3TlXf8P1`
+- Placeholders: `{{FECHA_EMISION}}`, `{{LUGAR}}`, `{{DIRECCION_LUGAR}}`, `{{CIUDAD}}`, `{{FECHA_INICIO_TEXTO}}`, `{{FECHA_FIN_TEXTO}}`, `{{TABLA_CONVOCADAS}}`, `{{TIPO_ACTIVIDAD}}`
 
-- Mantener compatibilidad con el frontend actual.
-- No mezclar datos administrativos con reportes.
-- No duplicar lógica documental si ya existe un Worker o script dedicado.
-- Si este script se vuelve el backend compartido, su contrato debe quedar documentado antes de tocar frontend.
+## Antidoping
 
-## Riesgos conocidos
-
-- Hay referencias históricas al backend auxiliar `worker-additions.gs`.
-- Si el entorno productivo ya separó responsabilidades, este documento debe ajustarse a esa división real.
-- No asumir que `Penales` o `Partidos` viven aquí sin validar el backend desplegado.
+Las acciones `antidoping_*` **no están** en el Worker ni en este GAS. El módulo antidoping funciona como consulta local con fallback — no tiene backend.

@@ -363,11 +363,30 @@
         font-size: clamp(31px, 9vw, 44px);
       }
     }
+
+    .hidden{display:none!important}
+    .login-card{max-width:440px;margin:90px auto 0;background:rgba(255,255,255,.95);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:36px 32px;text-align:center;backdrop-filter:blur(3px)}
+    .login-card h2{font-family:var(--condensed);font-size:2.4rem;font-weight:800;text-transform:uppercase;color:var(--text);margin:8px 0 10px;line-height:1}
+    .login-sub{color:var(--muted);font-size:15px;margin:0 0 22px;line-height:1.4}
+    .login-input{width:100%;border:1px solid var(--border);border-radius:14px;padding:12px 14px;font-family:var(--sans);font-size:1rem;outline:none;margin-bottom:10px;color:var(--text);background:#fff;box-sizing:border-box}
+    .login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,159,227,.15)}
+    .login-btn{width:100%;background:var(--accent-dark);color:#fff;border:0;border-radius:14px;padding:12px 20px;font-family:var(--condensed);font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;transition:.12s ease}
+    .login-btn:hover{background:var(--accent)}
+    .login-status{margin-top:10px;font-size:.9rem;color:var(--muted);font-weight:600;min-height:20px}
+    .login-status.error{color:#b91c1c}
   </style>
 </head>
 
 <body>
-  <main class="app">
+  <section id="loginView" class="login-card">
+    <div class="eyebrow">Herramientas internas</div>
+    <h2>Las Murciélagas</h2>
+    <p class="login-sub">Acceso exclusivo para el cuerpo técnico.</p>
+    <input id="passInput" type="password" placeholder="Contraseña del equipo" autocomplete="current-password" class="login-input">
+    <button id="loginBtn" class="login-btn">Ingresar</button>
+    <div id="loginStatus" class="login-status"></div>
+  </section>
+  <main class="app hidden" id="appContent">
     <section class="hero">
       <img
         class="hero-logo fadec"
@@ -458,5 +477,12 @@
       Murciélagas Analytics · uso interno del cuerpo técnico
     </div>
   </main>
+  <script src="./assets/config.js"></script>
+  <script>
+    const API_URL=API_BASE_URL;
+    (function(){if(localStorage.getItem('mrcl_auth')==='1'){document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}})();
+    function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contraseña incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
+    document.addEventListener('DOMContentLoaded',()=>{document.getElementById('loginBtn').addEventListener('click',login);document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()})});
+  </script>
 </body>
 </html>
