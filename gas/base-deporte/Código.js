@@ -42,6 +42,20 @@ var SHEETS = {
 var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
 var ANTIDOPING_BACKEND_VERSION = '2026-05-17.3';
+var TUE_DEFAULT_DURATION_DAYS = 365;
+var TUE_FIELDS_ = [
+  'TUE_Estado',
+  'TUE_Medicamento',
+  'TUE_Sustancia',
+  'TUE_Diagnostico',
+  'TUE_Justificacion',
+  'TUE_Fecha_Emision',
+  'TUE_Fecha_Vencimiento',
+  'TUE_IBSA_Enviado',
+  'TUE_IBSA_Fecha_Envio',
+  'TUE_Observaciones',
+  'TUE_Archivo'
+];
 
 // Campos críticos para calcular completitud y alertas.
 // Nota: Titulo_Educativo se agrega cuando se cree la columna en Sheets.
@@ -96,6 +110,7 @@ function formatearFecha_(date) {
 // ── LECTURA DE DATOS ──────────────────────────────────────────────────────────
 function getAllRows_() {
   var ws = getSheet_();
+  base_ensureTUEColumns_(ws);
   var data = ws.getDataRange().getValues();
   var headers = data[0];
   var filas = [];
@@ -123,6 +138,12 @@ function getRowByDNI_(dni) {
     if (filas[i].DNI === dniLimpio) return filas[i];
   }
   return null;
+}
+
+function base_ensureTUEColumns_(sheet) {
+  var ws = sheet || getSheet_();
+  TUE_FIELDS_.forEach(function(col) { ensureColumn_(ws, col); });
+  return ws;
 }
 
 function tryGetSheet(name) {
@@ -910,6 +931,117 @@ function antidoping_getBackendStatus() {
   });
 }
 
+function tue_todayIso_() {
+  return Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd');
+}
+
+function tue_addDaysIso_(iso, days) {
+  var base = parseFechaHoja_(iso);
+  if (!base) return '';
+  base.setDate(base.getDate() + days);
+  return Utilities.formatDate(base, 'GMT-3', 'yyyy-MM-dd');
+}
+
+function tue_normalizeEstado_(estado, vencimiento) {
+  var s = String(estado || '').trim();
+  if (!s) return '';
+  if (/vigente/i.test(s) && tue_isExpired_(vencimiento)) return 'Vencido';
+  return s;
+}
+
+function tue_isExpired_(vencimiento) {
+  var fecha = parseFechaHoja_(vencimiento);
+  if (!fecha) return false;
+  return fecha.getTime() < fechaHoyArgentina_().getTime();
+}
+
+function tue_shouldRequire_(item) {
+  var estado = normalizeText(item && item.estado);
+  var detalle = normalizeText(item && item.advertencia_detalle);
+  return estado.indexOf('prohibido') !== -1 ||
+    estado.indexOf('advertencia') !== -1 ||
+    detalle.indexOf('tue') !== -1;
+}
+
+function antidoping_guardarTUE(payload) {
+  var dni = normalizarDNI_(payload && payload.dni);
+  if (!dni) throw new Error('dni es requerido');
+  var row = getRowByDNI_(dni);
+  if (!row) throw new Error('Jugadora no encontrada');
+
+  base_ensureTUEColumns_();
+
+  var fechaEmision = String((payload && payload.fecha_emision) || '').trim() || tue_todayIso_();
+  var fechaVencimiento = String((payload && payload.fecha_vencimiento) || '').trim();
+  if (!fechaVencimiento) fechaVencimiento = tue_addDaysIso_(fechaEmision, TUE_DEFAULT_DURATION_DAYS);
+
+  var cambios = {
+    TUE_Estado: String((payload && payload.estado) || '').trim() || 'En preparación',
+    TUE_Medicamento: String((payload && payload.medicamento) || '').trim(),
+    TUE_Sustancia: String((payload && payload.sustancia) || '').trim(),
+    TUE_Diagnostico: String((payload && payload.diagnostico) || '').trim(),
+    TUE_Justificacion: String((payload && payload.justificacion) || '').trim(),
+    TUE_Fecha_Emision: fechaEmision,
+    TUE_Fecha_Vencimiento: fechaVencimiento,
+    TUE_IBSA_Enviado: String((payload && payload.ibsa_enviado) || '').trim() || 'NO',
+    TUE_IBSA_Fecha_Envio: String((payload && payload.ibsa_fecha_envio) || '').trim(),
+    TUE_Observaciones: String((payload && payload.observaciones) || '').trim()
+  };
+
+  guardarCambios(dni, cambios, payload && payload.usuario ? payload.usuario : 'Sistema — TUE');
+  return getFicha(dni);
+}
+
+function antidoping_listarTUEs() {
+  base_ensureTUEColumns_();
+  var filas = getAllRows_();
+  var casos = filas
+    .map(function(r) {
+      var estado = tue_normalizeEstado_(r.TUE_Estado, r.TUE_Fecha_Vencimiento);
+      var hasData = [
+        estado,
+        r.TUE_Sustancia,
+        r.TUE_Medicamento,
+        r.TUE_Archivo,
+        r.TUE_Fecha_Emision,
+        r.TUE_Fecha_Vencimiento
+      ].some(function(v) { return String(v || '').trim() !== ''; });
+      if (!hasData) return null;
+      return {
+        dni: r.DNI || '',
+        nombre: (r.Apellido || '') ? ((r.Apellido || '') + ', ' + (r.Nombre || '')) : (r.Nombre || ''),
+        estado: estado || 'En preparación',
+        medicamento: String(r.TUE_Medicamento || '').trim(),
+        sustancia: String(r.TUE_Sustancia || '').trim(),
+        diagnostico: String(r.TUE_Diagnostico || '').trim(),
+        justificacion: String(r.TUE_Justificacion || '').trim(),
+        fecha_emision: String(r.TUE_Fecha_Emision || '').trim(),
+        fecha_vencimiento: String(r.TUE_Fecha_Vencimiento || '').trim(),
+        ibsa_enviado: String(r.TUE_IBSA_Enviado || '').trim() || 'NO',
+        ibsa_fecha_envio: String(r.TUE_IBSA_Fecha_Envio || '').trim(),
+        observaciones: String(r.TUE_Observaciones || '').trim(),
+        archivo: String(r.TUE_Archivo || '').trim(),
+        vigente: !tue_isExpired_(r.TUE_Fecha_Vencimiento) && /vigente/i.test(estado || ''),
+        vencido: tue_isExpired_(r.TUE_Fecha_Vencimiento)
+      };
+    })
+    .filter(Boolean)
+    .sort(function(a, b) {
+      return (a.nombre || '').localeCompare(b.nombre || '');
+    });
+
+  var resumen = {
+    total: casos.length,
+    vigentes: casos.filter(function(x) { return x.vigente; }).length,
+    pendientes_ibsa: casos.filter(function(x) {
+      return (x.vigente || /subido|preparacion|preparación|revision/i.test(x.estado)) && String(x.ibsa_enviado || '').toUpperCase() !== 'SI';
+    }).length,
+    vencidos: casos.filter(function(x) { return x.vencido; }).length
+  };
+
+  return { resumen: resumen, casos: casos };
+}
+
 function base_crearHojaWADA_() {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName('WADA_Sustancias');
@@ -1059,7 +1191,7 @@ function getFaltantes() {
  * guardarCambios — escribe los cambios en la hoja y registra cada uno en Log_Cambios.
  */
 function guardarCambios(dni, cambios, usuario) {
-  var ws      = getSheet_();
+  var ws      = base_ensureTUEColumns_(getSheet_());
   var headers = ws.getDataRange().getValues()[0];
   var row     = getRowByDNI_(dni);
   if (!row) return { ok: false, msg: 'DNI no encontrado' };
@@ -1071,7 +1203,12 @@ function guardarCambios(dni, cambios, usuario) {
 
   for (var campo in cambios) {
     var colIdx = headers.indexOf(campo);
-    if (colIdx === -1) continue; // columna no existe, saltar
+    if (colIdx === -1) {
+      ensureColumn_(ws, campo);
+      headers = ws.getDataRange().getValues()[0].map(String);
+      colIdx = headers.indexOf(campo);
+    }
+    if (colIdx === -1) continue;
 
     var valorAnterior = ws.getRange(rowNum, colIdx + 1).getValue();
     var valorNuevo    = cambios[campo];
@@ -1118,6 +1255,8 @@ var LABELS_CAMPO_ALERTAS_ = {
   Emergencia_Nombre:      'Contacto de emergencia',
   Emergencia_Tel:         'Teléfono de emergencia',
   Foto_Link:              'Foto',
+  TUE_Fecha_Vencimiento:  'Vencimiento TUE',
+  TUE_IBSA_Enviado:       'Envío TUE a IBSA',
 };
 
 /**
@@ -1138,7 +1277,7 @@ function base_getAlertas() {
     var dni = r.DNI || '';
 
     // Regla 1: documentos con fecha de vencimiento
-    ['DNI_Vto', 'Pasaporte_Vto', 'CUD_Vto', 'Apto_Medico_Vto'].forEach(function(campo) {
+    ['DNI_Vto', 'Pasaporte_Vto', 'CUD_Vto', 'Apto_Medico_Vto', 'TUE_Fecha_Vencimiento'].forEach(function(campo) {
       var alerta = evaluarVencimientoCampo_(r[campo], campo, nombreCompleto, dni, hoy);
       if (alerta) alertas.push(alerta);
     });
@@ -1207,6 +1346,22 @@ function base_getAlertas() {
         });
       }
     });
+
+    var tueEstado = tue_normalizeEstado_(r.TUE_Estado, r.TUE_Fecha_Vencimiento);
+    if (tueEstado && !tue_isExpired_(r.TUE_Fecha_Vencimiento) && /vigente|subido|revision|preparacion|preparación/i.test(tueEstado)) {
+      if (String(r.TUE_IBSA_Enviado || '').toUpperCase() !== 'SI') {
+        alertas.push({
+          tipo: 'AMARILLA',
+          categoria: 'documento',
+          jugadora: nombreCompleto,
+          dni: dni,
+          campo: 'TUE_IBSA_Enviado',
+          mensaje: 'TUE cargada sin confirmar envío a IBSA.',
+          dias_restantes: null,
+          fecha: null
+        });
+      }
+    }
   });
 
   return agruparAlertas_(alertas);
@@ -1371,6 +1526,12 @@ function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
     var cambios = {};
     if (CAMPOS_LINK_[tipo]) cambios[CAMPOS_LINK_[tipo]] = link;
     if (tipo === 'apto_medico') cambios['Apto_Medico_Vigente'] = 'SI';
+    if (tipo === 'tue') {
+      if (!String(row.TUE_Estado || '').trim()) cambios['TUE_Estado'] = 'Subido';
+      if (!String(row.TUE_Fecha_Emision || '').trim()) cambios['TUE_Fecha_Emision'] = tue_todayIso_();
+      if (!String(row.TUE_Fecha_Vencimiento || '').trim()) cambios['TUE_Fecha_Vencimiento'] = tue_addDaysIso_(tue_todayIso_(), TUE_DEFAULT_DURATION_DAYS);
+      if (!String(row.TUE_IBSA_Enviado || '').trim()) cambios['TUE_IBSA_Enviado'] = 'NO';
+    }
 
     guardarCambios(dni, cambios, 'Sistema — Upload');
 
@@ -1497,6 +1658,8 @@ function doPost(e) {
       case 'antidoping_importarCatalogo':  result = antidoping_importarCatalogo(payload); break;
       case 'antidoping_importarWada':      result = antidoping_importarWada(payload); break;
       case 'antidoping_getBackendStatus':  result = antidoping_getBackendStatus(); break;
+      case 'antidoping_guardarTUE':        result = ok(true, antidoping_guardarTUE(payload)); break;
+      case 'antidoping_listarTUEs':        result = ok(true, antidoping_listarTUEs()); break;
       case 'importarWADA':
         result = ok(true, base_importarWADA(payload.rows || [], payload.modo || 'replace'));
         break;
