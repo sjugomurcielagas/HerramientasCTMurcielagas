@@ -112,6 +112,9 @@ Acciones disponibles en `gas/base-deporte/Código.js`:
 - `antidoping_getHistorial` — devuelve historial de consultas (últimas 50).
 - `antidoping_importarCatalogo` — importa catálogo real desde un array `items` en formato JSON.
 - `antidoping_importarWada` — importa `WADA_Sustancias` desde `rows` (array) o `csv` (texto con `;` o `,`).
+- `antidoping_getBackendStatus` — devuelve versión backend, estado de cache, historial y carga WADA.
+- `antidoping_guardarTUE` — guarda o actualiza el estado TUE de una jugadora sobre la ficha del plantel.
+- `antidoping_listarTUEs` — devuelve tablero resumido de TUE vigentes / pendientes IBSA / vencidas.
 
 Persistencia:
 
@@ -119,12 +122,38 @@ Persistencia:
 - Hoja `Antidoping_Historial`: `fecha_revision`, `consulta`, `medicamento`, `principio_activo`, `estado`, `fuente_argentina`, `fuente_wada`, `fuente_secundaria`, `observaciones`.
 - Hoja `Antidoping_Cache`: `query_norm`, `query_raw`, `source`, `result_json`, `fetched_at`, `expires_at`, `hit_count`, `last_hit_at`.
 - Hoja `WADA_Sustancias`: `sustancia`, `estado`, `categoria`, `en_competencia`, `fuera_competencia`, `umbral`, `nota`, `version`.
+- Hoja `Las_Murcielagas_Base_Personal` (misma ficha del plantel): columnas TUE agregadas automáticamente si no existen:
+  - `TUE_Estado`
+  - `TUE_Medicamento`
+  - `TUE_Sustancia`
+  - `TUE_Diagnostico`
+  - `TUE_Justificacion`
+  - `TUE_Fecha_Emision`
+  - `TUE_Fecha_Vencimiento`
+  - `TUE_IBSA_Enviado`
+  - `TUE_IBSA_Fecha_Envio`
+  - `TUE_Observaciones`
+  - `TUE_Archivo`
 
 Formato rápido para `antidoping_importarWada` (CSV):
 
 `sustancia;estado;categoria;en_competencia;fuera_competencia;umbral;nota;version`
 
 Si `Antidoping_Catalogo` está vacía al primer uso, se crea una semilla inicial de referencia para asegurar respuestas y trazabilidad desde la primera consulta.
+
+### TUE
+
+La implementación actual trabaja con una sola TUE activa por jugadora.
+
+Reglas relevantes:
+
+- Si se sube un archivo `tue` por `base_subirArchivo`, el backend completa defaults básicos si faltan:
+  - `TUE_Estado = Subido`
+  - `TUE_Fecha_Emision = hoy`
+  - `TUE_Fecha_Vencimiento = hoy + 365 días`
+  - `TUE_IBSA_Enviado = NO`
+- `TUE_Fecha_Vencimiento` entra en el sistema de alertas.
+- Si la TUE está vigente o en curso y `TUE_IBSA_Enviado != SI`, se genera alerta operativa.
 
 ### Formato de importación de catálogo
 

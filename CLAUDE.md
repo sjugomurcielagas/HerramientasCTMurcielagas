@@ -57,6 +57,50 @@ assets/
   logo-murcielagas.webp
 ```
 
+## Estado actual relevante
+
+- `antidoping/index.html` ya no es solo consulta: incluye flujo TUE operativo.
+- `gas/base-deporte/Código.js` expone acciones antidoping y TUE vía el mismo Apps Script.
+- La ficha del plantel se auto-extiende con columnas TUE si no existen todavía en Sheets.
+
+### Antidoping y TUE
+
+Acciones activas del backend:
+
+- `antidoping_buscarMedicamento`
+- `antidoping_getFrecuentes`
+- `antidoping_getHistorial`
+- `antidoping_importarCatalogo`
+- `antidoping_importarWada`
+- `antidoping_getBackendStatus`
+- `antidoping_guardarTUE`
+- `antidoping_listarTUEs`
+
+Criterio operativo actual del módulo:
+
+- `PERMITIDO` si la base WADA cargada no marca prohibición ni advertencia explícita.
+- `PERMITIDO CON ADVERTENCIA` si hay condición de uso, umbral, vía, dosis o posible TUE.
+- `PROHIBIDO` o `PROHIBIDO EN COMPETENCIA` si la regla lo marca de forma explícita.
+
+Modelo TUE actual en ficha:
+
+- `TUE_Estado`
+- `TUE_Medicamento`
+- `TUE_Sustancia`
+- `TUE_Diagnostico`
+- `TUE_Justificacion`
+- `TUE_Fecha_Emision`
+- `TUE_Fecha_Vencimiento`
+- `TUE_IBSA_Enviado`
+- `TUE_IBSA_Fecha_Envio`
+- `TUE_Observaciones`
+- `TUE_Archivo`
+
+Importante:
+
+- Hoy el sistema maneja una sola TUE activa por jugadora en la ficha.
+- La vigencia por defecto se propone a `365 días`, pero es editable y no debe asumirse como regla universal.
+
 ## Consistencia de estilo
 
 Mantener coherencia con los módulos existentes. Las CSS custom properties definidas en `:root` son idénticas en todos los módulos internos (base-datos, penales, analisis):
