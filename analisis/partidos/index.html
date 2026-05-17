@@ -327,8 +327,8 @@
     const state={plantel:[],partidos:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{}};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
-    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const r=await fetch(url.toString());const d=await r.json();if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data}
-    async function apiPost(payload){const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data}
+    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const r=await fetch(url.toString());const txt=await r.text();let d;try{d=JSON.parse(txt)}catch{throw new Error('Respuesta inesperada del servidor')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data}
+    async function apiPost(payload){const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const txt=await r.text();let d;try{d=JSON.parse(txt)}catch{throw new Error('Respuesta inesperada del servidor')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data}
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('loginBtn').addEventListener('click',login);
