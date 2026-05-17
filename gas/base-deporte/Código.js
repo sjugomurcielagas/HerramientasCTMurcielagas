@@ -1141,7 +1141,7 @@ function concentraciones_editarConcentracion(p) {
   const sheet = getSheet(SHEETS.concentraciones);
   const row = findRowIndex(sheet, 'id', p.id);
   if (row === -1) throw new Error('Concentración no encontrada');
-  ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'notas'].forEach(f => {
+  ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'notas', 'convocadas_json'].forEach(f => {
     if (p[f] !== undefined) setCell(sheet, row, f, p[f]);
   });
   return ok(true, { id: p.id });
@@ -1194,7 +1194,8 @@ function _getOrCreateDia(concentracionId, fecha) {
   return { sheet, diaId: id };
 }
 
-// Parámetros: { concentracionId, fecha, tipo, hora?, descripcion?, duracion?, notas? }
+// Parámetros: { concentracionId, fecha, tipo, titulo?, hora?, detalle?, duracion?, notas? }
+// titulo y descripcion son sinónimos; detalle y notas son sinónimos.
 function concentraciones_agregarActividad(p) {
   if (!p.concentracionId || !p.fecha || !p.tipo)
     throw new Error('concentracionId, fecha y tipo son requeridos');
@@ -1205,12 +1206,12 @@ function concentraciones_agregarActividad(p) {
   const lista = parseJson(sheet.getRange(diaRow, col).getValue()) || [];
 
   const actividad = {
-    id:          newId(),
-    tipo:        p.tipo,
-    hora:        p.hora        || '',
-    descripcion: p.descripcion || '',
-    duracion:    p.duracion    || '',
-    notas:       p.notas       || '',
+    id:      newId(),
+    tipo:    p.tipo,
+    hora:    p.hora    || '',
+    titulo:  p.titulo  || p.descripcion || '',
+    notas:   p.detalle || p.notas       || '',
+    duracion: p.duracion || '',
   };
   lista.push(actividad);
   lista.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
@@ -1218,7 +1219,7 @@ function concentraciones_agregarActividad(p) {
   return ok(true, { ...actividad, diaId });
 }
 
-// Parámetros: { concentracionId, fecha, actividadId, tipo?, hora?, descripcion?, duracion?, notas? }
+// Parámetros: { concentracionId, fecha, actividadId, tipo?, hora?, titulo?, detalle?, duracion?, notas? }
 function concentraciones_editarActividad(p) {
   if (!p.concentracionId || !p.fecha || !p.actividadId)
     throw new Error('concentracionId, fecha y actividadId son requeridos');
@@ -1236,32 +1237,38 @@ function concentraciones_editarActividad(p) {
   const idx = lista.findIndex(a => String(a.id) === String(p.actividadId));
   if (idx === -1) throw new Error('Actividad no encontrada');
 
-  ['tipo', 'hora', 'descripcion', 'duracion', 'notas'].forEach(f => {
+  ['tipo', 'hora', 'duracion', 'notas'].forEach(f => {
     if (p[f] !== undefined) lista[idx][f] = p[f];
   });
+  if (p.titulo !== undefined)    lista[idx].titulo = p.titulo;
+  else if (p.descripcion !== undefined) lista[idx].titulo = p.descripcion;
+  if (p.detalle !== undefined)   lista[idx].notas  = p.detalle;
   lista.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
   sheet.getRange(rowIndex, col).setValue(JSON.stringify(lista));
   return ok(true, { actividadId: p.actividadId });
 }
 
-// Parámetros: { concentracionId, fecha, actividadId }
+// Parámetros: { actividadId, concentracionId? }
+// No requiere fecha: escanea todos los días de la concentración para localizar la actividad.
 function concentraciones_eliminarActividad(p) {
-  if (!p.concentracionId || !p.fecha || !p.actividadId)
-    throw new Error('concentracionId, fecha y actividadId son requeridos');
+  const actId  = p.actividadId || p.id;
+  const concId = p.concentracionId || p.concentracion_id;
+  if (!actId) throw new Error('actividadId es requerido');
 
   const sheet = getSheet(SHEETS.concentracionDias);
-  const diaRow = sheetToObjects(sheet).find(
-    r => String(r.concentracionId) === String(p.concentracionId)
-      && String(r.fecha) === String(p.fecha)
-  );
-  if (!diaRow) throw new Error('Día no encontrado');
+  const dias   = sheetToObjects(sheet);
+  const col    = getColIndex(sheet, 'actividades');
 
-  const rowIndex = findRowIndex(sheet, 'id', diaRow.id);
-  const col = getColIndex(sheet, 'actividades');
-  const lista = (parseJson(sheet.getRange(rowIndex, col).getValue()) || [])
-    .filter(a => String(a.id) !== String(p.actividadId));
-  sheet.getRange(rowIndex, col).setValue(JSON.stringify(lista));
-  return ok(true, { actividadId: p.actividadId });
+  for (var i = 0; i < dias.length; i++) {
+    if (concId && String(dias[i].concentracionId) !== String(concId)) continue;
+    const lista = parseJson(dias[i].actividades) || [];
+    const idx   = lista.findIndex(function(a) { return String(a.id) === String(actId); });
+    if (idx === -1) continue;
+    lista.splice(idx, 1);
+    sheet.getRange(i + 2, col).setValue(JSON.stringify(lista));
+    return ok(true, { actividadId: actId });
+  }
+  throw new Error('Actividad no encontrada');
 }
 
 

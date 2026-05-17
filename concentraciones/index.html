@@ -327,7 +327,7 @@
     function activityHtml(a,dia){
       const id=a.id||a.actividad_id||a.uuid||'';
       const tipo=activityTipo(a),duracion=a.duracion||a.Duracion||a.duration||'';
-      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.Titulo||a.nombre||tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(tipoLabel(tipo))}${duracion?' · '+esc(duracion)+' min':''}</div>${a.detalle||a.Detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.Detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
+      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(tipoLabel(tipo))}${duracion?' · '+esc(duracion)+' min':''}</div>${a.detalle||a.Detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.Detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
     }
 
     function actualizarTitulosActividad(){
@@ -366,7 +366,7 @@
     async function eliminarActividad(id){
       const c=currentConc();if(!c||!id)return;
       if(!confirm('¿Eliminar esta actividad?'))return;
-      try{await apiPost({action:'concentraciones_eliminarActividad',id,actividad_id:id,concentracion_id:concId(c)});await loadDias()}
+      try{await apiPost({action:'concentraciones_eliminarActividad',actividadId:id,concentracionId:concId(c)});await loadDias()}
       catch(err){alert('Error al eliminar actividad: '+err.message)}
     }
     async function eliminarConcentracion(){
