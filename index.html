@@ -374,6 +374,8 @@
     .login-btn:hover{background:var(--accent)}
     .login-status{margin-top:10px;font-size:.9rem;color:var(--muted);font-weight:600;min-height:20px}
     .login-status.error{color:#b91c1c}
+    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    @media (max-width:1024px){.page-version-tag{display:none}}
   </style>
 </head>
 
@@ -484,5 +486,6 @@
     function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contraseña incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
     document.addEventListener('DOMContentLoaded',()=>{document.getElementById('loginBtn').addEventListener('click',login);document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()})});
   </script>
+  <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
 </body>
 </html>

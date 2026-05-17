@@ -373,7 +373,9 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   #statusbar{font-size:13px;}
 }
 
-</style>
+    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    @media (max-width:1024px){.page-version-tag{display:none}}
+  </style>
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -2505,5 +2507,6 @@ window.addEventListener('beforeinstallprompt', e=>{
   setTimeout(()=>btn.remove(), 10000);
 });
 </script>
+  <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
 </body>
 </html>

@@ -27,6 +27,8 @@
     .footer{margin-top:28px;text-align:center;color:var(--muted);font-size:.88rem;border-top:1px solid var(--borde);padding-top:16px}
     @media(min-width:640px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:540px){main{padding:16px 12px 48px}.tool-card{min-height:auto}}
+    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    @media (max-width:1024px){.page-version-tag{display:none}}
   </style>
 </head>
 <body>
@@ -68,5 +70,6 @@
     </div>
     <div class="footer">Herramienta interna · Cuerpo técnico Las Murciélagas</div>
   </main>
+  <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
 </body>
 </html>

@@ -708,7 +708,9 @@ footer {
   .metric, .table-wrap { border-color: #ddd; background: #fff; }
   .report-meta, .metric-label, .metric-sub, th, td { color: #444 !important; }
 }
-  </style>
+  .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+  @media (max-width:1024px){.page-version-tag{display:none}}
+</style>
 </head>
 <body>
   <div class="app">
@@ -2682,5 +2684,6 @@ function getManualContext() {
   return notes ? notes.value.trim() : '';
 }
   </script>
+  <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
 </body>
 </html>

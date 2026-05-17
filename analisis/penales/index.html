@@ -131,6 +131,8 @@
     /* Responsive */
     @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.registro-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px;align-items:start}}
     @media(max-width:540px){main{padding:12px 11px 64px}.panel-head h2{font-size:1.08rem}.res-btn{font-size:.96rem;padding:12px 6px}.zona-btn{padding:13px 4px}}
+    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    @media (max-width:1024px){.page-version-tag{display:none}}
   </style>
 </head>
 <body>
@@ -741,5 +743,6 @@
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
+  <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
 </body>
 </html>
