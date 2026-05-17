@@ -1150,10 +1150,14 @@ function concentraciones_getConcentraciones() {
 function concentraciones_crearConcentracion(p) {
   if (!p.nombre || !p.fechaInicio) throw new Error('nombre y fechaInicio son requeridos');
   const id = newId();
-  getSheet(SHEETS.concentraciones).appendRow([
-    id, p.nombre, p.fechaInicio, p.fechaFin || '', p.lugar || '', p.notas || '',
-    new Date().toISOString()
-  ]);
+  const sheet = getSheet(SHEETS.concentraciones);
+  sheet.appendRow([id, p.nombre, p.fechaInicio, p.fechaFin || '', p.lugar || '', p.notas || '', new Date().toISOString()]);
+  const row = findRowIndex(sheet, 'id', id);
+  if (row !== -1) {
+    ['direccion', 'ciudad', 'convocadas_json'].forEach(f => {
+      if (p[f] !== undefined && p[f] !== '') { ensureColumn_(sheet, f); setCell(sheet, row, f, p[f]); }
+    });
+  }
   return ok(true, { id });
 }
 
@@ -1162,8 +1166,10 @@ function concentraciones_editarConcentracion(p) {
   const sheet = getSheet(SHEETS.concentraciones);
   const row = findRowIndex(sheet, 'id', p.id);
   if (row === -1) throw new Error('Concentración no encontrada');
-  if (p.convocadas_json !== undefined) ensureColumn_(sheet, 'convocadas_json');
-  ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'notas', 'convocadas_json'].forEach(f => {
+  ['convocadas_json', 'direccion', 'ciudad'].forEach(f => {
+    if (p[f] !== undefined) ensureColumn_(sheet, f);
+  });
+  ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'direccion', 'ciudad', 'notas', 'convocadas_json'].forEach(f => {
     if (p[f] !== undefined) setCell(sheet, row, f, p[f]);
   });
   return ok(true, { id: p.id });
@@ -1324,7 +1330,9 @@ function concentraciones_generarConvocatoria(p) {
   var fechaEmision  = formatFechaTextoGas_(new Date());
   var fechaInicio   = formatFechaTextoGas_(conc.fechaInicio);
   var fechaFin      = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
-  var lugar         = String(conc.lugar || conc.nombre || '').trim();
+  var lugar         = String(conc.lugar     || conc.nombre || '').trim();
+  var direccion     = String(conc.direccion || lugar).trim();
+  var ciudad        = String(conc.ciudad    || lugar).trim();
 
   var template = DriveApp.getFileById(CONFIG_DOC.PLANTILLA_CONVOCATORIA);
   var carpeta  = getOrCreateFolder_(CONFIG_DOC.CARPETA_GENERADOS, 'Convocatorias Generadas');
@@ -1335,8 +1343,8 @@ function concentraciones_generarConvocatoria(p) {
   var body = doc.getBody();
   body.replaceText('\\{\\{FECHA_EMISION\\}\\}',    fechaEmision);
   body.replaceText('\\{\\{LUGAR\\}\\}',             lugar);
-  body.replaceText('\\{\\{DIRECCION_LUGAR\\}\\}',   lugar);
-  body.replaceText('\\{\\{CIUDAD\\}\\}',            lugar);
+  body.replaceText('\\{\\{DIRECCION_LUGAR\\}\\}',   direccion);
+  body.replaceText('\\{\\{CIUDAD\\}\\}',            ciudad);
   body.replaceText('\\{\\{FECHA_INICIO_TEXTO\\}\\}',fechaInicio);
   body.replaceText('\\{\\{FECHA_FIN_TEXTO\\}\\}',   fechaFin);
   body.replaceText('\\{\\{TABLA_CONVOCADAS\\}\\}',  tablaTexto);

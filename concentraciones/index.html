@@ -40,7 +40,9 @@
           <div class="panel-head"><div><h2>Nueva concentración</h2><p>Creá el registro general. La convocatoria se carga desde el detalle.</p></div></div>
           <div class="fields-grid">
             <div class="form-row"><label for="newNombre">Nombre *</label><input id="newNombre" placeholder="Ej: Campus Cenard · Mayo"></div>
-            <div class="form-row"><label for="newLugar">Lugar</label><input id="newLugar" placeholder="Sede o ciudad"></div>
+            <div class="form-row"><label for="newLugar">Sede</label><input id="newLugar" placeholder="Cenard, Club Atlético..."></div>
+            <div class="form-row"><label for="newDireccion">Dirección</label><input id="newDireccion" placeholder="Av. Figueroa Alcorta 7597"></div>
+            <div class="form-row"><label for="newCiudad">Ciudad</label><input id="newCiudad" placeholder="Buenos Aires"></div>
             <div class="form-row"><label for="newInicio">Inicio *</label><input id="newInicio" type="date"></div>
             <div class="form-row"><label for="newFin">Fin</label><input id="newFin" type="date"></div>
           </div>
@@ -58,7 +60,9 @@
               <h3>Datos generales</h3>
               <div class="fields-grid">
                 <div class="form-row"><label for="editNombre">Nombre</label><input id="editNombre"></div>
-                <div class="form-row"><label for="editLugar">Lugar</label><input id="editLugar"></div>
+                <div class="form-row"><label for="editLugar">Sede</label><input id="editLugar"></div>
+                <div class="form-row"><label for="editDireccion">Dirección</label><input id="editDireccion"></div>
+                <div class="form-row"><label for="editCiudad">Ciudad</label><input id="editCiudad"></div>
                 <div class="form-row"><label for="editInicio">Inicio</label><input id="editInicio" type="date"></div>
                 <div class="form-row"><label for="editFin">Fin</label><input id="editFin" type="date"></div>
               </div>
@@ -213,6 +217,8 @@
     async function crearConcentracion(){
       const nombre=document.getElementById('newNombre').value.trim();
       const lugar=document.getElementById('newLugar').value.trim();
+      const direccion=document.getElementById('newDireccion').value.trim();
+      const ciudad=document.getElementById('newCiudad').value.trim();
       const fechaInicio=document.getElementById('newInicio').value;
       const fechaFin=document.getElementById('newFin').value;
       const notas=document.getElementById('newNotas').value.trim();
@@ -221,7 +227,7 @@
       if(!fechaInicio){st.textContent='Seleccioná la fecha de inicio.';st.className='status-line error';return}
       st.textContent='Creando...';st.className='status-line';btn.disabled=true;
       try{
-        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,fechaInicio,fechaFin,notas,convocadas_json:'[]'});
+        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,direccion,ciudad,fechaInicio,fechaFin,notas,convocadas_json:'[]'});
         const id=result?.id||result?.concentracion_id;
         await loadAll();
         clearNewForm();
@@ -241,9 +247,12 @@
       const c=currentConc();if(!c)return;
       const inicio=dateValue(c,'fecha_inicio','fechaInicio','inicio'),fin=dateValue(c,'fecha_fin','fechaFin','fin');
       document.getElementById('detalleTitulo').textContent=c.nombre||'Concentración';
-      document.getElementById('detalleSubtitulo').textContent=`${dateRange(inicio,fin)}${c.lugar?' · '+c.lugar:''}`;
+      const lugarTexto=[c.lugar,c.ciudad].filter(Boolean).join(', ');
+      document.getElementById('detalleSubtitulo').textContent=`${dateRange(inicio,fin)}${lugarTexto?' · '+lugarTexto:''}`;
       document.getElementById('editNombre').value=c.nombre||'';
       document.getElementById('editLugar').value=c.lugar||'';
+      document.getElementById('editDireccion').value=c.direccion||'';
+      document.getElementById('editCiudad').value=c.ciudad||'';
       document.getElementById('editInicio').value=inicio||'';
       document.getElementById('editFin').value=fin||'';
       document.getElementById('editNotas').value=c.notas||c.observaciones||'';
@@ -261,7 +270,7 @@
       finally{btn.disabled=false}
     }
     function detailPayload(c){
-      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),fechaInicio:document.getElementById('editInicio').value,fechaFin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(parseConvocadas(c))};
+      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),direccion:document.getElementById('editDireccion').value.trim(),ciudad:document.getElementById('editCiudad').value.trim(),fechaInicio:document.getElementById('editInicio').value,fechaFin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(parseConvocadas(c))};
     }
 
     function renderConvocatoria(){
@@ -279,7 +288,7 @@
     async function guardarConvocatoria(){
       const c=currentConc();if(!c)return;
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
-      const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
+      const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
       const st=document.getElementById('convStatus'),btn=document.getElementById('guardarConvBtn');
       st.textContent='Guardando convocatoria...';st.className='status-line';btn.disabled=true;
       try{await apiPost(payload);mergeConc({id:concId(c),convocadas_json:payload.convocadas_json});st.textContent='Convocatoria guardada.';st.className='status-line ok';renderLista();updateConvCount()}
@@ -376,7 +385,7 @@
       catch(err){alert('Error al eliminar concentración: '+err.message)}
     }
 
-    function clearNewForm(){['newNombre','newLugar','newFin','newNotas'].forEach(id=>document.getElementById(id).value='');document.getElementById('newInicio').valueAsDate=new Date()}
+    function clearNewForm(){['newNombre','newLugar','newDireccion','newCiudad','newFin','newNotas'].forEach(id=>document.getElementById(id).value='');document.getElementById('newInicio').valueAsDate=new Date()}
     function currentConc(){return state.concentraciones.find(c=>String(concId(c))===String(state.actualId))}
     function concId(c){return c?.id??c?.ID??c?.concentracion_id??c?.concentracionId??''}
     function mergeConc(values){const c=currentConc();if(c)Object.assign(c,values)}
