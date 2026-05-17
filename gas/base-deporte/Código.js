@@ -41,7 +41,7 @@ var SHEETS = {
 
 var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
-var ANTIDOPING_BACKEND_VERSION = '2026-05-17.2';
+var ANTIDOPING_BACKEND_VERSION = '2026-05-17.3';
 
 // Campos críticos para calcular completitud y alertas.
 // Nota: Titulo_Educativo se agrega cuando se cree la columna en Sheets.
@@ -170,11 +170,11 @@ function antidoping_seedCatalogo_(sheet) {
   if (sheet.getLastRow() > 1) return;
   var ahora = Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd');
   var base = [
-    ['Paracetamol', 'Paracetamol', 'NO FIGURA COMO PROHIBIDO (REVISAR DOSIS)', 'Uso habitual. Confirmar composición combinada si aplica.', 'Vademecum Argentina', 'Lista Prohibida WADA 2026', 'N/A', ahora, 'SI'],
-    ['Ibuprofeno', 'Ibuprofeno', 'NO FIGURA COMO PROHIBIDO', 'Revisar formulaciones combinadas con descongestivos.', 'Vademecum Argentina', 'Lista Prohibida WADA 2026', 'N/A', ahora, 'SI'],
-    ['Salbutamol', 'Salbutamol', 'CONDICIONADO / REQUIERE REVISIÓN MÉDICA', 'Puede requerir TUE o control de dosis según vía y concentración.', 'Vademecum Argentina', 'Lista Prohibida WADA 2026 (S3)', 'Global DRO / NADAmed', ahora, 'SI'],
-    ['Pseudoefedrina', 'Pseudoefedrina', 'PROHIBIDO EN COMPETENCIA (UMBRAL)', 'Controlar ventana de uso y concentración.', 'Vademecum Argentina', 'Lista Prohibida WADA 2026 (S6)', 'Global DRO / NADAmed', ahora, 'SI'],
-    ['Budesonida', 'Budesonida', 'CONDICIONADO / REQUIERE REVISIÓN MÉDICA', 'Vía sistémica e indicación pueden requerir TUE.', 'Vademecum Argentina', 'Lista Prohibida WADA 2026 (S9)', 'Global DRO / NADAmed', ahora, 'SI']
+    ['Paracetamol', 'Paracetamol', '', 'Uso habitual. Confirmar composición combinada si aplica.', 'Catálogo interno', 'WADA_Sustancias', '', ahora, 'SI'],
+    ['Ibuprofeno', 'Ibuprofeno', '', 'Revisar formulaciones combinadas con descongestivos.', 'Catálogo interno', 'WADA_Sustancias', '', ahora, 'SI'],
+    ['Salbutamol', 'Salbutamol', '', 'Controlar dosis, vía y concentración urinaria si aplica.', 'Catálogo interno', 'WADA_Sustancias', '', ahora, 'SI'],
+    ['Pseudoefedrina', 'Pseudoefedrina', '', 'Controlar ventana de uso y umbral urinario.', 'Catálogo interno', 'WADA_Sustancias', '', ahora, 'SI'],
+    ['Budesonida', 'Budesonida', '', 'Revisar la vía de administración y el contexto competitivo.', 'Catálogo interno', 'WADA_Sustancias', '', ahora, 'SI']
   ];
   sheet.getRange(2, 1, base.length, base[0].length).setValues(base);
 }
@@ -352,15 +352,16 @@ function antidoping_evalWada_(principioActivo) {
     .filter(Boolean);
   if (!activos.length) activos = [normalizeText(principioActivo)];
 
-  var hits = [];
+  var exactHits = [];
+  var boundaryHits = [];
   activos.forEach(function(a) {
     rules.forEach(function(r) {
       if (!a || !r.sustancia) return;
-      if (a === r.sustancia || a.indexOf(r.sustancia) !== -1 || r.sustancia.indexOf(a) !== -1) {
-        hits.push(r);
-      }
+      if (a === r.sustancia) exactHits.push(r);
+      else if (antidoping_phraseMatch_(a, r.sustancia) || antidoping_phraseMatch_(r.sustancia, a)) boundaryHits.push(r);
     });
   });
+  var hits = exactHits.length ? exactHits : boundaryHits;
   if (!hits.length) {
     return {
       estado: 'PERMITIDO',
@@ -395,6 +396,15 @@ function antidoping_evalWada_(principioActivo) {
     en_competencia: enCompetenciaResumen,
     fuera_competencia: fueraCompetenciaResumen
   };
+}
+
+function antidoping_phraseMatch_(text, phrase) {
+  var haystack = normalizeText(text || '');
+  var needle = normalizeText(phrase || '');
+  if (!haystack || !needle) return false;
+  var escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var re = new RegExp('(^|[\\s,;\\/()+-])' + escaped + '($|[\\s,;\\/()+-])');
+  return re.test(haystack);
 }
 
 function antidoping_resolveExplicitState_(enCompetencia, fueraCompetencia) {
@@ -624,6 +634,21 @@ function antidoping_buscarMedicamento(payload) {
       .slice(0, 5)
       .map(function(x) { return x.item; });
     source = 'catalogo_local';
+  }
+
+  if (!matches.length) {
+    matches = [{
+      medicamento: consulta,
+      principio_activo: knownActiveFromQuery || consulta,
+      presentacion: '',
+      laboratorio: '',
+      observaciones: '',
+      fuente_argentina: knownActiveFromQuery ? 'Marca comercial normalizada' : 'Consulta directa',
+      fuente_secundaria: '',
+      fuente_url: '',
+      fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+    }];
+    source = knownActiveFromQuery ? 'known_commercial_active' : 'wada_direct';
   }
 
   var enriquecidos = matches.map(function(item) {
