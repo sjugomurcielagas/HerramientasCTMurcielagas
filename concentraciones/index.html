@@ -16,7 +16,7 @@
     .form-row{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}label{font-size:.92rem;font-weight:800;color:#334155}input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.98rem}textarea{min-height:92px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 4px rgba(34,168,232,.15)}
     .btn{border:0;border-radius:13px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:7px;text-decoration:none;transition:.12s ease}.btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.86rem;padding:8px 10px;border-radius:11px}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}.status-line{margin-top:10px;color:var(--muted);font-weight:700}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
     .tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 0 13px;position:sticky;top:70px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.94) 100%)}.tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:800}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
-    .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.fields-grid{display:grid;gap:10px}.toolbar{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:13px}.item-list{display:grid;gap:10px}.item-card{padding:13px;display:grid;gap:10px;box-shadow:none}.item-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.item-meta{font-size:.92rem;color:var(--muted);margin-top:2px}.actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
+    .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.fields-grid{display:grid;gap:10px}.toolbar{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:13px}.item-list{display:grid;gap:10px}.item-card{padding:13px;display:grid;gap:10px;box-shadow:none}.item-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.item-meta{font-size:.92rem;color:var(--muted);margin-top:2px}.actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
     .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.section-card{padding:12px;margin-bottom:10px;box-shadow:none}.section-card h3{font-size:1.2rem;margin-bottom:9px}.check-grid{display:grid;gap:7px;max-height:300px;overflow:auto;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:8px}.check-item{display:flex;gap:7px;align-items:flex-start;background:#fff;border:1px solid var(--borde);border-radius:11px;padding:7px;font-size:.94rem}.check-item input{width:auto;margin-top:2px}.docs-block{margin:10px 0 2px;padding-top:10px;border-top:1px solid var(--borde)}.docs-block .actions{gap:6px}.activity-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.activity-title{font-weight:800;color:var(--azul-950)}.activity-meta{font-size:.9rem;color:var(--muted);margin-top:3px}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
     @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 180px}.item-card{grid-template-columns:1fr auto;align-items:center}.fields-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(min-width:1040px){.fields-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){main{padding:12px 11px 70px}.topbar-inner{align-items:flex-start}.home-link{font-size:.81rem;padding:8px 9px}.brand img:first-child{height:46px;max-width:62px}.brand img:nth-child(2){height:54px;max-width:74px}.brand-subtitle{display:none}.panel,.login-card{padding:14px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
@@ -77,12 +77,14 @@
               <div class="docs-block">
                 <div class="card-title" style="margin-bottom:12px">Otros documentos</div>
                 <div class="actions">
+                  <button id="validarDocsBtn" class="btn ghost small" type="button">Validar datos</button>
                   <button class="btn ghost small" type="button" data-doc="licencia_agencia_cordoba">Licencia Agencia Córdoba</button>
                   <button class="btn ghost small" type="button" data-doc="licencia_municipalidad_cordoba">Licencia Municipalidad Córdoba</button>
                   <button class="btn ghost small" type="button" data-doc="certificacion_participacion">Certificación participación</button>
                   <button class="btn secondary small" type="button" data-doc="todos">Generar todos</button>
                 </div>
                 <div id="docsStatus" class="status-line"></div>
+                <div id="docsHistory" class="grid" style="margin-top:10px"><div class="empty">Sin documentos generados todavía.</div></div>
               </div>
               <div class="actions" style="margin:10px 0"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
@@ -96,7 +98,7 @@
           <div class="panel-head"><div><h2>Días y actividades</h2><p>Planificación operativa por jornada.</p></div><button id="recargarDiasBtn" class="btn secondary small">Recargar días</button></div>
           <div class="split">
             <div class="section-card">
-              <h3>Nueva actividad</h3>
+              <h3 id="actividadFormTitle">Nueva actividad</h3>
               <div class="fields-grid">
                 <div class="form-row"><label for="actFecha">Fecha</label><input id="actFecha" type="date"></div>
                 <div class="form-row"><label for="actHora">Hora</label><input id="actHora" type="time"></div>
@@ -105,7 +107,7 @@
                 <div class="form-row"><label for="actDuracion">Duración</label><input id="actDuracion" type="number" min="0" step="5" placeholder="Minutos"></div>
               </div>
               <div class="form-row"><label for="actDetalle">Detalle</label><textarea id="actDetalle" placeholder="Lugar, responsables, materiales o notas"></textarea></div>
-              <div class="actions"><button id="agregarActBtn" class="btn small">Agregar actividad</button></div>
+              <div class="actions"><button id="agregarActBtn" class="btn small">Agregar actividad</button><button id="cancelarEdicionActBtn" class="btn ghost small hidden" type="button">Cancelar edición</button></div>
               <div id="actStatus" class="status-line"></div>
             </div>
             <div>
@@ -121,7 +123,7 @@
   <script src="../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],concentraciones:[],dias:[],actualId:null};
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null,documentos:[],editingActividad:null};
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -132,11 +134,13 @@
       document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
       document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
       document.getElementById('generarConvBtn').addEventListener('click',generarConvocatoriaDocumental);
+      document.getElementById('validarDocsBtn').addEventListener('click',validarDocumentos);
       document.querySelectorAll('[data-doc]').forEach(btn=>btn.addEventListener('click',()=>generarDocumentosDesdeBoton(btn.dataset.doc)));
       document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
       document.getElementById('agregarActBtn').addEventListener('click',agregarActividad);
+      document.getElementById('cancelarEdicionActBtn').addEventListener('click',resetActividadForm);
       document.getElementById('actTipo').addEventListener('change',actualizarTitulosActividad);
       document.getElementById('eliminarConcBtn').addEventListener('click',eliminarConcentracion);
       document.getElementById('newInicio').valueAsDate=new Date();
@@ -232,6 +236,7 @@
       state.actualId=String(id);
       renderDetalle();
       loadDias();
+      loadDocumentosGenerados();
       showView('detalleView');
     }
     function renderDetalle(){
@@ -248,6 +253,7 @@
       document.getElementById('editFin').value=fin||'';
       document.getElementById('editNotas').value=c.notas||c.observaciones||'';
       document.getElementById('actFecha').value=inicio||new Date().toISOString().slice(0,10);
+      resetActividadForm();
       renderConvocatoria();
     }
 
@@ -314,10 +320,47 @@
         }).join('');
         st.className='status-line ok';
         st.innerHTML=links?`Documentos generados:<ul style="margin:8px 0 0 18px">${links}</ul>`:'Documentos generados.';
+        await loadDocumentosGenerados();
       }catch(err){
         st.textContent='La generación documental todavía no está disponible o falló en el backend. La convocatoria guardada no se modificó. Detalle: '+err.message;
         st.className='status-line error';
       }finally{if(btn)btn.disabled=false}
+    }
+    async function validarDocumentos(){
+      const c=currentConc();if(!c)return;
+      const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
+      st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
+      try{
+        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:['convocatoria_fadec','licencia_agencia_cordoba','licencia_municipalidad_cordoba','certificacion_participacion']});
+        if(data?.valido){st.textContent='Validación OK. No se detectaron faltantes para los documentos configurados.';st.className='status-line ok'}
+        else{st.textContent='Faltantes detectados: '+(Array.isArray(data?.faltantes)&&data.faltantes.length?data.faltantes.join(', '):'sin detalle');st.className='status-line error'}
+      }catch(err){st.textContent='Error al validar documentos: '+err.message;st.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+    async function loadDocumentosGenerados(){
+      const c=currentConc();if(!c)return;
+      const cont=document.getElementById('docsHistory');
+      cont.innerHTML='<div class="empty">Cargando historial de documentos...</div>';
+      try{
+        const data=await apiGet('concentraciones_getDocumentosGenerados',{concentracionId:concId(c),id:concId(c)});
+        state.documentos=Array.isArray(data)?data:[];
+        renderDocumentosGenerados();
+      }catch(err){cont.innerHTML=`<div class="empty">Error al cargar historial: ${esc(err.message)}</div>`}
+    }
+    function renderDocumentosGenerados(){
+      const cont=document.getElementById('docsHistory');
+      const items=(state.documentos||[]).slice().sort((a,b)=>String(b.timestamp||'').localeCompare(String(a.timestamp||'')));
+      if(!items.length){cont.innerHTML='<div class="empty">Sin documentos generados todavía.</div>';return}
+      cont.innerHTML=items.map(d=>{
+        const estado=String(d.estado||'').toLowerCase();
+        const badgeClass=estado==='generado'?'ok':(estado==='pendiente'?'warn':'danger');
+        const nombre=d.nombre||d.tipoDocumento||'Documento';
+        const cuando=d.timestamp?formatDateTime(d.timestamp):'';
+        const error=d.error?`<div class="item-meta">Detalle: ${esc(d.error)}</div>`:'';
+        const link=d.url?`<a class="btn ghost small" href="${esc(d.url)}" target="_blank" rel="noopener">Abrir</a>`:'';
+        return `<article class="item-card"><div><div class="item-title">${esc(nombre)}</div><div class="item-meta">${esc(d.tipoDocumento||'')}${cuando?' · '+esc(cuando):''}</div>${error}</div><div class="actions"><span class="badge ${badgeClass}">${esc(d.estado||'sin estado')}</span>${link}</div></article>`;
+      }).join('');
     }
     function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=value});updateConvCount()}
     function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}
@@ -338,12 +381,14 @@
         const actividades=normalizeActivities(d);
         return `<section class="section-card"><h3>${esc(formatDate(d.fecha||d.dia||d.date)||'Día')}</h3>${d.notas?`<p class="muted">${esc(d.notas)}</p>`:''}<div class="grid">${actividades.length?actividades.map(a=>activityHtml(a,d)).join(''):'<div class="empty">Sin actividades.</div>'}</div></section>`;
       }).join('');
+      cont.querySelectorAll('[data-edit-act]').forEach(btn=>btn.addEventListener('click',()=>startEditarActividad(btn.dataset.editAct,btn.dataset.fecha)));
       cont.querySelectorAll('[data-del-act]').forEach(btn=>btn.addEventListener('click',()=>eliminarActividad(btn.dataset.delAct)));
     }
     function activityHtml(a,dia){
       const id=a.id||a.actividad_id||a.uuid||'';
       const tipo=activityTipo(a),duracion=a.duracion||a.Duracion||a.duration||'';
-      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(tipoLabel(tipo))}${duracion?' · '+esc(duracion)+' min':''}</div>${a.detalle||a.Detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.Detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
+      const fecha=dia?.fecha||dia?.dia||dia?.date||'';
+      return `<article class="activity-card"><div class="activity-title">${esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipo||'Actividad')}</div><div class="activity-meta">${a.hora?esc(a.hora)+' · ':''}${esc(tipoLabel(tipo))}${duracion?' · '+esc(duracion)+' min':''}</div>${a.detalle||a.Detalle||a.notas||a.descripcion?`<p>${esc(a.detalle||a.Detalle||a.notas||a.descripcion)}</p>`:''}<div class="actions"><button class="btn ghost small" data-edit-act="${esc(id)}" data-fecha="${esc(fecha)}" ${id?'':'disabled'}>Editar</button><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
     }
 
     function actualizarTitulosActividad(){
@@ -374,10 +419,61 @@
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
       if(!tipo){st.textContent='Seleccioná un tipo.';st.className='status-line error';return}
       if(!titulo){st.textContent='Ingresá un título.';st.className='status-line error';return}
-      st.textContent='Agregando...';st.className='status-line';btn.disabled=true;
-      try{await apiPost({action:'concentraciones_agregarActividad',concentracionId:concId(c),fecha,hora,tipo,categoria:tipo,titulo,detalle,duracion});document.getElementById('actHora').value='';document.getElementById('actTipo').value='';document.getElementById('actTitulo').value='';document.getElementById('actDetalle').value='';document.getElementById('actDuracion').value='';actualizarTitulosActividad();st.textContent='Actividad agregada.';st.className='status-line ok';await loadDias()}
+      const editing=state.editingActividad;
+      st.textContent=editing?'Guardando cambios...':'Agregando...';st.className='status-line';btn.disabled=true;
+      try{
+        if(editing&&editing.id){
+          await apiPost({action:'concentraciones_editarActividad',concentracionId:concId(c),fecha:editing.fecha||fecha,actividadId:editing.id,hora,tipo,categoria:tipo,titulo,detalle,duracion});
+          st.textContent='Actividad actualizada.';st.className='status-line ok';
+        }else{
+          await apiPost({action:'concentraciones_agregarActividad',concentracionId:concId(c),fecha,hora,tipo,categoria:tipo,titulo,detalle,duracion});
+          st.textContent='Actividad agregada.';st.className='status-line ok';
+        }
+        resetActividadForm();
+        await loadDias();
+      }
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
+    }
+    function startEditarActividad(id,fecha){
+      const found=findActividadById(id);
+      if(!found)return;
+      const a=found.actividad||{};
+      state.editingActividad={id:id,fecha:fecha||found.fecha||''};
+      document.getElementById('actividadFormTitle').textContent='Editar actividad';
+      document.getElementById('agregarActBtn').textContent='Guardar cambios';
+      document.getElementById('cancelarEdicionActBtn').classList.remove('hidden');
+      document.getElementById('actFecha').value=fecha||found.fecha||'';
+      document.getElementById('actHora').value=a.hora||'';
+      document.getElementById('actTipo').value=activityTipo(a);
+      actualizarTitulosActividad();
+      document.getElementById('actTitulo').value=a.titulo||a.descripcion||a.Titulo||a.nombre||'';
+      document.getElementById('actDetalle').value=a.detalle||a.Detalle||a.notas||a.descripcion||'';
+      document.getElementById('actDuracion').value=a.duracion||a.Duracion||a.duration||'';
+      document.getElementById('actStatus').textContent='Editando actividad seleccionada.';document.getElementById('actStatus').className='status-line';
+      window.scrollTo({top:document.getElementById('actFecha').getBoundingClientRect().top+window.scrollY-120,behavior:'smooth'});
+    }
+    function resetActividadForm(){
+      state.editingActividad=null;
+      document.getElementById('actividadFormTitle').textContent='Nueva actividad';
+      document.getElementById('agregarActBtn').textContent='Agregar actividad';
+      document.getElementById('cancelarEdicionActBtn').classList.add('hidden');
+      document.getElementById('actHora').value='';
+      document.getElementById('actTipo').value='';
+      document.getElementById('actTitulo').value='';
+      document.getElementById('actDetalle').value='';
+      document.getElementById('actDuracion').value='';
+      document.getElementById('actStatus').textContent='';
+      document.getElementById('actStatus').className='status-line';
+      actualizarTitulosActividad();
+    }
+    function findActividadById(id){
+      for(const dia of state.dias||[]){
+        const actividades=normalizeActivities(dia);
+        const actividad=actividades.find(a=>String(a.id||a.actividad_id||a.uuid||'')===String(id));
+        if(actividad)return{actividad,fecha:dia.fecha||dia.dia||dia.date||''};
+      }
+      return null;
     }
     async function eliminarActividad(id){
       const c=currentConc();if(!c||!id)return;
@@ -410,6 +506,7 @@
     function isConvocable(p){const permitidos=['jugadora','arquera','cuerpo tecnico','ct','cuerpo tecnico / ct'];return permitidos.includes(normalizarTipo(tipoIntegrante(p)))||permitidos.includes(normalizarTipo(rolIntegrante(p)))}
     function nombrePersona(p){return[p.Nombre||'',p.Apellido||''].filter(Boolean).join(' ')||p.nombre||p.Nombre||p.DNI||p.dni||'Sin nombre'}
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+    function formatDateTime(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
     function norm(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
