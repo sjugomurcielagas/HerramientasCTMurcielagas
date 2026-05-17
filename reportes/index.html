@@ -1033,6 +1033,15 @@ footer {
   </div>
 </div>
 
+      <div class="field">
+        <label>Filtro de contexto</label>
+        <label class="check-item">
+          <input id="exclude-concentrations" type="checkbox">
+          <span>Excluir concentraciones del análisis</span>
+        </label>
+        <div class="hint">Se aplica por palabras clave en comentarios hasta que la planilla tenga un campo formal para identificar concentraciones.</div>
+      </div>
+
       <div class="btn-row">
         <button id="btn-open-ai">Redactar informe con IA</button>
       </div>
@@ -1141,6 +1150,7 @@ const tableSortState = {
 let temporalMode = 'weekly';
 let blockOffset = 0;
 let customRange = null;
+let excludeConcentrations = Boolean(lsGet('murcielagasExcludeConcentrations', false));
 
 function lsGet(key,fallback){try{return JSON.parse(localStorage.getItem(key)??JSON.stringify(fallback));}catch{return fallback;}}
 let includedPlayers = new Set(lsGet('murcielagasIncludedPlayers', []));
@@ -1324,6 +1334,16 @@ if (playerEl) {
     btnOpenAi.addEventListener('click', openAiConfigPanel);
   }
 
+  const excludeConcentrationsEl = $('exclude-concentrations');
+  if (excludeConcentrationsEl) {
+    excludeConcentrationsEl.checked = excludeConcentrations;
+    excludeConcentrationsEl.addEventListener('change', () => {
+      excludeConcentrations = !!excludeConcentrationsEl.checked;
+      localStorage.setItem('murcielagasExcludeConcentrations', JSON.stringify(excludeConcentrations));
+      applyRowFilters();
+    });
+  }
+
   const btnCloseAi = $('btn-close-ai');
   if (btnCloseAi) {
     btnCloseAi.addEventListener('click', closeAiConfigPanel);
@@ -1476,15 +1496,9 @@ function setRows(inputRows, sourceLabel) {
     );
   }
 
-  rows = rawRows.filter(r => isPlayerIncluded(r.jugadora));
-
   lastSourceLabel = sourceLabel;
-
+  applyRowFilters();
   populateIncludedPlayers();
-  populatePlayers();
-  populateWeeks();
-  updateStatus(sourceLabel);
-  renderLocalReport();
 }
 
     function populatePlayers() {
@@ -1552,14 +1566,28 @@ function populateIncludedPlayers() {
         JSON.stringify([...includedPlayers])
       );
 
-      rows = rawRows.filter(r => isPlayerIncluded(r.jugadora));
-
-      populatePlayers();
-      populateWeeks();
-      updateStatus(lastSourceLabel);
-      renderLocalReport();
+      applyRowFilters();
     });
   });
+}
+
+function applyRowFilters() {
+  rows = rawRows.filter(r => isPlayerIncluded(r.jugadora) && !shouldExcludeRowByContext(r));
+  populatePlayers();
+  populateWeeks();
+  updateStatus(buildSourceStatusLabel());
+  renderLocalReport();
+}
+
+function buildSourceStatusLabel() {
+  return excludeConcentrations ? `${lastSourceLabel} · sin concentraciones` : lastSourceLabel;
+}
+
+function shouldExcludeRowByContext(row) {
+  if (!excludeConcentrations) return false;
+  const text = normalizeKey(row?.comentario || '');
+  if (!text) return false;
+  return /concentracion|concentración|hotel|cenard|convivencia|microciclo concentrado/.test(text);
 }
 
 function populateWeeks() {
@@ -2316,6 +2344,7 @@ return {
         const lastWeek = (s.weekly || [])[s.weekly.length - 1];
         return [
           `Modo individual.`,
+          excludeConcentrations ? `Filtro activo: excluyendo registros marcados como concentración por comentario.` : `Filtro activo: incluyendo todos los registros disponibles.`,
           `Período analizado: ${s.periodLabel}.`,
           `${s.player} reportó ${s.reportedWeeks} de ${s.periodWeeks} semanas.`,
           `Promedio total: ${s.avgTotal}. Promedio físico: ${s.avgFisico}. Promedio técnico-táctico: ${s.avgTecnico}.`,
@@ -2332,6 +2361,7 @@ return {
         const lowContinuity = topBy(s.periodicByPlayer, 'semanasReportadas', 3, 'asc').map(p => `${p.jugadora} (${p.semanasReportadas}/${p.semanasTotales})`);
         return [
           `Modo plantel periódico.`,
+          excludeConcentrations ? `Filtro activo: excluyendo registros marcados como concentración por comentario.` : `Filtro activo: incluyendo todos los registros disponibles.`,
           `Período analizado: ${s.periodLabel}.`,
           `Jugadoras con al menos una carga: ${s.periodicActivePlayers.length} de ${s.periodicByPlayer.length}.`,
           `Promedio semanal del bloque: total ${s.periodicAvg.total}, físico ${s.periodicAvg.fisico}, técnico-táctico ${s.periodicAvg.tecnico}.`,
@@ -2346,6 +2376,7 @@ return {
       const topWeek = topBy((s.selectedWeekByPlayer || []).filter(r => r.estado === 'Cargó'), 'total', 3, 'desc').map(r => `${r.jugadora} (${r.total})`);
       return [
         `Modo plantel semanal.`,
+        excludeConcentrations ? `Filtro activo: excluyendo registros marcados como concentración por comentario.` : `Filtro activo: incluyendo todos los registros disponibles.`,
         `Semana analizada: ${s.selectedWeekLabel}.`,
         `Reportaron ${s.reportedNames.length} de ${s.selectedWeekByPlayer.length}; no reportaron ${s.notReportedNames.length}.`,
         `Promedio sobre quienes cargaron: total ${s.selectedWeekAvg.total}, físico ${s.selectedWeekAvg.fisico}, técnico-táctico ${s.selectedWeekAvg.tecnico}.`,
