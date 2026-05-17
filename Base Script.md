@@ -86,7 +86,7 @@ Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`,
 - `ensureColumn_(sheet, colName)` — agrega columna al final si no existe. Permite auto-extender el esquema sin tocar Sheets manualmente.
 - `getOrCreateFolder_(parentId, nombre)` — crea subcarpeta en Drive si no existe.
 - `formatFechaTextoGas_(fecha)` — convierte `yyyy-MM-dd` a texto natural (ej: "17 de mayo de 2026").
-- `FORZAR_AUTORIZACION()` — función manual a ejecutar desde el editor una sola vez para pre-autorizar DriveApp y DocumentApp.
+- `FORZAR_AUTORIZACION()` — función manual a ejecutar desde el editor una sola vez para pre-autorizar DriveApp, SpreadsheetApp y DocumentApp.
 
 ## Generación de convocatoria (Drive)
 

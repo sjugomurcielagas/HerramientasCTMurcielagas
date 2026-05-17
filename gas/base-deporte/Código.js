@@ -1558,6 +1558,8 @@ function ok(success, data, error) {
 function FORZAR_AUTORIZACION() {
   var carpeta = DriveApp.getFolderById(CONFIG.DRIVE_RAIZ_ID);
   var hoja    = getSheet(SHEETS.plantel);
+  var doc      = DocumentApp.openById(CONFIG_DOC.PLANTILLA_CONVOCATORIA);
   Logger.log('Drive OK: ' + carpeta.getName());
   Logger.log('Sheets OK: ' + hoja.getName());
+  Logger.log('Docs OK: ' + doc.getName());
 }
