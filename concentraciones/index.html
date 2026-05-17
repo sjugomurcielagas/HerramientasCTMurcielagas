@@ -306,6 +306,8 @@
         const links=docs.map(d=>{
           const url=documentUrl(d)||documentUrl(result);
           const name=d.nombre||d.tipoDocumento||d.tipo_documento||'Documento';
+          const error=d.error||d.mensaje||'';
+          if(error)return `<li>${esc(name)} <span class="badge danger" style="font-size:.68rem">${esc(error)}</span></li>`;
           return url?`<li><a href="${esc(url)}" target="_blank" rel="noopener">${esc(name)}</a></li>`:`<li>${esc(name)}</li>`;
         }).join('');
         st.className='status-line ok';

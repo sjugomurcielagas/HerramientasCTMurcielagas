@@ -96,6 +96,7 @@ Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`,
 
 - Template: ID `1foA1M0ftQz7KAOWRgBHCRcewgdCJFdUPynpMYdyEmZM`
 - Carpeta de generados: ID `1HtxDxNOxjm3xKs6N5t2SzDlp3TlXf8P1`
+- Plantillas extra: se resuelven desde `Config_Plantillas` / `Config_Carpetas` si existen, con fallback a búsqueda por nombre en la carpeta de plantillas.
 - Placeholders: `{{FECHA_EMISION}}`, `{{LUGAR}}`, `{{DIRECCION_LUGAR}}`, `{{CIUDAD}}`, `{{FECHA_INICIO_TEXTO}}`, `{{FECHA_FIN_TEXTO}}`, `{{TABLA_CONVOCADAS}}`, `{{TIPO_ACTIVIDAD}}`
 - `{{TABLA_CONVOCADAS}}` se reemplaza por una tabla de Google Docs con columnas `Nombre y apellido`, `DNI` y `Provincia de procedencia`.
 

@@ -1393,13 +1393,30 @@ function concentraciones_generarDocumentos(p) {
   });
 
   var documentos = tipos.map(function(tipo) {
-    return _generarDocumentoConcentracion_({
-      tipo: tipo,
-      conc: conc,
-      reemplazos: reemplazos,
-      convocadas: convocadas,
-      validacion: validacion
-    });
+    try {
+      return _generarDocumentoConcentracion_({
+        tipo: tipo,
+        conc: conc,
+        reemplazos: reemplazos,
+        convocadas: convocadas,
+        validacion: validacion
+      });
+    } catch (err) {
+      var errorMsg = err && err.message ? err.message : String(err);
+      _registrarDocumentoGenerado_(conc.id, tipo, _nombreDocumentoConcentraciones(tipo, conc), '', 'error', errorMsg);
+      return {
+        concentracionId: conc.id,
+        tipoDocumento: tipo,
+        nombre: _nombreDocumentoConcentraciones(tipo, conc),
+        url: '',
+        estado: 'error',
+        error: errorMsg,
+        faltantes: validacion ? validacion.faltantes : [],
+        convocadas: convocadas,
+        plantillaId: '',
+        carpetaId: ''
+      };
+    }
   });
 
   var primerDoc = documentos.find(function(d) { return d.url; });
