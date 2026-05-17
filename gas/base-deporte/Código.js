@@ -542,7 +542,7 @@ function doPost(e) {
     result = base_agregarColumna(payload);
     break;
 
-  case 'base_getAlertas':
+  case 'getAlertas':
     result = ok(true, base_getAlertas());
     break;
 
