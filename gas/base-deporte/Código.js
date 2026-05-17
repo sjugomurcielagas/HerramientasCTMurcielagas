@@ -561,7 +561,18 @@ function antidoping_buscarMedicamento(payload) {
   }
 
   var enriquecidos = matches.map(function(item) {
-    var principio = item.principio_activo || antidoping_knownCommercialActive_(item.medicamento || '') || item.medicamento || '';
+    var mappedActive = antidoping_knownCommercialActive_(item.medicamento || '');
+    var rawActive = String(item.principio_activo || '').trim();
+    var principio = rawActive;
+    if (!principio) {
+      principio = mappedActive || item.medicamento || '';
+    } else {
+      var nPrincipio = normalizeText(principio);
+      var nMedicamento = normalizeText(item.medicamento || '');
+      if (mappedActive && (nPrincipio === nMedicamento || nPrincipio === normalizeText(mappedActive))) {
+        principio = mappedActive;
+      }
+    }
     var evalWada = antidoping_evalWada_(principio);
     return {
       medicamento: item.medicamento || consulta,
