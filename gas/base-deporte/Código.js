@@ -491,6 +491,7 @@ function antidoping_knownCommercialActive_(nombre) {
   var n = normalizeText(nombre);
   var map = {
     'tafirol': 'paracetamol',
+    'anaflex': 'paracetamol',
     'ibupirac': 'ibuprofeno',
     'actron': 'ibuprofeno',
     'buscapina': 'butilhioscina',

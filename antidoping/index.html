@@ -126,7 +126,7 @@
     const TUE_FORM_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
     const TUE_GUIDE_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
     const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina','Novalgina'];
-    const SEARCH_ALIASES={novalgina:['novalgina','dipirona','metamizol'],dipirona:['dipirona','metamizol','novalgina'],metamizol:['metamizol','dipirona','novalgina']};
+    const SEARCH_ALIASES={novalgina:['novalgina','dipirona','metamizol'],dipirona:['dipirona','metamizol','novalgina'],metamizol:['metamizol','dipirona','novalgina'],anaflex:['anaflex','paracetamol'],paracetamol:['paracetamol','anaflex']};
     const state={frecuentes:[],historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null};
 
     document.addEventListener('DOMContentLoaded',()=>{
@@ -219,7 +219,7 @@
         return `<div class="decision-btn warn">🟡 Uso con advertencia</div>${detail?`<p><strong>Advertencia:</strong> ${esc(detail)}</p>`:'<p><strong>Advertencia:</strong> revisar dosis, vía y contexto de competencia.</p>'}${tueBtn}`;
       }
       if(s.includes('NO FIGURA')||s.includes('PERMITIDO')){
-        return `<div class="decision-btn ok">🟢 Habilitar uso</div>`;
+        return `<div class="decision-btn ok">🟢 Uso habilitado</div>`;
       }
       return `<div class="decision-btn warn">🟡 Requiere revisión médica</div>${tueBtn}`;
     }
