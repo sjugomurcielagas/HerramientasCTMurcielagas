@@ -659,10 +659,26 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 <div id="ia-modal" onclick="closeIAModal(event)">
   <div id="ia-card">
     <div id="ia-title">✦ Generar jugada desde texto</div>
-    <textarea id="ia-textarea" placeholder="Ej: La 7 recibe en el lateral, pasa a la 9 que entra al área y remata al arco"></textarea>
-    <div class="ia-row">
-      <input type="checkbox" id="ia-replace" checked style="accent-color:var(--celeste);width:16px;height:16px;cursor:pointer">
-      <label for="ia-replace" class="ia-label" style="cursor:pointer">Reemplazar tablero actual</label>
+    <!-- Panel configuración key -->
+    <div id="ia-cfg-panel">
+      <div class="ia-label" style="margin-bottom:6px">API Key de Anthropic</div>
+      <div style="display:flex;gap:7px">
+        <input id="ia-key-input" type="password" placeholder="sk-ant-api03-..." style="flex:1;border:1px solid var(--borde);border-radius:10px;padding:9px 11px;font-size:.92rem;outline:none">
+        <button class="btn btn-primary btn-sm" onclick="saveIAKey()">Guardar</button>
+      </div>
+      <div style="font-size:.8rem;color:var(--muted);margin-top:6px">La key se guarda solo en este dispositivo, nunca en el servidor.</div>
+    </div>
+    <!-- Panel generación -->
+    <div id="ia-gen-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="ia-label">Describí la jugada</div>
+        <button onclick="clearIAKey()" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:var(--muted);padding:0">⚙ Cambiar key</button>
+      </div>
+      <textarea id="ia-textarea" placeholder="Ej: La 7 recibe en el lateral, pasa a la 9 que entra al área y remata al arco"></textarea>
+      <div class="ia-row">
+        <input type="checkbox" id="ia-replace" checked style="accent-color:var(--celeste);width:16px;height:16px;cursor:pointer">
+        <label for="ia-replace" class="ia-label" style="cursor:pointer">Reemplazar tablero actual</label>
+      </div>
     </div>
     <div id="ia-status"></div>
     <div style="display:flex;gap:8px">
@@ -2590,21 +2606,26 @@ function doDownload(){
 // =============================================
 // GENERACIÓN DE JUGADAS CON IA (Claude)
 // =============================================
-const CLAUDE_API_KEY='CONFIGURAR_API_KEY';// Reemplazar con tu API key de Anthropic
-function showIAModal(){document.getElementById('ia-modal').classList.add('show');document.getElementById('ia-status').textContent='';document.getElementById('ia-status').className='ia-status';}
+const IA_KEY_STORAGE='mrcl_claude_key';
+function getIAKey(){return localStorage.getItem(IA_KEY_STORAGE)||'';}
+function saveIAKey(){const v=document.getElementById('ia-key-input').value.trim();if(!v){iaStatus('Ingresá la API key.','err');return;}localStorage.setItem(IA_KEY_STORAGE,v);renderIAModal();iaStatus('','');}
+function clearIAKey(){localStorage.removeItem(IA_KEY_STORAGE);renderIAModal();}
+function renderIAModal(){const hasKey=!!getIAKey();document.getElementById('ia-cfg-panel').style.display=hasKey?'none':'block';document.getElementById('ia-gen-panel').style.display=hasKey?'block':'none';document.getElementById('ia-gen-btn').style.display=hasKey?'':'none';}
+function showIAModal(){document.getElementById('ia-modal').classList.add('show');document.getElementById('ia-status').textContent='';document.getElementById('ia-status').className='ia-status';renderIAModal();}
 function closeIAModal(e){if(!e||e.target===document.getElementById('ia-modal'))document.getElementById('ia-modal').classList.remove('show');}
 function iaStatus(msg,type){const el=document.getElementById('ia-status');el.textContent=msg;el.className='ia-status '+(type||'');}
 async function triggerGenerarJugada(){
   const texto=document.getElementById('ia-textarea').value.trim();
   if(!texto){iaStatus('Escribí una descripción de la jugada.','err');return;}
-  if(CLAUDE_API_KEY==='CONFIGURAR_API_KEY'){iaStatus('Configurar API key de Anthropic antes de usar esta función.','err');return;}
+  const key=getIAKey();
+  if(!key){iaStatus('Configurá la API key primero.','err');renderIAModal();return;}
   const reemplazar=document.getElementById('ia-replace').checked;
   document.getElementById('ia-gen-btn').disabled=true;
   iaStatus('Interpretando...','loading');
   try{
-    await generarJugadaDesdeTexto(texto,reemplazar);
+    await generarJugadaDesdeTexto(texto,reemplazar,key);
     iaStatus('Jugada generada','ok');
-    document.getElementById('ia-modal').classList.remove('show');
+    setTimeout(()=>document.getElementById('ia-modal').classList.remove('show'),800);
   }catch(err){
     const msg=err&&err.message?err.message:'Error al generar la jugada.';
     iaStatus(msg,'err');
@@ -2612,7 +2633,7 @@ async function triggerGenerarJugada(){
     document.getElementById('ia-gen-btn').disabled=false;
   }
 }
-async function generarJugadaDesdeTexto(texto,reemplazar){
+async function generarJugadaDesdeTexto(texto,reemplazar,key){
   const roster=MURCIELAGAS.filter(p=>p.num).map(p=>`{num:${p.num},name:"${p.apellido}"}`).join(',');
   const systemPrompt=`Sos un asistente táctico para fútbol para personas ciegas (IBSA Blind Football). Generás posiciones y flechas para un tablero táctico digital.
 
@@ -2650,7 +2671,7 @@ ESQUEMA DE RESPUESTA:
 {"players":[{"num":9,"team":"A","x":500,"y":260,"gk":false}],"arrows":[{"kind":"straight","fromNum":7,"toNum":9,"type":"pass"},{"kind":"straight","fromNum":9,"toX":810,"toY":260,"type":"shot"}]}`;
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,system:systemPrompt,messages:[{role:'user',content:texto}]})
   });
   if(!resp.ok){
