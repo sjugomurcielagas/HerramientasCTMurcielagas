@@ -81,18 +81,8 @@
                   <button class="btn ghost small" type="button" data-doc="certificacion_participacion">Certificación participación</button>
                   <button class="btn secondary small" type="button" data-doc="todos">Generar todos</button>
                 </div>
-                <div class="muted" style="margin-top:8px;font-size:.92rem">Las licencias de Agencia Córdoba y Municipalidad Córdoba no se generan acá en lote: son trámites personales de Santiago y Gonzalo.</div>
                 <div id="docsStatus" class="status-line"></div>
                 <div id="docsHistory" class="grid" style="margin-top:10px"><div class="empty">Sin documentos generados todavía.</div></div>
-              </div>
-              <div class="docs-block">
-                <div class="card-title" style="margin-bottom:12px">Documentos personales</div>
-                <div class="actions">
-                  <button class="btn ghost small" type="button" data-doc="licencia_agencia_cordoba">Licencia Agencia Córdoba</button>
-                  <button class="btn ghost small" type="button" data-doc="licencia_municipalidad_cordoba">Licencia Municipalidad Córdoba</button>
-                </div>
-                <div class="muted" style="margin-top:8px;font-size:.92rem">Estos botones quedan separados para revisar emisión y placeholders de los documentos personales de Santiago y Gonzalo.</div>
-                <div id="personalDocsStatus" class="status-line"></div>
               </div>
               <div class="actions" style="margin:10px 0"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
@@ -310,8 +300,7 @@
         : [tipoDoc];
       const requiereConvocadas=tipos.some(t=>t==='convocatoria_fadec'||t==='certificacion_participacion');
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
-      const isGeneral=tipos.every(t=>t==='convocatoria_fadec'||t==='certificacion_participacion');
-      const statusId=tipoDoc==='convocatoria_fadec' ? 'convStatus' : (isGeneral?'docsStatus':'personalDocsStatus');
+      const statusId=tipoDoc==='convocatoria_fadec' ? 'convStatus' : 'docsStatus';
       const btn=tipoDoc==='convocatoria_fadec' ? document.getElementById('generarConvBtn') : document.querySelector(`[data-doc="${tipoDoc}"]`);
       const st=document.getElementById(statusId);
       if(requiereConvocadas&&!convocadas.length){st.textContent='Seleccioná al menos una persona antes de generar estos documentos.';st.className='status-line error';return}
