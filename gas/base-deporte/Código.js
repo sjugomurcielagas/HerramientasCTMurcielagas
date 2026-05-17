@@ -1117,7 +1117,7 @@ function calcularImpactoJugadoras_(p) {
 //   id | concentracionId | fecha | notas | actividades | timestamp
 //
 //   actividades → JSON: [{ id, tipo, hora, descripcion, duracion, notas }, ...]
-//   tipo actividad: 'entrenamiento' | 'charla-tactica' | 'partido' |
+//   tipo actividad: 'entrenamiento' | 'charla_tactica' | 'partido' |
 //                   'recuperacion' | 'medica' | 'libre' | 'otro'
 //   hora: 'HH:MM' — se usa para ordenar las actividades del día
 //
