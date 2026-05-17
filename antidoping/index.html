@@ -268,7 +268,8 @@
             mejor={items:items.length?items:[fallbackResultado(query)],usedAlias:variante!==query?variante:''};
             mejorScore=score;
           }
-          if(score>=4)break;
+          const isConclusivo=mejor.items.some(i=>{const e=estadoNormalizado(i.estado||'');return e.includes('PROHIBIDO')||e.includes('ADVERTENCIA');});
+          if(score>=4&&isConclusivo)break;
         }catch(err){}
       }
       return mejor;
@@ -277,7 +278,8 @@
       const normalized=normalizeAliasKey(query).replace(/[^a-z0-9]+/g,' ').trim();
       const direct=String(query||'').trim();
       const extras=SEARCH_ALIASES[normalized]||[];
-      return Array.from(new Set([direct,...extras].filter(Boolean)));
+      const singular=normalized.length>3&&normalized.endsWith('s')?normalized.slice(0,-1):'';
+      return Array.from(new Set([singular,direct,...extras].filter(Boolean)));
     }
     function resultadoScore(items){
       if(!Array.isArray(items)||!items.length)return 0;
@@ -286,7 +288,8 @@
         let score=0;
         if(item.principio_activo||item.principioActivo)score+=2;
         if(item.fuente_argentina||item.fuente_wada||item.fuente_secundaria)score+=1;
-        if(estado.includes('PERMITIDO')||estado.includes('PROHIBIDO')||estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO'))score+=2;
+        if(estado.includes('PROHIBIDO'))score+=4;
+        else if(estado.includes('PERMITIDO')||estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO'))score+=2;
         if(estado.includes('NO ENCONTRADO')||estado.includes('REQUIERE VERIFICACION'))score-=2;
         return score;
       }));
