@@ -19,6 +19,7 @@
     .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.fields-grid{display:grid;gap:10px}.toolbar{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:13px}.item-list{display:grid;gap:10px}.item-card{padding:13px;display:grid;gap:10px;box-shadow:none}.item-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.item-meta{font-size:.92rem;color:var(--muted);margin-top:2px}.actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
     .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.section-card{padding:12px;margin-bottom:10px;box-shadow:none}.section-card h3{font-size:1.2rem;margin-bottom:9px}.check-grid{display:grid;gap:6px;max-height:320px;overflow:auto;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:8px;grid-template-columns:1fr}.check-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;background:#fff;border:1px solid var(--borde);border-radius:10px;padding:6px 8px;font-size:.88rem;line-height:1.2}.check-item input{width:auto;margin:0}.check-main strong{display:block;color:var(--azul-950)}.check-meta{font-size:.8rem;color:var(--muted)}.docs-block{margin:10px 0 2px;padding-top:10px;border-top:1px solid var(--borde)}.docs-block .actions{gap:6px}.activity-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.activity-title{font-weight:800;color:var(--azul-950)}.activity-meta{font-size:.9rem;color:var(--muted);margin-top:3px}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
     @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 180px}.item-card{grid-template-columns:1fr auto;align-items:center}.fields-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(min-width:1040px){.fields-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){main{padding:12px 11px 70px}.topbar-inner{align-items:flex-start}.home-link{font-size:.81rem;padding:8px 9px}.brand img:first-child{height:46px;max-width:62px}.brand img:nth-child(2){height:54px;max-width:74px}.brand-subtitle{display:none}.panel,.login-card{padding:14px}}
+    .doc-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,23,47,.42);backdrop-filter:blur(4px);z-index:80;padding:14px}.doc-modal.show{display:flex}.doc-card{width:min(520px,100%);background:#fff;border:1px solid var(--borde);border-radius:18px;box-shadow:var(--shadow);padding:16px}.doc-option{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--borde);border-radius:12px;padding:10px;background:#f8fbfd}.doc-option input{width:auto;margin-top:2px}.doc-option strong{display:block;color:var(--azul-950)}.doc-option .muted{font-size:.86rem}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
   </style>
@@ -78,15 +79,14 @@
                 <div class="card-title" style="margin-bottom:12px">Documentos generales de la concentración</div>
                 <div class="actions">
                   <button id="validarDocsBtn" class="btn ghost small" type="button">Validar datos</button>
-                  <button class="btn ghost small" type="button" data-doc="certificacion_participacion">Certificación participación</button>
-                  <button class="btn secondary small" type="button" data-doc="todos">Generar todos</button>
+                  <button id="generarDocsBtn" class="btn secondary small" type="button">Generar documentos</button>
                 </div>
                 <div id="docsStatus" class="status-line"></div>
                 <div id="docsHistory" class="grid" style="margin-top:10px"><div class="empty">Sin documentos generados todavía.</div></div>
               </div>
               <div class="actions" style="margin:10px 0"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
-              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="generarConvBtn" class="btn secondary small" type="button">Generar convocatoria</button><span id="convCount" class="badge info"></span></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
             </div>
           </div>
@@ -118,10 +118,26 @@
     </section>
   </main>
 
+  <div id="docsModal" class="doc-modal">
+    <div class="doc-card">
+      <div class="panel-head"><div><h2>Generar documentos</h2><p>Elegí qué documentos emitir para esta concentración.</p></div><button id="cerrarDocsModalBtn" class="btn ghost small" type="button">Cerrar</button></div>
+      <div class="grid">
+        <label class="doc-option"><input type="checkbox" value="convocatoria_fadec" checked><span><strong>Convocatoria FADEC</strong><span class="muted">Usa la convocatoria marcada y los datos generales de la concentración.</span></span></label>
+        <label class="doc-option"><input type="checkbox" value="certificacion_participacion"><span><strong>Certificación de participación</strong><span class="muted">Usa la convocatoria marcada y los datos generales de la concentración.</span></span></label>
+        <label class="doc-option"><input type="checkbox" value="licencia_agencia_cordoba"><span><strong>Licencia Agencia Córdoba</strong><span class="muted">Usa los datos generales de la concentración y toma automáticamente a Santiago y Gonzalo.</span></span></label>
+        <label class="doc-option"><input type="checkbox" value="licencia_municipalidad_cordoba"><span><strong>Licencia Municipalidad Córdoba</strong><span class="muted">Usa los datos generales de la concentración y toma automáticamente a Santiago y Gonzalo.</span></span></label>
+      </div>
+      <div class="actions" style="margin-top:14px"><button id="confirmarDocsBtn" class="btn" type="button">Generar seleccionados</button></div>
+    </div>
+  </div>
+
   <script src="../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
     const state={plantel:[],concentraciones:[],dias:[],actualId:null,documentos:[],editingActividad:null};
+    const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
+    const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
+    const PERSONAL_DOC_MATCHERS=['jugo santiago','santiago jugo','abbas hachache','daniel gonzalo','gonzalo abbas'];
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -131,9 +147,11 @@
       document.getElementById('crearBtn').addEventListener('click',crearConcentracion);
       document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
       document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
-      document.getElementById('generarConvBtn').addEventListener('click',generarConvocatoriaDocumental);
       document.getElementById('validarDocsBtn').addEventListener('click',validarDocumentos);
-      document.querySelectorAll('[data-doc]').forEach(btn=>btn.addEventListener('click',()=>generarDocumentosDesdeBoton(btn.dataset.doc)));
+      document.getElementById('generarDocsBtn').addEventListener('click',openDocsModal);
+      document.getElementById('cerrarDocsModalBtn').addEventListener('click',closeDocsModal);
+      document.getElementById('confirmarDocsBtn').addEventListener('click',generarDocumentosSeleccionados);
+      document.getElementById('docsModal').addEventListener('click',e=>{if(e.target.id==='docsModal')closeDocsModal()});
       document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
@@ -290,39 +308,64 @@
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }
-    async function generarConvocatoriaDocumental(){
-      await generarDocumentosDesdeBoton('convocatoria_fadec');
-    }
-    async function generarDocumentosDesdeBoton(tipoDoc){
+    function openDocsModal(){const c=currentConc();if(!c)return;document.getElementById('docsModal').classList.add('show')}
+    function closeDocsModal(){document.getElementById('docsModal').classList.remove('show')}
+    async function generarDocumentosSeleccionados(){
       const c=currentConc();if(!c)return;
-      const tipos=tipoDoc==='todos'
-        ? ['convocatoria_fadec','certificacion_participacion']
-        : [tipoDoc];
-      const requiereConvocadas=tipos.some(t=>t==='convocatoria_fadec'||t==='certificacion_participacion');
-      const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
-      const statusId=tipoDoc==='convocatoria_fadec' ? 'convStatus' : 'docsStatus';
-      const btn=tipoDoc==='convocatoria_fadec' ? document.getElementById('generarConvBtn') : document.querySelector(`[data-doc="${tipoDoc}"]`);
-      const st=document.getElementById(statusId);
-      if(requiereConvocadas&&!convocadas.length){st.textContent='Seleccioná al menos una persona antes de generar estos documentos.';st.className='status-line error';return}
-      st.textContent='Generando documentos...';st.className='status-line';if(btn)btn.disabled=true;
-      const payload={action:'concentraciones_generarDocumentos',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos};
+      const tipos=[...document.querySelectorAll('#docsModal input[type="checkbox"]:checked')].map(i=>i.value);
+      const st=document.getElementById('docsStatus'),btn=document.getElementById('confirmarDocsBtn');
+      if(!tipos.length){st.textContent='Seleccioná al menos un documento.';st.className='status-line error';return}
+      const convocadasGenerales=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const tiposGenerales=tipos.filter(t=>DOC_TYPES_GENERAL.includes(t));
+      const tiposPersonales=tipos.filter(t=>DOC_TYPES_PERSONAL.includes(t));
+      if(tiposGenerales.length&&!convocadasGenerales.length){st.textContent='Seleccioná al menos una persona en la convocatoria para generar documentos generales.';st.className='status-line error';return}
+      const convocadasPersonales=getPersonalDocumentDnis();
+      if(tiposPersonales.length&&convocadasPersonales.length<2){st.textContent='No pude identificar automáticamente a Santiago y Gonzalo en el plantel para los documentos personales.';st.className='status-line error';return}
+      st.textContent='Generando documentos...';st.className='status-line';btn.disabled=true;
       try{
-        const result=await apiPost(payload);
-        const docs=Array.isArray(result.documentos)&&result.documentos.length?result.documentos:[result];
-        const links=docs.map(d=>{
-          const url=documentUrl(d)||documentUrl(result);
-          const name=d.nombre||d.tipoDocumento||d.tipo_documento||'Documento';
-          const error=d.error||d.mensaje||'';
-          if(error)return `<li>${esc(name)} <span class="badge danger" style="font-size:.68rem">${esc(error)}</span></li>`;
-          return url?`<li><a href="${esc(url)}" target="_blank" rel="noopener">${esc(name)}</a></li>`:`<li>${esc(name)}</li>`;
-        }).join('');
+        const resultados=[];
+        if(tiposGenerales.length){
+          const resultGeneral=await generarDocumentosLote(tiposGenerales,convocadasGenerales);
+          resultados.push(...normalizeDocumentResults(resultGeneral));
+        }
+        if(tiposPersonales.length){
+          const resultPersonal=await generarDocumentosLote(tiposPersonales,convocadasPersonales);
+          resultados.push(...normalizeDocumentResults(resultPersonal));
+        }
         st.className='status-line ok';
-        st.innerHTML=links?`Documentos generados:<ul style="margin:8px 0 0 18px">${links}</ul>`:'Documentos generados.';
+        st.innerHTML=buildDocumentResultHtml(resultados);
+        closeDocsModal();
         await loadDocumentosGenerados();
       }catch(err){
-        st.textContent='La generación documental todavía no está disponible o falló en el backend. La convocatoria guardada no se modificó. Detalle: '+err.message;
+        st.textContent='La generación documental falló. Detalle: '+err.message;
         st.className='status-line error';
-      }finally{if(btn)btn.disabled=false}
+      }finally{btn.disabled=false}
+    }
+    async function generarDocumentosLote(tipos,convocadas){
+      const c=currentConc();if(!c)return null;
+      const payload={action:'concentraciones_generarDocumentos',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos};
+      return apiPost(payload);
+    }
+    function normalizeDocumentResults(result){
+      if(!result)return[];
+      return Array.isArray(result.documentos)&&result.documentos.length?result.documentos:[result];
+    }
+    function buildDocumentResultHtml(docs){
+      const links=(docs||[]).map(d=>{
+        const url=documentUrl(d);
+        const name=d.nombre||d.tipoDocumento||d.tipo_documento||'Documento';
+        const error=d.error||d.mensaje||'';
+        if(error)return `<li>${esc(name)} <span class="badge danger" style="font-size:.68rem">${esc(error)}</span></li>`;
+        return url?`<li><a href="${esc(url)}" target="_blank" rel="noopener">${esc(name)}</a></li>`:`<li>${esc(name)}</li>`;
+      }).join('');
+      return links?`Documentos generados:<ul style="margin:8px 0 0 18px">${links}</ul>`:'Documentos generados.';
+    }
+    function getPersonalDocumentDnis(){
+      const matches=state.plantel.filter(p=>{
+        const nombre=normalizeTextForDocMatch(nombrePersona(p));
+        return PERSONAL_DOC_MATCHERS.some(m=>nombre.includes(m));
+      }).map(p=>String(p.DNI||p.dni||'').trim()).filter(Boolean);
+      return Array.from(new Set(matches));
     }
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
@@ -506,6 +549,7 @@
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function formatDateTime(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
     function norm(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+    function normalizeTextForDocMatch(v){return norm(v).replace(/[^a-z0-9]+/g,' ').trim()}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
