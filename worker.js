@@ -32,7 +32,11 @@ const BASE_ACTION_MAP = {
   base_ordenarColumnasBase: 'ordenarColumnasBase',
 
   // En tu Apps Script la función se llama base_agregarColumna
-  base_agregarColumna: 'base_agregarColumna'
+  base_agregarColumna: 'base_agregarColumna',
+
+  // WADA helpers
+  importarWADA: 'importarWADA',
+  getWADAStatus: 'getWADAStatus'
 };
 
 const DEPORTES_PREFIXES = [
