@@ -511,6 +511,7 @@ function doPost(e) {
      
   // ── BASE ──
   case 'verificarPassword':
+  case 'base_verificarPassword':
     result = ok(true, verificarPassword(payload.pwd || payload.password || ''));
     break;
 
@@ -596,6 +597,10 @@ function doPost(e) {
 
       default:
         result = ok(false, null, 'Acción no reconocida: ' + action);
+    }
+
+    if (!result) {
+      result = ok(false, null, 'Acción no reconocida: ' + action);
     }
 
     return result;
