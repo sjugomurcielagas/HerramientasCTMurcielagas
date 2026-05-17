@@ -103,4 +103,45 @@ Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`,
 
 ## Antidoping
 
-Las acciones `antidoping_*` **no están** en el Worker ni en este GAS. El módulo antidoping funciona como consulta local con fallback — no tiene backend.
+Acciones disponibles en `gas/base-deporte/Código.js`:
+
+- `antidoping_buscarMedicamento` — busca por medicamento o principio activo sobre catálogo interno y guarda trazabilidad en historial.
+  - Prioriza cache (`Antidoping_Cache`, TTL 180 días), luego consulta en vivo (`ar.prvademecum.com`) y fallback a catálogo local.
+  - Acepta `forceRefresh: true` para saltar cache.
+- `antidoping_getFrecuentes` — devuelve medicamentos marcados como frecuentes.
+- `antidoping_getHistorial` — devuelve historial de consultas (últimas 50).
+- `antidoping_importarCatalogo` — importa catálogo real desde un array `items` en formato JSON.
+- `antidoping_importarWada` — importa `WADA_Sustancias` desde `rows` (array) o `csv` (texto con `;` o `,`).
+
+Persistencia:
+
+- Hoja `Antidoping_Catalogo`: `medicamento`, `principio_activo`, `estado`, `observaciones`, `fuente_argentina`, `fuente_wada`, `fuente_secundaria`, `fecha_revision`, `frecuente`.
+- Hoja `Antidoping_Historial`: `fecha_revision`, `consulta`, `medicamento`, `principio_activo`, `estado`, `fuente_argentina`, `fuente_wada`, `fuente_secundaria`, `observaciones`.
+- Hoja `Antidoping_Cache`: `query_norm`, `query_raw`, `source`, `result_json`, `fetched_at`, `expires_at`, `hit_count`, `last_hit_at`.
+- Hoja `WADA_Sustancias`: `sustancia`, `estado`, `categoria`, `en_competencia`, `fuera_competencia`, `umbral`, `nota`, `version`.
+
+Formato rápido para `antidoping_importarWada` (CSV):
+
+`sustancia;estado;categoria;en_competencia;fuera_competencia;umbral;nota;version`
+
+Si `Antidoping_Catalogo` está vacía al primer uso, se crea una semilla inicial de referencia para asegurar respuestas y trazabilidad desde la primera consulta.
+
+### Formato de importación de catálogo
+
+`action: antidoping_importarCatalogo`
+
+- `modo`: `replace` (reemplaza catálogo) o `append` (agrega al final)
+- `items`: array de objetos con campos:
+  - `medicamento` (obligatorio)
+  - `principio_activo`
+  - `estado`
+  - `observaciones`
+  - `fuente_argentina`
+  - `fuente_wada`
+  - `fuente_secundaria`
+  - `fecha_revision` (`YYYY-MM-DD`)
+  - `frecuente` (`SI`/`NO`)
+
+Plantilla de ejemplo en:
+
+- `antidoping/catalogo.template.json`

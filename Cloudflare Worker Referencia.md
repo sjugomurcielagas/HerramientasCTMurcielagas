@@ -42,10 +42,15 @@ const DEPORTES_PREFIXES = [
   'testeos_'
 ];
 
+const ANTIDOPING_PREFIXES = [
+  'antidoping_'
+];
+
 // El Worker decide el destino por acción:
 // - REPORTES_ACTIONS -> gas/reportes
 // - BASE_ACTION_MAP   -> gas/base-deporte (alias base_* hacia funciones legacy)
 // - DEPORTES_PREFIXES -> gas/base-deporte (módulos deportivos)
+// - ANTIDOPING_PREFIXES -> gas/base-deporte (módulo antidoping)
 
 export default {
   async fetch(request) {
@@ -96,6 +101,8 @@ export default {
         targetResponse = await handleBaseAction(action, payload);
       } else if (DEPORTES_PREFIXES.some(prefix => action.startsWith(prefix))) {
         targetResponse = await handleDeportesAction(action, payload);
+      } else if (ANTIDOPING_PREFIXES.some(prefix => action.startsWith(prefix))) {
+        targetResponse = await handleAntidopingAction(action, payload);
       } else {
         return jsonResponse({
           ok: false,
@@ -162,6 +169,15 @@ async function handleBaseAction(action, payload) {
 }
 
 async function handleDeportesAction(action, payload) {
+  const cleanPayload = {
+    ...payload,
+    action
+  };
+
+  return postToAppsScript(BASE_DEPORTE_SCRIPT_URL, cleanPayload);
+}
+
+async function handleAntidopingAction(action, payload) {
   const cleanPayload = {
     ...payload,
     action

@@ -1,0 +1,28 @@
+{
+  "action": "antidoping_importarCatalogo",
+  "modo": "replace",
+  "items": [
+    {
+      "medicamento": "Paracetamol",
+      "principio_activo": "Paracetamol",
+      "estado": "NO FIGURA COMO PROHIBIDO (REVISAR DOSIS)",
+      "observaciones": "Verificar combinación con otros principios activos.",
+      "fuente_argentina": "ANMAT / Vademecum Nacional",
+      "fuente_wada": "Lista Prohibida WADA 2026",
+      "fuente_secundaria": "NADAmed / Global DRO",
+      "fecha_revision": "2026-05-17",
+      "frecuente": "SI"
+    },
+    {
+      "medicamento": "Pseudoefedrina",
+      "principio_activo": "Pseudoefedrina",
+      "estado": "PROHIBIDO EN COMPETENCIA (UMBRAL)",
+      "observaciones": "Controlar ventana previa a competencia y concentración.",
+      "fuente_argentina": "ANMAT / Vademecum Nacional",
+      "fuente_wada": "Lista Prohibida WADA 2026 (S6)",
+      "fuente_secundaria": "NADAmed / Global DRO",
+      "fecha_revision": "2026-05-17",
+      "frecuente": "SI"
+    }
+  ]
+}
