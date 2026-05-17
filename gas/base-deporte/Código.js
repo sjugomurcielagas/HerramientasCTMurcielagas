@@ -449,14 +449,18 @@ var CATEGORIAS_DRIVE_ = {
   'foto':        '01_Fotos',
   'apto_medico': '02_Aptos_Medicos',
   'pasaporte':   '03_Pasaportes',
-  'antidoping':  '04_Anti_Doping'
+  'antidoping':  '04_Anti_Doping',
+  'tue':         '05_TUE',
+  'ibsa_elegibilidad': '06_IBSA_Elegibilidad'
 };
 
 var CAMPOS_LINK_ = {
   'foto':        'Foto_Link',
   'pasaporte':   'Pasaporte_Scan_Link',
   'apto_medico': 'Apto_Medico_Link',
-  'antidoping':  'Anti_Doping_Link'
+  'antidoping':  'Anti_Doping_Link',
+  'tue':         'TUE_Archivo',
+  'ibsa_elegibilidad': 'IBSA_Elegibilidad_Archivo'
 };
 
 function subirArchivo(dni, tipo, base64Data, mimeType, extension) {

@@ -25,7 +25,7 @@
   <header class="topbar"><div class="topbar-inner"><a class="home-link" href="../index.html">← Volver al inicio</a><div class="brand"><img src="../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'"><img src="../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'"><div><div class="brand-title">Antidoping</div><div class="brand-subtitle">Consulta orientativa con fuentes internas y trazabilidad</div></div></div></div></header>
   <main>
     <section id="appView">
-      <nav class="tabs" aria-label="Navegación interna"><button class="tab-btn active" data-view="consultaView">Consulta</button><button class="tab-btn" data-view="frecuentesView">Frecuentes revisados</button><button class="tab-btn" data-view="historialView">Historial</button><button class="tab-btn" data-view="criteriosView">Criterios</button></nav>
+      <nav class="tabs" aria-label="Navegación interna"><button class="tab-btn active" data-view="consultaView">Consulta</button><button class="tab-btn" data-view="tueView">TUE</button><button class="tab-btn" data-view="frecuentesView">Frecuentes revisados</button><button class="tab-btn" data-view="historialView">Historial</button><button class="tab-btn" data-view="criteriosView">Criterios</button></nav>
 
       <section id="consultaView" class="app-section">
         <div class="panel">
@@ -36,6 +36,24 @@
           <div id="buscarStatus" class="status-line"></div>
         </div>
         <div id="resultados" class="grid"><div class="empty">Ingresá una consulta para ver resultados.</div></div>
+      </section>
+
+      <section id="tueView" class="app-section hidden">
+        <div class="panel">
+          <div class="panel-head"><div><h2>TUE</h2><p>Sección para registrar autorizaciones de uso terapéutico por jugadora.</p></div></div>
+          <div class="notice">Pendiente de backend. La idea es guardar estado, fecha de emisión, vencimiento, archivo y observaciones para cada TUE.</div>
+          <div class="split" style="margin-top:13px">
+            <article class="med-card">
+              <div class="med-title">Estado de la TUE</div>
+              <div class="meta">Vigente, en revisión o vencida.</div>
+            </article>
+            <article class="med-card">
+              <div class="med-title">Archivo y fechas</div>
+              <div class="meta">Emisión, vencimiento y enlace al documento.</div>
+            </article>
+          </div>
+          <div class="empty" style="margin-top:13px">En la próxima etapa se conectará con la ficha de cada integrante y con la base administrativa.</div>
+        </div>
       </section>
 
       <section id="frecuentesView" class="app-section hidden">
