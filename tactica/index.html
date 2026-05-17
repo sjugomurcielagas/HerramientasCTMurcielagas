@@ -2704,20 +2704,29 @@ REGLAS IMPORTANTES:
 1. Si se menciona número ("la 7"), usá num:7. Si se menciona apellido, buscalo en el plantel y agregá el campo "apellido" en el JSON solo cuando el usuario lo menciona explícitamente. Si solo se menciona número, NO incluyas "apellido".
 2. Solo usá el plantel real si el texto menciona explícitamente un apellido o número de jugadora. Si no se nombra nadie específico, usá SIEMPRE jugadoras genéricas con num:21, 22, 23, 24, 25 para campo y num:1 para arquera. Nunca asignes números del plantel real (1,4,6,7,8,9,10,11,12,14,15) si el texto no los menciona.
 3. Las flechas tipo "press" van SIEMPRE desde una jugadora del equipo A hacia una jugadora del equipo B (rival). Nunca de A a A. Si hay presión en el texto, obligatoriamente incluí jugadoras con team:"B" como destino de esas flechas.
-4. Si el texto menciona "pase", "toca", "da la pelota" o similar entre dos jugadoras del mismo equipo, usá type:"pass".
-5. Si el texto menciona "corre", "se desmarca", "baja" o movimiento sin pelota, usá type:"run".
-6. Si el texto dice "desde posición inicial", "formación" o "arrancan", usá los valores exactos de una de las formaciones arriba.
-7. Para rematar al arco rival: toX=810, toY=260 (o 215/305 para los palos).
-8. Coordenadas válidas: x entre 90 y 820, y entre 75 y 445.
-9. fromNum y toNum corresponden al campo "num" del array players generado.
-10. Si el destino es un punto del campo libre, usá toX/toY en lugar de toNum.
+4. Cada jugadora tiene una posición fija en el campo. Las flechas muestran los movimientos DESDE esa posición inicial.
+5. Una misma jugadora puede tener MÚLTIPLES flechas saliendo de ella para representar acciones secuenciales (correr, luego pasar; conducir, luego rematar). Generá tantas flechas como acciones tenga la jugadora.
+6. Tipos de flecha según la acción:
+   - "run" + "straight": correr sin pelota en línea recta
+   - "pass" + "straight": pase directo a compañera
+   - "pass" + "curve": centro o pase en diagonal
+   - "dribble" + "straight": conducción en línea
+   - "dribble" + "curve": conducción con cambio de dirección o recorrido en arco
+   - "shot" + "straight": remate
+   - "press" + "straight": presión sobre rival (siempre hacia team B)
+7. Para correr a un punto libre del campo usá toX/toY. Para pasar o presionar a otra jugadora usá toNum.
+8. Si el texto dice "desde posición inicial", "formación" o "arrancan", usá los valores exactos de una de las formaciones arriba.
+9. Para rematar al arco rival: toX=810, toY=260 (o 215/305 para los palos). "Segundo palo" desde la izquierda = toY=215.
+10. Coordenadas válidas: x entre 90 y 820, y entre 75 y 445.
 11. Siempre poné al menos 2 jugadoras para que se entienda la relación táctica.
 
 RESPONDÉ ÚNICAMENTE con JSON válido. Sin texto, sin markdown, sin explicaciones.
 
-ESQUEMA (pase entre compañeras): {"players":[{"num":21,"team":"A","x":500,"y":260,"gk":false},{"num":22,"team":"A","x":350,"y":160,"gk":false}],"arrows":[{"kind":"straight","fromNum":22,"toNum":21,"type":"pass"}]}
+EJEMPLO — jugadora sale de su área, pasa a la 9 en banda izquierda, la 9 conduce en curva y remata:
+{"players":[{"num":2,"team":"A","x":160,"y":260,"gk":false},{"num":9,"team":"A","x":400,"y":120,"gk":false}],"arrows":[{"kind":"straight","fromNum":2,"toX":310,"toY":260,"type":"run"},{"kind":"straight","fromNum":2,"toNum":9,"type":"pass"},{"kind":"curve","fromNum":9,"toX":750,"toY":260,"type":"dribble"},{"kind":"straight","fromNum":9,"toX":810,"toY":215,"type":"shot"}]}
 
-ESQUEMA (presión sobre rival): {"players":[{"num":21,"team":"A","x":600,"y":200,"gk":false},{"num":51,"team":"B","x":650,"y":200,"gk":false}],"arrows":[{"kind":"straight","fromNum":21,"toNum":51,"type":"press"}]}`;
+EJEMPLO — presión sobre rival:
+{"players":[{"num":21,"team":"A","x":600,"y":200,"gk":false},{"num":51,"team":"B","x":650,"y":200,"gk":false}],"arrows":[{"kind":"straight","fromNum":21,"toNum":51,"type":"press"}]}`;
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
