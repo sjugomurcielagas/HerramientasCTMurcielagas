@@ -526,7 +526,9 @@ function antidoping_buscarMedicamento(payload) {
   if (!consulta) throw new Error('consulta es requerida');
   var consultaNorm = normalizeText(consulta);
   var forceRefresh = !!(payload && payload.forceRefresh);
-  if (!forceRefresh) {
+  var knownActiveFromQuery = antidoping_knownCommercialActive_(consulta);
+  var shouldBypassCache = !!knownActiveFromQuery;
+  if (!forceRefresh && !shouldBypassCache) {
     var cached = antidoping_readCache_(consultaNorm);
     if (cached && cached.length) {
       antidoping_appendHistorial_(consulta, cached[0]);
