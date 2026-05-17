@@ -1320,24 +1320,15 @@ function concentraciones_generarConvocatoria(p) {
 
   var convDnis = parseJson(conc.convocadas_json) || [];
   var plantel  = sheetToObjects(getSheet(SHEETS.plantel));
-  var nombres  = convDnis.map(function(dni) {
-    var persona = plantel.find(function(r) { return String(r.DNI) === String(dni); });
-    if (!persona) return 'DNI ' + dni;
-    var apellido = String(persona.Apellido || '').trim();
-    var nombre   = String(persona.Nombre   || '').trim();
-    return apellido ? apellido + ', ' + nombre : nombre;
-  }).sort();
-
-  var tablaTexto = nombres.length
-    ? nombres.map(function(n, i) { return (i + 1) + '. ' + n; }).join('\n')
-    : '(Sin convocadas)';
+  var convocadas = _armarConvocatoriaParticipantes_(plantel, convDnis);
 
   var fechaEmision  = formatFechaTextoGas_(new Date());
   var fechaInicio   = formatFechaTextoGas_(conc.fechaInicio);
   var fechaFin      = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
   var lugar         = String(conc.lugar     || conc.nombre || '').trim();
-  var direccion     = String(conc.direccion || lugar).trim();
-  var ciudad        = String(conc.ciudad    || lugar).trim();
+  var direccion     = String(conc.direccion || '').trim();
+  var ciudad        = String(conc.ciudad    || '').trim();
+  var tipoActividad = String(p.tipoActividad || p.tipo || conc.tipoActividad || conc.tipo || 'la concentración').trim();
 
   var template = DriveApp.getFileById(CONFIG_DOC.PLANTILLA_CONVOCATORIA);
   var carpeta  = getOrCreateFolder_(CONFIG_DOC.CARPETA_GENERADOS, 'Convocatorias Generadas');
@@ -1352,10 +1343,103 @@ function concentraciones_generarConvocatoria(p) {
   body.replaceText('\\{\\{CIUDAD\\}\\}',            ciudad);
   body.replaceText('\\{\\{FECHA_INICIO_TEXTO\\}\\}',fechaInicio);
   body.replaceText('\\{\\{FECHA_FIN_TEXTO\\}\\}',   fechaFin);
-  body.replaceText('\\{\\{TABLA_CONVOCADAS\\}\\}',  tablaTexto);
+  body.replaceText('\\{\\{TIPO_ACTIVIDAD\\}\\}',    tipoActividad);
+  _insertarTablaConvocatoria_(body, convocadas);
   doc.saveAndClose();
 
   return ok(true, { url: copia.getUrl(), nombre: titulo });
+}
+
+function _armarConvocatoriaParticipantes_(plantel, convDnis) {
+  var mapa = {};
+
+  convDnis.forEach(function(dni) {
+    var dniLimpio = normalizarDNI_(dni);
+    if (!dniLimpio) return;
+    var persona = plantel.find(function(r) { return normalizarDNI_(r.DNI) === dniLimpio; });
+    if (!persona) {
+      mapa[dniLimpio] = {
+        dni: dniLimpio,
+        nombre: 'DNI ' + dniLimpio,
+        rol: 'Convocada'
+      };
+      return;
+    }
+
+    mapa[dniLimpio] = {
+      dni: dniLimpio,
+      nombre: _nombreCompletoPersona_(persona),
+      rol: String(persona.Rol || 'Convocada').trim() || 'Convocada'
+    };
+  });
+
+  plantel.forEach(function(persona) {
+    if (!_esCuerpoTecnico_(persona.Rol)) return;
+    var dniLimpio = normalizarDNI_(persona.DNI);
+    if (!dniLimpio || mapa[dniLimpio]) return;
+    mapa[dniLimpio] = {
+      dni: dniLimpio,
+      nombre: _nombreCompletoPersona_(persona),
+      rol: String(persona.Rol || 'Cuerpo técnico').trim() || 'Cuerpo técnico'
+    };
+  });
+
+  return Object.keys(mapa).map(function(k) { return mapa[k]; }).sort(function(a, b) {
+    var pesoA = _pesoRolConvocatoria_(a.rol);
+    var pesoB = _pesoRolConvocatoria_(b.rol);
+    if (pesoA !== pesoB) return pesoA - pesoB;
+    return a.nombre.localeCompare(b.nombre, 'es');
+  });
+}
+
+function _nombreCompletoPersona_(persona) {
+  var apellido = String(persona.Apellido || '').trim();
+  var nombre   = String(persona.Nombre || '').trim();
+  return apellido ? apellido + ', ' + nombre : nombre;
+}
+
+function _esCuerpoTecnico_(rol) {
+  var texto = _normalizarTextoSinAcentos_(rol);
+  return texto.indexOf('cuerpo tecnico') !== -1 || texto === 'ct' || texto.indexOf('tecnico') !== -1 && texto.indexOf('cuerpo') !== -1;
+}
+
+function _pesoRolConvocatoria_(rol) {
+  var texto = _normalizarTextoSinAcentos_(rol);
+  if (texto.indexOf('cuerpo tecnico') !== -1 || texto === 'ct' || texto.indexOf('cuerpo') !== -1 && texto.indexOf('tecnico') !== -1) return 2;
+  if (texto.indexOf('arquera') !== -1) return 0;
+  if (texto.indexOf('jugadora') !== -1) return 1;
+  return 3;
+}
+
+function _normalizarTextoSinAcentos_(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function _insertarTablaConvocatoria_(body, participantes) {
+  var pattern = '\\{\\{TABLA_CONVOCADAS\\}\\}';
+  var found = body.findText(pattern);
+  if (!found) throw new Error('No se encontró el placeholder {{TABLA_CONVOCADAS}} en la plantilla');
+
+  var text = found.getElement().asText();
+  var paragraph = text.getParent().asParagraph();
+  var parent = paragraph.getParent();
+  var index = parent.getChildIndex(paragraph);
+  var rows = [['DNI', 'Apellido y nombre', 'Rol']];
+
+  if (participantes.length) {
+    participantes.forEach(function(p) {
+      rows.push([p.dni, p.nombre, p.rol]);
+    });
+  } else {
+    rows.push(['', '(Sin convocadas)', '']);
+  }
+
+  parent.insertTable(index, rows);
+  parent.removeChild(paragraph);
 }
 
 function formatFechaTextoGas_(valor) {
