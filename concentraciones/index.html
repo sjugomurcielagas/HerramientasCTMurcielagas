@@ -137,7 +137,6 @@
     const state={plantel:[],concentraciones:[],dias:[],actualId:null,documentos:[],editingActividad:null};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
-    const PERSONAL_DOC_MATCHERS=['jugo santiago','santiago jugo','abbas hachache','daniel gonzalo','gonzalo abbas'];
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -319,8 +318,6 @@
       const tiposGenerales=tipos.filter(t=>DOC_TYPES_GENERAL.includes(t));
       const tiposPersonales=tipos.filter(t=>DOC_TYPES_PERSONAL.includes(t));
       if(tiposGenerales.length&&!convocadasGenerales.length){st.textContent='Seleccioná al menos una persona en la convocatoria para generar documentos generales.';st.className='status-line error';return}
-      const convocadasPersonales=getPersonalDocumentDnis();
-      if(tiposPersonales.length&&convocadasPersonales.length<2){st.textContent='No pude identificar automáticamente a Santiago y Gonzalo en el plantel para los documentos personales.';st.className='status-line error';return}
       st.textContent='Generando documentos...';st.className='status-line';btn.disabled=true;
       try{
         const resultados=[];
@@ -329,7 +326,7 @@
           resultados.push(...normalizeDocumentResults(resultGeneral));
         }
         if(tiposPersonales.length){
-          const resultPersonal=await generarDocumentosLote(tiposPersonales,convocadasPersonales);
+          const resultPersonal=await generarDocumentosLote(tiposPersonales,[]);
           resultados.push(...normalizeDocumentResults(resultPersonal));
         }
         st.className='status-line ok';
@@ -360,20 +357,13 @@
       }).join('');
       return links?`Documentos generados:<ul style="margin:8px 0 0 18px">${links}</ul>`:'Documentos generados.';
     }
-    function getPersonalDocumentDnis(){
-      const matches=state.plantel.filter(p=>{
-        const nombre=normalizeTextForDocMatch(nombrePersona(p));
-        return PERSONAL_DOC_MATCHERS.some(m=>nombre.includes(m));
-      }).map(p=>String(p.DNI||p.dni||'').trim()).filter(Boolean);
-      return Array.from(new Set(matches));
-    }
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
       const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
       st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
       try{
-        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:['convocatoria_fadec','certificacion_participacion']});
+        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:['convocatoria_fadec','certificacion_participacion','licencia_agencia_cordoba','licencia_municipalidad_cordoba']});
         if(data?.valido){st.textContent='Validación OK. No se detectaron faltantes para los documentos configurados.';st.className='status-line ok'}
         else{st.textContent='Faltantes detectados: '+(Array.isArray(data?.faltantes)&&data.faltantes.length?data.faltantes.join(', '):'sin detalle');st.className='status-line error'}
       }catch(err){st.textContent='Error al validar documentos: '+err.message;st.className='status-line error'}
@@ -549,7 +539,6 @@
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function formatDateTime(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
     function norm(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
-    function normalizeTextForDocMatch(v){return norm(v).replace(/[^a-z0-9]+/g,' ').trim()}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
