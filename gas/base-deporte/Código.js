@@ -14,6 +14,12 @@ var CONFIG = {
 // Compatibilidad con módulos nuevos
 var SPREADSHEET_ID = CONFIG.SPREADSHEET_ID;
 
+var CONFIG_DOC = {
+  PLANTILLA_CONVOCATORIA: '1foA1M0ftQz7KAOWRgBHCRcewgdCJFdUPynpMYdyEmZM',
+  CARPETA_PLANTILLAS:     '14LB7lSbuRq8cr1Zwbz6DilwE9EIllLNn',
+  CARPETA_GENERADOS:      CONFIG.DRIVE_RAIZ_ID, // dentro de "Documentos Digitalizados"
+};
+
 var SHEETS = {
   plantel:           'Las_Murcielagas_Base_Personal',
   sesionesPenales:   'SesionesPenales',
@@ -578,7 +584,8 @@ function doPost(e) {
       case 'concentraciones_getDias':               result = concentraciones_getDias(payload); break;
       case 'concentraciones_agregarActividad':      result = concentraciones_agregarActividad(payload); break;
       case 'concentraciones_editarActividad':       result = concentraciones_editarActividad(payload); break;
-      case 'concentraciones_eliminarActividad':     result = concentraciones_eliminarActividad(payload); break;
+      case 'concentraciones_eliminarActividad':      result = concentraciones_eliminarActividad(payload); break;
+      case 'concentraciones_generarConvocatoria':   result = concentraciones_generarConvocatoria(payload); break;
 
       // ── TESTEOS ──
       case 'testeos_getTesteos':         result = testeos_getTesteos(); break;
@@ -625,6 +632,20 @@ function setCell(sheet, row, colName, value) {
   const col = getColIndex(sheet, colName);
   if (col === 0) return;
   sheet.getRange(row, col).setValue(value);
+}
+
+// Si la columna no existe en la hoja, la agrega al final con ese nombre como header
+function ensureColumn_(sheet, colName) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  if (headers.indexOf(colName) !== -1) return;
+  sheet.getRange(1, sheet.getLastColumn() + 1).setValue(colName);
+}
+
+// Obtiene o crea una subcarpeta por nombre dentro de una carpeta padre
+function getOrCreateFolder_(parentId, nombre) {
+  var parent = DriveApp.getFolderById(parentId);
+  var iter = parent.getFoldersByName(nombre);
+  return iter.hasNext() ? iter.next() : parent.createFolder(nombre);
 }
 
 // Convierte el rango de datos de una hoja en array de objetos usando la fila 1 como headers
@@ -1141,6 +1162,7 @@ function concentraciones_editarConcentracion(p) {
   const sheet = getSheet(SHEETS.concentraciones);
   const row = findRowIndex(sheet, 'id', p.id);
   if (row === -1) throw new Error('Concentración no encontrada');
+  if (p.convocadas_json !== undefined) ensureColumn_(sheet, 'convocadas_json');
   ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'notas', 'convocadas_json'].forEach(f => {
     if (p[f] !== undefined) setCell(sheet, row, f, p[f]);
   });
@@ -1271,6 +1293,75 @@ function concentraciones_eliminarActividad(p) {
   throw new Error('Actividad no encontrada');
 }
 
+
+// Genera una copia de la plantilla de convocatoria con los datos reales
+// Parámetros: { concentracionId }
+// Placeholders en el template:
+//   {{FECHA_EMISION}} {{LUGAR}} {{DIRECCION_LUGAR}} {{CIUDAD}}
+//   {{FECHA_INICIO_TEXTO}} {{FECHA_FIN_TEXTO}} {{TABLA_CONVOCADAS}}
+function concentraciones_generarConvocatoria(p) {
+  var concId = p.concentracionId || p.id;
+  if (!concId) throw new Error('concentracionId es requerido');
+
+  var concs = sheetToObjects(getSheet(SHEETS.concentraciones));
+  var conc  = concs.find(function(c) { return String(c.id) === String(concId); });
+  if (!conc) throw new Error('Concentración no encontrada');
+
+  var convDnis = parseJson(conc.convocadas_json) || [];
+  var plantel  = sheetToObjects(getSheet(SHEETS.plantel));
+  var nombres  = convDnis.map(function(dni) {
+    var persona = plantel.find(function(r) { return String(r.DNI) === String(dni); });
+    if (!persona) return 'DNI ' + dni;
+    var apellido = String(persona.Apellido || '').trim();
+    var nombre   = String(persona.Nombre   || '').trim();
+    return apellido ? apellido + ', ' + nombre : nombre;
+  }).sort();
+
+  var tablaTexto = nombres.length
+    ? nombres.map(function(n, i) { return (i + 1) + '. ' + n; }).join('\n')
+    : '(Sin convocadas)';
+
+  var fechaEmision  = formatFechaTextoGas_(new Date());
+  var fechaInicio   = formatFechaTextoGas_(conc.fechaInicio);
+  var fechaFin      = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
+  var lugar         = String(conc.lugar || conc.nombre || '').trim();
+
+  var template = DriveApp.getFileById(CONFIG_DOC.PLANTILLA_CONVOCATORIA);
+  var carpeta  = getOrCreateFolder_(CONFIG_DOC.CARPETA_GENERADOS, 'Convocatorias Generadas');
+  var titulo   = 'Convocatoria — ' + conc.nombre + ' — ' + new Date().toISOString().slice(0, 10);
+  var copia    = template.makeCopy(titulo, carpeta);
+
+  var doc  = DocumentApp.openById(copia.getId());
+  var body = doc.getBody();
+  body.replaceText('\\{\\{FECHA_EMISION\\}\\}',    fechaEmision);
+  body.replaceText('\\{\\{LUGAR\\}\\}',             lugar);
+  body.replaceText('\\{\\{DIRECCION_LUGAR\\}\\}',   lugar);
+  body.replaceText('\\{\\{CIUDAD\\}\\}',            lugar);
+  body.replaceText('\\{\\{FECHA_INICIO_TEXTO\\}\\}',fechaInicio);
+  body.replaceText('\\{\\{FECHA_FIN_TEXTO\\}\\}',   fechaFin);
+  body.replaceText('\\{\\{TABLA_CONVOCADAS\\}\\}',  tablaTexto);
+  doc.saveAndClose();
+
+  return ok(true, { url: copia.getUrl(), nombre: titulo });
+}
+
+function formatFechaTextoGas_(valor) {
+  if (!valor) return '';
+  var d;
+  if (valor instanceof Date) {
+    d = valor;
+  } else {
+    var parts = String(valor).slice(0, 10).split('-');
+    if (parts.length === 3) {
+      d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      return String(valor);
+    }
+  }
+  var meses = ['enero','febrero','marzo','abril','mayo','junio',
+               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+}
 
 // ────────────────────────────────────────────────────────────────
 // TESTEOS FÍSICOS
