@@ -1648,7 +1648,7 @@ function _resolverPlantillaDocumento_(clave) {
   var candidatos = _candidatosPlantillaDocumento_(clave);
   if (cfg && cfg.nombreArchivo) candidatos.unshift(cfg.nombreArchivo);
   var folderId = (cfg && (cfg.folderId || cfg.carpetaId)) || CONFIG_DOC.CARPETA_PLANTILLAS;
-  var encontrado = _buscarArchivoEnCarpeta_(folderId, candidatos);
+  var encontrado = _buscarArchivoEnCarpeta_(folderId, candidatos) || _buscarArchivoEnDrive_(candidatos);
   if (encontrado) {
     return {
       plantillaId: encontrado.id,
@@ -1700,6 +1700,31 @@ function _buscarArchivoEnCarpeta_(folderId, candidatos) {
       }
       if (candidatos.some(function(c) { return normalizeText(c).split(' ').every(function(token) { return token && nombre.indexOf(token) !== -1; }); })) {
         return file;
+      }
+    }
+  } catch (err) {
+    return null;
+  }
+  return null;
+}
+
+function _buscarArchivoEnDrive_(candidatos) {
+  try {
+    for (var i = 0; i < candidatos.length; i++) {
+      var cand = String(candidatos[i] || '').trim();
+      if (!cand) continue;
+
+      var exactos = DriveApp.getFilesByName(cand);
+      if (exactos.hasNext()) return exactos.next();
+
+      var normalizado = normalizeText(cand);
+      var archivos = DriveApp.getFiles();
+      while (archivos.hasNext()) {
+        var file = archivos.next();
+        var nombre = normalizeText(file.getName());
+        if (nombre === normalizado || nombre.indexOf(normalizado) !== -1 || normalizado.indexOf(nombre) !== -1) {
+          return file;
+        }
       }
     }
   } catch (err) {
