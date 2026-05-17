@@ -530,33 +530,6 @@ function normalizeTrainingNumber_(value) {
   return sum;
 }
 
-function detectDataIssues_(item, rawItem) {
-  const issues = [];
-
-  const total = Number(item.total) || 0;
-  const fisico = Number(item.fisico) || 0;
-  const tecnico = Number(item.tecnico) || 0;
-  const subtotal = fisico + tecnico;
-
-  if (total === 0 && subtotal > 0) {
-    issues.push('El total figura en 0, pero hay estímulos físicos o técnico-tácticos cargados.');
-  }
-
-  if (total > 0 && subtotal === 0) {
-    issues.push('Hay total cargado, pero no se discrimina entre físico y técnico-táctico.');
-  }
-
-  if (total > 0 && subtotal > total) {
-    issues.push('La suma de físico y técnico-táctico supera el total declarado.');
-  }
-
-  if (total > 20 || fisico > 20 || tecnico > 20) {
-    issues.push('El valor cargado parece demasiado alto para una semana.');
-  }
-
-  return issues;
-}
-
 function testRegistrosConIssues() {
   const rows = getReportRows_();
   const conIssues = rows.filter(r => r.issues && r.issues.length);
