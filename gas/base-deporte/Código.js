@@ -2489,6 +2489,7 @@ function concentraciones_generarDocumentos(p) {
   var documentos = [];
   tipos.forEach(function(tipo) {
     var cfg = tiposMap[tipo];
+    var faltantesGlobales = _faltantesGlobalesDocumento_(cfg, conc, convocadas);
     if (cfg && cfg.requierePersona) {
       var personas = _resolverPersonasDocumento_(tipo, plantel, convocadas);
       if (!personas.length) {
@@ -2507,6 +2508,28 @@ function concentraciones_generarDocumentos(p) {
         return;
       }
       personas.forEach(function(persona) {
+        var faltantesPersona = faltantesGlobales.concat(_filtrarFaltantesPorTipoPersona_(validacion, tipo, persona));
+        if (faltantesPersona.length) {
+          var nombrePendiente = _nombreDocumentoConcentraciones(tipo, conc, persona);
+          documentos.push({
+            concentracionId: conc.id,
+            tipoDocumento: tipo,
+            nombre: nombrePendiente,
+            url: '',
+            estado: 'error',
+            error: 'Faltan datos obligatorios: ' + faltantesPersona.join(', '),
+            faltantes: faltantesPersona,
+            convocadas: convocadas,
+            plantillaId: cfg.plantillaId || '',
+            carpetaId: cfg.carpetaId || CONFIG_DOC.CARPETA_GENERADOS,
+            persona: {
+              clave: persona.clave || '',
+              nombre: persona.nombreCompleto || ''
+            }
+          });
+          _registrarDocumentoGenerado_(conc.id, tipo, nombrePendiente, '', 'error', 'Faltan datos obligatorios: ' + faltantesPersona.join(', '));
+          return;
+        }
         documentos.push(_intentarGeneracionDocumentoConcentracion_({
           tipo: tipo,
           cfg: cfg,
@@ -2518,6 +2541,24 @@ function concentraciones_generarDocumentos(p) {
           baseCtx: baseCtx
         }));
       });
+      return;
+    }
+    var faltantesTipo = faltantesGlobales.concat(_filtrarFaltantesPorTipoPersona_(validacion, tipo, null));
+    if (faltantesTipo.length) {
+      var nombrePendienteTipo = _nombreDocumentoConcentraciones(tipo, conc);
+      documentos.push({
+        concentracionId: conc.id,
+        tipoDocumento: tipo,
+        nombre: nombrePendienteTipo,
+        url: '',
+        estado: 'error',
+        error: 'Faltan datos obligatorios: ' + faltantesTipo.join(', '),
+        faltantes: faltantesTipo,
+        convocadas: convocadas,
+        plantillaId: cfg && cfg.plantillaId ? cfg.plantillaId : '',
+        carpetaId: cfg && cfg.carpetaId ? cfg.carpetaId : CONFIG_DOC.CARPETA_GENERADOS
+      });
+      _registrarDocumentoGenerado_(conc.id, tipo, nombrePendienteTipo, '', 'error', 'Faltan datos obligatorios: ' + faltantesTipo.join(', '));
       return;
     }
     documentos.push(_intentarGeneracionDocumentoConcentracion_({
@@ -2541,6 +2582,32 @@ function concentraciones_generarDocumentos(p) {
     documentos: documentos,
     validacion: validacion
   });
+}
+
+function _filtrarFaltantesPorTipoPersona_(validacion, tipo, persona) {
+  if (!validacion || !Array.isArray(validacion.faltantes)) return [];
+  var prefijo = String(tipo || '') + ':';
+  var out = [];
+
+  validacion.faltantes.forEach(function(f) {
+    var item = String(f || '').trim();
+    if (!item || item.indexOf(prefijo) !== 0) return;
+    if (!persona && item.split(':').length > 2) return;
+    var limpio = item.replace(prefijo, '');
+    if (persona && limpio.indexOf(':') !== -1) limpio = limpio.split(':')[0];
+    out.push(limpio);
+  });
+
+  return Array.from(new Set(out));
+}
+
+function _faltantesGlobalesDocumento_(cfg, conc, convocadas) {
+  var out = [];
+  if (!cfg) return ['tipo no configurado'];
+  if (cfg.requiereNombre && !(conc && conc.nombre)) out.push('nombre');
+  if (cfg.requiereFecha && !(conc && conc.fechaInicio)) out.push('fechaInicio');
+  if (cfg.requiereConvocadas && (!Array.isArray(convocadas) || !convocadas.length)) out.push('convocadas');
+  return out;
 }
 
 function _tiposDocumentoConcentraciones() {

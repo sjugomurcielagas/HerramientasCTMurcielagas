@@ -1151,6 +1151,8 @@ let temporalMode = 'weekly';
 let blockOffset = 0;
 let customRange = null;
 let excludeConcentrations = Boolean(lsGet('murcielagasExcludeConcentrations', false));
+let aiRequestCounter = 0;
+let activeAiRequestId = 0;
 
 function lsGet(key,fallback){try{return JSON.parse(localStorage.getItem(key)??JSON.stringify(fallback));}catch{return fallback;}}
 let includedPlayers = new Set(lsGet('murcielagasIncludedPlayers', []));
@@ -2956,11 +2958,14 @@ async function generateWithAI() {
 
   const btnAi = $('btn-ai');
   if (btnAi) btnAi.disabled = true;
+  const requestId = ++aiRequestCounter;
+  activeAiRequestId = requestId;
 
   $('output').innerHTML =
     '<div class="notice">Generando informe con IA...</div>';
 
   const aiTimeout = setTimeout(() => {
+    if (requestId !== activeAiRequestId) return;
     const btnAi = $('btn-ai');
     if (btnAi) btnAi.disabled = false;
 
@@ -2979,6 +2984,7 @@ async function generateWithAI() {
     const data = await callBackend('generateClientReport', payload);
 
     clearTimeout(aiTimeout);
+    if (requestId !== activeAiRequestId) return;
 
     if (!data || !data.ok) {
       const error = data && data.error
@@ -2993,11 +2999,12 @@ async function generateWithAI() {
     $('output').innerHTML = markdownToHtml(data.report || data.text || data.result || '');
   } catch (error) {
     clearTimeout(aiTimeout);
+    if (requestId !== activeAiRequestId) return;
 
     $('output').innerHTML =
       `<div class="notice warn"><strong>Error al generar el informe con IA.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si el Worker responde pero el informe no se genera, revisá que la acción generateClientReport esté conectada con Apps Script y que acepte el prompt enviado por JSON.</div>`;
   } finally {
-    if (btnAi) btnAi.disabled = false;
+    if (requestId === activeAiRequestId && btnAi) btnAi.disabled = false;
   }
 }
 

@@ -311,7 +311,7 @@
     function closeDocsModal(){document.getElementById('docsModal').classList.remove('show')}
     async function generarDocumentosSeleccionados(){
       const c=currentConc();if(!c)return;
-      const tipos=[...document.querySelectorAll('#docsModal input[type="checkbox"]:checked')].map(i=>i.value);
+      const tipos=getSelectedDocTypes();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('confirmarDocsBtn');
       if(!tipos.length){st.textContent='Seleccioná al menos un documento.';st.className='status-line error';return}
       const convocadasGenerales=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
@@ -360,14 +360,19 @@
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const tipos=getSelectedDocTypes();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
       st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
       try{
-        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:['convocatoria_fadec','certificacion_participacion','licencia_agencia_cordoba','licencia_municipalidad_cordoba']});
+        const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos});
         if(data?.valido){st.textContent='Validación OK. No se detectaron faltantes para los documentos configurados.';st.className='status-line ok'}
         else{st.textContent='Faltantes detectados: '+(Array.isArray(data?.faltantes)&&data.faltantes.length?data.faltantes.join(', '):'sin detalle');st.className='status-line error'}
       }catch(err){st.textContent='Error al validar documentos: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
+    }
+    function getSelectedDocTypes(){
+      const seleccion=[...document.querySelectorAll('#docsModal input[type="checkbox"]:checked')].map(i=>i.value).filter(Boolean);
+      return seleccion.length?Array.from(new Set(seleccion)):DOC_TYPES_GENERAL.slice();
     }
     async function loadDocumentosGenerados(){
       const c=currentConc();if(!c)return;
