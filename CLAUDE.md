@@ -100,6 +100,7 @@ Importante:
 
 - Hoy el sistema maneja una sola TUE activa por jugadora en la ficha.
 - La vigencia por defecto se propone a `365 días`, pero es editable y no debe asumirse como regla universal.
+- Al 2026-05-17 no hay casos TUE reales cargados. Antes de expandir dashboard, alertas o histórico, validar el primer caso operativo con el CT para no sobrediseñar el flujo.
 
 ## Consistencia de estilo
 
