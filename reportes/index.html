@@ -2333,7 +2333,7 @@ return {
     function audienceInstructions(audience) {
       const map = {
         ct_completo: 'Destinatario: cuerpo técnico. Priorizá esta semana, evolución por semanas, alertas, disponibilidad, continuidad, volumen semanal reportado, distribución físico/técnico-táctica e implicancias para la planificación. El lenguaje debe ser profesional, claro y útil para decidir.',
-        jugadora: 'Destinatario: jugadora. Redactá con claridad y respeto. Explicá la evolución de forma comprensible, sin tono de reto ni rankings duros. Convertí el análisis en orientaciones concretas para sostener o mejorar su proceso.'
+        jugadora: 'Destinatario: jugadora. Escribí directamente para ella, en segunda persona singular. Usá formulaciones del tipo "lograste", "mostraste", "se observa", "tenés que mejorar", "conviene sostener". No hables de la jugadora en tercera persona. Explicá la evolución de forma comprensible, sin tono de reto ni rankings duros. Convertí el análisis en orientaciones concretas para sostener o mejorar su proceso.'
       };
       return map[audience] || map.ct_completo;
     }
@@ -2877,7 +2877,7 @@ function buildPrompt() {
   const destinatario = audience === 'jugadora' ? 'jugadora' : 'cuerpo técnico';
 
   const estilo = audience === 'jugadora'
-    ? 'claro, respetuoso, humano y comprensible, sin infantilizar ni usar tono de reto'
+    ? 'claro, respetuoso, humano y comprensible, en segunda persona singular, sin infantilizar ni usar tono de reto'
     : 'profesional, claro, operativo, útil para tomar decisiones del cuerpo técnico';
 
   const humanSummary = buildHumanSummaryText(s);
@@ -2924,6 +2924,9 @@ Criterios importantes:
 - Si el período es semanal, priorizá cobertura de carga, volumen reportado de la semana, alertas y comentarios concretos.
 - Si el período es periódico, priorizá continuidad, tendencia del bloque, semanas con más o menos reporte y alertas acumuladas.
 - Escribí como una persona del CT que leyó la información y la ordenó, no como una IA que comenta un JSON.
+- Si el destinatario es la jugadora, escribí todo el informe hablándole directamente a ella. Usá segunda persona singular de principio a fin.
+- Si el destinatario es la jugadora, evitá frases como "la jugadora presentó", "se ubicó", "ella mostró". Reemplazalas por formulaciones como "lograste", "mostraste", "tu volumen reportado fue", "debés mejorar", "se observa".
+- Si el destinatario es la jugadora, cerrá cada sección con una orientación concreta y breve sobre qué sostener, revisar o mejorar.
 
 Enfoque elegido: ${$('focus') ? $('focus').value : 'general'}.
 
