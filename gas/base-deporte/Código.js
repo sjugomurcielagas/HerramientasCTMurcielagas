@@ -1399,6 +1399,7 @@ function concentraciones_generarDocumentos(p) {
         conc: conc,
         reemplazos: reemplazos,
         convocadas: convocadas,
+        plantel: plantel,
         validacion: validacion
       });
     } catch (err) {
@@ -1542,20 +1543,24 @@ function _generarDocumentoConcentracion_(ctx) {
   var copia = plantilla.makeCopy(nombre, carpeta);
   var doc = DocumentApp.openById(copia.getId());
   var body = doc.getBody();
+  var urlDoc = copia.getUrl ? copia.getUrl() : '';
+  if (!urlDoc) urlDoc = 'https://docs.google.com/document/d/' + copia.getId() + '/edit';
 
-  _aplicarReemplazosDocumentoConcentracion_(body, ctx.reemplazos, ctx.tipo, ctx.convocadas);
+  _aplicarReemplazosDocumentoConcentracion_(body, ctx.reemplazos, ctx.tipo, ctx.convocadas, ctx.plantel);
   doc.saveAndClose();
 
   var estado = 'generado';
   if (ctx.validacion && !ctx.validacion.valido) estado = 'pendiente';
 
-  _registrarDocumentoGenerado_(ctx.conc.id, ctx.tipo, nombre, copia.getUrl(), estado, ctx.validacion ? ctx.validacion.faltantes.join(', ') : '');
+  _registrarDocumentoGenerado_(ctx.conc.id, ctx.tipo, nombre, urlDoc, estado, ctx.validacion ? ctx.validacion.faltantes.join(', ') : '');
 
   return {
     concentracionId: ctx.conc.id,
     tipoDocumento: ctx.tipo,
     nombre: nombre,
-    url: copia.getUrl(),
+    url: urlDoc,
+    documentUrl: urlDoc,
+    pdfUrl: urlDoc,
     estado: estado,
     faltantes: ctx.validacion ? ctx.validacion.faltantes : [],
     convocadas: ctx.convocadas,
@@ -1584,13 +1589,13 @@ function _reemplazosDocumentoConcentracion_(data) {
   };
 }
 
-function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convocadas) {
+function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convocadas, plantel) {
   Object.keys(reemplazos).forEach(function(clave) {
     if ((tipo === 'convocatoria_fadec' || tipo === 'certificacion_participacion') && clave === '{{TABLA_CONVOCADAS}}') return;
     body.replaceText(_escapeRegexDocumento_(clave), reemplazos[clave]);
   });
   if (tipo === 'convocatoria_fadec' || tipo === 'certificacion_participacion') {
-    _insertarTablaConvocatoria_(body, convocadas);
+    _insertarTablaConvocatoria_(body, _armarConvocatoriaParticipantes_(plantel || [], convocadas || []));
   } else {
     body.replaceText(_escapeRegexDocumento_('{{TABLA_CONVOCADAS}}'), '');
   }

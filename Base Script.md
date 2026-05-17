@@ -99,6 +99,7 @@ Campos persistidos en hoja `Penales`: `sesionId`, `jugadora`, `arquera`, `zona`,
 - Plantillas extra: se resuelven desde `Config_Plantillas` / `Config_Carpetas` si existen, con fallback a búsqueda por nombre en la carpeta de plantillas.
 - Placeholders: `{{FECHA_EMISION}}`, `{{LUGAR}}`, `{{DIRECCION_LUGAR}}`, `{{CIUDAD}}`, `{{FECHA_INICIO_TEXTO}}`, `{{FECHA_FIN_TEXTO}}`, `{{TABLA_CONVOCADAS}}`, `{{TIPO_ACTIVIDAD}}`
 - `{{TABLA_CONVOCADAS}}` se reemplaza por una tabla de Google Docs con columnas `Nombre y apellido`, `DNI` y `Provincia de procedencia`.
+- Si `File.getUrl()` viene vacío, el backend arma el enlace del documento con el ID del archivo para devolver siempre un link utilizable.
 
 ## Antidoping
 
