@@ -3539,7 +3539,7 @@ function _normalizarTextoSinAcentos_(valor) {
 }
 
 function _insertarTablaConvocatoria_(body, participantes) {
-  var pattern = '\\{\\{TABLA_CONVOCADAS\\}\\}';
+  var pattern = '\\{\\{\\s*TABLA_CONVOCADAS\\s*\\}\\}';
   var found = body.findText(pattern);
   if (!found) throw new Error('No se encontró el placeholder {{TABLA_CONVOCADAS}} en la plantilla');
 
@@ -3548,6 +3548,8 @@ function _insertarTablaConvocatoria_(body, participantes) {
   var parent = paragraph.getParent();
   var index = parent.getChildIndex(paragraph);
   var rows = [['Nombre y apellido', 'DNI', 'Provincia de procedencia']];
+  var start = found.getStartOffset();
+  var end = found.getEndOffsetInclusive();
 
   if (participantes.length) {
     participantes.forEach(function(p) {
@@ -3557,8 +3559,31 @@ function _insertarTablaConvocatoria_(body, participantes) {
     rows.push(['(Sin convocadas)', '', '']);
   }
 
-  parent.insertTable(index, rows);
-  parent.removeChild(paragraph);
+  text.deleteText(start, end);
+  var table = parent.insertTable(index + 1, rows);
+  _estilizarTablaConvocatoria_(table);
+  if (!paragraph.getText().trim()) parent.removeChild(paragraph);
+}
+
+function _estilizarTablaConvocatoria_(table) {
+  if (!table) return;
+  var headerBg = '#EAF4FB';
+  for (var r = 0; r < table.getNumRows(); r++) {
+    var row = table.getRow(r);
+    for (var c = 0; c < row.getNumCells(); c++) {
+      var cell = row.getCell(c);
+      var cellText = cell.editAsText();
+      cellText.setFontFamily('Arial');
+      cellText.setFontSize(10);
+      if (r === 0) cellText.setBold(true);
+      if (r === 0) cell.setBackgroundColor(headerBg);
+      if (c === 1) {
+        cell.getChild(0).asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      } else {
+        cell.getChild(0).asParagraph().setAlignment(DocumentApp.HorizontalAlignment.LEFT);
+      }
+    }
+  }
 }
 
 function formatFechaTextoGas_(valor) {
