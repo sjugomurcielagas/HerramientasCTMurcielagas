@@ -143,9 +143,13 @@
 
 <div id="toast" class="toast"></div>
 <input type="file" id="upload-foto" style="display:none" accept="image/*" onchange="handleUpload(this,'foto')">
+<input type="file" id="upload-dni" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'dni')">
 <input type="file" id="upload-pasaporte" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'pasaporte')">
+<input type="file" id="upload-cud" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'cud')">
 <input type="file" id="upload-apto" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'apto_medico')">
 <input type="file" id="upload-antidoping" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'antidoping')">
+<input type="file" id="upload-tue" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'tue')">
+<input type="file" id="upload-ibsa" style="display:none" accept=".pdf,image/*" onchange="handleUpload(this,'ibsa_elegibilidad')">
 
 <script>
 var USUARIO = 'Santiago Jugo';
@@ -162,9 +166,12 @@ var ETIQUETAS = {
   Sexo:'Sexo', Rol:'Rol', Estado_Convocatoria:'Estado',
   Telefono:'Teléfono', Email:'Email', Direccion:'Dirección',
   Emergencia_Nombre:'Emergencia: Nombre', Emergencia_Vinculo:'Emergencia: Vínculo', Emergencia_Tel:'Emergencia: Tel.',
+  DNI_Vto:'Venc. DNI',
   Pasaporte_Nro:'N° Pasaporte', Pasaporte_Vto:'Venc. Pasaporte',
+  CUD_Vto:'Venc. CUD',
   Apto_Medico_Vto:'Venc. Apto Médico', Apto_Medico_Vigente:'Apto Vigente',
   Clasif_Visual_IBSA:'Clasif. IBSA', CUD_Nro:'N° CUD',
+  TUE_Estado:'Estado TUE', TUE_Fecha_Vencimiento:'Venc. TUE', TUE_IBSA_Enviado:'Envío TUE a IBSA',
   Club_Equipo:'Club / Equipo', Posicion:'Posición', Protocolos_SSDN:'Protocolos SSDN',
   Beca_SDN_2024:'Beca 2025 (anterior)',
   Beca_SSDN_2025:'Beca 2026 (actual)',
@@ -181,7 +188,7 @@ var ETIQUETAS = {
 var BLOQUES = {
   'IDENTIDAD':      ['Apellido','Nombre','DNI','Fecha_Nac','Sexo','Rol','Estado_Convocatoria'],
   'CONTACTO':       ['Telefono','Email','Direccion','Emergencia_Nombre','Emergencia_Vinculo','Emergencia_Tel'],
-  'DOCUMENTACIÓN':  ['Pasaporte_Nro','Pasaporte_Vto','Apto_Medico_Vto','Apto_Medico_Vigente','Clasif_Visual_IBSA','CUD_Nro'],
+  'DOCUMENTACIÓN':  ['DNI_Vto','Pasaporte_Nro','Pasaporte_Vto','CUD_Nro','CUD_Vto','Apto_Medico_Vto','Apto_Medico_Vigente','Clasif_Visual_IBSA','TUE_Estado','TUE_Fecha_Vencimiento','TUE_IBSA_Enviado'],
   'DEPORTIVO':      ['Club_Equipo','Posicion','Protocolos_SSDN'],
   'BECAS':          ['Beca_SDN_2024','Beca_SSDN_2025'],
   'PROFESIONAL':    ['Nivel_Educativo','Institucion_Educativa','Titulo_Educativo','Ocupacion'],
@@ -349,6 +356,10 @@ function renderFicha(f) {
 
   for(var titulo in BLOQUES) {
     var t = titulo;
+    if (t === 'DOCUMENTACIÓN') {
+      html += renderDocumentacionSection(f);
+      continue;
+    }
     html += '<div style="margin-top:22px;">' +
       '<div class="bloque-header">' +
       '<span class="bloque-header-title">' + t + '</span>' +
@@ -362,26 +373,54 @@ function renderFicha(f) {
     });
     html += '</div></div>';
   }
-
-  html += '<div style="margin-top:30px;padding-top:25px;border-top:2.5px solid var(--bg);">' +
-    '<div class="bloque-header"><span class="bloque-header-title">GESTIÓN DE ARCHIVOS</span></div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">' +
-    renderFileBtn('PASAPORTE', f.Pasaporte_Scan_Link, 'upload-pasaporte') +
-    renderFileBtn('APTO MÉDICO', f.Apto_Medico_Link, 'upload-apto') +
-    renderFileBtn('ANTI-DOPING', f.Anti_Doping_Link, 'upload-antidoping') +
-    renderFileBtn('FOTO PERFIL', f.Foto_Link, 'upload-foto') +
-    '</div></div></div>';
+  html += '</div>';
 
   document.getElementById('ficha-contenido').innerHTML = html;
 }
 
+function renderDocumentacionSection(f) {
+  var html = '<div style="margin-top:22px;">' +
+    '<div class="bloque-header">' +
+    '<span class="bloque-header-title">DOCUMENTACIÓN</span>' +
+    '<button class="btn-op" onclick="abrirModal(\'DOCUMENTACIÓN\')">EDITAR</button>' +
+    '</div>' +
+    '<div class="data-grid">';
+
+  BLOQUES['DOCUMENTACIÓN'].forEach(function(c){
+    var val = (f[c]||'').toString();
+    var falta = val === '' || val === 'PENDIENTE';
+    html += '<div class="data-box"><label>' + escapeHtml(ETIQUETAS[c]||c) + '</label>' +
+      '<span class="' + (falta ? 'missing' : '') + '">' + escapeHtml(val || 'FALTA') + '</span></div>';
+  });
+
+  html += '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px;">' +
+    renderFileBtn('DNI COMPLETO', f.DNI_Scan_Link, 'upload-dni') +
+    renderFileBtn('PASAPORTE', f.Pasaporte_Scan_Link, 'upload-pasaporte') +
+    renderFileBtn('CUD', f.CUD_Link, 'upload-cud') +
+    renderFileBtn('APTO MÉDICO', f.Apto_Medico_Link, 'upload-apto') +
+    renderFileBtn('ANTI-DOPING', f.Anti_Doping_Link, 'upload-antidoping') +
+    renderFileBtn('IBSA ELEGIBILIDAD', f.IBSA_Elegibilidad_Archivo, 'upload-ibsa') +
+    renderFileBtn('TUE', f.TUE_Archivo, 'upload-tue') +
+    renderFileBtn('FOTO PERFIL', f.Foto_Link, 'upload-foto') +
+    '</div>' +
+    '</div>';
+  return html;
+}
+
 function renderFileBtn(label, link, id) {
   var safeLink = safeUrl(link);
+  var estado = safeLink ? 'Cargado' : 'Faltante';
+  var color = safeLink ? 'var(--success)' : 'var(--danger)';
+  var uploadBtn = id
+    ? '<label for="' + escapeAttr(id) + '" class="btn-op" style="flex:1;text-align:center;cursor:pointer;">' + (safeLink ? 'REEMPLAZAR' : 'SUBIR') + '</label>'
+    : '';
   return '<div style="background:var(--surface-3);padding:14px;border-radius:14px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--border);">' +
     '<span style="font-size:0.7rem;font-weight:800;color:var(--accent-soft);text-transform:uppercase;">' + escapeHtml(label) + '</span>' +
+    '<span style="font-size:0.8rem;font-weight:700;color:' + color + ';">' + estado + '</span>' +
     '<div style="display:flex;gap:8px;">' +
     (safeLink ? '<a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="btn-op" style="flex:1;text-align:center;background:var(--accent);color:white;border:none;text-decoration:none;padding-top:10px;">VER</a>' : '') +
-    '<label for="' + escapeAttr(id) + '" class="btn-op" style="flex:1;text-align:center;cursor:pointer;">SUBIR</label>' +
+    uploadBtn +
     '</div></div>';
 }
 
@@ -433,6 +472,6 @@ function toast(m) {
   setTimeout(function(){ t.style.display = 'none'; }, 3000);
 }
 </script>
-<div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
+<div class="page-version-tag">Versión UI 2026.05.18 · docs-unificado</div>
 </body>
 </html>

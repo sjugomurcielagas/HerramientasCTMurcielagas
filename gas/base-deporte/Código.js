@@ -59,6 +59,16 @@ var TUE_FIELDS_ = [
   'TUE_Observaciones',
   'TUE_Archivo'
 ];
+var DOCUMENT_LINK_FIELDS_ = [
+  'Foto_Link',
+  'DNI_Scan_Link',
+  'Pasaporte_Scan_Link',
+  'CUD_Link',
+  'Apto_Medico_Link',
+  'Anti_Doping_Link',
+  'TUE_Archivo',
+  'IBSA_Elegibilidad_Archivo'
+];
 
 // Campos críticos para calcular completitud y alertas.
 // Nota: Titulo_Educativo se agrega cuando se cree la columna en Sheets.
@@ -114,6 +124,7 @@ function formatearFecha_(date) {
 function getAllRows_() {
   var ws = getSheet_();
   base_ensureTUEColumns_(ws);
+  base_ensureDocumentColumns_(ws);
   var data = ws.getDataRange().getValues();
   var headers = data[0];
   var filas = [];
@@ -146,6 +157,12 @@ function getRowByDNI_(dni) {
 function base_ensureTUEColumns_(sheet) {
   var ws = sheet || getSheet_();
   TUE_FIELDS_.forEach(function(col) { ensureColumn_(ws, col); });
+  return ws;
+}
+
+function base_ensureDocumentColumns_(sheet) {
+  var ws = sheet || getSheet_();
+  DOCUMENT_LINK_FIELDS_.forEach(function(col) { ensureColumn_(ws, col); });
   return ws;
 }
 
@@ -1512,8 +1529,10 @@ function agruparAlertas_(alertas) {
 // ── GESTIÓN DE ARCHIVOS EN DRIVE ──────────────────────────────────────────────
 var CATEGORIAS_DRIVE_ = {
   'foto':        '01_Fotos',
+  'dni':         '01b_DNI',
   'apto_medico': '02_Aptos_Medicos',
   'pasaporte':   '03_Pasaportes',
+  'cud':         '03b_CUD',
   'antidoping':  '04_Anti_Doping',
   'tue':         '05_TUE',
   'ibsa_elegibilidad': '06_IBSA_Elegibilidad'
@@ -1521,7 +1540,9 @@ var CATEGORIAS_DRIVE_ = {
 
 var CAMPOS_LINK_ = {
   'foto':        'Foto_Link',
+  'dni':         'DNI_Scan_Link',
   'pasaporte':   'Pasaporte_Scan_Link',
+  'cud':         'CUD_Link',
   'apto_medico': 'Apto_Medico_Link',
   'antidoping':  'Anti_Doping_Link',
   'tue':         'TUE_Archivo',
@@ -1530,6 +1551,7 @@ var CAMPOS_LINK_ = {
 
 function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
   try {
+    base_ensureDocumentColumns_();
     var row = getRowByDNI_(dni);
     if (!row) return { ok: false, msg: 'Persona no encontrada' };
 
