@@ -10,8 +10,8 @@
   <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../index.html');}})();</script>
   <style>
     :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select,textarea{font-family:inherit}button{font-weight:800}.hidden{display:none!important}.loading{opacity:.72;pointer-events:none}
-    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}.home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}.brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:56px;max-width:76px}.brand img:nth-child(2){height:66px;max-width:90px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand-subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
+    *{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;font-family:"Barlow",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select,textarea{font-family:inherit}button{font-weight:800}.hidden{display:none!important}.loading{opacity:.72;pointer-events:none}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}.home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}.brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:56px;max-width:76px}.brand img:nth-child(2){height:66px;max-width:90px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand-subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
     main{max-width:1180px;margin:0 auto;padding:16px 14px 90px}.panel,.login-card,.item-card,.section-card{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}.login-card{max-width:540px;margin:54px auto;padding:24px}h1,h2,h3{font-family:"Barlow Condensed",sans-serif;color:var(--azul-950);margin:0;line-height:1.05}p{line-height:1.42}.muted{color:var(--muted)}
     .form-row{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}label{font-size:.92rem;font-weight:800;color:#334155}input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.98rem}textarea{min-height:92px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 4px rgba(34,168,232,.15)}
     .btn{border:0;border-radius:13px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:7px;text-decoration:none;transition:.12s ease}.btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.86rem;padding:8px 10px;border-radius:11px}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}.status-line{margin-top:10px;color:var(--muted);font-weight:700}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
@@ -19,7 +19,7 @@
     .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.fields-grid{display:grid;gap:10px}.toolbar{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:13px}.item-list{display:grid;gap:10px}.item-card{padding:13px;display:grid;gap:10px;box-shadow:none}.item-title{font-weight:800;color:var(--azul-950);font-size:1.08rem}.item-meta{font-size:.92rem;color:var(--muted);margin-top:2px}.actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
     .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.section-card{padding:12px;margin-bottom:10px;box-shadow:none}.section-card h3{font-size:1.2rem;margin-bottom:9px}.check-grid{display:grid;gap:6px;max-height:320px;overflow:auto;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:8px;grid-template-columns:1fr}.check-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;background:#fff;border:1px solid var(--borde);border-radius:10px;padding:6px 8px;font-size:.88rem;line-height:1.2}.check-item input{width:auto;margin:0}.check-main strong{display:block;color:var(--azul-950)}.check-meta{font-size:.8rem;color:var(--muted)}.docs-block{margin:10px 0 2px;padding-top:10px;border-top:1px solid var(--borde)}.docs-block .actions{gap:6px}.activity-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.activity-title{font-weight:800;color:var(--azul-950)}.activity-meta{font-size:.9rem;color:var(--muted);margin-top:3px}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
     @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 180px}.item-card{grid-template-columns:1fr auto;align-items:center}.fields-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(min-width:1040px){.fields-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){main{padding:12px 11px 70px}.topbar-inner{align-items:flex-start}.home-link{font-size:.81rem;padding:8px 9px}.brand img:first-child{height:46px;max-width:62px}.brand img:nth-child(2){height:54px;max-width:74px}.brand-subtitle{display:none}.panel,.login-card{padding:14px}}
-    .doc-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,23,47,.42);backdrop-filter:blur(4px);z-index:80;padding:14px}.doc-modal.show{display:flex}.doc-card{width:min(520px,100%);background:#fff;border:1px solid var(--borde);border-radius:18px;box-shadow:var(--shadow);padding:16px}.doc-option{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--borde);border-radius:12px;padding:10px;background:#f8fbfd}.doc-option input{width:auto;margin-top:2px}.doc-option strong{display:block;color:var(--azul-950)}.doc-option .muted{font-size:.86rem}
+    .doc-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,23,47,.42);z-index:80;padding:14px}.doc-modal.show{display:flex}.doc-card{width:min(520px,100%);background:#fff;border:1px solid var(--borde);border-radius:18px;box-shadow:var(--shadow);padding:16px}.doc-option{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--borde);border-radius:12px;padding:10px;background:#f8fbfd}.doc-option input{width:auto;margin-top:2px}.doc-option strong{display:block;color:var(--azul-950)}.doc-option .muted{font-size:.86rem}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
   </style>
@@ -79,7 +79,7 @@
                 <div class="card-title" style="margin-bottom:12px">Documentos generales de la concentración</div>
                 <div class="actions">
                   <button id="validarDocsBtn" class="btn ghost small" type="button">Validar datos</button>
-                  <button id="generarDocsBtn" class="btn secondary small" type="button">Generar documentos</button>
+                  <button id="generarDocsBtn" class="btn secondary small" type="button">Generar convocatoria/certificación</button>
                 </div>
                 <div id="docsStatus" class="status-line"></div>
                 <div id="docsHistory" class="grid" style="margin-top:10px"><div class="empty">Sin documentos generados todavía.</div></div>
@@ -88,6 +88,11 @@
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
               <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
+              <div class="docs-block">
+                <div class="card-title" style="margin-bottom:12px">Documentos oficiales</div>
+                <div class="actions"><button id="generarOficialesBtn" class="btn secondary small" type="button">Generar documentos oficiales (Santiago y Gonzalo)</button></div>
+                <div class="muted" style="font-size:.86rem;margin-top:8px">Este acceso genera solo Licencia Agencia Córdoba y Licencia Municipalidad Córdoba para las personas configuradas en documentos oficiales.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -124,8 +129,8 @@
       <div class="grid">
         <label class="doc-option"><input type="checkbox" value="convocatoria_fadec" checked><span><strong>Convocatoria FADEC</strong><span class="muted">Usa la convocatoria marcada y los datos generales de la concentración.</span></span></label>
         <label class="doc-option"><input type="checkbox" value="certificacion_participacion"><span><strong>Certificación de participación</strong><span class="muted">Usa la convocatoria marcada y los datos generales de la concentración.</span></span></label>
-        <label class="doc-option"><input type="checkbox" value="licencia_agencia_cordoba"><span><strong>Licencia Agencia Córdoba</strong><span class="muted">Usa los datos generales de la concentración y toma automáticamente a Santiago y Gonzalo.</span></span></label>
-        <label class="doc-option"><input type="checkbox" value="licencia_municipalidad_cordoba"><span><strong>Licencia Municipalidad Córdoba</strong><span class="muted">Usa los datos generales de la concentración y toma automáticamente a Santiago y Gonzalo.</span></span></label>
+        <label class="doc-option"><input type="checkbox" value="licencia_agencia_cordoba"><span><strong>Licencia Agencia Córdoba</strong><span class="muted">Usa los datos generales de la concentración y se genera para las personas oficiales configuradas.</span></span></label>
+        <label class="doc-option"><input type="checkbox" value="licencia_municipalidad_cordoba"><span><strong>Licencia Municipalidad Córdoba</strong><span class="muted">Usa los datos generales de la concentración y se genera para las personas oficiales configuradas.</span></span></label>
       </div>
       <div class="actions" style="margin-top:14px"><button id="confirmarDocsBtn" class="btn" type="button">Generar seleccionados</button></div>
     </div>
@@ -134,7 +139,7 @@
   <script src="../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],concentraciones:[],dias:[],actualId:null,documentos:[],editingActividad:null};
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null,documentos:[],editingActividad:null,docFlow:'general'};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
 
@@ -147,7 +152,8 @@
       document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
       document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
       document.getElementById('validarDocsBtn').addEventListener('click',validarDocumentos);
-      document.getElementById('generarDocsBtn').addEventListener('click',openDocsModal);
+      document.getElementById('generarDocsBtn').addEventListener('click',()=>openDocsModal('general'));
+      document.getElementById('generarOficialesBtn').addEventListener('click',()=>openDocsModal('oficiales'));
       document.getElementById('cerrarDocsModalBtn').addEventListener('click',closeDocsModal);
       document.getElementById('confirmarDocsBtn').addEventListener('click',generarDocumentosSeleccionados);
       document.getElementById('docsModal').addEventListener('click',e=>{if(e.target.id==='docsModal')closeDocsModal()});
@@ -307,7 +313,16 @@
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }
-    function openDocsModal(){const c=currentConc();if(!c)return;document.getElementById('docsModal').classList.add('show')}
+    function openDocsModal(flow){
+      const c=currentConc();if(!c)return;
+      state.docFlow=flow==='oficiales'?'oficiales':'general';
+      const generalFlow=state.docFlow==='general';
+      document.querySelectorAll('#docsModal input[type="checkbox"]').forEach(input=>{
+        const isGeneral=DOC_TYPES_GENERAL.includes(input.value);
+        input.checked=generalFlow?isGeneral:!isGeneral;
+      });
+      document.getElementById('docsModal').classList.add('show');
+    }
     function closeDocsModal(){document.getElementById('docsModal').classList.remove('show')}
     async function generarDocumentosSeleccionados(){
       const c=currentConc();if(!c)return;
@@ -360,7 +375,7 @@
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
       const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
-      const tipos=getSelectedDocTypes();
+      const tipos=DOC_TYPES_GENERAL.slice();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
       st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
       try{

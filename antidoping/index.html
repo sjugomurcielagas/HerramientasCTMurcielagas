@@ -127,7 +127,7 @@
     const TUE_GUIDE_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
     const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina','Novalgina'];
     const SEARCH_ALIASES={novalgina:['novalgina','dipirona','metamizol'],dipirona:['dipirona','metamizol','novalgina'],metamizol:['metamizol','dipirona','novalgina'],anaflex:['anaflex','paracetamol'],paracetamol:['paracetamol','anaflex']};
-    const state={frecuentes:[],historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null};
+    const state={frecuentes:[],historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null,loaded:{frecuentes:false,historial:false,plantel:false,tues:false}};
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -146,7 +146,7 @@
       document.getElementById('wadaAnnualBtn').href=WADA_LISTA_VIGENTE_URL;
       document.getElementById('tueFormBtn').href=TUE_FORM_URL;
       document.getElementById('tueGuideBtn').href=TUE_GUIDE_URL;
-      Promise.all([loadFrecuentes(),loadHistorial(),loadPlantel(),loadTUEs()]);
+      Promise.all([loadFrecuentes(),loadPlantel()]);
     });
 
     async function apiGet(action,params={}){
@@ -172,6 +172,8 @@
       document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
+      if(id==='historialView'&&!state.loaded.historial)loadHistorial();
+      if(id==='tueView'&&!state.loaded.tues)loadTUEs();
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
@@ -246,6 +248,7 @@
       try{
         const data=await apiGet('antidoping_getFrecuentes');
         state.frecuentes=Array.isArray(data)?data:[];
+        state.loaded.frecuentes=true;
       }catch(err){
         state.frecuentes=FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual y carga en base interna.'}));
       }
@@ -301,6 +304,7 @@
       try{
         const data=await apiGet('antidoping_getHistorial');
         state.historial=Array.isArray(data)?data:[];
+        state.loaded.historial=true;
       }catch(err){state.historial=[]}
       cont.innerHTML=state.historial.length?state.historial.map(h=>`<article class="med-card"><div class="med-title">${esc(h.medicamento||h.consulta||'Consulta')}</div><div class="meta">${esc(h.principio_activo||h.principioActivo||'')} · ${esc(h.fecha_revision||h.fechaRevision||'sin fecha')}</div>${estadoBadge(estadoNormalizado(h.estado||h.resultado||'REQUIERE REVISIÓN'))}</article>`).join(''):'<div class="empty">Sin historial disponible en la API interna.</div>';
     }
@@ -309,6 +313,7 @@
       try{
         const data=await apiGet('base_getPlantel');
         state.plantel=(Array.isArray(data)?data:[]).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
+        state.loaded.plantel=true;
       }catch(err){
         state.plantel=[];
       }
@@ -327,6 +332,7 @@
       try{
         const data=await apiGet('antidoping_listarTUEs');
         state.tues={resumen:data?.resumen||{},casos:Array.isArray(data?.casos)?data.casos:[]};
+        state.loaded.tues=true;
       }catch(err){
         state.tues={resumen:{},casos:[]};
       }

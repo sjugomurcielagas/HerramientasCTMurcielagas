@@ -1229,13 +1229,7 @@ if (document.readyState === 'loading') {
   startApp();
 }
 
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    if (!rows.length) {
-      loadServerData();
-    }
-  }, 800);
-});
+// Evita doble carga automática de datos al iniciar.
 
 
  function init() {

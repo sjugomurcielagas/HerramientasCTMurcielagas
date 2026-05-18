@@ -10,10 +10,10 @@
   <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../../index.html');}})();</script>
   <style>
     :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select{font-family:inherit}button{font-weight:700}.hidden{display:none!important}.loading{opacity:.7;pointer-events:none}
+    *{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select{font-family:inherit}button{font-weight:700}.hidden{display:none!important}.loading{opacity:.7;pointer-events:none}
 
     /* Topbar */
-    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:10px;align-items:center}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:10px;align-items:center}
     .home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:8px 11px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.85rem}
     .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:first-child{height:52px;max-width:68px}.brand img:nth-child(2){height:60px;max-width:80px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.2rem,3.5vw,1.85rem);font-weight:700;color:var(--azul-950);line-height:1}.brand-subtitle{color:var(--muted);font-size:.84rem;margin-top:2px}
 
@@ -338,7 +338,9 @@
   <script src="../../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],sesiones:[],penales:[],sesionActualId:null,zona:null,resultado:null,potencia:null};
+    const LAST_ARQUERA_KEY='penales_last_arquera_dni';
+    const state={plantel:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null};
+    const MAX_PENALES_RENDER=120;
 
     async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const res=await fetch(url.toString(),{headers:{Accept:'application/json'}});return parseApiResponse(res,action)}
     async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});return parseApiResponse(res,payload?.action)}
@@ -357,7 +359,7 @@
       document.getElementById('cancelarSesionBtn').addEventListener('click',()=>showNuevaSesionForm(false));
       document.getElementById('sesionSelect').addEventListener('change',onSesionChange);
       document.getElementById('jugadoraSelect').addEventListener('change',checkRegistrarBtn);
-      document.getElementById('arqueraSelect').addEventListener('change',checkRegistrarBtn);
+      document.getElementById('arqueraSelect').addEventListener('change',onArqueraChange);
       document.getElementById('zonaSelector').addEventListener('click',e=>{const b=e.target.closest('[data-zona]');if(b)setZona(b.dataset.zona)});
       document.getElementById('resultadoBtns').addEventListener('click',e=>{const b=e.target.closest('.res-btn');if(b)setResultado(b.dataset.res)});
       document.getElementById('potenciaBtns').addEventListener('click',e=>{const b=e.target.closest('[data-pot]');if(b)setPotencia(b.dataset.pot)});
@@ -379,6 +381,7 @@
         state.plantel=Array.isArray(plantel)?plantel:[];
         state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
         state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];
+        rebuildPenalesIndex();
         if(!state.sesionActualId&&state.sesiones.length){
           state.sesionActualId=state.sesiones[state.sesiones.length-1].id;
         }
@@ -398,13 +401,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
     async function loadAndRenderStats(){
-      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];renderListaPenales()}catch(e){}
+      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];rebuildPenalesIndex();renderListaPenales()}catch(e){}
       renderStats();
     }
     async function actualizarPenales(){
       const btn=document.getElementById('refreshPenalesBtn');
       btn.disabled=true;btn.textContent='...';
-      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
+      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];rebuildPenalesIndex();renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
       finally{btn.disabled=false;btn.textContent='Actualizar'}
     }
 
@@ -414,11 +417,37 @@
       const arqueras=state.plantel.filter(esArquera).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       document.getElementById('jugadoraSelect').innerHTML='<option value="">— Jugadora —</option>'+jugadoras.map(toOpt).join('');
       document.getElementById('arqueraSelect').innerHTML='<option value="">— Arquera —</option>'+arqueras.map(toOpt).join('');
+      restoreLastArquera();
+      checkRegistrarBtn();
+    }
+    function onArqueraChange(){
+      const dni=document.getElementById('arqueraSelect').value||'';
+      if(dni)localStorage.setItem(LAST_ARQUERA_KEY,dni);
+      else localStorage.removeItem(LAST_ARQUERA_KEY);
+      checkRegistrarBtn();
+    }
+    function restoreLastArquera(){
+      const sel=document.getElementById('arqueraSelect');
+      const last=localStorage.getItem(LAST_ARQUERA_KEY)||'';
+      if(!sel||!last)return;
+      const exists=[...sel.options].some(o=>String(o.value)===String(last));
+      if(exists)sel.value=last;
     }
 
-    function valoresRolPlantel(p){return [p.Tipo_Integrante,p.tipo_integrante,p.tipoIntegrante,p['Tipo Integrante'],p.Rol,p.rol,p.Puesto,p.puesto].map(normalizeText).filter(Boolean)}
-    function esArquera(p){return valoresRolPlantel(p).some(v=>v.includes('arquera'))}
-    function esJugadoraCampo(p){return valoresRolPlantel(p).some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo'))&&!esArquera(p)}
+    function valoresTipoIntegrantePlantel(p){return [p.Tipo_Integrante,p.tipo_integrante,p.tipoIntegrante,p['Tipo Integrante']].map(normalizeText).filter(Boolean)}
+    function valoresRolPlantel(p){return [p.Rol,p.rol,p.Puesto,p.puesto,p.Posicion,p.posicion,p.Posición,p['Posición'],p.Funcion,p.funcion,p['Función']].map(normalizeText).filter(Boolean)}
+    function esArquera(p){
+      const tipos=valoresTipoIntegrantePlantel(p);
+      const roles=valoresRolPlantel(p);
+      const vals=[...tipos,...roles];
+      return vals.some(v=>v.includes('arquera')||v.includes('arquero')||v.includes('portera')||v.includes('goalkeeper')||v==='gk');
+    }
+    function esJugadoraCampo(p){
+      const tipos=valoresTipoIntegrantePlantel(p);
+      if(tipos.length)return tipos.some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo')||v.includes('campo'))&&!esArquera(p);
+      const roles=valoresRolPlantel(p);
+      return roles.some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo')||v.includes('campo'))&&!esArquera(p);
+    }
     function nombrePersona(p){return [p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||p.Nombre||p.DNI||p.dni||''}
 
     function renderSesionSelector(){
@@ -502,8 +531,12 @@
       btn.disabled=true;status.textContent='Registrando...';status.className='status-line';
       try{
         const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora:jugadora_dni,arquera:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado,potencia:state.potencia});
-        state.penales.push(normalizePenalRecord({id:result.id,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,timestamp:new Date().toISOString()}));
+        const nuevo=normalizePenalRecord({id:result.id,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,timestamp:new Date().toISOString()});
+        state.penales.push(nuevo);
+        indexPenalRecord(nuevo);
+        localStorage.setItem(LAST_ARQUERA_KEY,arquera_dni);
         state.zona=null;state.resultado=null;state.potencia=null;
+        jSel.value='';
         document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
         document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
         document.querySelectorAll('.pot-btn').forEach(b=>b.classList.remove('sel'));
@@ -522,6 +555,7 @@
       try{
         await apiPost({action:'penales_eliminarPenal',id});
         state.penales=state.penales.filter(p=>p.id!==id);
+        rebuildPenalesIndex();
         renderListaPenales();
       }catch(err){alert('Error al eliminar: '+err.message)}
     }
@@ -533,22 +567,26 @@
         cont.innerHTML='<div class="empty">Seleccioná o creá una sesión para empezar.</div>';
         sum.textContent='';return;
       }
-      const sp=state.penales.filter(p=>String(p.sesionId)===String(state.sesionActualId)).slice().reverse();
+      const sp=getPenalesSesion(state.sesionActualId).slice().reverse();
       const goles=sp.filter(p=>p.resultado==='gol').length;
       const pct=sp.length?Math.round(goles/sp.length*100):0;
       sum.textContent=sp.length?`${sp.length} pen. · ${goles} gol${goles!==1?'es':''} · ${pct}%`:'Sin penales';
       if(!sp.length){cont.innerHTML='<div class="empty">No hay penales en esta sesión todavía.</div>';return}
-      cont.innerHTML=sp.map(p=>`<div class="penal-row">
+      const visibles=sp.slice(0,MAX_PENALES_RENDER);
+      cont.innerHTML=visibles.map(p=>`<div class="penal-row">
         <div class="penal-info">
-          <span class="penal-jugadora">${esc(p.jugadora_nombre||p.jugadora_dni)}</span>
+          <span class="penal-jugadora">${esc(nombreMostrado(p.jugadora_nombre,p.jugadora_dni))}</span>
           <span class="penal-vs">vs</span>
-          <span class="penal-arquera">${esc(p.arquera_nombre||p.arquera_dni)}</span>
+          <span class="penal-arquera">${esc(nombreMostrado(p.arquera_nombre,p.arquera_dni))}</span>
           <span class="badge">${esc(zonaLabel(p.zona))}</span>
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
           ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
         </div>
         <button class="btn small danger" onclick="eliminarPenal(${JSON.stringify(String(p.id))})">×</button>
       </div>`).join('');
+      if(sp.length>MAX_PENALES_RENDER){
+        cont.insertAdjacentHTML('beforeend',`<div class="empty">Mostrando los últimos ${MAX_PENALES_RENDER} penales de ${sp.length}. El resto sigue contado en estadísticas.</div>`);
+      }
     }
 
     function renderSesiones(){
@@ -594,10 +632,14 @@
 
     function calcEfect(arr){const total=arr.length,goles=arr.filter(p=>p.resultado==='gol').length;return{total,goles,pct:total?Math.round(goles/total*100):0}}
 
+    function dniKey(v){return String(v??'').replace(/\D+/g,'')}
+    function nombreMostrado(nombre,dni){return String(nombre||resolveNombre(dni)||'Sin nombre').trim()}
     function resolveNombre(dni){
-      const p=state.plantel.find(x=>(x.DNI||x.dni)===dni);
-      if(!p)return dni;
-      return[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||dni;
+      const key=dniKey(dni);
+      if(!key)return '';
+      const p=state.plantel.find(x=>dniKey(x.DNI||x.dni)===key);
+      if(!p)return '';
+      return [p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ');
     }
 
     function renderStatsJugadoras(penales){
@@ -731,13 +773,28 @@
         sesionId,
         sesion_id: sesionId,
         jugadora_dni: jugadoraDni,
+        jugadora_nombre: p.jugadora_nombre??p.jugadoraNombre??resolveNombre(jugadoraDni),
         jugadora: jugadoraDni,
         arquera_dni: arqueraDni,
+        arquera_nombre: p.arquera_nombre??p.arqueraNombre??resolveNombre(arqueraDni),
         arquera: arqueraDni,
         zona:p.zona??'',
         resultado:p.resultado??'',
         potencia:p.potencia??'',
       };
+    }
+    function rebuildPenalesIndex(){
+      state.penalesPorSesion=new Map();
+      (state.penales||[]).forEach(indexPenalRecord);
+    }
+    function indexPenalRecord(p){
+      const key=String(p?.sesionId??'');
+      if(!key)return;
+      if(!state.penalesPorSesion.has(key))state.penalesPorSesion.set(key,[]);
+      state.penalesPorSesion.get(key).push(p);
+    }
+    function getPenalesSesion(sesionId){
+      return state.penalesPorSesion.get(String(sesionId??''))||[];
     }
     function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ')}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}

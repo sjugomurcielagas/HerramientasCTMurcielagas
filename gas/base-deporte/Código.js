@@ -3502,7 +3502,9 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
   convDnis.forEach(function(dni) {
     var dniLimpio = normalizarDNI_(dni);
     if (!dniLimpio) return;
-    var persona = plantel.find(function(r) { return normalizarDNI_(r.DNI) === dniLimpio; });
+    var persona = plantel.find(function(r) {
+      return normalizarDNI_(r.DNI || r.dni || r.Dni || '') === dniLimpio;
+    });
     if (!persona) {
       mapa[dniLimpio] = {
         dni: dniLimpio,
@@ -3553,7 +3555,8 @@ function _provinciaProcedenciaPersona_(persona) {
     'Provincia_Origen', 'ProvinciaOrigen', 'Provincia_de_Procedencia',
     'Provincia de procedencia', 'Provincia de origen',
     'Provincia_Residencia', 'ProvinciaResidencia', 'Provincia de residencia',
-    'Provincia Procedencia', 'Prov_Procedencia', 'Prov Procedencia'
+    'Provincia Procedencia', 'Prov_Procedencia', 'Prov Procedencia',
+    'provincia', 'provincia_origen', 'provincia_procedencia'
   ];
   for (var i = 0; i < claves.length; i++) {
     var val = persona[claves[i]];
@@ -3572,6 +3575,12 @@ function _provinciaProcedenciaPersona_(persona) {
     var parts = dir.split(',').map(function(x) { return String(x || '').trim(); }).filter(Boolean);
     if (parts.length >= 2) return parts[parts.length - 1];
   }
+  var ciudad = String(
+    persona.Ciudad || persona.ciudad ||
+    persona.Localidad || persona.localidad ||
+    persona['Ciudad de origen'] || persona['Ciudad_Origen'] || ''
+  ).trim();
+  if (ciudad) return ciudad;
   return '';
 }
 
@@ -3632,7 +3641,7 @@ function _estilizarTablaConvocatoria_(table) {
       var cell = row.getCell(c);
       var cellText = cell.editAsText();
       cellText.setFontFamily('Arial');
-      cellText.setFontSize(8);
+      cellText.setFontSize(7);
       if (r === 0) cellText.setBold(true);
       if (r === 0) cell.setBackgroundColor(headerBg);
       var paragraphs = cell.getNumChildren();
