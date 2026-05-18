@@ -338,6 +338,7 @@
   <script src="../../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
+    const STRICT_MODE={tolerant_json:false,role_fallback_when_no_tipo:true};
     const LAST_ARQUERA_KEY='penales_last_arquera_dni';
     const state={plantel:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null};
     const MAX_PENALES_RENDER=120;
@@ -346,10 +347,22 @@
     async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});return parseApiResponse(res,payload?.action)}
     async function parseApiResponse(res,action){
       const text=await res.text();
-      let data=null;
-      try{data=text?JSON.parse(text):null}catch(err){console.error('Respuesta no JSON en Penales',action,{status:res.status,text,error:err});throw new Error(`Respuesta no JSON del servidor (${res.status}).`)}
+      const data=tryParseJsonPayload(text);
+      if(!data){console.error('Respuesta no JSON en Penales',action,{status:res.status,text});throw new Error(`Respuesta no JSON del servidor (${res.status}).`)}
       if(!res.ok||!data||data.ok===false){console.error('Error API Penales',action,{status:res.status,data});throw new Error(data?.error||`Error de API (${res.status})`)}
       return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
+    }
+    function tryParseJsonPayload(text){
+      const raw=String(text||'').trim();
+      if(!raw)return null;
+      try{return JSON.parse(raw)}catch(e){}
+      if(STRICT_MODE.tolerant_json)return null;
+      const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
+      if(start!==-1&&end!==-1&&end>start){
+        const candidate=raw.slice(start,end+1);
+        try{return JSON.parse(candidate)}catch(e){}
+      }
+      return null;
     }
 
     document.addEventListener('DOMContentLoaded',()=>{
@@ -434,17 +447,33 @@
       if(exists)sel.value=last;
     }
 
-    function valoresTipoIntegrantePlantel(p){return [p.Tipo_Integrante,p.tipo_integrante,p.tipoIntegrante,p['Tipo Integrante']].map(normalizeText).filter(Boolean)}
+    function valoresTipoIntegrantePlantel(p){return [p.Tipo_Integrante,p.tipo_integrante,p.tipoIntegrante,p['Tipo Integrante'],p['tipo integrante']].map(normalizeText).filter(Boolean)}
     function valoresRolPlantel(p){return [p.Rol,p.rol,p.Puesto,p.puesto,p.Posicion,p.posicion,p.Posición,p['Posición'],p.Funcion,p.funcion,p['Función']].map(normalizeText).filter(Boolean)}
+    function tipoIntegrantePrincipal(p){return valoresTipoIntegrantePlantel(p)[0]||''}
     function esArquera(p){
-      const tipos=valoresTipoIntegrantePlantel(p);
-      const roles=valoresRolPlantel(p);
-      const vals=[...tipos,...roles];
-      return vals.some(v=>v.includes('arquera')||v.includes('arquero')||v.includes('portera')||v.includes('goalkeeper')||v==='gk');
+      const tipo=tipoIntegrantePrincipal(p);
+      if(tipo)return esTokenArquera(tipo);
+      return valoresRolPlantel(p).some(esTokenArquera);
+    }
+    function esTokenArquera(v){
+      const t=normalizeText(v||'');
+      if(!t)return false;
+      if(t==='gk'||t==='arq'||t==='1')return true;
+      return t.includes('arquera')||
+        t.includes('arquero')||
+        t.includes('arquer')||
+        t.includes('portera')||
+        t.includes('portero')||
+        t.includes('guardameta')||
+        t.includes('goalkeeper')||
+        t.includes('goalie')||
+        t.includes('keeper')||
+        t.includes('arco');
     }
     function esJugadoraCampo(p){
-      const tipos=valoresTipoIntegrantePlantel(p);
-      if(tipos.length)return tipos.some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo')||v.includes('campo'))&&!esArquera(p);
+      const tipo=tipoIntegrantePrincipal(p);
+      if(tipo)return !esArquera(p)&&(tipo==='jugadora'||tipo.includes('jugadora de campo')||tipo.includes('jugadora campo')||tipo.includes('campo'));
+      if(!STRICT_MODE.role_fallback_when_no_tipo)return false;
       const roles=valoresRolPlantel(p);
       return roles.some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo')||v.includes('campo'))&&!esArquera(p);
     }

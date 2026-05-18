@@ -122,6 +122,7 @@
   <script src="../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
+    const STRICT_MODE={tolerant_json:false,synthetic_frecuentes:false};
     const WADA_LISTA_VIGENTE_URL='https://drive.google.com/file/d/1vuOT1Yclhb0c_m6P5r1PUyAHb6FlZRX2/view?usp=drive_link';
     const TUE_FORM_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
     const TUE_GUIDE_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
@@ -162,10 +163,22 @@
     }
     async function parseApiResponse(res){
       const text=await res.text();
-      let data=null;
-      try{data=text?JSON.parse(text):null}catch(e){throw new Error(`Respuesta no JSON. Estado ${res.status}. ${text.slice(0,180)}`)}
+      const data=tryParseJsonPayload(text);
+      if(!data)throw new Error(`Respuesta no JSON. Estado ${res.status}. ${String(text||'').slice(0,180)}`);
       if(!res.ok||!data||data.ok===false)throw new Error(data?.error||`Error HTTP ${res.status}`);
       return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
+    }
+    function tryParseJsonPayload(text){
+      const raw=String(text||'').trim();
+      if(!raw)return null;
+      try{return JSON.parse(raw)}catch(e){}
+      if(STRICT_MODE.tolerant_json)return null;
+      const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
+      if(start!==-1&&end!==-1&&end>start){
+        const candidate=raw.slice(start,end+1);
+        try{return JSON.parse(candidate)}catch(e){}
+      }
+      return null;
     }
 
     function showView(id){
@@ -250,12 +263,16 @@
         state.frecuentes=Array.isArray(data)?data:[];
         state.loaded.frecuentes=true;
       }catch(err){
-        state.frecuentes=FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual y carga en base interna.'}));
+        state.frecuentes=STRICT_MODE.synthetic_frecuentes
+          ? FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual y carga en base interna.'}))
+          : [];
+        if(!STRICT_MODE.synthetic_frecuentes)cont.innerHTML='<div class="empty">No se pudo cargar frecuentes desde la API interna.</div>';
       }
       renderFrecuentes();
     }
     function renderFrecuentes(){
       const cont=document.getElementById('frecuentesList');
+      if(!state.frecuentes.length){cont.innerHTML='<div class="empty">Sin frecuentes cargados.</div>';return}
       cont.innerHTML=state.frecuentes.map(m=>`<article class="med-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(m.medicamento||m.nombre_comercial||m.nombre)}</div><div class="meta">${esc(m.principio_activo||m.principioActivo||'Pendiente de identificar')}</div></div>${estadoBadge(estadoNormalizado(m.estado||'REQUIERE REVISIÓN'))}</div>${m.observaciones?`<p>${esc(m.observaciones)}</p>`:''}</article>`).join('');
     }
 

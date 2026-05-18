@@ -82,7 +82,6 @@
                   <button id="generarDocsBtn" class="btn secondary small" type="button">Generar convocatoria/certificación</button>
                 </div>
                 <div id="docsStatus" class="status-line"></div>
-                <div id="docsHistory" class="grid" style="margin-top:10px"><div class="empty">Sin documentos generados todavía.</div></div>
               </div>
               <div class="actions" style="margin:10px 0"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
@@ -139,7 +138,8 @@
   <script src="../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],concentraciones:[],dias:[],actualId:null,documentos:[],editingActividad:null,docFlow:'general'};
+    const STRICT_MODE={tolerant_json:false};
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general'};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
 
@@ -183,10 +183,22 @@
     }
     async function parseApiResponse(res){
       const text=await res.text();
-      let data=null;
-      try{data=text?JSON.parse(text):null}catch(e){throw new Error(`Respuesta no JSON. Estado ${res.status}. ${text.slice(0,180)}`)}
+      const data=tryParseJsonPayload(text);
+      if(!data)throw new Error(`Respuesta no JSON. Estado ${res.status}. ${String(text||'').slice(0,180)}`);
       if(!res.ok||!data||data.ok===false)throw new Error(data?.error||`Error HTTP ${res.status}`);
       return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
+    }
+    function tryParseJsonPayload(text){
+      const raw=String(text||'').trim();
+      if(!raw)return null;
+      try{return JSON.parse(raw)}catch(e){}
+      if(STRICT_MODE.tolerant_json)return null;
+      const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
+      if(start!==-1&&end!==-1&&end>start){
+        const candidate=raw.slice(start,end+1);
+        try{return JSON.parse(candidate)}catch(e){}
+      }
+      return null;
     }
 
     async function loadAll(){
@@ -257,7 +269,6 @@
       state.actualId=String(id);
       renderDetalle();
       loadDias();
-      loadDocumentosGenerados();
       showView('detalleView');
     }
     function renderDetalle(){
@@ -347,7 +358,6 @@
         st.className='status-line ok';
         st.innerHTML=buildDocumentResultHtml(resultados);
         closeDocsModal();
-        await loadDocumentosGenerados();
       }catch(err){
         st.textContent='La generación documental falló. Detalle: '+err.message;
         st.className='status-line error';
@@ -388,30 +398,6 @@
     function getSelectedDocTypes(){
       const seleccion=[...document.querySelectorAll('#docsModal input[type="checkbox"]:checked')].map(i=>i.value).filter(Boolean);
       return seleccion.length?Array.from(new Set(seleccion)):DOC_TYPES_GENERAL.slice();
-    }
-    async function loadDocumentosGenerados(){
-      const c=currentConc();if(!c)return;
-      const cont=document.getElementById('docsHistory');
-      cont.innerHTML='<div class="empty">Cargando historial de documentos...</div>';
-      try{
-        const data=await apiGet('concentraciones_getDocumentosGenerados',{concentracionId:concId(c),id:concId(c)});
-        state.documentos=Array.isArray(data)?data:[];
-        renderDocumentosGenerados();
-      }catch(err){cont.innerHTML=`<div class="empty">Error al cargar historial: ${esc(err.message)}</div>`}
-    }
-    function renderDocumentosGenerados(){
-      const cont=document.getElementById('docsHistory');
-      const items=(state.documentos||[]).slice().sort((a,b)=>String(b.timestamp||'').localeCompare(String(a.timestamp||'')));
-      if(!items.length){cont.innerHTML='<div class="empty">Sin documentos generados todavía.</div>';return}
-      cont.innerHTML=items.map(d=>{
-        const estado=String(d.estado||'').toLowerCase();
-        const badgeClass=estado==='generado'?'ok':(estado==='pendiente'?'warn':'danger');
-        const nombre=d.nombre||d.tipoDocumento||'Documento';
-        const cuando=d.timestamp?formatDateTime(d.timestamp):'';
-        const error=d.error?`<div class="item-meta">Detalle: ${esc(d.error)}</div>`:'';
-        const link=d.url?`<a class="btn ghost small" href="${esc(d.url)}" target="_blank" rel="noopener">Abrir</a>`:'';
-        return `<article class="item-card"><div><div class="item-title">${esc(nombre)}</div><div class="item-meta">${esc(d.tipoDocumento||'')}${cuando?' · '+esc(cuando):''}</div>${error}</div><div class="actions"><span class="badge ${badgeClass}">${esc(d.estado||'sin estado')}</span>${link}</div></article>`;
-      }).join('');
     }
     function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=value});updateConvCount()}
     function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}

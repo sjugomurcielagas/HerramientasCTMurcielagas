@@ -1937,6 +1937,9 @@ function safeJsonParse(val, fallback) {
   try {
     return JSON.parse(val);
   } catch (e) {
+    try {
+      Logger.log('safeJsonParse fallback activado. Valor: %s', String(val).slice(0, 240));
+    } catch (_) {}
     return fallback;
   }
 }
