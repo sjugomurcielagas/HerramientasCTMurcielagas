@@ -3146,11 +3146,27 @@ function _resolverPersonaDocumentoDesdePlantel_(row, plantel) {
 }
 
 function _normalizarPersonaDocumento_(cfg, plantelPersona) {
-  var nombreCompleto = String(cfg.nombre_completo || '').trim() || (plantelPersona ? _nombreCompletoPersona_(plantelPersona) : '');
+  var clavePersona = String(cfg.clave_persona || '').trim();
+  var nombreCfg = String(cfg.nombre_completo || '').trim();
+  var nombreDetectado = plantelPersona ? _nombreCompletoPersona_(plantelPersona) : '';
+  var nombreCompleto = nombreCfg || nombreDetectado;
   var dni = String(cfg.dni || '').trim() || (plantelPersona ? String(plantelPersona.DNI || plantelPersona.dni || '').trim() : '');
   var apellidoNombre = plantelPersona ? _apellidoNombrePersona_(plantelPersona) : _apellidoNombreDesdeNombreCompleto_(nombreCompleto);
+  var nombreNorm = _normalizarTextoSinAcentos_(nombreCompleto);
+  var autoridadInstitucion = String(cfg.autoridad_institucion || '').trim() || 'Agencia Cordoba Deportes';
+  var destinatarioNombre = String(cfg.destinatario_nombre || '').trim() || 'Lic. Ignacio Barani';
+  var cargoAdministrativo = String(cfg.cargo_administrativo || '').trim();
+
+  if (!cargoAdministrativo) {
+    if (clavePersona === 'gonzalo_abbas_hachache' || nombreNorm.indexOf('gonzalo') !== -1) {
+      cargoAdministrativo = '1219';
+    } else if (clavePersona === 'santiago_jugo' || nombreNorm.indexOf('santiago') !== -1) {
+      cargoAdministrativo = '6901';
+    }
+  }
+
   return {
-    clave: String(cfg.clave_persona || '').trim(),
+    clave: clavePersona,
     orden: parseInt(cfg.orden || '999', 10),
     activo: _boolDocConfig_(cfg.activo, true),
     nombreCompleto: nombreCompleto,
@@ -3158,10 +3174,10 @@ function _normalizarPersonaDocumento_(cfg, plantelPersona) {
     apellidoNombreMayus: apellidoNombre.toUpperCase(),
     dni: dni,
     fechaNacimiento: plantelPersona ? _leerFechaPersonaDocumento_(plantelPersona) : '',
-    autoridadInstitucion: String(cfg.autoridad_institucion || '').trim(),
-    destinatarioNombre: String(cfg.destinatario_nombre || '').trim(),
+    autoridadInstitucion: autoridadInstitucion,
+    destinatarioNombre: destinatarioNombre,
     rolEvento: String(cfg.rol_evento || (plantelPersona && plantelPersona.Rol) || '').trim(),
-    cargoAdministrativo: String(cfg.cargo_administrativo || '').trim(),
+    cargoAdministrativo: cargoAdministrativo,
     plantelPersona: plantelPersona || null
   };
 }
