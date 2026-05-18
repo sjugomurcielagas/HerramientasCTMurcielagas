@@ -3551,11 +3551,21 @@ function _provinciaProcedenciaPersona_(persona) {
   var claves = [
     'Provincia', 'Provincia_Procedencia', 'ProvinciaProcedencia',
     'Provincia_Origen', 'ProvinciaOrigen', 'Provincia_de_Procedencia',
-    'Provincia de procedencia', 'Provincia de origen'
+    'Provincia de procedencia', 'Provincia de origen',
+    'Provincia_Residencia', 'ProvinciaResidencia', 'Provincia de residencia',
+    'Provincia Procedencia', 'Prov_Procedencia', 'Prov Procedencia'
   ];
   for (var i = 0; i < claves.length; i++) {
     var val = persona[claves[i]];
     if (val !== undefined && val !== null && String(val).trim() !== '') return String(val).trim();
+  }
+  var keys = Object.keys(persona || {});
+  for (var j = 0; j < keys.length; j++) {
+    var k = _normalizarTextoSinAcentos_(keys[j]).replace(/[^a-z0-9]/g, '');
+    if (k.indexOf('provincia') === -1) continue;
+    if (k.indexOf('procedencia') === -1 && k.indexOf('origen') === -1 && k.indexOf('residencia') === -1) continue;
+    var dyn = persona[keys[j]];
+    if (dyn !== undefined && dyn !== null && String(dyn).trim() !== '') return String(dyn).trim();
   }
   return '';
 }
@@ -3617,13 +3627,17 @@ function _estilizarTablaConvocatoria_(table) {
       var cell = row.getCell(c);
       var cellText = cell.editAsText();
       cellText.setFontFamily('Arial');
-      cellText.setFontSize(10);
+      cellText.setFontSize(9);
       if (r === 0) cellText.setBold(true);
       if (r === 0) cell.setBackgroundColor(headerBg);
-      if (c === 1) {
-        cell.getChild(0).asParagraph().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-      } else {
-        cell.getChild(0).asParagraph().setAlignment(DocumentApp.HorizontalAlignment.LEFT);
+      var paragraphs = cell.getNumChildren();
+      for (var p = 0; p < paragraphs; p++) {
+        var el = cell.getChild(p);
+        if (el.getType() !== DocumentApp.ElementType.PARAGRAPH) continue;
+        el.asParagraph().setHeading(DocumentApp.ParagraphHeading.NORMAL);
+        el.asParagraph().setAlignment(c === 1
+          ? DocumentApp.HorizontalAlignment.CENTER
+          : DocumentApp.HorizontalAlignment.LEFT);
       }
     }
   }
