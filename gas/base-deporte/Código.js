@@ -1708,6 +1708,7 @@ function doPost(e) {
       case 'concentraciones_validarDatosDocumentos':result = concentraciones_validarDatosDocumentos(payload); break;
       case 'concentraciones_generarDocumentos':     result = concentraciones_generarDocumentos(payload); break;
       case 'concentraciones_getDocumentosGenerados':result = concentraciones_getDocumentosGenerados(payload); break;
+      case 'concentraciones_actualizarConfigPersonasDocs': result = concentraciones_actualizarConfigPersonasDocs(payload); break;
 
       // ── TESTEOS ──
       case 'testeos_getTesteos':         result = testeos_getTesteos(); break;
@@ -2468,6 +2469,32 @@ function concentraciones_getDocumentosGenerados(p) {
   var concId = p && (p.concentracionId || p.id);
   var data = concId ? all.filter(function(d) { return String(d.concentracionId) === String(concId); }) : all;
   return ok(true, data);
+}
+
+function concentraciones_actualizarConfigPersonasDocs(p) {
+  _ensureConfiguracionDocumentos_();
+  var sheet = getSheet(SHEETS.configDocPersonas);
+  var rows = sheetToObjects(sheet);
+  var updates = Array.isArray(p && p.personas) ? p.personas : [];
+  var updated = [];
+
+  updates.forEach(function(u) {
+    var clave = String((u && u.clave_persona) || '').trim();
+    if (!clave) return;
+    var idx = rows.findIndex(function(r) { return String(r.clave_persona || '').trim() === clave; });
+    if (idx === -1) return;
+    var rowNum = idx + 2;
+    if (u.autoridad_institucion !== undefined) setCell(sheet, rowNum, 'autoridad_institucion', String(u.autoridad_institucion || '').trim());
+    if (u.destinatario_nombre !== undefined) setCell(sheet, rowNum, 'destinatario_nombre', String(u.destinatario_nombre || '').trim());
+    if (u.cargo_administrativo !== undefined) setCell(sheet, rowNum, 'cargo_administrativo', String(u.cargo_administrativo || '').trim());
+    if (u.rol_evento !== undefined) setCell(sheet, rowNum, 'rol_evento', String(u.rol_evento || '').trim());
+    updated.push(clave);
+  });
+
+  return ok(true, {
+    updated: updated,
+    total: updated.length
+  });
 }
 
 function concentraciones_generarDocumentos(p) {
