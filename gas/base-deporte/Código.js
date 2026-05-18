@@ -3567,6 +3567,11 @@ function _provinciaProcedenciaPersona_(persona) {
     var dyn = persona[keys[j]];
     if (dyn !== undefined && dyn !== null && String(dyn).trim() !== '') return String(dyn).trim();
   }
+  var dir = String(persona.Direccion || persona.direccion || '').trim();
+  if (dir) {
+    var parts = dir.split(',').map(function(x) { return String(x || '').trim(); }).filter(Boolean);
+    if (parts.length >= 2) return parts[parts.length - 1];
+  }
   return '';
 }
 
@@ -3627,7 +3632,7 @@ function _estilizarTablaConvocatoria_(table) {
       var cell = row.getCell(c);
       var cellText = cell.editAsText();
       cellText.setFontFamily('Arial');
-      cellText.setFontSize(9);
+      cellText.setFontSize(8);
       if (r === 0) cellText.setBold(true);
       if (r === 0) cell.setBackgroundColor(headerBg);
       var paragraphs = cell.getNumChildren();
