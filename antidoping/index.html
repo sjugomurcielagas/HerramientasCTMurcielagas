@@ -128,7 +128,7 @@
     const TUE_GUIDE_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
     const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina','Novalgina'];
     const SEARCH_ALIASES={novalgina:['novalgina','dipirona','metamizol'],dipirona:['dipirona','metamizol','novalgina'],metamizol:['metamizol','dipirona','novalgina'],anaflex:['anaflex','paracetamol'],paracetamol:['paracetamol','anaflex']};
-    const state={frecuentes:[],historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null,loaded:{frecuentes:false,historial:false,plantel:false,tues:false}};
+    const state={frecuentes:[],frecuentesError:'',historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null,loaded:{frecuentes:false,historial:false,plantel:false,tues:false}};
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -202,7 +202,7 @@
         loadHistorial();
       }catch(err){
         status.textContent='No se pudo consultar la API interna: '+err.message;status.className='status-line error';
-        renderResultados([fallbackResultado(q)]);
+        renderResultados([]);
       }
     }
 
@@ -261,17 +261,19 @@
       try{
         const data=await apiGet('antidoping_getFrecuentes');
         state.frecuentes=Array.isArray(data)?data:[];
+        state.frecuentesError='';
         state.loaded.frecuentes=true;
       }catch(err){
         state.frecuentes=STRICT_MODE.synthetic_frecuentes
           ? FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual y carga en base interna.'}))
           : [];
-        if(!STRICT_MODE.synthetic_frecuentes)cont.innerHTML='<div class="empty">No se pudo cargar frecuentes desde la API interna.</div>';
+        state.frecuentesError=STRICT_MODE.synthetic_frecuentes?'':'No se pudo cargar frecuentes desde la API interna.';
       }
       renderFrecuentes();
     }
     function renderFrecuentes(){
       const cont=document.getElementById('frecuentesList');
+      if(state.frecuentesError){cont.innerHTML=`<div class="empty">${esc(state.frecuentesError)}</div>`;return}
       if(!state.frecuentes.length){cont.innerHTML='<div class="empty">Sin frecuentes cargados.</div>';return}
       cont.innerHTML=state.frecuentes.map(m=>`<article class="med-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(m.medicamento||m.nombre_comercial||m.nombre)}</div><div class="meta">${esc(m.principio_activo||m.principioActivo||'Pendiente de identificar')}</div></div>${estadoBadge(estadoNormalizado(m.estado||'REQUIERE REVISIÓN'))}</div>${m.observaciones?`<p>${esc(m.observaciones)}</p>`:''}</article>`).join('');
     }

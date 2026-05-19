@@ -386,24 +386,34 @@
       const app=document.getElementById('appView');
       app.classList.add('loading');
       try{
-        const [plantel,sesiones,penales]=await Promise.all([
+        const [plantel,sesiones]=await Promise.all([
           apiGet('base_getPlantel'),
-          apiGet('penales_getSesiones'),
-          apiGet('penales_getPenales')
+          apiGet('penales_getSesiones')
         ]);
         state.plantel=Array.isArray(plantel)?plantel:[];
         state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
-        state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];
-        rebuildPenalesIndex();
         if(!state.sesionActualId&&state.sesiones.length){
           state.sesionActualId=state.sesiones[state.sesiones.length-1].id;
         }
         renderPlantelSelects();
         renderSesionSelector();
-        renderListaPenales();
         renderSesiones();
+        document.getElementById('listaPenalesBody').innerHTML='<div class="empty">Cargando penales...</div>';
+        loadPenalesEnSegundoPlano();
       }catch(err){alert('Error al cargar datos: '+err.message)}
       finally{app.classList.remove('loading')}
+    }
+
+    async function loadPenalesEnSegundoPlano(){
+      try{
+        const penales=await apiGet('penales_getPenales');
+        state.penales=mergePenalesServidor(penales);
+        rebuildPenalesIndex();
+        renderListaPenales();
+        renderSesiones();
+      }catch(err){
+        document.getElementById('listaPenalesBody').innerHTML=`<div class="empty">No se pudieron cargar penales: ${esc(err.message)}</div>`;
+      }
     }
 
     function showView(id){
@@ -414,13 +424,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
     async function loadAndRenderStats(){
-      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];rebuildPenalesIndex();renderListaPenales()}catch(e){}
+      try{const penales=await apiGet('penales_getPenales');state.penales=mergePenalesServidor(penales);rebuildPenalesIndex();renderListaPenales()}catch(e){}
       renderStats();
     }
     async function actualizarPenales(){
       const btn=document.getElementById('refreshPenalesBtn');
       btn.disabled=true;btn.textContent='...';
-      try{const penales=await apiGet('penales_getPenales');state.penales=Array.isArray(penales)?penales.map(normalizePenalRecord):[];rebuildPenalesIndex();renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
+      try{const penales=await apiGet('penales_getPenales');state.penales=mergePenalesServidor(penales);rebuildPenalesIndex();renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
       finally{btn.disabled=false;btn.textContent='Actualizar'}
     }
 
@@ -557,26 +567,44 @@
       const arquera_dni=aSel.value;
       const jugadora_nombre=jSel.selectedOptions[0]?.text||jugadora_dni;
       const arquera_nombre=aSel.selectedOptions[0]?.text||arquera_dni;
-      btn.disabled=true;status.textContent='Registrando...';status.className='status-line';
+      const snapshot={zona:state.zona,resultado:state.resultado,potencia:state.potencia,jugadora:jugadora_dni};
+      const tempId='tmp_'+Date.now();
+      const nuevo=normalizePenalRecord({id:tempId,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia,timestamp:new Date().toISOString(),local_pending:true,local_created:true});
+      btn.disabled=true;status.textContent='Guardando...';status.className='status-line';
+      state.penales.push(nuevo);
+      indexPenalRecord(nuevo);
+      localStorage.setItem(LAST_ARQUERA_KEY,arquera_dni);
+      resetRegistroPenal(jSel);
+      renderListaPenales();
+      checkRegistrarBtn();
       try{
-        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora:jugadora_dni,arquera:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:state.zona,resultado:state.resultado,potencia:state.potencia});
-        const nuevo=normalizePenalRecord({id:result.id,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:state.zona,resultado:state.resultado,potencia:state.potencia,timestamp:new Date().toISOString()});
-        state.penales.push(nuevo);
-        indexPenalRecord(nuevo);
-        localStorage.setItem(LAST_ARQUERA_KEY,arquera_dni);
-        state.zona=null;state.resultado=null;state.potencia=null;
-        jSel.value='';
-        document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
-        document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
-        document.querySelectorAll('.pot-btn').forEach(b=>b.classList.remove('sel'));
+        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora:jugadora_dni,arquera:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia});
+        nuevo.id=result.id||tempId;
+        nuevo.local_pending=false;
+        nuevo.local_created=true;
         status.textContent='✓ Registrado';status.className='status-line ok';
         renderListaPenales();
-        checkRegistrarBtn();
         setTimeout(()=>{status.textContent='';status.className='status-line'},1800);
       }catch(err){
+        state.penales=state.penales.filter(p=>p.id!==tempId);
+        rebuildPenalesIndex();
+        jSel.value=snapshot.jugadora;
+        state.zona=snapshot.zona;state.resultado=snapshot.resultado;state.potencia=snapshot.potencia;
+        document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.toggle('sel',b.dataset.zona===String(snapshot.zona)));
+        document.querySelectorAll('.res-btn').forEach(b=>b.classList.toggle('sel',b.dataset.res===snapshot.resultado));
+        document.querySelectorAll('.pot-btn').forEach(b=>b.classList.toggle('sel',b.dataset.pot===snapshot.potencia));
+        renderListaPenales();
         status.textContent='Error: '+err.message;status.className='status-line error';
-        btn.disabled=false;
+        checkRegistrarBtn();
       }
+    }
+
+    function resetRegistroPenal(jSel){
+      state.zona=null;state.resultado=null;state.potencia=null;
+      if(jSel)jSel.value='';
+      document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
+      document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
+      document.querySelectorAll('.pot-btn').forEach(b=>b.classList.remove('sel'));
     }
 
     async function eliminarPenal(id){
@@ -611,7 +639,7 @@
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
           ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
         </div>
-        <button class="btn small danger" onclick="eliminarPenal(${JSON.stringify(String(p.id))})">×</button>
+        ${p.local_pending?'<span class="badge warn">Guardando</span>':`<button class="btn small danger" onclick="eliminarPenal(${JSON.stringify(String(p.id))})">×</button>`}
       </div>`).join('');
       if(sp.length>MAX_PENALES_RENDER){
         cont.insertAdjacentHTML('beforeend',`<div class="empty">Mostrando los últimos ${MAX_PENALES_RENDER} penales de ${sp.length}. El resto sigue contado en estadísticas.</div>`);
@@ -811,6 +839,12 @@
         resultado:p.resultado??'',
         potencia:p.potencia??'',
       };
+    }
+    function mergePenalesServidor(penalesServidor){
+      const server=Array.isArray(penalesServidor)?penalesServidor.map(normalizePenalRecord):[];
+      const serverIds=new Set(server.map(p=>String(p.id||'')).filter(Boolean));
+      const locales=(state.penales||[]).filter(p=>(p.local_pending||p.local_created)&&!serverIds.has(String(p.id||'')));
+      return server.concat(locales);
     }
     function rebuildPenalesIndex(){
       state.penalesPorSesion=new Map();
