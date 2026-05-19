@@ -1202,11 +1202,28 @@ function base_getWADAStatus() {
  */
 function getPlantel() {
   return getAllRows_().map(function(r) {
+    var nombre = [r.Apellido, r.Nombre].filter(function(v) { return String(v || '').trim(); }).join(', ');
+    var tipoIntegrante = r.Tipo_Integrante || r.tipoIntegrante || r.tipo_integrante || r['Tipo Integrante'] || '';
     return {
+      DNI:           r.DNI,
       dni:           r.DNI,
-      nombre:        r.Apellido + ', ' + r.Nombre,
+      Apellido:      r.Apellido || '',
+      Nombre:        r.Nombre || '',
+      nombre:        nombre || r.Nombre || r.Apellido || r.DNI,
+      Tipo_Integrante: tipoIntegrante,
+      tipoIntegrante:  tipoIntegrante,
+      tipo_integrante: tipoIntegrante,
+      Rol:           r.Rol,
       rol:           r.Rol,
+      Estado_Convocatoria: r.Estado_Convocatoria,
+      Estado_Plantel: r.Estado_Plantel,
+      Activo:        r.Activo,
       estado:        r.Estado_Convocatoria,
+      Puesto:        r.Puesto || '',
+      Posicion:      r.Posicion || r['Posición'] || '',
+      'Posición':    r['Posición'] || r.Posicion || '',
+      Funcion:       r.Funcion || r['Función'] || '',
+      'Función':     r['Función'] || r.Funcion || '',
       beca_actual:   r.Beca_SSDN_2025   || '',   // categoría vigente (postulación 2026)
       beca_anterior: r.Beca_SDN_2024    || '',   // categoría anterior (ciclo 2025)
     };
@@ -1784,6 +1801,17 @@ function ensureColumn_(sheet, colName) {
   sheet.getRange(1, sheet.getLastColumn() + 1).setValue(colName);
 }
 
+function appendObjectRow_(sheet, valuesByHeader, requiredHeaders) {
+  (requiredHeaders || Object.keys(valuesByHeader || {})).forEach(function(col) {
+    ensureColumn_(sheet, col);
+  });
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const row = headers.map(function(h) {
+    return valuesByHeader && valuesByHeader[h] !== undefined ? valuesByHeader[h] : '';
+  });
+  sheet.appendRow(row);
+}
+
 // Obtiene o crea una subcarpeta por nombre dentro de una carpeta padre
 function getOrCreateFolder_(parentId, nombre) {
   var parent = DriveApp.getFolderById(parentId);
@@ -1862,7 +1890,7 @@ function base_agregarColumna(p) {
 //   id | nombre | fecha | arquera | notas | timestamp
 //
 // Hoja Penales:
-//   id | sesionId | jugadora | zona | potencia | resultado | timestamp
+//   id | sesionId | jugadora | arquera | zona | potencia | resultado | timestamp
 //   potencia: 'fuerte' | 'medio' | 'debil'
 //   resultado: 'gol' | 'atajado' | 'afuera' | 'palo'
 //   zona: '1'-'9' | 'palo-izq' | 'palo-der' | 'travesano' |
@@ -1895,7 +1923,10 @@ function penales_editarSesion(p) {
 
 // Si se omite sesionId devuelve todos los penales (útil para stats globales)
 function penales_getPenales(p) {
-  const all = sheetToObjects(getSheet(SHEETS.penales));
+  const nombres = _mapaNombresPlantelPenales_();
+  const all = sheetToObjects(getSheet(SHEETS.penales)).map(function(row) {
+    return _normalizarPenalBackend_(row, nombres);
+  });
   const data = p.sesionId
     ? all.filter(r => String(r.sesionId) === String(p.sesionId))
     : all;
@@ -1903,14 +1934,61 @@ function penales_getPenales(p) {
 }
 
 function penales_registrarPenal(p) {
-  if (!p.sesionId || !p.jugadora) throw new Error('sesionId y jugadora son requeridos');
+  const sesionId = _primerValorNoVacio_(p.sesionId, p.sesion_id, p.sesionID);
+  const jugadora = normalizarDNI_(_primerValorNoVacio_(p.jugadora, p.jugadora_dni, p.jugadoraDNI));
+  const arquera = normalizarDNI_(_primerValorNoVacio_(p.arquera, p.arquera_dni, p.arqueraDNI));
+  if (!sesionId || !jugadora || !arquera) throw new Error('sesionId, jugadora y arquera son requeridos');
   const id = newId();
-  getSheet(SHEETS.penales).appendRow([
-    id, p.sesionId, p.jugadora,
-    p.zona || '', p.potencia || '', p.resultado || '',
-    new Date().toISOString()
-  ]);
+  const sheet = getSheet(SHEETS.penales);
+  appendObjectRow_(sheet, {
+    id: id,
+    sesionId: sesionId,
+    sesion_id: sesionId,
+    jugadora: jugadora,
+    jugadora_dni: jugadora,
+    arquera: arquera,
+    arquera_dni: arquera,
+    zona: p.zona || '',
+    potencia: p.potencia || '',
+    resultado: p.resultado || '',
+    timestamp: new Date().toISOString()
+  }, ['id', 'sesionId', 'jugadora', 'arquera', 'zona', 'potencia', 'resultado', 'timestamp']);
   return ok(true, { id });
+}
+
+function _normalizarPenalBackend_(row, nombres) {
+  var sesionId = _primerValorNoVacio_(row.sesionId, row.sesion_id, row.sesionID, row.sesionid);
+  var jugadora = normalizarDNI_(_primerValorNoVacio_(row.jugadora_dni, row.jugadora, row.jugadoraDNI, row.Jugadora));
+  var arquera = normalizarDNI_(_primerValorNoVacio_(row.arquera_dni, row.arquera, row.arqueraDNI, row.Arquera));
+  var out = Object.assign({}, row);
+  out.sesionId = sesionId;
+  out.sesion_id = sesionId;
+  out.jugadora = jugadora;
+  out.jugadora_dni = jugadora;
+  out.arquera = arquera;
+  out.arquera_dni = arquera;
+  out.jugadora_nombre = _primerValorNoVacio_(row.jugadora_nombre, row.jugadoraNombre, nombres[jugadora]);
+  out.arquera_nombre = _primerValorNoVacio_(row.arquera_nombre, row.arqueraNombre, nombres[arquera]);
+  return out;
+}
+
+function _mapaNombresPlantelPenales_() {
+  var mapa = {};
+  getAllRows_().forEach(function(p) {
+    var dni = normalizarDNI_(p.DNI);
+    if (!dni) return;
+    mapa[dni] = [p.Apellido, p.Nombre].filter(function(v) { return String(v || '').trim(); }).join(', ') ||
+      [p.Nombre, p.Apellido].filter(function(v) { return String(v || '').trim(); }).join(' ');
+  });
+  return mapa;
+}
+
+function _primerValorNoVacio_() {
+  for (var i = 0; i < arguments.length; i++) {
+    var v = arguments[i];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+  }
+  return '';
 }
 
 function penales_eliminarPenal(p) {
@@ -3522,19 +3600,19 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
       dni: dniLimpio,
       nombre: _nombreCompletoPersona_(persona),
       provincia: _provinciaProcedenciaPersona_(persona),
-      rol: String(persona.Rol || 'Convocada').trim() || 'Convocada'
+      rol: _rolConvocatoriaPersona_(persona, 'Convocada')
     };
   });
 
   plantel.forEach(function(persona) {
-    if (!_esCuerpoTecnico_(persona.Rol)) return;
-    var dniLimpio = normalizarDNI_(persona.DNI);
+    if (!_esCuerpoTecnicoPersona_(persona)) return;
+    var dniLimpio = normalizarDNI_(persona.DNI || persona.dni || persona.Dni || '');
     if (!dniLimpio || mapa[dniLimpio]) return;
     mapa[dniLimpio] = {
       dni: dniLimpio,
       nombre: _nombreCompletoPersona_(persona),
       provincia: _provinciaProcedenciaPersona_(persona),
-      rol: String(persona.Rol || 'Cuerpo técnico').trim() || 'Cuerpo técnico'
+      rol: _rolConvocatoriaPersona_(persona, 'Cuerpo técnico')
     };
   });
 
@@ -3622,6 +3700,19 @@ function _extraerProvinciaDesdeTexto_(valor, requiereSeparador) {
   return partes.length ? partes[0] : texto;
 }
 
+function _rolConvocatoriaPersona_(persona, fallback) {
+  return String(
+    persona.Tipo_Integrante || persona.tipoIntegrante || persona.tipo_integrante || persona['Tipo Integrante'] ||
+    persona.Rol || persona.rol || fallback || ''
+  ).trim() || fallback || '';
+}
+
+function _esCuerpoTecnicoPersona_(persona) {
+  var tipo = String(persona.Tipo_Integrante || persona.tipoIntegrante || persona.tipo_integrante || persona['Tipo Integrante'] || '').trim();
+  if (tipo) return _esCuerpoTecnico_(tipo);
+  return _esCuerpoTecnico_(persona.Rol || persona.rol || '');
+}
+
 function _esCuerpoTecnico_(rol) {
   var texto = _normalizarTextoSinAcentos_(rol);
   return texto.indexOf('cuerpo tecnico') !== -1 || texto === 'ct' || texto.indexOf('tecnico') !== -1 && texto.indexOf('cuerpo') !== -1;
@@ -3673,21 +3764,33 @@ function _insertarTablaConvocatoria_(body, participantes) {
 function _estilizarTablaConvocatoria_(table) {
   if (!table) return;
   var headerBg = '#EAF4FB';
+  var baseAttrs = {};
+  baseAttrs[DocumentApp.Attribute.FONT_FAMILY] = 'Arial';
+  baseAttrs[DocumentApp.Attribute.FONT_SIZE] = 8;
   for (var r = 0; r < table.getNumRows(); r++) {
     var row = table.getRow(r);
     for (var c = 0; c < row.getNumCells(); c++) {
       var cell = row.getCell(c);
       var cellText = cell.editAsText();
-      cellText.setFontFamily('Arial');
-      cellText.setFontSize(8);
-      if (r === 0) cellText.setBold(true);
+      var attrs = Object.assign({}, baseAttrs);
+      attrs[DocumentApp.Attribute.BOLD] = r === 0;
+      cellText.setAttributes(attrs);
+      var len = cellText.getText().length;
+      if (len > 0) {
+        cellText.setAttributes(0, len - 1, attrs);
+        cellText.setFontFamily(0, len - 1, 'Arial');
+        cellText.setFontSize(0, len - 1, 8);
+        cellText.setBold(0, len - 1, r === 0);
+      }
       if (r === 0) cell.setBackgroundColor(headerBg);
       var paragraphs = cell.getNumChildren();
       for (var p = 0; p < paragraphs; p++) {
         var el = cell.getChild(p);
         if (el.getType() !== DocumentApp.ElementType.PARAGRAPH) continue;
-        el.asParagraph().setHeading(DocumentApp.ParagraphHeading.NORMAL);
-        el.asParagraph().setAlignment(c === 1
+        var para = el.asParagraph();
+        para.setHeading(DocumentApp.ParagraphHeading.NORMAL);
+        para.setAttributes(baseAttrs);
+        para.setAlignment(c === 1
           ? DocumentApp.HorizontalAlignment.CENTER
           : DocumentApp.HorizontalAlignment.LEFT);
       }
@@ -3824,7 +3927,7 @@ function inicializarHojas() {
     },
     {
       nombre: 'Penales',
-      headers: ['id', 'sesionId', 'jugadora', 'zona', 'potencia', 'resultado', 'timestamp']
+      headers: ['id', 'sesionId', 'jugadora', 'arquera', 'zona', 'potencia', 'resultado', 'timestamp']
     },
     {
       nombre: 'Partidos',

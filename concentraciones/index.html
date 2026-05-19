@@ -236,7 +236,7 @@
       if(!items.length){cont.innerHTML='<div class="empty">No hay concentraciones para mostrar.</div>';return}
       cont.innerHTML=items.map(c=>{
         const id=concId(c),inicio=dateValue(c,'fecha_inicio','fechaInicio','inicio'),fin=dateValue(c,'fecha_fin','fechaFin','fin');
-        const convocadas=parseConvocadas(c);
+        const convocadas=convocatoriaDnisEfectivos(c);
         return `<article class="item-card"><div><div class="item-title">${esc(c.nombre||'Concentración sin nombre')}</div><div class="item-meta">${dateRange(inicio,fin)}${c.lugar?' · '+esc(c.lugar):''}</div><div class="badge-row"><span class="badge info">${convocadas.length} convocada${convocadas.length===1?'':'s'}</span>${statusBadge(inicio,fin)}</div></div><div class="actions"><button class="btn small" data-open="${esc(id)}">Abrir</button></div></article>`;
       }).join('');
       cont.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openConcentracion(btn.dataset.open)));
@@ -255,7 +255,7 @@
       if(!fechaInicio){st.textContent='Seleccioná la fecha de inicio.';st.className='status-line error';return}
       st.textContent='Creando...';st.className='status-line';btn.disabled=true;
       try{
-        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,direccion,ciudad,fechaInicio,fechaFin,notas,convocadas_json:'[]'});
+        const result=await apiPost({action:'concentraciones_crearConcentracion',nombre,lugar,direccion,ciudad,fechaInicio,fechaFin,notas,convocadas_json:JSON.stringify(defaultConvocadosDnis())});
         const id=result?.id||result?.concentracion_id;
         await loadAll();
         clearNewForm();
@@ -299,24 +299,25 @@
       finally{btn.disabled=false}
     }
     function detailPayload(c){
-      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),direccion:document.getElementById('editDireccion').value.trim(),ciudad:document.getElementById('editCiudad').value.trim(),fechaInicio:document.getElementById('editInicio').value,fechaFin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(parseConvocadas(c))};
+      return {action:'concentraciones_editarConcentracion',id:concId(c),nombre:document.getElementById('editNombre').value.trim(),lugar:document.getElementById('editLugar').value.trim(),direccion:document.getElementById('editDireccion').value.trim(),ciudad:document.getElementById('editCiudad').value.trim(),fechaInicio:document.getElementById('editInicio').value,fechaFin:document.getElementById('editFin').value,notas:document.getElementById('editNotas').value.trim(),convocadas_json:JSON.stringify(convocatoriaDnisEfectivos(c))};
     }
 
     function renderConvocatoria(){
       const c=currentConc(),cont=document.getElementById('convocatoriaList');
-      const selected=new Set(parseConvocadas(c).map(String));
+      const selected=new Set(convocatoriaDnisEfectivos(c).map(String));
       const convocables=state.plantel.filter(isConvocable).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       if(!convocables.length){cont.innerHTML='<div class="empty">No hay integrantes disponibles en el plantel.</div>';updateConvCount();return}
       cont.innerHTML=convocables.map(p=>{
         const dni=String(p.DNI||p.dni||'').trim(),nombre=nombrePersona(p),tipo=tipoIntegrante(p),rol=rolIntegrante(p),etiqueta=tipo||rol||'Integrante';
-        return `<label class="check-item"><input type="checkbox" value="${esc(dni)}" ${selected.has(dni)?'checked':''}><span class="check-main"><strong>${esc(nombre)}</strong><span class="check-meta">${rol&&rol!==tipo?esc(rol)+' · ':''}DNI ${esc(dni||'sin cargar')}</span></span><span class="badge info" style="font-size:.66rem">${esc(etiqueta)}</span></label>`;
+        const fijo=isCuerpoTecnico(p);
+        return `<label class="check-item"><input type="checkbox" value="${esc(dni)}" ${selected.has(dni)?'checked':''} ${fijo?'disabled':''}><span class="check-main"><strong>${esc(nombre)}</strong><span class="check-meta">${rol&&rol!==tipo?esc(rol)+' · ':''}DNI ${esc(dni||'sin cargar')}</span></span><span class="badge info" style="font-size:.66rem">${esc(fijo?'Siempre':etiqueta)}</span></label>`;
       }).join('');
       cont.querySelectorAll('input').forEach(input=>input.addEventListener('change',updateConvCount));
       updateConvCount();
     }
     async function guardarConvocatoria(){
       const c=currentConc();if(!c)return;
-      const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const convocadas=convocatoriaDnisDesdeChecks();
       const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
       const st=document.getElementById('convStatus'),btn=document.getElementById('guardarConvBtn');
       st.textContent='Guardando convocatoria...';st.className='status-line';btn.disabled=true;
@@ -340,7 +341,7 @@
       const tipos=getSelectedDocTypes();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('confirmarDocsBtn');
       if(!tipos.length){st.textContent='Seleccioná al menos un documento.';st.className='status-line error';return}
-      const convocadasGenerales=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const convocadasGenerales=convocatoriaDnisDesdeChecks();
       const tiposGenerales=tipos.filter(t=>DOC_TYPES_GENERAL.includes(t));
       const tiposPersonales=tipos.filter(t=>DOC_TYPES_PERSONAL.includes(t));
       if(tiposGenerales.length&&!convocadasGenerales.length){st.textContent='Seleccioná al menos una persona en la convocatoria para generar documentos generales.';st.className='status-line error';return}
@@ -384,7 +385,7 @@
     }
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
-      const convocadas=[...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean);
+      const convocadas=convocatoriaDnisDesdeChecks();
       const tipos=DOC_TYPES_GENERAL.slice();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
       st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
@@ -399,7 +400,7 @@
       const seleccion=[...document.querySelectorAll('#docsModal input[type="checkbox"]:checked')].map(i=>i.value).filter(Boolean);
       return seleccion.length?Array.from(new Set(seleccion)):DOC_TYPES_GENERAL.slice();
     }
-    function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=value});updateConvCount()}
+    function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=isCuerpoTecnicoDni(i.value)||value});updateConvCount()}
     function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}
 
     async function loadDias(){
@@ -530,6 +531,9 @@
     function concId(c){return c?.id??c?.ID??c?.concentracion_id??c?.concentracionId??''}
     function mergeConc(values){const c=currentConc();if(c)Object.assign(c,values)}
     function parseConvocadas(c){const raw=c?.convocadas_json??c?.convocadasJson??c?.convocadas??'[]';if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
+    function defaultConvocadosDnis(){return state.plantel.filter(isCuerpoTecnico).map(p=>String(p.DNI||p.dni||'').trim()).filter(Boolean)}
+    function convocatoriaDnisEfectivos(c){return Array.from(new Set([...parseConvocadas(c).map(String),...defaultConvocadosDnis()]))}
+    function convocatoriaDnisDesdeChecks(){return Array.from(new Set([...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean).concat(defaultConvocadosDnis())))}
     function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
     function documentUrl(result){if(!result)return'';return result.url||result.documentUrl||result.document_url||result.pdfUrl||result.pdf_url||result.link||''}
     function activityTipo(a){return a.tipo||a.Tipo||a.categoria||a.Categoria||a.tipoActividad||a.tipo_actividad||''}
@@ -540,6 +544,8 @@
     function tipoIntegrante(p){return String(p.Tipo_Integrante||p.tipoIntegrante||p.tipo_integrante||p['Tipo Integrante']||'').trim()}
     function rolIntegrante(p){return String(p.Rol||p.rol||'').trim()}
     function normalizarTipo(v){return norm(v).trim().replace(/\s+/g,' ').replace(/\s*\/\s*/g,' / ')}
+    function isCuerpoTecnico(p){const tipo=normalizarTipo(tipoIntegrante(p));if(tipo)return tipo==='cuerpo tecnico'||tipo==='ct'||tipo==='cuerpo tecnico / ct';const rol=normalizarTipo(rolIntegrante(p));return rol==='cuerpo tecnico'||rol==='ct'||rol==='cuerpo tecnico / ct'||(rol.includes('cuerpo')&&rol.includes('tecnico'))}
+    function isCuerpoTecnicoDni(dni){const key=String(dni||'').replace(/\D+/g,'');return state.plantel.some(p=>String(p.DNI||p.dni||'').replace(/\D+/g,'')===key&&isCuerpoTecnico(p))}
     function isConvocable(p){const permitidos=['jugadora','arquera','cuerpo tecnico','ct','cuerpo tecnico / ct'];return permitidos.includes(normalizarTipo(tipoIntegrante(p)))||permitidos.includes(normalizarTipo(rolIntegrante(p)))}
     function nombrePersona(p){return[p.Nombre||'',p.Apellido||''].filter(Boolean).join(' ')||p.nombre||p.Nombre||p.DNI||p.dni||'Sin nombre'}
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}

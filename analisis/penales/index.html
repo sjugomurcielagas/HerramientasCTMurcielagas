@@ -378,6 +378,7 @@
       document.getElementById('potenciaBtns').addEventListener('click',e=>{const b=e.target.closest('[data-pot]');if(b)setPotencia(b.dataset.pot)});
       document.getElementById('registrarBtn').addEventListener('click',registrarPenal);
       document.getElementById('refreshPenalesBtn').addEventListener('click',actualizarPenales);
+      document.getElementById('listaPenalesBody').addEventListener('click',e=>{const b=e.target.closest('[data-delete-penal]');if(b)eliminarPenal(b.dataset.deletePenal)});
       document.getElementById('nsFecha').valueAsDate=new Date();
       loadAll();
     });
@@ -611,9 +612,11 @@
       if(!confirm('¿Eliminar este penal?'))return;
       try{
         await apiPost({action:'penales_eliminarPenal',id});
-        state.penales=state.penales.filter(p=>p.id!==id);
+        state.penales=state.penales.filter(p=>String(p.id)!==String(id));
         rebuildPenalesIndex();
         renderListaPenales();
+        renderSesiones();
+        renderStats();
       }catch(err){alert('Error al eliminar: '+err.message)}
     }
 
@@ -632,14 +635,14 @@
       const visibles=sp.slice(0,MAX_PENALES_RENDER);
       cont.innerHTML=visibles.map(p=>`<div class="penal-row">
         <div class="penal-info">
-          <span class="penal-jugadora">${esc(nombreMostrado(p.jugadora_nombre,p.jugadora_dni))}</span>
+          <span class="penal-jugadora">${esc(nombreMostrado(p.jugadora_nombre,p.jugadora_dni,'Sin jugadora'))}</span>
           <span class="penal-vs">vs</span>
-          <span class="penal-arquera">${esc(nombreMostrado(p.arquera_nombre,p.arquera_dni))}</span>
+          <span class="penal-arquera">${esc(nombreMostrado(p.arquera_nombre,p.arquera_dni,'Sin arquera'))}</span>
           <span class="badge">${esc(zonaLabel(p.zona))}</span>
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
           ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
         </div>
-        ${p.local_pending?'<span class="badge warn">Guardando</span>':`<button class="btn small danger" onclick="eliminarPenal(${JSON.stringify(String(p.id))})">×</button>`}
+        ${p.local_pending?'<span class="badge warn">Guardando</span>':`<button class="btn small danger" type="button" data-delete-penal="${esc(String(p.id))}">×</button>`}
       </div>`).join('');
       if(sp.length>MAX_PENALES_RENDER){
         cont.insertAdjacentHTML('beforeend',`<div class="empty">Mostrando los últimos ${MAX_PENALES_RENDER} penales de ${sp.length}. El resto sigue contado en estadísticas.</div>`);
@@ -690,19 +693,21 @@
     function calcEfect(arr){const total=arr.length,goles=arr.filter(p=>p.resultado==='gol').length;return{total,goles,pct:total?Math.round(goles/total*100):0}}
 
     function dniKey(v){return String(v??'').replace(/\D+/g,'')}
-    function nombreMostrado(nombre,dni){return String(nombre||resolveNombre(dni)||'Sin nombre').trim()}
+    function nombreMostrado(nombre,dni,fallback='Sin nombre'){return String(firstNonEmpty(nombre,resolveNombre(dni),fallback)).trim()}
     function resolveNombre(dni){
       const key=dniKey(dni);
       if(!key)return '';
       const p=state.plantel.find(x=>dniKey(x.DNI||x.dni)===key);
       if(!p)return '';
-      return [p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ');
+      return nombrePersona(p);
     }
+    function firstNonEmpty(...values){for(const v of values){if(v!==undefined&&v!==null&&String(v).trim()!=='')return String(v).trim()}return ''}
 
     function renderStatsJugadoras(penales){
       const m={};
       penales.forEach(p=>{
         const k=p.jugadora_dni;
+        if(!k)return;
         if(!m[k])m[k]={nombre:p.jugadora_nombre||resolveNombre(k),todos:[],zonaMap:{}};
         m[k].todos.push(p);
         if(p.zona)m[k].zonaMap[p.zona]=(m[k].zonaMap[p.zona]||0)+1;
@@ -716,6 +721,7 @@
         const potTop=potEntries.length?potEntries.reduce((a,b)=>b[1]>a[1]?b:a):null;
         return{...e,nombre:x.nombre,zonaTop:topEntry?topEntry[0]:null,potTop:potTop?potTop[0]:null};
       }).sort((a,b)=>b.total-a.total);
+      if(!rows.length){document.getElementById('statsJugadoras').innerHTML='<div class="empty">Sin datos.</div>';return}
       document.getElementById('statsJugadoras').innerHTML=rows.map(r=>`<div class="stat-row">
         <div class="stat-nombre">${esc(r.nombre)}</div>
         <div class="stat-bar-wrap"><div class="stat-bar" style="width:${r.pct}%"></div></div>
@@ -729,6 +735,7 @@
       const m={};
       penales.forEach(p=>{
         const k=p.arquera_dni;
+        if(!k)return;
         if(!m[k])m[k]={nombre:p.arquera_nombre||resolveNombre(k),todos:[],zonaMap:{}};
         m[k].todos.push(p);
         if(p.zona)m[k].zonaMap[p.zona]=(m[k].zonaMap[p.zona]||0)+1;
@@ -740,6 +747,7 @@
         const topEntry=entries.length?entries.reduce((a,b)=>b[1]>a[1]?b:a):null;
         return{nombre:x.nombre,total:x.todos.length,atajados,pct,zonaMas:topEntry?topEntry[0]:null};
       }).sort((a,b)=>b.total-a.total);
+      if(!rows.length){document.getElementById('statsArqueras').innerHTML='<div class="empty">Sin datos.</div>';return}
       document.getElementById('statsArqueras').innerHTML=rows.map(r=>`<div class="stat-row">
         <div class="stat-nombre">${esc(r.nombre)}</div>
         <div class="stat-bar-wrap"><div class="stat-bar tap" style="width:${r.pct}%"></div></div>
@@ -769,6 +777,7 @@
     function renderStatsCruces(penales){
       const m={};
       penales.forEach(p=>{
+        if(!p.jugadora_dni||!p.arquera_dni)return;
         const key=p.jugadora_dni+'|'+p.arquera_dni;
         if(!m[key])m[key]={jugadora:p.jugadora_nombre||resolveNombre(p.jugadora_dni),arquera:p.arquera_nombre||resolveNombre(p.arquera_dni),todos:[]};
         m[key].todos.push(p);
@@ -822,18 +831,18 @@
     function potBadge(p){return{fuerte:'danger',medio:'warn',debil:'info'}[p]||''}
     function normalizePenalRecord(p){
       if(!p)return p;
-      const sesionId=p.sesionId??p.sesion_id??p.sesionID??p.sesionid??'';
-      const jugadoraDni=p.jugadora_dni??p.jugadora??p.jugadoraDNI??'';
-      const arqueraDni=p.arquera_dni??p.arquera??p.arqueraDNI??'';
+      const sesionId=firstNonEmpty(p.sesionId,p.sesion_id,p.sesionID,p.sesionid);
+      const jugadoraDni=firstNonEmpty(p.jugadora_dni,p.jugadora,p.jugadoraDNI,p.Jugadora);
+      const arqueraDni=firstNonEmpty(p.arquera_dni,p.arquera,p.arqueraDNI,p.Arquera);
       return {
         ...p,
         sesionId,
         sesion_id: sesionId,
         jugadora_dni: jugadoraDni,
-        jugadora_nombre: p.jugadora_nombre??p.jugadoraNombre??resolveNombre(jugadoraDni),
+        jugadora_nombre: firstNonEmpty(p.jugadora_nombre,p.jugadoraNombre,resolveNombre(jugadoraDni)),
         jugadora: jugadoraDni,
         arquera_dni: arqueraDni,
-        arquera_nombre: p.arquera_nombre??p.arqueraNombre??resolveNombre(arqueraDni),
+        arquera_nombre: firstNonEmpty(p.arquera_nombre,p.arqueraNombre,resolveNombre(arqueraDni)),
         arquera: arqueraDni,
         zona:p.zona??'',
         resultado:p.resultado??'',
