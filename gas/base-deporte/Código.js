@@ -3553,38 +3553,73 @@ function _nombreCompletoPersona_(persona) {
 }
 
 function _provinciaProcedenciaPersona_(persona) {
-  var claves = [
+  var clavesProvincia = [
     'Provincia', 'Provincia_Procedencia', 'ProvinciaProcedencia',
     'Provincia_Origen', 'ProvinciaOrigen', 'Provincia_de_Procedencia',
-    'Provincia de procedencia', 'Provincia de origen',
+    'Provincia de procedencia', 'Provincia de origen', 'Procedencia',
+    'Provincia_Nacimiento', 'ProvinciaNacimiento', 'Provincia de nacimiento',
+    'Provincia_Nac', 'ProvinciaNac', 'Provincia de nac.',
     'Provincia_Residencia', 'ProvinciaResidencia', 'Provincia de residencia',
     'Provincia Procedencia', 'Prov_Procedencia', 'Prov Procedencia',
-    'provincia', 'provincia_origen', 'provincia_procedencia'
+    'Prov_Origen', 'Prov Origen', 'Prov_Nacimiento', 'Prov Nacimiento',
+    'Prov_Nac', 'Prov Nac',
+    'provincia', 'provincia_origen', 'provincia_procedencia',
+    'provincia_nacimiento', 'provincia_nac', 'provincia_residencia',
+    'prov_nacimiento', 'prov_nac'
   ];
-  for (var i = 0; i < claves.length; i++) {
-    var val = persona[claves[i]];
+  for (var i = 0; i < clavesProvincia.length; i++) {
+    var val = persona[clavesProvincia[i]];
     if (val !== undefined && val !== null && String(val).trim() !== '') return String(val).trim();
   }
+
+  var clavesLugar = [
+    'Lugar_Nacimiento', 'LugarNacimiento', 'Lugar de nacimiento',
+    'Lugar_Nac', 'LugarNac', 'Lugar de nac.',
+    'Lugar_Origen', 'LugarOrigen', 'Lugar de origen',
+    'Lugar_Procedencia', 'LugarProcedencia', 'Lugar de procedencia',
+    'Ciudad_Provincia', 'CiudadProvincia', 'Ciudad / Provincia',
+    'Ciudad de origen', 'Ciudad_Origen'
+  ];
+  for (var l = 0; l < clavesLugar.length; l++) {
+    var lugar = _extraerProvinciaDesdeTexto_(persona[clavesLugar[l]], false);
+    if (lugar) return lugar;
+  }
+
   var keys = Object.keys(persona || {});
   for (var j = 0; j < keys.length; j++) {
     var k = _normalizarTextoSinAcentos_(keys[j]).replace(/[^a-z0-9]/g, '');
-    if (k.indexOf('provincia') === -1) continue;
-    if (k.indexOf('procedencia') === -1 && k.indexOf('origen') === -1 && k.indexOf('residencia') === -1) continue;
     var dyn = persona[keys[j]];
-    if (dyn !== undefined && dyn !== null && String(dyn).trim() !== '') return String(dyn).trim();
+    if (dyn === undefined || dyn === null || String(dyn).trim() === '') continue;
+
+    var esProvincia = k.indexOf('provincia') !== -1 || k.indexOf('prov') === 0 || k.indexOf('prov') !== -1;
+    var esOrigen = k.indexOf('procedencia') !== -1 || k.indexOf('origen') !== -1 || k.indexOf('nacimiento') !== -1 || k.indexOf('nac') !== -1 || k.indexOf('residencia') !== -1;
+    var esLugar = k.indexOf('lugar') !== -1 || k.indexOf('ciudadprovincia') !== -1;
+
+    if (esProvincia && (esOrigen || k === 'provincia' || k === 'prov')) return String(dyn).trim();
+    if (esLugar && esOrigen) {
+      var desdeLugar = _extraerProvinciaDesdeTexto_(dyn, false);
+      if (desdeLugar) return desdeLugar;
+    }
   }
-  var dir = String(persona.Direccion || persona.direccion || '').trim();
-  if (dir) {
-    var parts = dir.split(',').map(function(x) { return String(x || '').trim(); }).filter(Boolean);
-    if (parts.length >= 2) return parts[parts.length - 1];
-  }
-  var ciudad = String(
-    persona.Ciudad || persona.ciudad ||
-    persona.Localidad || persona.localidad ||
-    persona['Ciudad de origen'] || persona['Ciudad_Origen'] || ''
-  ).trim();
-  if (ciudad) return ciudad;
+  var desdeDireccion = _extraerProvinciaDesdeTexto_(persona.Direccion || persona.direccion || '', true);
+  if (desdeDireccion) return desdeDireccion;
   return '';
+}
+
+function _extraerProvinciaDesdeTexto_(valor, requiereSeparador) {
+  var texto = String(valor || '')
+    .replace(/\b(rep[uú]blica argentina|argentina)\b/ig, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!texto) return '';
+
+  var partes = texto
+    .split(/[,;|/]+/)
+    .map(function(x) { return String(x || '').trim(); })
+    .filter(Boolean);
+  if (partes.length >= 2) return partes[partes.length - 1];
+  if (requiereSeparador) return '';
+  return partes.length ? partes[0] : texto;
 }
 
 function _esCuerpoTecnico_(rol) {
