@@ -3644,7 +3644,7 @@ function _estilizarTablaConvocatoria_(table) {
       var cell = row.getCell(c);
       var cellText = cell.editAsText();
       cellText.setFontFamily('Arial');
-      cellText.setFontSize(7);
+      cellText.setFontSize(8);
       if (r === 0) cellText.setBold(true);
       if (r === 0) cell.setBackgroundColor(headerBg);
       var paragraphs = cell.getNumChildren();
