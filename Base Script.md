@@ -18,7 +18,18 @@ Ruteadas por el Worker via `BASE_ACTION_MAP` (el prefijo `base_` se convierte al
 - `base_subirArchivo` → `subirArchivo`
 - `base_agregarColumna` → `base_agregarColumna` (nombre completo, sin stripping)
 
-> Nota: `base_ordenarColumnasBase` está mapeada en el Worker pero no tiene `case` en el GAS.
+> Nota: `base_ordenarColumnasBase` no está implementada. No exponerla desde el Worker hasta que exista una función real en `gas/base-deporte/Código.js`.
+
+## Operación de recuperación
+
+Si un cambio rompe la comunicación entre módulos, la prioridad es:
+
+1. `worker.js`
+2. `assets/config.js`
+3. Frontend afectado
+4. Apps Script destino
+
+La referencia operativa completa está en [RECUPERACION_SITIO.md](/workspaces/HerramientasCTMurcielagas/RECUPERACION_SITIO.md).
 
 ## Acciones — Penales
 

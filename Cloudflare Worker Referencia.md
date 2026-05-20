@@ -29,7 +29,6 @@ const BASE_ACTION_MAP = {
   base_guardarCambios: 'guardarCambios',
   base_darDeBaja: 'darDeBaja',
   base_subirArchivo: 'subirArchivo',
-  base_ordenarColumnasBase: 'ordenarColumnasBase',
 
   // En tu Apps Script la función se llama base_agregarColumna
   base_agregarColumna: 'base_agregarColumna',
@@ -64,6 +63,7 @@ const ANTIDOPING_ACTIONS_REFERENCIA = [
 // - BASE_ACTION_MAP   -> gas/base-deporte (alias base_* hacia funciones legacy)
 // - DEPORTES_PREFIXES -> gas/base-deporte (módulos deportivos)
 // - ANTIDOPING_PREFIXES -> gas/base-deporte (módulo antidoping)
+// Nota: `base_ordenarColumnasBase` no se expone hasta que exista la función real en GAS.
 // Nota: ANTIDOPING_ACTIONS_REFERENCIA es documental; el ruteo real se hace por prefijo.
 
 export default {

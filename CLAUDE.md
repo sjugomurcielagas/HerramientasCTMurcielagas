@@ -63,6 +63,16 @@ assets/
 - `gas/base-deporte/Código.js` expone acciones antidoping y TUE vía el mismo Apps Script.
 - La ficha del plantel se auto-extiende con columnas TUE si no existen todavía en Sheets.
 
+## Recuperación del sitio
+
+Cuando el sitio quede desalineado, seguir este orden:
+
+1. Leer [RECUPERACION_SITIO.md](/workspaces/HerramientasCTMurcielagas/RECUPERACION_SITIO.md).
+2. Verificar primero `worker.js`, después `assets/config.js`, y recién luego los frontends.
+3. Tratar los HTML dentro de `gas/*/Index.html` como referencias o UIs legacy, no como fuente de verdad del sitio estático.
+4. No agregar acciones al Worker si el Apps Script de destino no las implementa.
+5. Si una pantalla deja de hablar con el backend, revisar si está usando una URL hardcoded antes de tocar el backend.
+
 ### Antidoping y TUE
 
 Acciones activas del backend:
