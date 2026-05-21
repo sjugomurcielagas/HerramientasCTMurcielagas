@@ -2101,8 +2101,8 @@ function penales_getPenales(p) {
 
 function penales_registrarPenal(p) {
   const sesionId = _primerValorNoVacio_(p.sesionId, p.sesion_id, p.sesionID);
-  const jugadora = normalizarDNI_(_primerValorNoVacio_(p.jugadora, p.jugadora_dni, p.jugadoraDNI));
-  const arquera = normalizarDNI_(_primerValorNoVacio_(p.arquera, p.arquera_dni, p.arqueraDNI));
+  const jugadora = _primerValorNoVacio_(p.jugadora_persona_id, p.jugadoraPersonaId, p.jugadora, p.jugadora_dni, p.jugadoraDNI);
+  const arquera = _primerValorNoVacio_(p.arquera_persona_id, p.arqueraPersonaId, p.arquera, p.arquera_dni, p.arqueraDNI);
   if (!sesionId || !jugadora || !arquera) throw new Error('sesionId, jugadora y arquera son requeridos');
   const id = newId();
   const sheet = getSheet(SHEETS.penales);
@@ -2112,8 +2112,10 @@ function penales_registrarPenal(p) {
     sesion_id: sesionId,
     jugadora: jugadora,
     jugadora_dni: jugadora,
+    jugadora_persona_id: jugadora,
     arquera: arquera,
     arquera_dni: arquera,
+    arquera_persona_id: arquera,
     zona: p.zona || '',
     potencia: p.potencia || '',
     resultado: p.resultado || '',
@@ -2124,15 +2126,17 @@ function penales_registrarPenal(p) {
 
 function _normalizarPenalBackend_(row, nombres) {
   var sesionId = _primerValorNoVacio_(row.sesionId, row.sesion_id, row.sesionID, row.sesionid);
-  var jugadora = normalizarDNI_(_primerValorNoVacio_(row.jugadora_dni, row.jugadora, row.jugadoraDNI, row.Jugadora));
-  var arquera = normalizarDNI_(_primerValorNoVacio_(row.arquera_dni, row.arquera, row.arqueraDNI, row.Arquera));
+  var jugadora = _primerValorNoVacio_(row.jugadora_persona_id, row.jugadora_dni, row.jugadora, row.jugadoraDNI, row.Jugadora);
+  var arquera = _primerValorNoVacio_(row.arquera_persona_id, row.arquera_dni, row.arquera, row.arqueraDNI, row.Arquera);
   var out = Object.assign({}, row);
   out.sesionId = sesionId;
   out.sesion_id = sesionId;
   out.jugadora = jugadora;
   out.jugadora_dni = jugadora;
+  out.jugadora_persona_id = jugadora;
   out.arquera = arquera;
   out.arquera_dni = arquera;
+  out.arquera_persona_id = arquera;
   out.jugadora_nombre = _primerValorNoVacio_(row.jugadora_nombre, row.jugadoraNombre, nombres[jugadora]);
   out.arquera_nombre = _primerValorNoVacio_(row.arquera_nombre, row.arqueraNombre, nombres[arquera]);
   return out;
@@ -2142,9 +2146,12 @@ function _mapaNombresPlantelPenales_() {
   var mapa = {};
   getAllRows_().forEach(function(p) {
     var dni = normalizarDNI_(p.DNI);
-    if (!dni) return;
-    mapa[dni] = [p.Apellido, p.Nombre].filter(function(v) { return String(v || '').trim(); }).join(', ') ||
+    var personaId = String(p[PERSONA_ID_COLUMN] || '').trim();
+    if (!dni && !personaId) return;
+    var nombre = [p.Apellido, p.Nombre].filter(function(v) { return String(v || '').trim(); }).join(', ') ||
       [p.Nombre, p.Apellido].filter(function(v) { return String(v || '').trim(); }).join(' ');
+    if (dni) mapa[dni] = nombre;
+    if (personaId) mapa[personaId] = nombre;
   });
   return mapa;
 }
@@ -3217,7 +3224,7 @@ function _defaultDocumentDefinitions_() {
   return [
     {
       tipo_documento: 'convocatoria_fadec',
-      nombre_visible: 'Convocatoria oficial FADeC',
+      nombre_visible: 'Convocatoria oficial FAdeC',
       template_id: CONFIG_DOC.PLANTILLA_CONVOCATORIA,
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'colectivo',
@@ -3312,7 +3319,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
     ['licencia_agencia_cordoba','{{FECHA_NACIMIENTO}}','persona','fecha_nacimiento','fecha_corta_anio',true,'',''],
-    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
+    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FAdeC)','Editable si cambia la entidad convocante'],
     ['licencia_agencia_cordoba','{{NOMBRE_EVENTO}}','concentracion','nombre','texto',true,'',''],
     ['licencia_agencia_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
@@ -3327,7 +3334,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_municipalidad_cordoba','{{FECHA_FIN_CORTA}}','concentracion','fecha_fin','fecha_corta',true,'',''],
     ['licencia_municipalidad_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{CIUDAD_EVENTO}}','concentracion','ciudad','texto',false,'',''],
-    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
+    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FAdeC)','Editable si cambia la entidad convocante'],
     ['licencia_municipalidad_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_municipalidad_cordoba','{{AGENTE_APELLIDO_NOMBRE_MAYUS}}','persona','apellido_nombre_mayus','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
@@ -3412,10 +3419,18 @@ function _placeholdersDocumentoPorTipo_(tipo) {
 
 function _resolverPersonasDocumento_(tipo, plantel, convDnis) {
   var configs = _leerConfigDocPersonas_().filter(function(row) { return _boolDocConfig_(row.activo, true); });
-  var permitidos = Array.isArray(convDnis) ? convDnis.map(normalizarDNI_) : [];
+  var permitidos = Array.isArray(convDnis) ? convDnis.map(function(v) { return String(v || '').trim(); }).filter(Boolean) : [];
   return configs.map(function(row) {
     var persona = _resolverPersonaDocumentoDesdePlantel_(row, plantel || []);
-    if (!persona && permitidos.length && row.dni && permitidos.indexOf(normalizarDNI_(row.dni)) === -1) return null;
+    if (!persona && permitidos.length) {
+      var rowDni = normalizarDNI_(row.dni || '');
+      var rowClave = String(row.clave_persona || '').trim();
+      var rowNombre = _normalizarTextoSinAcentos_(row.nombre_completo || '');
+      var okConv = permitidos.some(function(id) {
+        return id === rowDni || id === rowClave || id === rowNombre;
+      });
+      if (!okConv) return null;
+    }
     return persona || _normalizarPersonaDocumento_(row, null);
   }).filter(Boolean).sort(function(a, b) {
     return (a.orden || 999) - (b.orden || 999);
@@ -3424,11 +3439,14 @@ function _resolverPersonasDocumento_(tipo, plantel, convDnis) {
 
 function _resolverPersonaDocumentoDesdePlantel_(row, plantel) {
   var dniCfg = normalizarDNI_(row.dni || '');
+  var claveCfg = String(row.clave_persona || '').trim();
   var nombresNeedle = _normalizarTextoSinAcentos_(row.nombres_match || row.nombre_completo || '');
   var apellidosNeedle = _normalizarTextoSinAcentos_(row.apellidos_match || '');
   var match = (plantel || []).find(function(persona) {
     var dni = normalizarDNI_(persona.DNI || persona.dni || '');
+    var personaId = String(persona.Persona_ID || persona.persona_id || persona.personaId || '').trim();
     if (dniCfg && dni && dni === dniCfg) return true;
+    if (claveCfg && personaId && personaId === claveCfg) return true;
     var nombre = _normalizarTextoSinAcentos_(persona.Nombre || '');
     var apellido = _normalizarTextoSinAcentos_(persona.Apellido || '');
     if (nombresNeedle && nombre.indexOf(nombresNeedle) === -1) return false;
@@ -3556,7 +3574,7 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
     case 'convocadas_nombres':
       return (nombres || []).map(function(p) { return p.nombre; }).join(', ');
     case 'federacion_convocante':
-      return 'Federación Argentina de Deportes para Ciegos (FADeC)';
+      return 'Federación Argentina de Deportes para Ciegos (FAdeC)';
     default:
       return conc[campo] || '';
   }
@@ -3770,7 +3788,7 @@ function _plantillaFijaDocumento_(clave, cfg) {
   var mapa = {
     convocatoria_fadec: {
       plantillaId: CONFIG_DOC.PLANTILLA_CONVOCATORIA,
-      nombreArchivo: 'Plantilla - Convocatoria oficial FADeC'
+      nombreArchivo: 'Plantilla - Convocatoria oficial FAdeC'
     },
     licencia_agencia_cordoba: {
       plantillaId: CONFIG_DOC.PLANTILLA_LICENCIA_AGENCIA_CORDOBA,
@@ -3853,8 +3871,8 @@ function _nombreArchivoDrive_(file) {
 function _candidatosPlantillaDocumento_(clave) {
   var mapa = {
     convocatoria_fadec: [
-      'Plantilla - Convocatoria oficial FADeC.docx',
-      'Convocatoria oficial FADeC',
+      'Plantilla - Convocatoria oficial FAdeC.docx',
+      'Convocatoria oficial FAdeC',
       'convocatoria fadec'
     ],
     licencia_agencia_cordoba: [
@@ -3951,23 +3969,28 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
   var mapa = {};
 
   convDnis.forEach(function(dni) {
-    var dniLimpio = normalizarDNI_(dni);
-    if (!dniLimpio) return;
+    var id = String(dni || '').trim();
+    if (!id) return;
     var persona = plantel.find(function(r) {
-      return normalizarDNI_(r.DNI || r.dni || r.Dni || '') === dniLimpio;
+      var dniPersona = normalizarDNI_(r.DNI || r.dni || r.Dni || '');
+      var personaId = String(r.Persona_ID || r.persona_id || r.personaId || '').trim();
+      return (dniPersona && dniPersona === normalizarDNI_(id)) || (personaId && personaId === id);
     });
+    var key = persona ? String(persona.Persona_ID || persona.persona_id || persona.personaId || normalizarDNI_(persona.DNI || persona.dni || '')) : id;
     if (!persona) {
-      mapa[dniLimpio] = {
-        dni: dniLimpio,
-        nombre: 'DNI ' + dniLimpio,
+      mapa[key] = {
+        persona_id: key,
+        dni: normalizarDNI_(id),
+        nombre: 'DNI ' + normalizarDNI_(id),
         provincia: '',
         rol: 'Convocada'
       };
       return;
     }
 
-    mapa[dniLimpio] = {
-      dni: dniLimpio,
+    mapa[key] = {
+      persona_id: key,
+      dni: normalizarDNI_(persona.DNI || persona.dni || persona.Dni || ''),
       nombre: _nombreCompletoPersona_(persona),
       provincia: _provinciaProcedenciaPersona_(persona),
       rol: _rolConvocatoriaPersona_(persona, 'Convocada')
@@ -3977,8 +4000,11 @@ function _armarConvocatoriaParticipantes_(plantel, convDnis) {
   plantel.forEach(function(persona) {
     if (!_esCuerpoTecnicoPersona_(persona)) return;
     var dniLimpio = normalizarDNI_(persona.DNI || persona.dni || persona.Dni || '');
-    if (!dniLimpio || mapa[dniLimpio]) return;
-    mapa[dniLimpio] = {
+    var personaId = String(persona.Persona_ID || persona.persona_id || persona.personaId || '').trim();
+    var key = personaId || dniLimpio;
+    if (!key || mapa[key]) return;
+    mapa[key] = {
+      persona_id: personaId || '',
       dni: dniLimpio,
       nombre: _nombreCompletoPersona_(persona),
       provincia: _provinciaProcedenciaPersona_(persona),

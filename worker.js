@@ -53,6 +53,7 @@ const ANTIDOPING_PREFIXES = [
 const SITE_ACTIONS = [
   'site_getPlantel',
   'site_getContext',
+  'site_getAnalyticContext',
   'site_getPersonaContext',
   'site_lookupPersona'
 ];
@@ -235,6 +236,10 @@ async function handleSiteAction(action, payload) {
     return jsonResponse(await loadSiteContext_());
   }
 
+  if (action === 'site_getAnalyticContext') {
+    return jsonResponse(await loadAnalyticContext_());
+  }
+
   if (action === 'site_getPlantel') {
     return jsonResponse({
       ok: true,
@@ -331,6 +336,428 @@ async function loadSiteContext_() {
       ? reportes
       : { rows: [], linkedRows: [], linkStats: {} }
   };
+}
+
+async function loadAnalyticContext_() {
+  const siteContext = await loadSiteContext_();
+  if (!siteContext || siteContext.ok === false) {
+    return siteContext;
+  }
+
+  const plantel = Array.isArray(siteContext.plantel) ? siteContext.plantel : [];
+  const reportes = siteContext.reportes && typeof siteContext.reportes === 'object'
+    ? siteContext.reportes
+    : { rows: [], linkedRows: [], linkStats: {} };
+
+  const [partidosResponse, penalesResponse, concentracionesResponse, tueResponse] = await Promise.all([
+    loadModuleData_('partidos_getPartidos'),
+    loadModuleData_('penales_getPenales'),
+    loadModuleData_('concentraciones_getConcentraciones'),
+    loadModuleData_('antidoping_listarTUEs')
+  ]);
+
+  const partidos = normalizeModuleArray_(partidosResponse);
+  const penales = normalizeModuleArray_(penalesResponse);
+  const concentraciones = normalizeModuleArray_(concentracionesResponse);
+  const tues = normalizeModuleArray_(tueResponse);
+  const analytics = buildAnalyticContext_(plantel, reportes, partidos, penales, concentraciones, tues);
+
+  return {
+    ok: true,
+    generatedAt: siteContext.generatedAt || new Date().toISOString(),
+    sourceMerged: 'worker',
+    plantel,
+    reportes,
+    analytics,
+    modules: {
+      partidos: {
+        total: partidos.length
+      },
+      penales: {
+        total: penales.length
+      },
+      concentraciones: {
+        total: concentraciones.length
+      },
+      antidoping: {
+        total: tues.length
+      }
+    }
+  };
+}
+
+async function loadModuleData_(action, payload) {
+  try {
+    let response;
+    if (action === 'partidos_getPartidos' || action === 'penales_getPenales' || action === 'concentraciones_getConcentraciones' || action === 'antidoping_listarTUEs') {
+      response = await handleDeportesAction(action, payload || {});
+    } else {
+      response = await handleSiteAction(action, payload || {});
+    }
+
+    const parsed = await parseJsonResponse(response);
+    return parsed || { ok: false, data: [] };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error && error.message ? error.message : String(error),
+      data: []
+    };
+  }
+}
+
+function normalizeModuleArray_(parsed) {
+  const data = extractResponseData(parsed);
+  return Array.isArray(data) ? data : [];
+}
+
+function buildAnalyticContext_(plantel, reportes, partidos, penales, concentraciones, tues) {
+  const referenceIndex = buildPersonaReferenceIndex_(plantel);
+  const linkedRows = Array.isArray(reportes && reportes.linkedRows) ? reportes.linkedRows : [];
+  const reportRows = Array.isArray(reportes && reportes.rows) ? reportes.rows : [];
+  const personas = (plantel || []).map(persona => buildPersonaAnalytics_(persona, {
+    referenceIndex,
+    linkedRows,
+    reportRows,
+    partidos,
+    penales,
+    concentraciones,
+    tues
+  }));
+
+  const unmatchedReportes = linkedRows.filter(row => !row || !row.persona_id);
+  const personasConActividad = personas.filter(persona => {
+    const modules = persona.modules || {};
+    return (
+      (modules.reportes && modules.reportes.totalRows) ||
+      (modules.partidos && (modules.partidos.convocatorias || modules.partidos.momentos || modules.partidos.ratings)) ||
+      (modules.penales && (modules.penales.comoJugadora || modules.penales.comoArquera)) ||
+      (modules.concentraciones && modules.concentraciones.convocatorias) ||
+      (modules.tue && modules.tue.activo)
+    );
+  });
+
+  return {
+    summary: {
+      plantelTotal: plantel.length,
+      personasConActividad: personasConActividad.length,
+      reportesTotal: reportRows.length,
+      reportesVinculados: linkedRows.length - unmatchedReportes.length,
+      reportesSinVinculo: unmatchedReportes.length,
+      partidosTotal: partidos.length,
+      penalesTotal: penales.length,
+      concentracionesTotal: concentraciones.length,
+      tueTotal: tues.length
+    },
+    recommendations: buildAnalyticRecommendations_(personas),
+    personas
+  };
+}
+
+function buildPersonaReferenceIndex_(plantel) {
+  const index = new Map();
+  (plantel || []).forEach(persona => {
+    const personaId = normalizePersonaId(persona && (persona.persona_id || persona.Persona_ID || persona.personaId));
+    const dni = normalizeDni(persona && (persona.DNI || persona.dni));
+    const key = buildPersonKey(persona);
+    const nombre = normalizeText([
+      persona && (persona.Apellido || persona.apellido || ''),
+      persona && (persona.Nombre || persona.nombre || '')
+    ].filter(Boolean).join(', '));
+
+    if (personaId) index.set('id:' + normalizeText(personaId), personaId);
+    if (dni) index.set('dni:' + dni, personaId || dni);
+    if (key) index.set('key:' + normalizeText(key), personaId || key);
+    if (nombre) index.set('name:' + nombre, personaId || nombre);
+  });
+  return index;
+}
+
+function normalizePersonaRef_(value, referenceIndex) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const text = normalizeText(raw);
+  const dni = normalizeDni(raw);
+  return (
+    referenceIndex.get('id:' + text) ||
+    referenceIndex.get('dni:' + dni) ||
+    referenceIndex.get('key:' + text) ||
+    referenceIndex.get('name:' + text) ||
+    text ||
+    raw
+  );
+}
+
+function buildPersonaMatchSet_(persona, referenceIndex) {
+  const refs = new Set();
+  const personaId = normalizePersonaId(persona && (persona.persona_id || persona.Persona_ID || persona.personaId));
+  const dni = normalizeDni(persona && (persona.DNI || persona.dni));
+  const key = buildPersonKey(persona);
+  const nombre = [
+    persona && (persona.Apellido || persona.apellido || ''),
+    persona && (persona.Nombre || persona.nombre || '')
+  ].filter(Boolean).join(', ');
+
+  [
+    personaId,
+    dni,
+    key,
+    nombre,
+    [persona && (persona.Apellido || persona.apellido || ''), persona && (persona.Nombre || persona.nombre || '')].filter(Boolean).join(' '),
+    [persona && (persona.Nombre || persona.nombre || ''), persona && (persona.Apellido || persona.apellido || '')].filter(Boolean).join(' ')
+  ].forEach(value => {
+    const ref = normalizePersonaRef_(value, referenceIndex);
+    if (ref) refs.add(ref);
+  });
+
+  return refs;
+}
+
+function matchPersonaRef_(personaRefs, value, referenceIndex) {
+  const ref = normalizePersonaRef_(value, referenceIndex);
+  return !!ref && personaRefs.has(ref);
+}
+
+function parseMaybeJson_(value, fallback) {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined || String(value).trim() === '') return fallback;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : parsed || fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function buildPersonaAnalytics_(persona, context) {
+  const referenceIndex = context.referenceIndex;
+  const personaRefs = buildPersonaMatchSet_(persona, referenceIndex);
+  const personaId = normalizePersonaId(persona && (persona.persona_id || persona.Persona_ID || persona.personaId));
+  const dni = normalizeDni(persona && (persona.DNI || persona.dni));
+  const nombre = [persona && (persona.Apellido || persona.apellido || ''), persona && (persona.Nombre || persona.nombre || '')]
+    .filter(Boolean)
+    .join(', ');
+  const key = buildPersonKey(persona);
+
+  const reportesRows = (context.linkedRows || []).filter(row => {
+    const rowPersonaId = normalizePersonaId(row && row.persona_id);
+    if (personaId && rowPersonaId && rowPersonaId === personaId) return true;
+    if (row && row.personaKey && personaRefs.has(normalizePersonaRef_(row.personaKey, referenceIndex))) return true;
+    const rowName = row && row.jugadora ? row.jugadora : row && row.persona ? (row.persona.personaKey || row.persona.Nombre || row.persona.Apellido || '') : '';
+    return matchPersonaRef_(personaRefs, rowName, referenceIndex);
+  });
+
+  const partidosRows = context.partidos || [];
+  const partidosConvocadas = partidosRows.filter(partido => {
+    const convocadas = Array.isArray(partido.convocadas) ? partido.convocadas : parseMaybeJson_(partido.convocadas, []);
+    return convocadas.some(ref => matchPersonaRef_(personaRefs, ref, referenceIndex));
+  });
+  const partidosRatings = partidosRows.map(partido => {
+    const ratings = partido && partido.ratings && typeof partido.ratings === 'object' ? partido.ratings : {};
+    const ratingKeys = Object.keys(ratings).filter(ref => matchPersonaRef_(personaRefs, ref, referenceIndex));
+    if (!ratingKeys.length) return null;
+    return {
+      partidoId: partido.id || partido.partidoId || '',
+      keys: ratingKeys,
+      values: ratingKeys.map(ref => ratings[ref])
+    };
+  }).filter(Boolean);
+  const partidosMomentos = partidosRows.flatMap(partido => {
+    const momentos = Array.isArray(partido.momentos) ? partido.momentos : parseMaybeJson_(partido.momentos, []);
+    return momentos.filter(m => matchPersonaRef_(personaRefs, m && (m.jugadora || m.jugadora_dni || m.jugadora_persona_id)), referenceIndex)
+      .map(m => ({
+        partidoId: partido.id || partido.partidoId || '',
+        ...m
+      }));
+  });
+
+  const penalesComoJugadora = context.penales.filter(penal => matchPersonaRef_(personaRefs, penal && (penal.jugadora_persona_id || penal.jugadora_dni || penal.jugadora), referenceIndex));
+  const penalesComoArquera = context.penales.filter(penal => matchPersonaRef_(personaRefs, penal && (penal.arquera_persona_id || penal.arquera_dni || penal.arquera), referenceIndex));
+
+  const concentrations = context.concentraciones.filter(conc => {
+    const convocadas = parseMaybeJson_(conc.convocadas_json || conc.convocadas || conc.convocadasJson, []);
+    return convocadas.some(ref => matchPersonaRef_(personaRefs, ref, referenceIndex));
+  });
+
+  const tue = (context.tues || []).find(item => matchPersonaRef_(personaRefs, item && (item.persona_id || item.personaId || item.dni || item.nombre), referenceIndex));
+
+  const reportesStats = summarizeReportesRows_(reportesRows);
+  const partidosStats = summarizePartidosRows_(partidosConvocadas, partidosRatings, partidosMomentos);
+  const penalesStats = summarizePenalesRows_(penalesComoJugadora, penalesComoArquera);
+  const concentrationStats = summarizeConcentracionesRows_(concentrations);
+
+  return {
+    persona_id: personaId,
+    personaId: personaId,
+    dni: dni,
+    nombre: nombre,
+    personaKey: key,
+    persona,
+    modules: {
+      reportes: reportesStats,
+      partidos: partidosStats,
+      penales: penalesStats,
+      concentraciones: concentrationStats,
+      tue: summarizeTUE_(tue)
+    },
+    recommendations: buildPersonaRecommendations_({
+      persona,
+      reportes: reportesStats,
+      partidos: partidosStats,
+      penales: penalesStats,
+      concentraciones: concentrationStats,
+      tue: tue
+    })
+  };
+}
+
+function summarizeReportesRows_(rows) {
+  const totalRows = rows.length;
+  let total = 0;
+  let fisico = 0;
+  let tecnico = 0;
+  const alertas = [];
+
+  rows.forEach(row => {
+    total += Number(row && row.total) || 0;
+    fisico += Number(row && row.fisico) || 0;
+    tecnico += Number(row && row.tecnico) || 0;
+    const comentario = String(row && (row.comentario || row.comentarios || '')).trim();
+    if (comentario) {
+      alertas.push(comentario);
+    }
+  });
+
+  return {
+    totalRows,
+    volumenTotal: total,
+    volumenFisico: fisico,
+    volumenTecnico: tecnico,
+    alertas: alertas.length,
+    alertasDetalle: alertas.slice(0, 6)
+  };
+}
+
+function summarizePartidosRows_(convocadasRows, ratingsRows, momentosRows) {
+  const ratingsValues = [];
+  ratingsRows.forEach(row => {
+    (row.values || []).forEach(value => {
+      const n = Number(value);
+      if (Number.isFinite(n)) ratingsValues.push(n);
+    });
+  });
+
+  return {
+    convocatorias: convocadasRows.length,
+    ratings: ratingsRows.length,
+    momentos: momentosRows.length,
+    ratingPromedio: ratingsValues.length ? roundOneDecimal_(ratingsValues.reduce((a, b) => a + b, 0) / ratingsValues.length) : null
+  };
+}
+
+function summarizePenalesRows_(comoJugadora, comoArquera) {
+  const goles = comoJugadora.filter(p => String(p.resultado || '').trim().toLowerCase() === 'gol').length;
+  const atajados = comoArquera.filter(p => String(p.resultado || '').trim().toLowerCase() === 'atajado').length;
+  return {
+    comoJugadora: {
+      total: comoJugadora.length,
+      goles: goles,
+      efectividad: comoJugadora.length ? Math.round((goles / comoJugadora.length) * 100) : null
+    },
+    comoArquera: {
+      total: comoArquera.length,
+      atajados: atajados,
+      efectividad: comoArquera.length ? Math.round((atajados / comoArquera.length) * 100) : null
+    }
+  };
+}
+
+function summarizeConcentracionesRows_(rows) {
+  return {
+    convocatorias: rows.length,
+    nombres: rows.map(row => row.nombre || row.titulo || row.concentracion || '').filter(Boolean).slice(0, 6)
+  };
+}
+
+function summarizeTUE_(tue) {
+  if (!tue) {
+    return {
+      activo: false
+    };
+  }
+  return {
+    activo: true,
+    estado: tue.estado || '',
+    vigente: !!tue.vigente,
+    vencido: !!tue.vencido,
+    vencimiento: tue.fecha_vencimiento || ''
+  };
+}
+
+function buildPersonaRecommendations_(ctx) {
+  const recommendations = [];
+  const reportes = ctx.reportes || {};
+  const partidos = ctx.partidos || {};
+  const penales = ctx.penales || {};
+  const concentraciones = ctx.concentraciones || {};
+
+  if (reportes.totalRows && reportes.volumenTotal < 6) {
+    recommendations.push('Subir estímulo técnico progresivo y revisar continuidad semanal de carga.');
+  }
+
+  if (partidos.convocatorias && partidos.momentos < 2) {
+    recommendations.push('Reforzar exposición táctica y toma de decisión en contextos de partido o simulación.');
+  }
+
+  if (penales.comoJugadora && penales.comoJugadora.total >= 3 && penales.comoJugadora.efectividad !== null && penales.comoJugadora.efectividad < 50) {
+    recommendations.push('Planificar bloque específico de definición y penales bajo presión.');
+  }
+
+  if (penales.comoArquera && penales.comoArquera.total >= 3 && penales.comoArquera.efectividad !== null && penales.comoArquera.efectividad < 45) {
+    recommendations.push('Ajustar trabajo de lectura de remate y respuesta específica de arquera en penales.');
+  }
+
+  if (concentraciones.convocatorias && reportes.totalRows && reportes.volumenTotal < 8) {
+    recommendations.push('Sostener participación en concentración con foco en tareas técnicas puntuales y seguimiento de volumen.');
+  }
+
+  return recommendations;
+}
+
+function buildAnalyticRecommendations_(personas) {
+  const output = [];
+  const needsPenaltyWork = personas.filter(persona => {
+    const penales = persona.modules && persona.modules.penales ? persona.modules.penales : {};
+    return penales.comoJugadora && penales.comoJugadora.total >= 3 && penales.comoJugadora.efectividad !== null && penales.comoJugadora.efectividad < 50;
+  }).map(persona => persona.nombre || persona.personaKey || persona.dni).filter(Boolean);
+
+  if (needsPenaltyWork.length) {
+    output.push({
+      tipo: 'penales',
+      texto: 'Hay jugadoras que requieren refuerzo específico de penales.',
+      personas: needsPenaltyWork.slice(0, 8)
+    });
+  }
+
+  const lowTacticalExposure = personas.filter(persona => {
+    const partidos = persona.modules && persona.modules.partidos ? persona.modules.partidos : {};
+    return (partidos.convocatorias || 0) > 0 && (partidos.momentos || 0) < 2;
+  }).map(persona => persona.nombre || persona.personaKey || persona.dni).filter(Boolean);
+
+  if (lowTacticalExposure.length) {
+    output.push({
+      tipo: 'tactico',
+      texto: 'Hay personas con exposición táctica baja respecto de su participación competitiva.',
+      personas: lowTacticalExposure.slice(0, 8)
+    });
+  }
+
+  return output;
+}
+
+function roundOneDecimal_(value) {
+  return Math.round(Number(value || 0) * 10) / 10;
 }
 
 async function loadPersonaContext_(dni) {

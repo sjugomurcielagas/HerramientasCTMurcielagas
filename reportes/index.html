@@ -924,6 +924,7 @@ footer {
         <div class="status-line"><span class="status-k">Datos</span><span class="status-v" id="status-data">sin cargar</span></div>
         <div class="status-line"><span class="status-k">Jugadoras</span><span class="status-v" id="status-players">0</span></div>
         <div class="status-line"><span class="status-k">Registros</span><span class="status-v" id="status-rows">0</span></div>
+        <div class="status-line"><span class="status-k">Cruce</span><span class="status-v" id="status-contexto">—</span></div>
         <div class="status-line"><span class="status-k">Actualizado</span><span class="status-v" id="status-date">—</span></div>
       </aside>
     </header>
@@ -1136,10 +1137,11 @@ footer {
   <script>
     const DEMO_ROWS = [];
 
-  let rawRows = [];
+let rawRows = [];
 let rows = [];
 let reportMode = 'ct';
 let lastSourceLabel = 'sin cargar';
+let sharedContext = { plantel: [], reportes: { rows: [], linkedRows: [], linkStats: {} } };
 
 const tableSortState = {
   weeklyPlayers: {
@@ -1909,6 +1911,20 @@ function updateBlockLabel() {
       $('status-date').textContent = rows.length ? fmtDate.format(rows[rows.length - 1].fecha) : '—';
     }
 
+    function updateContextStatus(data) {
+      const el = $('status-contexto');
+      if (!el) return;
+
+      const analytics = data && data.analytics ? data.analytics : {};
+      const summary = analytics.summary || {};
+      if (!summary || !Object.keys(summary).length) {
+        el.textContent = 'sin cruce';
+        return;
+      }
+
+      el.textContent = `${summary.personasConActividad || 0}/${summary.plantelTotal || 0} personas`;
+    }
+
    async function loadServerData() {
   $('status-data').textContent = 'cargando...';
 
@@ -1918,7 +1934,25 @@ function updateBlockLabel() {
   $('output').innerHTML = '<div class="notice">Cargando planilla...</div>';
 
   try {
-    const data = await callBackend('getClientData');
+    let data;
+
+    try {
+      data = await callBackend('site_getAnalyticContext');
+    } catch (contextError) {
+      try {
+        data = await callBackend('site_getContext');
+      } catch (fallbackError) {
+        data = await callBackend('getClientData');
+      }
+    }
+
+    if (!data || !data.ok) {
+      try {
+        data = await callBackend('getClientData');
+      } catch (legacyError) {
+        // Se usa el error original de contexto compartido si el fallback también falla.
+      }
+    }
 
     if (!data || !data.ok) {
       const error = data && data.error ? data.error : 'Respuesta inválida del servidor.';
@@ -1929,7 +1963,29 @@ function updateBlockLabel() {
       return;
     }
 
-    const parsed = data.rows || [];
+    sharedContext = {
+      plantel: Array.isArray(data.plantel) ? data.plantel : [],
+      analytics: data.analytics && typeof data.analytics === 'object'
+        ? data.analytics
+        : { summary: {} },
+      reportes: data.reportes && typeof data.reportes === 'object'
+        ? data.reportes
+        : {
+            rows: Array.isArray(data.rows) ? data.rows : [],
+            linkedRows: Array.isArray(data.linkedRows) ? data.linkedRows : [],
+            linkStats: data.linkStats || {}
+          }
+    };
+
+    updateContextStatus(data);
+
+    const parsed = Array.isArray(sharedContext.reportes.linkedRows) && sharedContext.reportes.linkedRows.length
+      ? sharedContext.reportes.linkedRows
+      : Array.isArray(sharedContext.reportes.rows) && sharedContext.reportes.rows.length
+        ? sharedContext.reportes.rows
+        : Array.isArray(data.rows)
+          ? data.rows
+          : [];
 
     if (!parsed.length) {
       rows = [];
@@ -1939,16 +1995,17 @@ function updateBlockLabel() {
       return;
     }
 
-    setRows(parsed, 'planilla');
+    setRows(parsed, 'contexto compartido');
 
   } catch (error) {
     console.error(error);
     rows = [];
     rawRows = [];
     updateStatus('error');
+    updateContextStatus(null);
 
     $('output').innerHTML =
-      `<div class="notice warn"><strong>Error de comunicación con la API.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si este mensaje aparece desde GitHub Pages, revisá que el Worker tenga CORS habilitado y que esté reenviando correctamente la acción getClientData al Apps Script.</div>`;
+      `<div class="notice warn"><strong>Error de comunicación con la API.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si este mensaje aparece desde GitHub Pages, revisá que el Worker tenga CORS habilitado y que esté reenviando correctamente site_getAnalyticContext o getClientData al Apps Script.</div>`;
   } finally {
     if (btnLoad) btnLoad.disabled = false;
   }
