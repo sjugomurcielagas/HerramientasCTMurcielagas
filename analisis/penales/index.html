@@ -343,28 +343,8 @@
     const state={plantel:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null};
     const MAX_PENALES_RENDER=120;
 
-    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const res=await fetch(url.toString(),{headers:{Accept:'application/json'}});return parseApiResponse(res,action)}
-    async function apiPost(payload){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});return parseApiResponse(res,payload?.action)}
-    async function parseApiResponse(res,action){
-      const text=await res.text();
-      const data=tryParseJsonPayload(text);
-      if(!data){console.error('Respuesta no JSON en Penales',action,{status:res.status,text});throw new Error(`Respuesta no JSON del servidor (${res.status}).`)}
-      if(!res.ok||!data||data.ok===false){console.error('Error API Penales',action,{status:res.status,data});throw new Error(data?.error||`Error de API (${res.status})`)}
-      return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
-    }
-    function tryParseJsonPayload(text){
-      const raw=String(text||'').trim();
-      if(!raw)return null;
-      try{return JSON.parse(raw)}catch(e){}
-      if(STRICT_MODE.tolerant_json)return null;
-      const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
-      if(start!==-1&&end!==-1&&end>start){
-        const candidate=raw.slice(start,end+1);
-        try{return JSON.parse(candidate)}catch(e){}
-      }
-      return null;
-    }
-
+    const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
+    const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
       document.getElementById('nuevaSesionToggle').addEventListener('click',toggleNuevaSesionForm);
@@ -388,10 +368,10 @@
       app.classList.add('loading');
       try{
         const [plantel,sesiones]=await Promise.all([
-          apiGet('base_getPlantel'),
+          apiGet('site_getPlantel'),
           apiGet('penales_getSesiones')
         ]);
-        state.plantel=Array.isArray(plantel)?plantel:[];
+        state.plantel=Array.isArray(plantel?.plantel)?plantel.plantel:Array.isArray(plantel)?plantel:[];
         state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
         if(!state.sesionActualId&&state.sesiones.length){
           state.sesionActualId=state.sesiones[state.sesiones.length-1].id;
@@ -436,7 +416,7 @@
     }
 
     function renderPlantelSelects(){
-      const toOpt=p=>{const dni=p.DNI||p.dni||'';const nombre=[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||dni;return `<option value="${esc(dni)}">${esc(nombre)}</option>`};
+      const toOpt=p=>{const dni=p.DNI||p.dni||'';const personaId=p.persona_id||p.Persona_ID||'';const key=personaId||dni;const nombre=[p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||dni;return `<option value="${esc(key)}" data-dni="${esc(dni)}">${esc(nombre)}</option>`};
       const jugadoras=state.plantel.filter(esJugadoraCampo).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       const arqueras=state.plantel.filter(esArquera).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       document.getElementById('jugadoraSelect').innerHTML='<option value="">— Jugadora —</option>'+jugadoras.map(toOpt).join('');
@@ -445,8 +425,8 @@
       checkRegistrarBtn();
     }
     function onArqueraChange(){
-      const dni=document.getElementById('arqueraSelect').value||'';
-      if(dni)localStorage.setItem(LAST_ARQUERA_KEY,dni);
+      const key=document.getElementById('arqueraSelect').value||'';
+      if(key)localStorage.setItem(LAST_ARQUERA_KEY,key);
       else localStorage.removeItem(LAST_ARQUERA_KEY);
       checkRegistrarBtn();
     }
@@ -488,7 +468,7 @@
       const roles=valoresRolPlantel(p);
       return roles.some(v=>v==='jugadora'||v.includes('jugadora de campo')||v.includes('jugadora campo')||v.includes('campo'))&&!esArquera(p);
     }
-    function nombrePersona(p){return [p.Apellido||'',p.Nombre||''].filter(Boolean).join(', ')||p.nombre||p.Nombre||p.DNI||p.dni||''}
+    function nombrePersona(p){return Murci.personName(p)||p.DNI||p.dni||''}
 
     function renderSesionSelector(){
       const sel=document.getElementById('sesionSelect');
@@ -579,7 +559,7 @@
       renderListaPenales();
       checkRegistrarBtn();
       try{
-        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora:jugadora_dni,arquera:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia});
+        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora_persona_id:jugadora_dni,arquera_persona_id:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia});
         nuevo.id=result.id||tempId;
         nuevo.local_pending=false;
         nuevo.local_created=true;
@@ -692,12 +672,12 @@
 
     function calcEfect(arr){const total=arr.length,goles=arr.filter(p=>p.resultado==='gol').length;return{total,goles,pct:total?Math.round(goles/total*100):0}}
 
-    function dniKey(v){return String(v??'').replace(/\D+/g,'')}
+    function dniKey(v){return String(v||'').trim()}
     function nombreMostrado(nombre,dni,fallback='Sin nombre'){return String(firstNonEmpty(nombre,resolveNombre(dni),fallback)).trim()}
     function resolveNombre(dni){
       const key=dniKey(dni);
       if(!key)return '';
-      const p=state.plantel.find(x=>dniKey(x.DNI||x.dni)===key);
+      const p=state.plantel.find(x=>dniKey(x.persona_id||x.Persona_ID||x.DNI||x.dni)===key);
       if(!p)return '';
       return nombrePersona(p);
     }
@@ -868,7 +848,7 @@
     function getPenalesSesion(sesionId){
       return state.penalesPorSesion.get(String(sesionId??''))||[];
     }
-    function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ')}
+    function normalizeText(v){return Murci.normalizeText(v)}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>

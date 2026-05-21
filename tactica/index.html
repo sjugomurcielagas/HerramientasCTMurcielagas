@@ -12,6 +12,7 @@
 <meta property="og:description" content="Herramienta táctica para fútbol para personas ciegas. Las Murciélagas · FADEC.">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../index.html');}})();</script>
+<script src="../assets/config.js"></script>
 <style>
 :root{
   /* === Sistema de diseño estándar CT Murciélagas === */
@@ -730,6 +731,9 @@ const MURCIELAGAS=[
   {apellido:'Roldán',nombre:'Brisa',num:null,gk:false},
   {apellido:'Camus',nombre:'Gianella',num:null,gk:false},
 ];
+const API_URL=typeof API_BASE_URL!=='undefined'?API_BASE_URL:'';
+let canonicalPlantel=[];
+let canonicalPlantelPromise=null;
 let rivals=JSON.parse(localStorage.getItem('tb_rivals')||'[]');
 let rosterTeam='A';
 
@@ -844,6 +848,66 @@ function status(msg){document.getElementById('status-text').textContent=msg;}
 function updatePhaseBadge(){
   // Las fases quedan como lógica interna de animación. No se muestran en la botonera.
   currentPhase=Math.max(1,getMaxPhase());
+}
+
+function normalizeTacticaText(v){
+  return Murci.normalizeText(v);
+}
+
+function tacticaNameKey(p){
+  return normalizeTacticaText([p?.Apellido||p?.apellido||'',p?.Nombre||p?.nombre||''].filter(Boolean).join(' '));
+}
+
+function tacticaNameDisplay(p){
+  return Murci.personName(p) || p?.nombre || p?.Apellido || '';
+}
+
+function tacticaNumberFromLocal(p){
+  const key=tacticaNameKey(p);
+  const local=MURCIELAGAS.find(item=>tacticaNameKey(item)===key);
+  if(local&&local.num!=null)return local.num;
+  const raw=String(p?.DNI||p?.dni||'').replace(/\D+/g,'');
+  if(raw)return Number(raw.slice(-2))||Number(raw.slice(-1))||null;
+  return null;
+}
+
+function tacticaNormalizePlayer(p, idx){
+  if(!p)return null;
+  const nombre=tacticaNameDisplay(p);
+  const num=tacticaNumberFromLocal(p);
+  const gk=!!(p?.gk||String(p?.Posicion||p?.posicion||p?.Rol||p?.rol||'').toLowerCase().includes('arquera'));
+  const apellido=String(p?.Apellido||p?.apellido||'').trim();
+  const nombreSolo=String(p?.Nombre||p?.nombre||'').trim();
+  return {
+    apellido: apellido || nombre || `Jugador${idx+1}`,
+    nombre: nombreSolo,
+    num: num!=null ? num : 50 + idx,
+    gk,
+    dni: String(p?.DNI||p?.dni||'').trim()
+  };
+}
+
+async function loadCanonicalPlantel(){
+  if(canonicalPlantel.length) return canonicalPlantel;
+  if(canonicalPlantelPromise) return canonicalPlantelPromise;
+  if(!API_URL){
+    canonicalPlantel=MURCIELAGAS.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
+    return canonicalPlantel;
+  }
+
+  canonicalPlantelPromise=(async()=>{
+    try{
+      const plantel=await Murci.loadPlantel((action,params={},apiUrl=API_URL)=>Murci.apiGet(action,params,apiUrl),API_URL);
+      canonicalPlantel=plantel.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
+    }catch(err){
+      canonicalPlantel=MURCIELAGAS.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
+    }finally{
+      canonicalPlantelPromise=null;
+    }
+    return canonicalPlantel;
+  })();
+
+  return canonicalPlantelPromise;
 }
 
 // =============================================
@@ -2635,7 +2699,8 @@ async function triggerGenerarJugada(){
   }
 }
 async function generarJugadaDesdeTexto(texto,reemplazar,key){
-  const roster=MURCIELAGAS.filter(p=>p.num).map(p=>`{num:${p.num},name:"${p.apellido}",gk:${p.gk}}`).join(',');
+  const plantel=await loadCanonicalPlantel();
+  const roster=plantel.map(p=>JSON.stringify({num:p.num,apellido:p.apellido,nombre:p.nombre,gk:!!p.gk,dni:p.dni})).join(',');
   const systemPrompt=`Sos un asistente táctico especializado en fútbol para ciegos (IBSA Blind Football, B1-B3). Generás posiciones y flechas para un tablero táctico digital.
 
 DEPORTE: 5v5. Equipo A: 4 jugadoras de campo (ciegas, con antifaces) + 1 arquera (vidente). Sin offside. Campo real: 40m × 20m.
@@ -2685,8 +2750,8 @@ POSICIONES INICIALES POR FORMACIÓN:
     Delantera centro: x=700, y=260
     Delantera der: x=660, y=360
 
-PLANTEL EQUIPO A: [${roster}]
-  (num:1 Flores es arquera, gk:true — ubicarla siempre cerca de x=90)
+PLANTEL CANÓNICO EQUIPO A: [${roster}]
+  (Si el roster canónico no carga, usá como respaldo el plantel local embebido.)
 
 TIPOS DE FLECHA:
 - "pass": pase entre jugadoras
@@ -2701,8 +2766,8 @@ TIPOS DE MOVIMIENTO:
 - "free": irregular (conducción con cambio de dirección)
 
 REGLAS IMPORTANTES:
-1. Si se menciona número ("la 7"), usá num:7. Si se menciona apellido, buscalo en el plantel y agregá el campo "apellido" en el JSON solo cuando el usuario lo menciona explícitamente. Si solo se menciona número, NO incluyas "apellido".
-2. Solo usá el plantel real si el texto menciona explícitamente un apellido o número de jugadora. Si no se nombra nadie específico, usá SIEMPRE jugadoras genéricas con num:21, 22, 23, 24, 25 para campo y num:1 para arquera. Nunca asignes números del plantel real (1,4,6,7,8,9,10,11,12,14,15) si el texto no los menciona.
+1. Si se menciona número ("la 7"), usá num:7. Si se menciona apellido, buscá esa jugadora en el plantel canónico y agregá el campo "apellido" en el JSON. Si el texto nombra una jugadora real, priorizá ese nombre por sobre cualquier número.
+2. Si el texto no nombra a nadie específico, elegí igual jugadoras reales del plantel canónico que encajen con la acción. No uses jugadoras genéricas. Si hace falta, asigná un num estable para diferenciar la jugada, pero mantené el nombre real de la jugadora en el JSON.
 3. Las flechas tipo "press" van SIEMPRE desde una jugadora del equipo A hacia una jugadora del equipo B (rival). Nunca de A a A. Si hay presión en el texto, obligatoriamente incluí jugadoras con team:"B" como destino de esas flechas.
 4. Cada jugadora tiene una posición fija en el campo. Las flechas muestran los movimientos DESDE esa posición inicial.
 5. Una misma jugadora puede tener MÚLTIPLES flechas saliendo de ella para representar acciones secuenciales (correr, luego pasar; conducir, luego rematar). Generá tantas flechas como acciones tenga la jugadora.
@@ -2718,7 +2783,7 @@ REGLAS IMPORTANTES:
 8. Si el texto dice "desde posición inicial", "formación" o "arrancan", usá los valores exactos de una de las formaciones arriba.
 9. Para rematar al arco rival: toX=810, toY=260 (o 215/305 para los palos). "Segundo palo" desde la izquierda = toY=215.
 10. Coordenadas válidas: x entre 90 y 820, y entre 75 y 445.
-11. Siempre poné al menos 2 jugadoras para que se entienda la relación táctica.
+11. Siempre poné al menos 2 jugadoras para que se entienda la relación táctica. Si hay plantel canónico disponible, esas jugadoras deben salir de ahí.
 
 RESPONDÉ ÚNICAMENTE con JSON válido. Sin texto, sin markdown, sin explicaciones.
 
@@ -2752,7 +2817,7 @@ EJEMPLO — presión sobre rival:
   const baseIdx=players.length;
   (parsed.players||[]).forEach((p,i)=>{
     const num=p.num||counterA++;
-    const role=p.apellido?p.apellido:String(num);
+    const role=p.apellido?p.apellido:String(p.nombre||num);
     const px=Math.max(90,Math.min(830,Number(p.x)||450));
     const py=Math.max(75,Math.min(445,Number(p.y)||260));
     players.push({x:px,y:py,team:p.team||'A',num,role,r:18,ghost:false,gk:!!p.gk});
@@ -2779,6 +2844,7 @@ EJEMPLO — presión sobre rival:
 // =============================================
 // INIT
 // =============================================
+loadCanonicalPlantel().catch(()=>{});
 resizeCanvas();
 draw();
 updatePhaseBadge();

@@ -2327,7 +2327,8 @@ function partidos_guardarConvocatoria(p) {
 
   if (row === -1) throw new Error('Partido no encontrado');
 
-  setCell(sheet, row, 'convocadas', JSON.stringify(p.convocadas || []));
+  const convocadas = p.convocadas || p.convocatoria || p.convocatoria_ids || [];
+  setCell(sheet, row, 'convocadas', JSON.stringify(convocadas));
 
   return ok(true, { id: p.id });
 }

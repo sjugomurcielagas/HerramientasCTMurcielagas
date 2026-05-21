@@ -321,8 +321,8 @@
     const state={plantel:[],partidos:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{}};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
-    async function apiGet(action,params={}){const url=new URL(API_URL);url.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});const r=await fetch(url.toString());const txt=await r.text();let d;try{d=JSON.parse(txt)}catch{throw new Error('Respuesta inesperada del servidor')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data}
-    async function apiPost(payload){const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const txt=await r.text();let d;try{d=JSON.parse(txt)}catch{throw new Error('Respuesta inesperada del servidor')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data}
+    const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
+    const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -339,8 +339,8 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantel,partidos]=await Promise.all([apiGet('base_getPlantel'),apiGet('partidos_getPartidos')]);
-        state.plantel=Array.isArray(plantel)?plantel:[];
+        const [plantel,partidos]=await Promise.all([apiGet('site_getPlantel'),apiGet('partidos_getPartidos')]);
+        state.plantel=Array.isArray(plantel?.plantel)?plantel.plantel:Array.isArray(plantel)?plantel:[];
         state.partidos=Array.isArray(partidos)?partidos.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))):[];
         renderLista();
       }catch(e){alert('Error al cargar datos: '+e.message)}
@@ -569,11 +569,11 @@
         <div class="panel-head"><h2>Convocatoria</h2><button class="btn ghost small" onclick="toggleSection('editConv');toggleSection('dispConv')">Editar</button></div>
         <div class="panel-body">
           <div id="dispConv">
-            ${conv.length?`<div style="display:flex;flex-wrap:wrap;gap:5px">${conv.map(dni=>{const j=jugadoras.find(x=>(x.DNI||x.dni)===dni);return`<span class="badge info">${esc(j?nombrar(j):dni)}</span>`}).join('')}</div>`:'<div style="color:var(--muted);font-size:.9rem">Sin convocatoria cargada.</div>'}
+            ${conv.length?`<div style="display:flex;flex-wrap:wrap;gap:5px">${conv.map(id=>{const j=jugadoras.find(x=>personaKey(x)===String(id));return`<span class="badge info">${esc(j?nombrar(j):id)}</span>`}).join('')}</div>`:'<div style="color:var(--muted);font-size:.9rem">Sin convocatoria cargada.</div>'}
           </div>
           <div id="editConv" class="hidden">
             <div class="conv-grid" id="convGrid">
-              ${jugadoras.map(j=>{const dni=j.DNI||j.dni||'';return`<button class="conv-btn${conv.includes(dni)?' sel':''}" data-dni="${esc(dni)}" onclick="this.classList.toggle('sel')">${esc(nombrar(j))}</button>`}).join('')}
+              ${jugadoras.map(j=>{const key=personaKey(j);return`<button class="conv-btn${conv.map(String).includes(key)?' sel':''}" data-key="${esc(key)}" onclick="this.classList.toggle('sel')">${esc(nombrar(j))}</button>`}).join('')}
             </div>
             <div class="btn-row" style="margin-top:10px"><button class="btn small" onclick="guardarConvocatoria(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editConv');toggleSection('dispConv')">Cancelar</button></div>
             <div id="stConv" class="status-line"></div>
@@ -582,15 +582,15 @@
       </div>`;
 
       /* === VALORACIONES === */
-      const convActual=conv.length?conv:jugadoras.map(j=>j.DNI||j.dni||'');
+      const convActual=conv.length?conv:jugadoras.map(j=>personaKey(j)).filter(Boolean);
       h+=`<div class="panel">
         <div class="panel-head"><h2>Valoraciones individuales</h2><button class="btn ghost small" onclick="toggleSection('editRat');toggleSection('dispRat')">Editar</button></div>
         <div class="panel-body">
           <div id="dispRat">
-            ${ratings.length?ratings.map(rt=>{const j=jugadoras.find(x=>(x.DNI||x.dni)===rt.jugadora_dni);const pct=Math.round(rt.rating/10*100);return`<div class="rating-row"><span class="rating-nombre">${esc(j?nombrar(j):rt.jugadora_dni)}</span><div style="flex:1;margin:0 10px"><div class="stat-bar-wrap" style="margin:0"><div class="stat-bar" style="width:${pct}%"></div></div></div><span class="rating-val">${rt.rating}<span style="font-size:.7rem;color:var(--muted)">/10</span></span></div>`}).join(''):'<div style="color:var(--muted);font-size:.9rem">Sin valoraciones cargadas.</div>'}
+            ${ratings.length?ratings.map(rt=>{const j=jugadoras.find(x=>personaKey(x)===String(rt.jugadora_dni||''));const pct=Math.round(rt.rating/10*100);return`<div class="rating-row"><span class="rating-nombre">${esc(j?nombrar(j):rt.jugadora_dni)}</span><div style="flex:1;margin:0 10px"><div class="stat-bar-wrap" style="margin:0"><div class="stat-bar" style="width:${pct}%"></div></div></div><span class="rating-val">${rt.rating}<span style="font-size:.7rem;color:var(--muted)">/10</span></span></div>`}).join(''):'<div style="color:var(--muted);font-size:.9rem">Sin valoraciones cargadas.</div>'}
           </div>
           <div id="editRat" class="hidden">
-            ${convActual.length?`<div id="ratGrid">${convActual.map(dni=>{const j=jugadoras.find(x=>(x.DNI||x.dni)===dni);const ex=ratings.find(rt=>rt.jugadora_dni===dni);return`<div class="rating-row"><span class="rating-nombre">${esc(j?nombrar(j):dni)}</span><select data-rdni="${esc(dni)}" style="width:72px;padding:6px 8px">${[...Array(10)].map((_,i)=>`<option value="${i+1}"${(ex&&ex.rating===i+1)||(!ex&&i===4)?' selected':''}>${i+1}</option>`).join('')}</select></div>`}).join('')}</div>`:'<div style="color:var(--muted);font-size:.9rem">Primero cargá la convocatoria.</div>'}
+            ${convActual.length?`<div id="ratGrid">${convActual.map(id=>{const j=jugadoras.find(x=>personaKey(x)===String(id));const ex=ratings.find(rt=>String(rt.jugadora_dni||'')===String(id));return`<div class="rating-row"><span class="rating-nombre">${esc(j?nombrar(j):id)}</span><select data-rdni="${esc(id)}" style="width:72px;padding:6px 8px">${[...Array(10)].map((_,i)=>`<option value="${i+1}"${(ex&&ex.rating===i+1)||(!ex&&i===4)?' selected':''}>${i+1}</option>`).join('')}</select></div>`}).join('')}</div>`:'<div style="color:var(--muted);font-size:.9rem">Primero cargá la convocatoria.</div>'}
             <div class="btn-row" style="margin-top:10px"><button class="btn small" onclick="guardarRatings(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editRat');toggleSection('dispRat')">Cancelar</button></div>
             <div id="stRat" class="status-line"></div>
           </div>
@@ -659,7 +659,7 @@
 
     async function guardarConvocatoria(id){
       const st=document.getElementById('stConv');
-      const sels=[...document.querySelectorAll('#convGrid .conv-btn.sel')].map(b=>b.dataset.dni);
+      const sels=[...document.querySelectorAll('#convGrid .conv-btn.sel')].map(b=>b.dataset.key);
       st.textContent='Guardando...';st.className='status-line';
       try{
         await apiPost({action:'partidos_guardarConvocatoria',partido_id:id,convocatoria:sels});
@@ -800,7 +800,8 @@
     function resLabel(r){return{victoria:'V',empate:'E',derrota:'D'}[r]||'—'}
     function mLabel(t){return{'gol-propio':'Gol propio','gol-rival':'Gol rival','pelota-parada':'Pelota parada',jugada:'Jugada puntual',cambio:'Cambio',tarjeta:'Tarjeta',nota:'Nota'}[t]||t}
     function mColor(t){return{'gol-propio':'#15803d','gol-rival':'var(--danger)','pelota-parada':'var(--azul-800)',jugada:'var(--celeste)',cambio:'var(--celeste)',tarjeta:'#92400e',nota:'var(--muted)'}[t]||'var(--muted)'}
-    function nombrar(item){if(!item)return'';if(item.nombre)return item.nombre;return[item.Apellido||'',item.Nombre||''].filter(Boolean).join(', ')}
+    function nombrar(item){return Murci.personName(item)}
+    function personaKey(v){return String(v||'').trim()}
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>

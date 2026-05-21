@@ -150,37 +150,8 @@
       Promise.all([loadFrecuentes(),loadPlantel()]);
     });
 
-    async function apiGet(action,params={}){
-      const url=new URL(API_URL);
-      url.searchParams.set('action',action);
-      Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')url.searchParams.set(k,v)});
-      const res=await fetch(url.toString(),{headers:{Accept:'application/json'}});
-      return parseApiResponse(res);
-    }
-    async function apiPost(payload){
-      const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});
-      return parseApiResponse(res);
-    }
-    async function parseApiResponse(res){
-      const text=await res.text();
-      const data=tryParseJsonPayload(text);
-      if(!data)throw new Error(`Respuesta no JSON. Estado ${res.status}. ${String(text||'').slice(0,180)}`);
-      if(!res.ok||!data||data.ok===false)throw new Error(data?.error||`Error HTTP ${res.status}`);
-      return Object.prototype.hasOwnProperty.call(data,'data')?data.data:data;
-    }
-    function tryParseJsonPayload(text){
-      const raw=String(text||'').trim();
-      if(!raw)return null;
-      try{return JSON.parse(raw)}catch(e){}
-      if(STRICT_MODE.tolerant_json)return null;
-      const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
-      if(start!==-1&&end!==-1&&end>start){
-        const candidate=raw.slice(start,end+1);
-        try{return JSON.parse(candidate)}catch(e){}
-      }
-      return null;
-    }
-
+    const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
+    const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
     function showView(id){
       document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
@@ -330,8 +301,8 @@
 
     async function loadPlantel(){
       try{
-        const data=await apiGet('base_getPlantel');
-        state.plantel=(Array.isArray(data)?data:[]).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
+        const data=await apiGet('site_getPlantel');
+        state.plantel=(Array.isArray(data?.plantel)?data.plantel:Array.isArray(data)?data:[]).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
         state.loaded.plantel=true;
       }catch(err){
         state.plantel=[];
@@ -342,8 +313,12 @@
 
     function renderTUEPlayerOptions(){
       const select=document.getElementById('tuePlayerSelect');
-      const current=select.value||state.tueDraft?.dni||'';
-      select.innerHTML=`<option value="">Seleccionar jugadora</option>${state.plantel.map(p=>`<option value="${esc(p.dni||'')}" ${String(p.dni||'')===String(current)?'selected':''}>${esc(p.nombre||'')}</option>`).join('')}`;
+      const current=select.value||state.tueDraft?.personaId||state.tueDraft?.dni||'';
+      select.innerHTML=`<option value="">Seleccionar jugadora</option>${state.plantel.map(p=>{
+        const personaId=String(p.persona_id||p.Persona_ID||'').trim();
+        const dni=String(p.dni||p.DNI||'').trim();
+        return `<option value="${esc(personaId||dni)}" data-dni="${esc(dni)}" ${String(personaId||dni)===String(current)?'selected':''}>${esc(p.nombre||'')}</option>`;
+      }).join('')}`;
       if(current)select.value=current;
     }
 
@@ -369,7 +344,7 @@
       const cont=document.getElementById('tueBoard');
       const casos=state.tues.casos||[];
       if(!casos.length){cont.innerHTML='<div class="empty">Sin casos TUE cargados.</div>';return}
-      cont.innerHTML=casos.map(t=>`<article class="tue-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(t.nombre||'Sin jugadora')}</div><div class="meta">${esc(t.medicamento||'Sin medicamento')} · ${esc(t.sustancia||'Sin sustancia')}</div></div>${estadoBadge(estadoNormalizado(t.estado||''))}</div><div class="meta">Emisión: ${esc(t.fecha_emision||'—')} · Vencimiento: ${esc(t.fecha_vencimiento||'—')}</div><div class="meta">IBSA enviado: ${esc(t.ibsa_enviado||'NO')}${t.ibsa_fecha_envio?` · ${esc(t.ibsa_fecha_envio)}`:''}</div>${t.observaciones?`<p>${esc(t.observaciones)}</p>`:''}<div class="actions" style="margin-top:10px"><button class="btn small secondary" data-action="edit-tue" data-dni="${esc(t.dni||'')}">Editar</button>${t.archivo?`<a class="btn ghost small" href="${esc(t.archivo)}" target="_blank" rel="noopener noreferrer">Ver TUE</a>`:''}</div></article>`).join('');
+      cont.innerHTML=casos.map(t=>`<article class="tue-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(t.nombre||'Sin jugadora')}</div><div class="meta">${esc(t.medicamento||'Sin medicamento')} · ${esc(t.sustancia||'Sin sustancia')}</div></div>${estadoBadge(estadoNormalizado(t.estado||''))}</div><div class="meta">Emisión: ${esc(t.fecha_emision||'—')} · Vencimiento: ${esc(t.fecha_vencimiento||'—')}</div><div class="meta">IBSA enviado: ${esc(t.ibsa_enviado||'NO')}${t.ibsa_fecha_envio?` · ${esc(t.ibsa_fecha_envio)}`:''}</div>${t.observaciones?`<p>${esc(t.observaciones)}</p>`:''}<div class="actions" style="margin-top:10px"><button class="btn small secondary" data-action="edit-tue" data-persona-id="${esc(t.persona_id||t.Persona_ID||'')}" data-dni="${esc(t.dni||'')}">Editar</button>${t.archivo?`<a class="btn ghost small" href="${esc(t.archivo)}" target="_blank" rel="noopener noreferrer">Ver TUE</a>`:''}</div></article>`).join('');
     }
 
     function handleResultadosClick(e){
@@ -397,16 +372,18 @@
     function handleTUEBoardClick(e){
       const btn=e.target.closest('[data-action="edit-tue"]');
       if(!btn)return;
+      const personaId=btn.dataset.personaId||'';
       const dni=btn.dataset.dni||'';
-      document.getElementById('tuePlayerSelect').value=dni;
-      state.tueDraft={dni};
+      const select=document.getElementById('tuePlayerSelect');
+      select.value=personaId||dni;
+      state.tueDraft={personaId, dni};
       showView('tueView');
       syncTUEForm();
     }
 
     function getCurrentTUECase(){
-      const dni=document.getElementById('tuePlayerSelect').value||state.tueDraft?.dni||'';
-      return (state.tues.casos||[]).find(t=>String(t.dni||'')===String(dni))||null;
+      const selected=getSelectedTUEIdentity();
+      return (state.tues.casos||[]).find(t=>String(t.persona_id||t.Persona_ID||t.dni||'')===String(selected.personaId||selected.dni))||null;
     }
 
     function mergeNonEmpty(base,extra){
@@ -417,10 +394,11 @@
 
     function syncTUEForm(){
       const select=document.getElementById('tuePlayerSelect');
-      const currentDni=select.value||state.tueDraft?.dni||'';
-      if(currentDni&&!select.value)select.value=currentDni;
-      const existing=(state.tues.casos||[]).find(t=>String(t.dni||'')===String(currentDni))||{};
-      const draftApplies=!state.tueDraft?.dni||String(state.tueDraft?.dni||'')===String(currentDni||'');
+      const selected=getSelectedTUEIdentity();
+      const currentId=selected.personaId||selected.dni||state.tueDraft?.personaId||state.tueDraft?.dni||'';
+      if(currentId&&!select.value)select.value=currentId;
+      const existing=(state.tues.casos||[]).find(t=>String(t.persona_id||t.Persona_ID||t.dni||'')===String(currentId))||{};
+      const draftApplies=!state.tueDraft?.personaId&&!state.tueDraft?.dni||String(state.tueDraft?.personaId||state.tueDraft?.dni||'')===String(currentId||'');
       const data=mergeNonEmpty(existing,draftApplies?state.tueDraft:{});
       document.getElementById('tueMedicamentoInput').value=data.medicamento||'';
       document.getElementById('tueSustanciaInput').value=data.sustancia||'';
@@ -448,11 +426,14 @@
     }
 
     async function guardarTUE(){
-      const dni=document.getElementById('tuePlayerSelect').value;
+      const selected=getSelectedTUEIdentity();
+      const personaId=selected.personaId||'';
+      const dni=selected.dni||personaId||'';
       const status=document.getElementById('tueStatus');
-      if(!dni){status.textContent='Seleccioná una jugadora.';status.className='status-line error';return}
+      if(!personaId&&!dni){status.textContent='Seleccioná una jugadora.';status.className='status-line error';return}
       const payload={
         action:'antidoping_guardarTUE',
+        personaId,
         dni,
         usuario:'CT',
         estado:document.getElementById('tueEstadoSelect').value||'En preparación',
@@ -469,7 +450,7 @@
       status.textContent='Guardando TUE...';status.className='status-line';
       try{
         const ficha=await apiPost(payload);
-        state.tueDraft={dni};
+        state.tueDraft={personaId, dni};
         status.textContent='TUE guardada correctamente.';status.className='status-line ok';
         if(ficha&&ficha.TUE_Archivo){document.getElementById('tueArchivoLink').href=ficha.TUE_Archivo;document.getElementById('tueArchivoLink').classList.remove('hidden')}
         await loadTUEs();
@@ -479,13 +460,13 @@
     }
 
     async function subirArchivoTUE(e){
-      const file=e.target.files&&e.target.files[0],dni=document.getElementById('tuePlayerSelect').value,status=document.getElementById('tueStatus');
+      const file=e.target.files&&e.target.files[0],selected=getSelectedTUEIdentity(),personaId=selected.personaId||'',dni=selected.dni||personaId||'',status=document.getElementById('tueStatus');
       if(!file)return;
-      if(!dni){status.textContent='Seleccioná una jugadora antes de subir el TUE.';status.className='status-line error';e.target.value='';return}
+      if(!personaId&&!dni){status.textContent='Seleccioná una jugadora antes de subir el TUE.';status.className='status-line error';e.target.value='';return}
       status.textContent='Preparando archivo TUE...';status.className='status-line';
       try{
         const base64Data=await fileToBase64(file),extension=getExtension(file.name),mimeType=file.type||guessMimeType(extension);
-        const result=await apiPost({action:'base_subirArchivo',dni,tipo:'tue',base64Data,mimeType,extension});
+        const result=await apiPost({action:'base_subirArchivo',personaId,dni,tipo:'tue',base64Data,mimeType,extension});
         if(result?.link){const link=document.getElementById('tueArchivoLink');link.href=result.link;link.classList.remove('hidden')}
         status.textContent='TUE cargado correctamente.';status.className='status-line ok';
         await loadTUEs();
@@ -505,6 +486,13 @@
     function fallbackResultado(q){return{consulta:q,estado:'NO ENCONTRADO / REQUIERE VERIFICACIÓN',observaciones:'La API interna antidoping no devolvió una revisión registrada. No se debe interpretar como permitido.'}}
     function hoyIso_(){return new Date().toISOString().slice(0,10)}
     function addOneYearIso_(iso){const d=new Date(`${iso}T12:00:00Z`);if(Number.isNaN(d.getTime()))return'';d.setUTCDate(d.getUTCDate()+365);return d.toISOString().slice(0,10)}
+    function getSelectedTUEIdentity(){
+      const select=document.getElementById('tuePlayerSelect');
+      const opt=select&&select.selectedOptions&&select.selectedOptions[0];
+      const personaId=String(select&&select.value||'').trim();
+      const dni=String(opt&&opt.dataset&&opt.dataset.dni||'').trim();
+      return {personaId,dni};
+    }
     function toInputDate(v){if(!v)return'';if(/^\d{4}-\d{2}-\d{2}$/.test(String(v)))return String(v);const parts=String(v).split('/');if(parts.length===3)return`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;return''}
     function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const result=String(reader.result||'');resolve(result.includes(',')?result.split(',')[1]:result)};reader.onerror=()=>reject(new Error('No se pudo leer el archivo.'));reader.readAsDataURL(file)})}
     function getExtension(filename){const parts=String(filename||'').split('.');return parts.length>1?parts.pop().toLowerCase():'bin'}

@@ -64,6 +64,18 @@ const COLUMN_ALIASES = {
   ]
 };
 
+function buildPlayerKey_(name) {
+  const clean = normalizeText_(name);
+  if (!clean) return '';
+  const parts = clean.split(',').map(part => part.trim()).filter(Boolean);
+  if (!parts.length) return clean;
+  const apellido = parts[0];
+  const nombre = parts[1] || '';
+  const primerNombre = nombre.split(/\s+/).filter(Boolean)[0] || '';
+  if (!primerNombre) return apellido;
+  return apellido + ' ' + primerNombre;
+}
+
 function doGet(e) {
   try {
     const action = e && e.parameter ? e.parameter.action : '';
@@ -140,24 +152,24 @@ function getReportRows_() {
     const rawName = getCell_(row, headerMap.jugadora);
     const normalizedName = normalizePlayerName_(rawName);
 
+    const rawItem = {
+      total: getCell_(row, headerMap.total),
+      fisico: getCell_(row, headerMap.fisico),
+      tecnico: getCell_(row, headerMap.tecnico)
+    };
 
-const rawItem = {
-  total: getCell_(row, headerMap.total),
-  fisico: getCell_(row, headerMap.fisico),
-  tecnico: getCell_(row, headerMap.tecnico)
-};
+    const item = {
+      rowNumber: i + 1,
+      fecha: getCell_(row, headerMap.fecha),
+      jugadora: normalizedName,
+      jugadoraKey: buildPlayerKey_(normalizedName),
+      total: normalizeTrainingNumber_(rawItem.total),
+      fisico: normalizeTrainingNumber_(rawItem.fisico),
+      tecnico: normalizeTrainingNumber_(rawItem.tecnico),
+      comentario: headerMap.comentario !== undefined ? getCell_(row, headerMap.comentario) : ''
+    };
 
-const item = {
-  rowNumber: i + 1,
-  fecha: getCell_(row, headerMap.fecha),
-  jugadora: normalizedName,
-  total: normalizeTrainingNumber_(rawItem.total),
-  fisico: normalizeTrainingNumber_(rawItem.fisico),
-  tecnico: normalizeTrainingNumber_(rawItem.tecnico),
-  comentario: headerMap.comentario !== undefined ? getCell_(row, headerMap.comentario) : ''
-};
-
-item.issues = detectDataIssues_(item, rawItem);
+    item.issues = detectDataIssues_(item, rawItem);
 
     // Evita filas vacías, incompletas, pruebas o personas que no deben entrar al análisis.
     if (!item.fecha || !item.jugadora) continue;
@@ -723,4 +735,3 @@ function doPost(e) {
     });
   }
 }
-

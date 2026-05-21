@@ -153,24 +153,6 @@
       transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, opacity .14s ease;
     }
 
-    .tool-card-temporal {
-      border-style: dashed;
-      border-color: rgba(0, 111, 166, .34);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.94)),
-        linear-gradient(135deg, rgba(0, 159, 227, .06), rgba(0, 111, 166, .03));
-    }
-
-    .tool-card-temporal .tool-label {
-      color: #c24141;
-    }
-
-    .tool-card-temporal .badge {
-      border-color: rgba(194, 65, 65, .24);
-      background: rgba(194, 65, 65, .08);
-      color: #a83232;
-    }
-
     .tool-card:hover {
       transform: translateY(-3px);
       border-color: rgba(0, 159, 227, .58);
@@ -392,108 +374,6 @@
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
 
-    .secret-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(16, 32, 51, .62);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 4000;
-      padding: 18px;
-      backdrop-filter: blur(4px);
-    }
-
-    .secret-overlay.visible {
-      display: flex;
-    }
-
-    .secret-panel {
-      width: 100%;
-      max-width: 620px;
-      background: rgba(255,255,255,.98);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: 0 24px 60px rgba(16, 32, 51, .24);
-      overflow: hidden;
-    }
-
-    .secret-panel-header {
-      padding: 18px 20px 14px;
-      background: linear-gradient(180deg, rgba(0,159,227,.08), rgba(255,255,255,.96));
-      border-bottom: 1px solid var(--border);
-    }
-
-    .secret-panel-title {
-      font-family: var(--condensed);
-      font-size: 1.35rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      color: var(--text);
-    }
-
-    .secret-panel-subtitle {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.45;
-    }
-
-    .secret-panel-body {
-      padding: 18px 20px 20px;
-    }
-
-    .secret-panel-body .field {
-      margin-bottom: 14px;
-    }
-
-    .secret-input {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 13px 14px;
-      font-family: var(--sans);
-      font-size: 15px;
-      outline: none;
-      background: #fff;
-      color: var(--text);
-    }
-
-    .secret-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(0,159,227,.14);
-    }
-
-    .secret-note {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .secret-status {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 13px;
-      min-height: 42px;
-    }
-
-    .secret-status.warn {
-      background: #fff8e9;
-      border-color: rgba(183, 121, 31, .28);
-      color: #7a541a;
-    }
-
-    .secret-status.good {
-      background: rgba(22, 131, 74, .08);
-      border-color: rgba(22, 131, 74, .22);
-      color: #14532d;
-    }
   </style>
 </head>
 
@@ -504,11 +384,8 @@
     <p class="login-sub">Acceso exclusivo para el cuerpo técnico.</p>
     <input id="passInput" type="password" placeholder="Contraseña del equipo" autocomplete="current-password" class="login-input">
     <button id="loginBtn" class="login-btn">Ingresar</button>
-    <button id="loginSecretBtn" class="login-btn" style="margin-top:10px;background:#ffffff;color:var(--accent-dark);border:1px solid var(--border);">Token Cloudflare</button>
     <div id="loginStatus" class="login-status"></div>
   </section>
-
-  <button id="floatingSecretBtn" class="login-btn" style="position:fixed;right:16px;bottom:16px;z-index:3500;box-shadow:0 14px 30px rgba(16,32,51,.18);">Token Cloudflare</button>
 
   <main class="app hidden" id="appContent">
     <section class="hero">
@@ -534,17 +411,6 @@
     </section>
 
     <section class="grid" aria-label="Herramientas disponibles">
-
-      <a class="tool-card tool-card-temporal" href="#" id="open-cloudflare-secret" aria-label="Configurar token temporal de Cloudflare">
-        <div>
-          <div class="tool-label">Temporal</div>
-          <div class="tool-title">Token Cloudflare</div>
-          <p class="tool-desc">
-            Pegalo una vez, guardalo en el workspace y dejá listo el deploy del Worker.
-          </p>
-          <span class="badge">Solo mientras probamos</span>
-        </div>
-      </a>
 
       <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento">
         <div>
@@ -613,265 +479,18 @@
     </div>
   </main>
 
-  <div id="secretOverlay" class="secret-overlay" aria-hidden="true">
-    <div class="secret-panel" role="dialog" aria-modal="true" aria-labelledby="secretPanelTitle">
-      <div class="secret-panel-header">
-        <div class="secret-panel-title" id="secretPanelTitle">Token Cloudflare temporal</div>
-        <div class="secret-panel-subtitle">
-          Este panel escribe el token en <strong>.codex/cloudflare.env</strong> dentro del workspace y deja listo el script de deploy para leerlo automáticamente.
-        </div>
-      </div>
-      <div class="secret-panel-body">
-        <div class="field">
-          <label for="cloudflareTokenInput">Token</label>
-          <input id="cloudflareTokenInput" type="password" class="secret-input" placeholder="Pegá acá el CLOUDFLARE_API_TOKEN">
-          <div class="secret-note">
-            El valor no se muestra en pantalla. Se guarda solo en el workspace local.
-          </div>
-        </div>
-
-        <div class="btn-row">
-          <button class="primary" id="btn-save-cloudflare-token" type="button">Guardar token</button>
-          <button id="btn-clear-cloudflare-token" type="button">Borrar guardado</button>
-          <button id="btn-close-cloudflare-token" type="button">Cerrar</button>
-        </div>
-
-        <div class="secret-status" id="cloudflareTokenStatus">
-          Elegí una carpeta del workspace y guardá el token para que el script de deploy lo encuentre.
-        </div>
-      </div>
-    </div>
-  </div>
   <script src="./assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
     const AUTH_DAYS=30;
-    const CLOUDFLARE_TOKEN_FILE = '.codex/cloudflare.env';
-    const CLOUDFLARE_TOKEN_STORAGE_KEY = 'mrcl_cloudflare_dir_handle';
     function authValida(){if(localStorage.getItem('mrcl_auth')!=='1')return false;const ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(!ts)return false;return(Date.now()-ts)<AUTH_DAYS*24*60*60*1000}
     function limpiarAuth(){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts')}
     (function(){if(authValida()){document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}else{limpiarAuth()}})();
-
-    const idb = {
-      db: null,
-      async open() {
-        if (this.db) return this.db;
-        this.db = await new Promise((resolve, reject) => {
-          const request = indexedDB.open('murcielagas-private-store', 1);
-          request.onupgradeneeded = () => {
-            request.result.createObjectStore('kv');
-          };
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        });
-        return this.db;
-      },
-      async get(key) {
-        const db = await this.open();
-        return await new Promise((resolve, reject) => {
-          const tx = db.transaction('kv', 'readonly');
-          const req = tx.objectStore('kv').get(key);
-          req.onsuccess = () => resolve(req.result ?? null);
-          req.onerror = () => reject(req.error);
-        });
-      },
-      async set(key, value) {
-        const db = await this.open();
-        return await new Promise((resolve, reject) => {
-          const tx = db.transaction('kv', 'readwrite');
-          tx.objectStore('kv').put(value, key);
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        });
-      },
-      async del(key) {
-        const db = await this.open();
-        return await new Promise((resolve, reject) => {
-          const tx = db.transaction('kv', 'readwrite');
-          tx.objectStore('kv').delete(key);
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        });
-      }
-    };
-
-    let cloudflareDirHandle = null;
-
-    function escapeShellSingleQuotes(value) {
-      return String(value || '').replace(/'/g, `'"'"'`);
-    }
-
-    async function verifyWritePermission(handle) {
-      if (!handle?.queryPermission || !handle?.requestPermission) return true;
-      const opts = { mode: 'readwrite' };
-      let permission = await handle.queryPermission(opts);
-      if (permission === 'granted') return true;
-      permission = await handle.requestPermission(opts);
-      return permission === 'granted';
-    }
-
-    async function loadCloudflareDirHandle() {
-      if (cloudflareDirHandle) return cloudflareDirHandle;
-      const stored = await idb.get(CLOUDFLARE_TOKEN_STORAGE_KEY);
-      if (stored && await verifyWritePermission(stored)) {
-        cloudflareDirHandle = stored;
-        return cloudflareDirHandle;
-      }
-      return null;
-    }
-
-    async function pickCloudflareWorkspace() {
-      if (!window.showDirectoryPicker) {
-        throw new Error('Tu navegador no soporta la selección de carpetas.');
-      }
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite', startIn: 'documents' });
-      if (!await verifyWritePermission(handle)) {
-        throw new Error('No se pudo obtener permiso de escritura sobre la carpeta.');
-      }
-      cloudflareDirHandle = handle;
-      await idb.set(CLOUDFLARE_TOKEN_STORAGE_KEY, handle);
-      return handle;
-    }
-
-    async function ensureCloudflareWorkspace() {
-      const existing = await loadCloudflareDirHandle();
-      if (existing) return existing;
-      return await pickCloudflareWorkspace();
-    }
-
-    async function writeCloudflareTokenFile(token) {
-      const rootHandle = await ensureCloudflareWorkspace();
-      const codexDir = await rootHandle.getDirectoryHandle('.codex', { create: true });
-      const fileHandle = await codexDir.getFileHandle('cloudflare.env', { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(`export CLOUDFLARE_API_TOKEN='${escapeShellSingleQuotes(token)}'\n`);
-      await writable.close();
-    }
-
-    async function removeCloudflareTokenFile() {
-      const rootHandle = await loadCloudflareDirHandle();
-      if (!rootHandle) return false;
-      try {
-        const codexDir = await rootHandle.getDirectoryHandle('.codex');
-        await codexDir.removeEntry('cloudflare.env');
-        return true;
-      } catch (error) {
-        if (String(error?.name || '').includes('NotFoundError')) return false;
-        throw error;
-      }
-    }
-
-    function setCloudflareStatus(message, kind = '') {
-      const status = document.getElementById('cloudflareTokenStatus');
-      if (!status) return;
-      status.className = `secret-status${kind ? ` ${kind}` : ''}`;
-      status.textContent = message;
-    }
-
-    function openCloudflareSecretPanel() {
-      const overlay = document.getElementById('secretOverlay');
-      if (!overlay) return;
-      overlay.classList.add('visible');
-      overlay.setAttribute('aria-hidden', 'false');
-      const input = document.getElementById('cloudflareTokenInput');
-      if (input) input.focus();
-      updateCloudflarePanelState();
-    }
-
-    function closeCloudflareSecretPanel() {
-      const overlay = document.getElementById('secretOverlay');
-      if (!overlay) return;
-      overlay.classList.remove('visible');
-      overlay.setAttribute('aria-hidden', 'true');
-    }
-
-    async function updateCloudflarePanelState() {
-      const status = document.getElementById('cloudflareTokenStatus');
-      const hasHandle = !!(await loadCloudflareDirHandle());
-      if (!status) return;
-      if (hasHandle) {
-        status.textContent = `Carpeta vinculada. El archivo se guardará en ${CLOUDFLARE_TOKEN_FILE}.`;
-        status.className = 'secret-status good';
-      } else {
-        status.textContent = 'Todavía no hay una carpeta vinculada. Al guardar, el navegador te pedirá elegir el workspace.';
-        status.className = 'secret-status warn';
-      }
-    }
-
-    async function saveCloudflareTokenFromUI() {
-      const input = document.getElementById('cloudflareTokenInput');
-      const token = (input?.value || '').trim();
-      if (!token) {
-        setCloudflareStatus('Pegá primero el token antes de guardarlo.', 'warn');
-        return;
-      }
-
-      try {
-        await writeCloudflareTokenFile(token);
-        if (input) input.value = '';
-        setCloudflareStatus(`Token guardado en ${CLOUDFLARE_TOKEN_FILE}.`, 'good');
-      } catch (error) {
-        setCloudflareStatus(`No se pudo guardar: ${error.message}`, 'warn');
-      }
-    }
-
-    async function clearCloudflareTokenFromUI() {
-      try {
-        const removed = await removeCloudflareTokenFile();
-        setCloudflareStatus(removed
-          ? `Token borrado de ${CLOUDFLARE_TOKEN_FILE}.`
-          : 'No había un token guardado para borrar.',
-          removed ? 'good' : 'warn'
-        );
-      } catch (error) {
-        setCloudflareStatus(`No se pudo borrar: ${error.message}`, 'warn');
-      }
-    }
 
     function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contraseña incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
     document.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('loginBtn').addEventListener('click',login);
       document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
-
-      const openSecret = document.getElementById('open-cloudflare-secret');
-      if (openSecret) {
-        openSecret.addEventListener('click', event => {
-          event.preventDefault();
-          openCloudflareSecretPanel();
-        });
-      }
-
-      const loginSecretBtn = document.getElementById('loginSecretBtn');
-      if (loginSecretBtn) {
-        loginSecretBtn.addEventListener('click', event => {
-          event.preventDefault();
-          openCloudflareSecretPanel();
-        });
-      }
-
-      const floatingSecretBtn = document.getElementById('floatingSecretBtn');
-      if (floatingSecretBtn) {
-        floatingSecretBtn.addEventListener('click', event => {
-          event.preventDefault();
-          openCloudflareSecretPanel();
-        });
-      }
-
-      const closeSecret = document.getElementById('btn-close-cloudflare-token');
-      if (closeSecret) closeSecret.addEventListener('click', closeCloudflareSecretPanel);
-
-      const saveSecret = document.getElementById('btn-save-cloudflare-token');
-      if (saveSecret) saveSecret.addEventListener('click', saveCloudflareTokenFromUI);
-
-      const clearSecret = document.getElementById('btn-clear-cloudflare-token');
-      if (clearSecret) clearSecret.addEventListener('click', clearCloudflareTokenFromUI);
-
-      const overlay = document.getElementById('secretOverlay');
-      if (overlay) {
-        overlay.addEventListener('click', event => {
-          if (event.target === overlay) closeCloudflareSecretPanel();
-        });
-      }
     });
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
