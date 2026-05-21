@@ -154,6 +154,7 @@
 <script>
 var USUARIO = 'Santiago Jugo';
 var FICHA_ACTUAL = null;
+var PERSONA_ACTUAL = null;
 var DNI_ACTUAL = null;
 var PLANTEL_DATA = [];
 
@@ -164,7 +165,7 @@ var PLANTEL_DATA = [];
 var ETIQUETAS = {
   Apellido:'Apellido', Nombre:'Nombre', DNI:'DNI', Fecha_Nac:'Fecha de Nac.',
   Sexo:'Sexo', Rol:'Rol', Estado_Convocatoria:'Estado',
-  Telefono:'Teléfono', Email:'Email', Direccion:'Dirección',
+  Telefono:'Teléfono', Email:'Email', Direccion:'Dirección', Provincia:'Provincia',
   Emergencia_Nombre:'Emergencia: Nombre', Emergencia_Vinculo:'Emergencia: Vínculo', Emergencia_Tel:'Emergencia: Tel.',
   DNI_Vto:'Venc. DNI',
   Pasaporte_Nro:'N° Pasaporte', Pasaporte_Vto:'Venc. Pasaporte',
@@ -187,7 +188,7 @@ var ETIQUETAS = {
 // ── BLOQUES ───────────────────────────────────────────────────────────────────
 var BLOQUES = {
   'IDENTIDAD':      ['Apellido','Nombre','DNI','Fecha_Nac','Sexo','Rol','Estado_Convocatoria'],
-  'CONTACTO':       ['Telefono','Email','Direccion','Emergencia_Nombre','Emergencia_Vinculo','Emergencia_Tel'],
+  'CONTACTO':       ['Telefono','Email','Direccion','Provincia','Emergencia_Nombre','Emergencia_Vinculo','Emergencia_Tel'],
   'DOCUMENTACIÓN':  ['DNI_Vto','Pasaporte_Nro','Pasaporte_Vto','CUD_Nro','CUD_Vto','Apto_Medico_Vto','Apto_Medico_Vigente','Clasif_Visual_IBSA','TUE_Estado','TUE_Fecha_Vencimiento','TUE_IBSA_Enviado'],
   'DEPORTIVO':      ['Club_Equipo','Posicion','Protocolos_SSDN'],
   'BECAS':          ['Beca_SDN_2024','Beca_SSDN_2025'],
@@ -271,9 +272,10 @@ function renderDropdownLista(lista) {
 
 function ddItemHTML(p) {
   var estado = escapeHtml(p.estado || '');
-  return '<div class="dd-item" onclick="seleccionarPersona(\'' + escapar(p.dni) + '\',\'' + escapar(p.nombre) + '\')">' +
+  var provincia = escapeHtml(p.provincia || p.Provincia || '');
+  return '<div class="dd-item" onclick="seleccionarPersona(\'' + escapar(p.persona_id || p.Persona_ID || p.dni) + '\',\'' + escapar(p.dni) + '\',\'' + escapar(p.nombre) + '\')">' +
     '<div class="dd-nombre">' + escapeHtml(p.nombre || '') + '</div>' +
-    '<div class="dd-detalle">' + escapeHtml(p.rol || '') + (estado ? ' &nbsp;·&nbsp; ' + estado : '') + '</div>' +
+    '<div class="dd-detalle">' + escapeHtml(p.rol || '') + (provincia ? ' &nbsp;·&nbsp; ' + provincia : '') + (estado ? ' &nbsp;·&nbsp; ' + estado : '') + '</div>' +
     '</div>';
 }
 
@@ -287,18 +289,22 @@ function toggleDropdown() {
 function filtrarDropdown(q) {
   var ql = q.toLowerCase();
   var filtrado = PLANTEL_DATA.filter(function(p){
-    return (p.nombre||'').toLowerCase().indexOf(ql) > -1 || (p.rol||'').toLowerCase().indexOf(ql) > -1;
+    return (p.nombre||'').toLowerCase().indexOf(ql) > -1 ||
+      (p.rol||'').toLowerCase().indexOf(ql) > -1 ||
+      (p.dni||'').toLowerCase().indexOf(ql) > -1 ||
+      (p.persona_id||p.Persona_ID||'').toLowerCase().indexOf(ql) > -1;
   });
   renderDropdownLista(filtrado);
 }
 
-function seleccionarPersona(dni, nombre) {
+function seleccionarPersona(personaId, dni, nombre) {
   var disp = document.getElementById('selector-display');
   document.getElementById('selector-texto').innerText = nombre;
   disp.classList.add('selected');
   document.getElementById('custom-dropdown').style.display = 'none';
+  PERSONA_ACTUAL = personaId || dni;
   DNI_ACTUAL = dni;
-  google.script.run.withSuccessHandler(function(f){ FICHA_ACTUAL = f; renderFicha(f); }).getFicha(dni);
+  google.script.run.withSuccessHandler(function(f){ FICHA_ACTUAL = f; renderFicha(f); }).getFicha(PERSONA_ACTUAL);
 }
 
 document.addEventListener('click', function(e){
@@ -315,7 +321,7 @@ function cargarFaltantes() {
       var color = p.completitud > 80 ? 'var(--success)' : (p.completitud > 40 ? 'var(--warn)' : 'var(--danger)');
       var nombre = escapeHtml(p.nombre || '');
       var completitud = escapeHtml(p.completitud);
-      html += '<div class="item-row" onclick="irAFicha(\'' + escapar(p.dni) + '\')">' +
+      html += '<div class="item-row" onclick="irAFicha(\'' + escapar(p.persona_id || p.dni) + '\',\'' + escapar(p.dni) + '\')">' +
         '<div style="display:flex;justify-content:space-between;font-weight:700;">' +
         '<span>' + nombre + '</span><span style="color:' + color + '">' + completitud + '%</span></div>' +
         '<div class="progress-wrap"><div class="progress-fill" style="width:' + p.completitud + '%;background:' + color + '"></div></div>' +
@@ -328,10 +334,12 @@ function cargarFaltantes() {
   }).getFaltantes();
 }
 
-function irAFicha(dni) {
+function irAFicha(personaId, dni) {
   ir('ficha');
-  var p = PLANTEL_DATA.filter(function(x){ return x.dni === dni; })[0];
-  if(p) seleccionarPersona(p.dni, p.nombre);
+  var p = PLANTEL_DATA.filter(function(x){
+    return (personaId && (x.persona_id === personaId || x.Persona_ID === personaId)) || (dni && x.dni === dni);
+  })[0];
+  if(p) seleccionarPersona(p.persona_id || p.Persona_ID || p.dni, p.dni, p.nombre);
 }
 
 // ── RENDER FICHA ──────────────────────────────────────────────────────────────
@@ -341,6 +349,7 @@ function renderFicha(f) {
   var nombre = escapeHtml(f.Nombre || '');
   var rol = escapeHtml(f.Rol || '');
   var dni = escapeHtml(f.DNI || '');
+  var personaId = escapeHtml(f.Persona_ID || f.persona_id || '');
 
   var html = '<div class="card">' +
     '<div style="display:flex;align-items:center;gap:20px;margin-bottom:30px;">' +
@@ -352,6 +361,7 @@ function renderFicha(f) {
     '<div style="min-width:0;">' +
     '<div style="font-family:\'Barlow Condensed\';font-size:1.8rem;font-weight:800;line-height:1;color:var(--accent);overflow-wrap:break-word;">' + apellido + ', ' + nombre + '</div>' +
     '<div style="font-size:0.9rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' + rol + ' | DNI: ' + dni + '</div>' +
+    (personaId ? '<div style="font-size:0.72rem;color:var(--muted);font-weight:700;letter-spacing:0.8px;margin-top:4px;">ID: ' + personaId + '</div>' : '') +
     '</div></div>';
 
   for(var titulo in BLOQUES) {
@@ -447,9 +457,9 @@ function guardarModal() {
   google.script.run.withSuccessHandler(function(){
     cerrarModal(); toast('DATOS SINCRONIZADOS');
     var nombreActual = document.getElementById('selector-texto').innerText;
-    seleccionarPersona(DNI_ACTUAL, nombreActual);
+    seleccionarPersona(PERSONA_ACTUAL, DNI_ACTUAL, nombreActual);
     cargarFaltantes();
-  }).guardarCambios(DNI_ACTUAL, cambios, USUARIO);
+  }).guardarCambios(PERSONA_ACTUAL || DNI_ACTUAL, cambios, USUARIO);
 }
 
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
@@ -460,8 +470,8 @@ function handleUpload(input, tipo) {
   reader.onload = function(e) {
     var base64 = e.target.result.split(',')[1];
     google.script.run.withSuccessHandler(function(res){
-      if(res.ok) { toast('ARCHIVO CARGADO'); var n = document.getElementById('selector-texto').innerText; seleccionarPersona(DNI_ACTUAL, n); }
-    }).subirArchivo(DNI_ACTUAL, tipo, base64, file.type, file.name.split('.').pop());
+      if(res.ok) { toast('ARCHIVO CARGADO'); var n = document.getElementById('selector-texto').innerText; seleccionarPersona(PERSONA_ACTUAL, DNI_ACTUAL, n); }
+    }).subirArchivo(PERSONA_ACTUAL || DNI_ACTUAL, tipo, base64, file.type, file.name.split('.').pop());
   };
   reader.readAsDataURL(file);
 }

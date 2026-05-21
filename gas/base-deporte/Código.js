@@ -16,6 +16,8 @@ var SPREADSHEET_ID = CONFIG.SPREADSHEET_ID;
 
 var CONFIG_DOC = {
   PLANTILLA_CONVOCATORIA: '1foA1M0ftQz7KAOWRgBHCRcewgdCJFdUPynpMYdyEmZM',
+  PLANTILLA_LICENCIA_AGENCIA_CORDOBA: '1HofHxU_DNq-yL0EjTuPrIuHqm5y2iiy24XR42IFpEiE',
+  PLANTILLA_LICENCIA_MUNICIPALIDAD_CORDOBA: '1Pf8JYykIncSPiZQW1lSM_EK_aPdWaqCgyDXiO35NsW4',
   CARPETA_PLANTILLAS:     '14LB7lSbuRq8cr1Zwbz6DilwE9EIllLNn',
   CARPETA_GENERADOS:      '1HtxDxNOxjm3xKs6N5t2SzDlp3TlXf8P1',
 };
@@ -41,6 +43,9 @@ var SHEETS = {
   antidopingCache: 'Antidoping_Cache',
   wadaSustancias: 'WADA_Sustancias',
 };
+
+var PERSONA_ID_COLUMN = 'Persona_ID';
+var PERSONA_ID_ALIASES_ = ['persona_id', 'personaId', 'id'];
 
 var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
@@ -69,11 +74,30 @@ var DOCUMENT_LINK_FIELDS_ = [
   'TUE_Archivo',
   'IBSA_Elegibilidad_Archivo'
 ];
+var PROVINCIA_FALLBACKS_ = {
+  '31843280': 'Córdoba',
+  '30332955': 'Buenos Aires',
+  '45964586': 'Córdoba',
+  '47449717': 'Córdoba',
+  '35947896': 'Buenos Aires'
+};
+var PROVINCIA_FALLBACKS_NOMBRE_ = {
+  'santiago andres jugo': 'Córdoba',
+  'maria luz morales': 'Buenos Aires',
+  'ana maria luz oviedo': 'Córdoba',
+  'ana oviedo': 'Córdoba',
+  'ana maria oviedo': 'Córdoba',
+  'marina san millan': 'Córdoba',
+  'martina san millan': 'Córdoba',
+  'yanina ligioi': 'Buenos Aires',
+  'yanina noemi ligioi': 'Buenos Aires'
+};
 
 // Campos críticos para calcular completitud y alertas.
 // Nota: Titulo_Educativo se agrega cuando se cree la columna en Sheets.
 var CAMPOS_CRITICOS = [
   'DNI', 'Fecha_Nac', 'Telefono', 'Email',
+  'Provincia',
   'Emergencia_Nombre', 'Emergencia_Tel',
   'Pasaporte_Nro', 'Pasaporte_Vto',
   'Apto_Medico_Vto', 'Clasif_Visual_IBSA',
@@ -104,8 +128,10 @@ function getLogSheet_() {
   // Si la hoja de log no existe, la crea automáticamente
   if (!log) {
     log = ss.insertSheet(CONFIG.LOG_SHEET_NAME);
-    log.appendRow(['Fecha', 'DNI', 'Nombre', 'Campo', 'Valor_Anterior', 'Valor_Nuevo', 'Usuario']);
+    log.appendRow(['Fecha', 'Persona_ID', 'DNI', 'Nombre', 'Campo', 'Valor_Anterior', 'Valor_Nuevo', 'Usuario']);
     log.setFrozenRows(1);
+  } else {
+    ensureColumn_(log, 'Persona_ID');
   }
   return log;
 }
@@ -113,6 +139,10 @@ function getLogSheet_() {
 // ── UTILIDADES ────────────────────────────────────────────────────────────────
 function normalizarDNI_(dni) {
   return String(dni).replace(/\./g, '').replace(/,/g, '').trim();
+}
+
+function normalizarPersonaId_(value) {
+  return String(value || '').trim();
 }
 
 function formatearFecha_(date) {
@@ -123,8 +153,11 @@ function formatearFecha_(date) {
 // ── LECTURA DE DATOS ──────────────────────────────────────────────────────────
 function getAllRows_() {
   var ws = getSheet_();
+  base_ensurePersonaIdColumn_(ws);
   base_ensureTUEColumns_(ws);
   base_ensureDocumentColumns_(ws);
+  base_ensureProvinciaColumn_(ws);
+  base_ensurePersonaIds_(ws);
   var data = ws.getDataRange().getValues();
   var headers = data[0];
   var filas = [];
@@ -139,6 +172,10 @@ function getAllRows_() {
         : (val === null || val === undefined ? '' : String(val));
     });
     obj['DNI'] = normalizarDNI_(obj['DNI']);
+    obj[PERSONA_ID_COLUMN] = normalizarPersonaId_(obj[PERSONA_ID_COLUMN]);
+    if (!String(obj['Provincia'] || '').trim()) {
+      obj['Provincia'] = _provinciaProcedenciaPersona_(obj);
+    }
     obj.__row = i + 1;
     filas.push(obj);
   }
@@ -147,11 +184,59 @@ function getAllRows_() {
 
 function getRowByDNI_(dni) {
   var dniLimpio = normalizarDNI_(dni);
+  return getRowByPersona_(dniLimpio, 'dni');
+}
+
+function getRowByPersona_(selector, kind) {
   var filas = getAllRows_();
+  var personaId = normalizarPersonaId_(selector);
+  var dni = normalizarDNI_(selector);
+  var nombre = kind === 'nombre' ? normalizeText(selector) : '';
+
   for (var i = 0; i < filas.length; i++) {
-    if (filas[i].DNI === dniLimpio) return filas[i];
+    var fila = filas[i];
+    if (personaId && normalizarPersonaId_(fila[PERSONA_ID_COLUMN]) === personaId) return fila;
+    if (dni && fila.DNI === dni) return fila;
+    if (nombre) {
+      var filaNombre = normalizeText([fila.Apellido || '', fila.Nombre || ''].filter(Boolean).join(', '));
+      if (filaNombre === nombre) return fila;
+    }
   }
+
   return null;
+}
+
+function base_ensurePersonaIdColumn_(sheet) {
+  var ws = sheet || getSheet_();
+  ensureColumn_(ws, PERSONA_ID_COLUMN);
+  return ws;
+}
+
+function base_ensurePersonaIds_(sheet) {
+  var ws = sheet || getSheet_();
+  var data = ws.getDataRange().getValues();
+  if (!data || data.length < 2) return ws;
+
+  var headers = data[0].map(String);
+  var idxPersonaId = headers.indexOf(PERSONA_ID_COLUMN);
+  if (idxPersonaId === -1) {
+    ensureColumn_(ws, PERSONA_ID_COLUMN);
+    data = ws.getDataRange().getValues();
+    headers = data[0].map(String);
+    idxPersonaId = headers.indexOf(PERSONA_ID_COLUMN);
+  }
+
+  if (idxPersonaId === -1) return ws;
+
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var current = normalizarPersonaId_(data[i][idxPersonaId]);
+    if (!current) {
+      ws.getRange(i + 1, idxPersonaId + 1).setValue(newId());
+    }
+  }
+
+  return ws;
 }
 
 function base_ensureTUEColumns_(sheet) {
@@ -163,6 +248,12 @@ function base_ensureTUEColumns_(sheet) {
 function base_ensureDocumentColumns_(sheet) {
   var ws = sheet || getSheet_();
   DOCUMENT_LINK_FIELDS_.forEach(function(col) { ensureColumn_(ws, col); });
+  return ws;
+}
+
+function base_ensureProvinciaColumn_(sheet) {
+  var ws = sheet || getSheet_();
+  ensureColumn_(ws, 'Provincia');
   return ws;
 }
 
@@ -1024,9 +1115,8 @@ function tue_shouldRequire_(item) {
 }
 
 function antidoping_guardarTUE(payload) {
-  var dni = normalizarDNI_(payload && payload.dni);
-  if (!dni) throw new Error('dni es requerido');
-  var row = getRowByDNI_(dni);
+  var selector = payload && (payload.personaId || payload.persona_id || payload.dni || payload.id);
+  var row = getRowByPersona_(selector, 'auto');
   if (!row) throw new Error('Jugadora no encontrada');
 
   base_ensureTUEColumns_();
@@ -1048,8 +1138,8 @@ function antidoping_guardarTUE(payload) {
     TUE_Observaciones: String((payload && payload.observaciones) || '').trim()
   };
 
-  guardarCambios(dni, cambios, payload && payload.usuario ? payload.usuario : 'Sistema — TUE');
-  return getFicha(dni);
+  guardarCambios(selector, cambios, payload && payload.usuario ? payload.usuario : 'Sistema — TUE');
+  return getFicha(selector);
 }
 
 function antidoping_listarTUEs() {
@@ -1205,11 +1295,17 @@ function getPlantel() {
     var nombre = [r.Apellido, r.Nombre].filter(function(v) { return String(v || '').trim(); }).join(', ');
     var tipoIntegrante = r.Tipo_Integrante || r.tipoIntegrante || r.tipo_integrante || r['Tipo Integrante'] || '';
     return {
+      Persona_ID:   r[PERSONA_ID_COLUMN],
+      persona_id:   r[PERSONA_ID_COLUMN],
+      personaId:    r[PERSONA_ID_COLUMN],
       DNI:           r.DNI,
       dni:           r.DNI,
       Apellido:      r.Apellido || '',
       Nombre:        r.Nombre || '',
       nombre:        nombre || r.Nombre || r.Apellido || r.DNI,
+      Provincia:     r.Provincia || _provinciaProcedenciaPersona_(r),
+      provincia:     r.Provincia || _provinciaProcedenciaPersona_(r),
+      personaKey:    _personaKeyCanonical_(r.Apellido || '', r.Nombre || ''),
       Tipo_Integrante: tipoIntegrante,
       tipoIntegrante:  tipoIntegrante,
       tipo_integrante: tipoIntegrante,
@@ -1230,14 +1326,24 @@ function getPlantel() {
   });
 }
 
+function _personaKeyCanonical_(apellido, nombre) {
+  var apellidoTxt = _normalizarTextoSinAcentos_(apellido).replace(/\s+/g, ' ').trim();
+  var nombreTxt = _normalizarTextoSinAcentos_(nombre).replace(/\s+/g, ' ').trim();
+  if (!apellidoTxt && !nombreTxt) return '';
+  var primerNombre = nombreTxt.split(' ').filter(Boolean)[0] || '';
+  if (!apellidoTxt) return nombreTxt;
+  if (!primerNombre) return apellidoTxt;
+  return apellidoTxt + ' ' + primerNombre;
+}
+
 /**
- * getFicha — devuelve todos los campos de una persona por DNI.
+ * getFicha — devuelve todos los campos de una persona por Persona_ID o DNI.
  * getAllRows_() ya mapea dinámicamente todos los headers,
  * por lo que Titulo_Educativo aparecerá automáticamente
  * en cuanto se agregue la columna en la hoja de Sheets.
  */
-function getFicha(dni) {
-  return getRowByDNI_(dni);
+function getFicha(selector) {
+  return getRowByPersona_(selector, 'auto');
 }
 
 /**
@@ -1253,6 +1359,7 @@ function getFaltantes() {
         return !val || val.toString().trim() === '' || val.toString().trim() === 'PENDIENTE';
       });
       return {
+        persona_id:  r[PERSONA_ID_COLUMN],
         dni:         r.DNI,
         nombre:      r.Apellido + ', ' + r.Nombre,
         rol:         r.Rol,
@@ -1268,15 +1375,16 @@ function getFaltantes() {
  * guardarCambios — escribe los cambios en la hoja y registra cada uno en Log_Cambios.
  */
 function guardarCambios(dni, cambios, usuario) {
-  var ws      = base_ensureTUEColumns_(getSheet_());
+  var ws      = base_ensureProvinciaColumn_(base_ensureTUEColumns_(getSheet_()));
   var headers = ws.getDataRange().getValues()[0];
-  var row     = getRowByDNI_(dni);
-  if (!row) return { ok: false, msg: 'DNI no encontrado' };
+  var row     = getRowByPersona_(dni, 'auto');
+  if (!row) return ok(false, null, 'Persona no encontrada');
 
   var rowNum   = row.__row;
   var logSheet = getLogSheet_();
   var ahora    = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
   var nombre   = (row.Apellido || '') + ', ' + (row.Nombre || '');
+  var personaId = row[PERSONA_ID_COLUMN] || '';
 
   for (var campo in cambios) {
     var colIdx = headers.indexOf(campo);
@@ -1294,7 +1402,7 @@ function guardarCambios(dni, cambios, usuario) {
 
     // Registrar en log solo si el valor realmente cambió
     if (String(valorAnterior) !== String(valorNuevo)) {
-      logSheet.appendRow([ahora, dni, nombre, campo, valorAnterior, valorNuevo, usuario || 'Sin usuario']);
+      logSheet.appendRow([ahora, personaId, row.DNI || normalizarDNI_(dni), nombre, campo, valorAnterior, valorNuevo, usuario || 'Sin usuario']);
     }
   }
 
@@ -1305,7 +1413,19 @@ function guardarCambios(dni, cambios, usuario) {
   var idxMod = headers.indexOf('Modificado_Por');
   if (idxMod > -1) ws.getRange(rowNum, idxMod + 1).setValue(usuario || 'Sin usuario');
 
-  return { ok: true };
+  var idxProvincia = headers.indexOf('Provincia');
+  if (idxProvincia > -1) {
+    var rowActualizada = {};
+    headers.forEach(function(h, idx) {
+      rowActualizada[h] = ws.getRange(rowNum, idx + 1).getValue();
+    });
+    var provinciaAuto = _provinciaProcedenciaPersona_(rowActualizada);
+    if (provinciaAuto && String(rowActualizada.Provincia || '').trim() !== provinciaAuto) {
+      ws.getRange(rowNum, idxProvincia + 1).setValue(provinciaAuto);
+    }
+  }
+
+  return ok(true, { actualizado: true });
 }
 
 /**
@@ -1352,16 +1472,17 @@ function base_getAlertas() {
     var nombre   = String(r.Nombre   || '').trim();
     var nombreCompleto = apellido ? apellido + ', ' + nombre : nombre;
     var dni = r.DNI || '';
+    var personaId = r[PERSONA_ID_COLUMN] || '';
 
     // Regla 1: documentos con fecha de vencimiento
     ['DNI_Vto', 'Pasaporte_Vto', 'CUD_Vto', 'Apto_Medico_Vto', 'TUE_Fecha_Vencimiento'].forEach(function(campo) {
-      var alerta = evaluarVencimientoCampo_(r[campo], campo, nombreCompleto, dni, hoy);
+      var alerta = evaluarVencimientoCampo_(r[campo], campo, nombreCompleto, dni, personaId, hoy);
       if (alerta) alertas.push(alerta);
     });
 
     // Regla 1b: Clasif_Visual_Revision tratada como documento si tiene fecha parseable
     var alertaRev = evaluarVencimientoCampo_(
-      r.Clasif_Visual_Revision, 'Clasif_Visual_Revision', nombreCompleto, dni, hoy
+      r.Clasif_Visual_Revision, 'Clasif_Visual_Revision', nombreCompleto, dni, personaId, hoy
     );
     if (alertaRev) alertas.push(alertaRev);
 
@@ -1372,6 +1493,7 @@ function base_getAlertas() {
         categoria:      'medico',
         jugadora:       nombreCompleto,
         dni:            dni,
+        persona_id:     personaId,
         campo:          'Apto_Medico_Vigente',
         mensaje:        'Apto médico no vigente.',
         dias_restantes: null,
@@ -1387,6 +1509,7 @@ function base_getAlertas() {
         categoria:      'clasificacion',
         jugadora:       nombreCompleto,
         dni:            dni,
+        persona_id:     personaId,
         campo:          'Clasif_Visual_Estado',
         mensaje:        'Clasificación visual IBSA sin completar.',
         dias_restantes: null,
@@ -1399,6 +1522,7 @@ function base_getAlertas() {
         categoria:      'clasificacion',
         jugadora:       nombreCompleto,
         dni:            dni,
+        persona_id:     personaId,
         campo:          'Clasif_Visual_Estado',
         mensaje:        'Clasificación visual pendiente para el próximo torneo.',
         dias_restantes: null,
@@ -1412,11 +1536,12 @@ function base_getAlertas() {
       var val = String(r[campo] || '').trim();
       if (!val || val === 'PENDIENTE') {
         alertas.push({
-          tipo:           'AMARILLA',
-          categoria:      'datos',
-          jugadora:       nombreCompleto,
-          dni:            dni,
-          campo:          campo,
+        tipo:           'AMARILLA',
+        categoria:      'datos',
+        jugadora:       nombreCompleto,
+        dni:            dni,
+        persona_id:     personaId,
+        campo:          campo,
           mensaje:        (LABELS_CAMPO_ALERTAS_[campo] || campo) + ' sin completar.',
           dias_restantes: null,
           fecha:          null,
@@ -1432,6 +1557,7 @@ function base_getAlertas() {
           categoria: 'documento',
           jugadora: nombreCompleto,
           dni: dni,
+          persona_id: personaId,
           campo: 'TUE_IBSA_Enviado',
           mensaje: 'TUE cargada sin confirmar envío a IBSA.',
           dias_restantes: null,
@@ -1446,7 +1572,7 @@ function base_getAlertas() {
 
 // Evalúa un campo de fecha y devuelve una alerta si está vencido o próximo a vencer.
 // Retorna null si el valor está vacío, no es una fecha, o no genera alerta.
-function evaluarVencimientoCampo_(valor, campo, jugadora, dni, hoy) {
+function evaluarVencimientoCampo_(valor, campo, jugadora, dni, personaId, hoy) {
   var str = String(valor || '').trim();
   if (!str || str === 'PENDIENTE') return null;
 
@@ -1468,6 +1594,7 @@ function evaluarVencimientoCampo_(valor, campo, jugadora, dni, hoy) {
     categoria:      'documento',
     jugadora:       jugadora,
     dni:            dni,
+    persona_id:     personaId || '',
     campo:          campo,
     mensaje:        mensaje,
     dias_restantes: diasRestantes,
@@ -1511,13 +1638,14 @@ function agruparAlertas_(alertas) {
     if (a.categoria === 'datos') {
       var key = a.dni || a.jugadora;
       if (!faltantesMap[key]) {
-        faltantesMap[key] = { nombre: a.jugadora, dni: a.dni, faltantes: [] };
+        faltantesMap[key] = { nombre: a.jugadora, dni: a.dni, persona_id: a.persona_id || '', faltantes: [] };
       }
       faltantesMap[key].faltantes.push(a.campo);
     } else {
       vencimientos.push({
         nombre:    a.jugadora,
         dni:       a.dni,
+        persona_id: a.persona_id || '',
         tipo:      LABELS_CAMPO_ALERTAS_[a.campo] || a.campo,
         nivel:     a.tipo,
         fecha:     a.fecha  || null,
@@ -1569,7 +1697,7 @@ var CAMPOS_LINK_ = {
 function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
   try {
     base_ensureDocumentColumns_();
-    var row = getRowByDNI_(dni);
+    var row = getRowByPersona_(dni, 'auto');
     if (!row) return { ok: false, msg: 'Persona no encontrada' };
 
     var apellido    = (row.Apellido || 'SIN_APELLIDO').replace(/\s+/g, '_');
@@ -1654,7 +1782,7 @@ function doPost(e) {
     break;
 
   case 'getFicha':
-    result = ok(true, getFicha(payload.dni));
+    result = ok(true, getFicha(payload.personaId || payload.persona_id || payload.dni || payload.id));
     break;
 
   case 'getFaltantes':
@@ -1662,16 +1790,20 @@ function doPost(e) {
     break;
 
   case 'guardarCambios':
-    result = guardarCambios(payload.dni, payload.cambios, payload.usuario);
+    result = guardarCambios(payload.personaId || payload.persona_id || payload.dni || payload.id, payload.cambios, payload.usuario);
+    break;
+
+  case 'base_actualizarProvinciasFaltantes':
+    result = base_actualizarProvinciasFaltantes(payload);
     break;
 
   case 'darDeBaja':
-    result = darDeBaja(payload.dni);
+    result = darDeBaja(payload.personaId || payload.persona_id || payload.dni || payload.id);
     break;
 
   case 'subirArchivo':
     result = subirArchivo(
-      payload.dni,
+      payload.personaId || payload.persona_id || payload.dni || payload.id,
       payload.tipo,
       payload.base64Data,
       payload.mimeType,
@@ -1726,7 +1858,6 @@ function doPost(e) {
       case 'concentraciones_generarDocumentos':     result = concentraciones_generarDocumentos(payload); break;
       case 'concentraciones_getDocumentosGenerados':result = concentraciones_getDocumentosGenerados(payload); break;
       case 'concentraciones_actualizarConfigPersonasDocs': result = concentraciones_actualizarConfigPersonasDocs(payload); break;
-
       // ── TESTEOS ──
       case 'testeos_getTesteos':         result = testeos_getTesteos(); break;
       case 'testeos_crearTesteo':        result = testeos_crearTesteo(payload); break;
@@ -1879,6 +2010,41 @@ function base_agregarColumna(p) {
   ]);
 
   return ok(true, { nombre: p.nombre, tipo: p.tipo || 'texto', grupo: p.grupo || '' });
+}
+
+function base_actualizarProvinciasFaltantes(p) {
+  const ws = base_ensureProvinciaColumn_(getSheet_());
+  const data = ws.getDataRange().getValues();
+  if (data.length < 2) return ok(true, { actualizadas: 0, total: 0 });
+
+  const headers = data[0].map(String);
+  const idxProvincia = headers.indexOf('Provincia');
+  if (idxProvincia === -1) return ok(true, { actualizadas: 0, total: 0 });
+
+  const actualizadas = [];
+  for (let i = 1; i < data.length; i++) {
+    const rowObj = {};
+    headers.forEach((h, idx) => {
+      rowObj[h] = data[i][idx];
+    });
+
+    const provinciaAuto = _provinciaProcedenciaPersona_(rowObj);
+    const provinciaActual = String(rowObj.Provincia || '').trim();
+    if (!provinciaAuto || provinciaActual === provinciaAuto) continue;
+
+    ws.getRange(i + 1, idxProvincia + 1).setValue(provinciaAuto);
+    actualizadas.push({
+      dni: String(rowObj.DNI || '').trim(),
+      nombre: [rowObj.Apellido || '', rowObj.Nombre || ''].filter(Boolean).join(', '),
+      provincia: provinciaAuto
+    });
+  }
+
+  return ok(true, {
+    actualizadas: actualizadas.length,
+    total: data.length - 1,
+    muestra: actualizadas.slice(0, 10)
+  });
 }
 
 
@@ -2599,10 +2765,10 @@ function concentraciones_generarDocumentos(p) {
   var fechaEmision = formatFechaTextoGas_(new Date());
   var fechaInicio = formatFechaTextoGas_(conc.fechaInicio);
   var fechaFin = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
-  var lugar = String(conc.lugar || conc.nombre || '').trim();
-  var direccion = String(conc.direccion || '').trim();
-  var ciudad = String(conc.ciudad || '').trim();
-  var tipoActividad = String(p.tipoActividad || p.tipo || conc.tipoActividad || conc.tipo || 'la concentración').trim();
+  var lugar = String(conc.lugar || conc.sede || conc.lugar_evento || '').trim();
+  var direccion = String(conc.direccion || conc.direccion_sede || conc.direccion_lugar || '').trim();
+  var ciudad = String(conc.ciudad || conc.localidad || '').trim();
+  var tipoActividad = String(p.tipoActividad || p.tipo || conc.tipoActividad || conc.tipo || '').trim() || _nombreConcentracionHumana_(conc);
   var baseCtx = {
     fechaEmision: fechaEmision,
     fechaInicio: fechaInicio,
@@ -2778,12 +2944,24 @@ function _getConcentracionParaDocumentos(p) {
     nombre: conc.nombre || '',
     fechaInicio: conc.fechaInicio || conc.fecha_inicio || '',
     fechaFin: conc.fechaFin || conc.fecha_fin || '',
-    lugar: conc.lugar || '',
-    direccion: conc.direccion || '',
-    ciudad: conc.ciudad || '',
+    lugar: _valorConcentracionAlias_(conc, ['lugar', 'sede', 'Lugar', 'Sede', 'lugar_evento', 'Lugar_Evento', 'nombre_sede', 'nombreSede']),
+    direccion: _valorConcentracionAlias_(conc, ['direccion', 'Dirección', 'direccion_sede', 'direccionSede', 'direccion_lugar', 'direccionLugar']),
+    ciudad: _valorConcentracionAlias_(conc, ['ciudad', 'Ciudad', 'localidad', 'Localidad', 'ciudad_evento', 'ciudadEvento']),
     notas: conc.notas || '',
     convocadas_json: conc.convocadas_json || conc.convocadasJson || conc.convocadas || '[]'
   };
+}
+
+function _valorConcentracionAlias_(conc, claves) {
+  conc = conc || {};
+  claves = Array.isArray(claves) ? claves : [];
+  for (var i = 0; i < claves.length; i++) {
+    var valor = conc[claves[i]];
+    if (valor === undefined || valor === null) continue;
+    var texto = String(valor).trim();
+    if (texto) return texto;
+  }
+  return '';
 }
 
 function _convocadasConcentracion(conc, p) {
@@ -2846,7 +3024,7 @@ function _generarDocumentoConcentracion_(ctx) {
     cfg = {
       ...cfg,
       plantillaId: resolved.plantillaId || cfg.plantillaId || '',
-      carpetaId: resolved.carpetaId || cfg.carpetaId || CONFIG_DOC.CARPETA_GENERADOS
+      carpetaId: cfg.carpetaId || resolved.carpetaId || CONFIG_DOC.CARPETA_GENERADOS
     };
   }
   if (!cfg.plantillaId) throw new Error('No hay plantilla configurada para ' + cfg.nombre);
@@ -3068,7 +3246,7 @@ function _defaultDocumentDefinitions_() {
     {
       tipo_documento: 'licencia_agencia_cordoba',
       nombre_visible: 'Licencia deportiva — Agencia Córdoba Deportes',
-      template_id: '',
+      template_id: CONFIG_DOC.PLANTILLA_LICENCIA_AGENCIA_CORDOBA,
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'individual',
       activo: true,
@@ -3082,7 +3260,7 @@ function _defaultDocumentDefinitions_() {
     {
       tipo_documento: 'licencia_municipalidad_cordoba',
       nombre_visible: 'Solicitud de licencia — Municipalidad de Córdoba',
-      template_id: '',
+      template_id: CONFIG_DOC.PLANTILLA_LICENCIA_MUNICIPALIDAD_CORDOBA,
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'individual_compuesto',
       activo: true,
@@ -3100,8 +3278,11 @@ function _defaultDocumentPlaceholders_() {
   return [
     ['convocatoria_fadec','{{FECHA_EMISION}}','sistema','fecha_emision','texto',true,'',''],
     ['convocatoria_fadec','{{LUGAR}}','concentracion','lugar','texto',true,'',''],
+    ['convocatoria_fadec','{{SEDE}}','concentracion','lugar','texto',false,'',''],
     ['convocatoria_fadec','{{DIRECCION_LUGAR}}','concentracion','direccion','texto',false,'',''],
+    ['convocatoria_fadec','{{DIRECCION_SEDE}}','concentracion','direccion','texto',false,'',''],
     ['convocatoria_fadec','{{CIUDAD}}','concentracion','ciudad','texto',false,'',''],
+    ['convocatoria_fadec','{{CIUDAD_SEDE}}','concentracion','ciudad','texto',false,'',''],
     ['convocatoria_fadec','{{FECHA_INICIO_TEXTO}}','concentracion','fecha_inicio','texto',true,'',''],
     ['convocatoria_fadec','{{FECHA_FIN_TEXTO}}','concentracion','fecha_fin','texto',true,'',''],
     ['convocatoria_fadec','{{TIPO_ACTIVIDAD}}','concentracion','tipo_actividad','texto',false,'',''],
@@ -3113,8 +3294,11 @@ function _defaultDocumentPlaceholders_() {
     ['convocatoria_fadec','{{CONVOCADAS_NOMBRES}}','concentracion','convocadas_nombres','texto',true,'',''],
     ['certificacion_participacion','{{FECHA_EMISION}}','sistema','fecha_emision','texto',true,'',''],
     ['certificacion_participacion','{{LUGAR}}','concentracion','lugar','texto',true,'',''],
+    ['certificacion_participacion','{{SEDE}}','concentracion','lugar','texto',false,'',''],
     ['certificacion_participacion','{{DIRECCION_LUGAR}}','concentracion','direccion','texto',false,'',''],
+    ['certificacion_participacion','{{DIRECCION_SEDE}}','concentracion','direccion','texto',false,'',''],
     ['certificacion_participacion','{{CIUDAD}}','concentracion','ciudad','texto',false,'',''],
+    ['certificacion_participacion','{{CIUDAD_SEDE}}','concentracion','ciudad','texto',false,'',''],
     ['certificacion_participacion','{{FECHA_INICIO_TEXTO}}','concentracion','fecha_inicio','texto',true,'',''],
     ['certificacion_participacion','{{FECHA_FIN_TEXTO}}','concentracion','fecha_fin','texto',true,'',''],
     ['certificacion_participacion','{{TIPO_ACTIVIDAD}}','concentracion','tipo_actividad','texto',false,'',''],
@@ -3128,10 +3312,11 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
     ['licencia_agencia_cordoba','{{FECHA_NACIMIENTO}}','persona','fecha_nacimiento','fecha_corta_anio',true,'',''],
-    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'FADeC','Editable si cambia la entidad convocante'],
+    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
     ['licencia_agencia_cordoba','{{NOMBRE_EVENTO}}','concentracion','nombre','texto',true,'',''],
     ['licencia_agencia_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
+    ['licencia_agencia_cordoba','{{LUGAR_EVENTO_COMPLETO}}','concentracion','lugar_evento_completo','texto',false,'',''],
     ['licencia_agencia_cordoba','{{FECHA_SALIDA}}','concentracion','fecha_inicio','texto',true,'',''],
     ['licencia_agencia_cordoba','{{FECHA_REGRESO}}','concentracion','fecha_fin','texto',true,'',''],
     ['licencia_agencia_cordoba','{{FECHA_EMISION}}','sistema','fecha_emision','texto',true,'',''],
@@ -3142,7 +3327,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_municipalidad_cordoba','{{FECHA_FIN_CORTA}}','concentracion','fecha_fin','fecha_corta',true,'',''],
     ['licencia_municipalidad_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{CIUDAD_EVENTO}}','concentracion','ciudad','texto',false,'',''],
-    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'FADeC','Editable si cambia la entidad convocante'],
+    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
     ['licencia_municipalidad_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_municipalidad_cordoba','{{AGENTE_APELLIDO_NOMBRE_MAYUS}}','persona','apellido_nombre_mayus','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
@@ -3261,7 +3446,7 @@ function _normalizarPersonaDocumento_(cfg, plantelPersona) {
   var dni = String(cfg.dni || '').trim() || (plantelPersona ? String(plantelPersona.DNI || plantelPersona.dni || '').trim() : '');
   var apellidoNombre = plantelPersona ? _apellidoNombrePersona_(plantelPersona) : _apellidoNombreDesdeNombreCompleto_(nombreCompleto);
   var nombreNorm = _normalizarTextoSinAcentos_(nombreCompleto);
-  var autoridadInstitucion = String(cfg.autoridad_institucion || '').trim() || 'Agencia Cordoba Deportes';
+  var autoridadInstitucion = _normalizarInstitucionDocumento_(cfg.autoridad_institucion) || 'Agencia Córdoba Deportes';
   var destinatarioNombre = String(cfg.destinatario_nombre || '').trim() || 'Lic. Ignacio Barani';
   var cargoAdministrativo = String(cfg.cargo_administrativo || '').trim();
 
@@ -3284,10 +3469,18 @@ function _normalizarPersonaDocumento_(cfg, plantelPersona) {
     fechaNacimiento: plantelPersona ? _leerFechaPersonaDocumento_(plantelPersona) : '',
     autoridadInstitucion: autoridadInstitucion,
     destinatarioNombre: destinatarioNombre,
-    rolEvento: String(cfg.rol_evento || (plantelPersona && plantelPersona.Rol) || '').trim(),
+    rolEvento: 'Entrenador',
     cargoAdministrativo: cargoAdministrativo,
     plantelPersona: plantelPersona || null
   };
+}
+
+function _normalizarInstitucionDocumento_(valor) {
+  var texto = String(valor || '').trim();
+  if (!texto) return '';
+  var norm = _normalizarTextoSinAcentos_(texto);
+  if (norm === 'agencia cordoba deportes') return 'Agencia Córdoba Deportes';
+  return texto;
 }
 
 function _leerFechaPersonaDocumento_(persona) {
@@ -3334,15 +3527,18 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
   switch (String(campo || '').trim()) {
     case 'nombre':
     case 'nombre_evento':
-      return conc.nombre || '';
+      return _nombreConcentracionHumana_(conc);
     case 'lugar':
+      return conc.lugar || conc.sede || conc.lugar_evento || '';
     case 'lugar_evento':
-      return conc.lugar || conc.nombre || '';
+      return _textoLugarEventoConcentracion_(conc);
+    case 'lugar_evento_completo':
+      return _textoLugarEventoConcentracion_(conc);
     case 'direccion':
-      return conc.direccion || '';
+      return conc.direccion || conc.direccion_sede || conc.direccion_lugar || '';
     case 'ciudad':
     case 'ciudad_evento':
-      return conc.ciudad || '';
+      return conc.ciudad || conc.localidad || '';
     case 'fecha_inicio':
       return formatFechaTextoGas_(fechaInicioRaw);
     case 'fecha_fin':
@@ -3352,7 +3548,7 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
     case 'fecha_fin_raw':
       return fechaFinRaw;
     case 'tipo_actividad':
-      return baseCtx.tipoActividad || '';
+      return baseCtx.tipoActividad || _nombreConcentracionHumana_(conc);
     case 'tabla_convocadas':
       return tablaTexto;
     case 'convocadas_cantidad':
@@ -3360,10 +3556,39 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
     case 'convocadas_nombres':
       return (nombres || []).map(function(p) { return p.nombre; }).join(', ');
     case 'federacion_convocante':
-      return 'FADeC';
+      return 'Federación Argentina de Deportes para Ciegos (FADeC)';
     default:
       return conc[campo] || '';
   }
+}
+
+function _textoLugarEventoConcentracion_(conc) {
+  conc = conc || {};
+  var sede = String(conc.lugar || conc.sede || conc.lugar_evento || '').trim();
+  var ciudad = String(conc.ciudad || conc.localidad || '').trim();
+  var provincia = String(conc.provincia || conc.Provincia || '').trim() || _provinciaDesdeCiudadConcentracion_(ciudad);
+  var partes = [];
+  if (sede) partes.push(sede);
+  if (ciudad) partes.push(ciudad);
+  if (provincia) partes.push(provincia);
+  return partes.join(', ');
+}
+
+function _provinciaDesdeCiudadConcentracion_(ciudad) {
+  var texto = _normalizarTextoSinAcentos_(ciudad);
+  var mapa = {
+    'buenos aires': 'Buenos Aires',
+    'ciudad autonoma de buenos aires': 'Ciudad Autónoma de Buenos Aires',
+    'cordoba': 'Córdoba',
+    'concepcion del uruguay': 'Entre Ríos',
+    'parana': 'Entre Ríos',
+    'rosario': 'Santa Fe',
+    'santa fe': 'Santa Fe',
+    'mendoza': 'Mendoza',
+    'san miguel de tucuman': 'Tucumán',
+    'san miguel de tucuman, tucuman': 'Tucumán'
+  };
+  return mapa[texto] || '';
 }
 
 function _resolverCampoDocumentoPersona_(campo, persona) {
@@ -3377,7 +3602,7 @@ function _resolverCampoDocumentoPersona_(campo, persona) {
     case 'fecha_nacimiento':
       return persona.fechaNacimiento || '';
     case 'rol_evento':
-      return persona.rolEvento || '';
+      return 'Entrenador';
     case 'cargo_administrativo':
       return persona.cargoAdministrativo || '';
     case 'autoridad_institucion':
@@ -3402,6 +3627,25 @@ function _resolverCampoDocumentoSistema_(campo, data) {
     default:
       return '';
   }
+}
+
+function _nombreConcentracionHumana_(conc) {
+  conc = conc || {};
+  var base = 'Concentración de la Selección Argentina "Las Murciélagas"';
+  var nombre = String(conc.nombre || '').trim();
+  if (!nombre) return base;
+
+  var nombreNorm = _normalizarTextoSinAcentos_(nombre);
+  if (nombreNorm.indexOf('seleccion argentina') !== -1 && nombreNorm.indexOf('murcielagas') !== -1) {
+    return nombre;
+  }
+
+  var detalle = nombre
+    .replace(/^\s*concentraci[oó]n\b[\s:·\-–—]*/i, '')
+    .replace(/^\s*de la seleccion argentina\s*/i, '')
+    .trim();
+  if (!detalle) return base;
+  return base + ' · ' + detalle;
 }
 
 function _aplicarFormatoDocumento_(valor, formato) {
@@ -3455,8 +3699,10 @@ function _apellidoNombreDesdeNombreCompleto_(nombreCompleto) {
 function _leerPlantillaDoc(clave) {
   var sheet = tryGetSheet(SHEETS.configPlantillas);
   if (!sheet) return {};
-  var match = sheetToObjects(sheet).find(function(r) { return normalizeText(r.clave) === normalizeText(clave); });
-  return match || {};
+  var match = sheetToObjects(sheet).find(function(r) {
+    return normalizeText(r.clave || r.tipo_documento || r.tipoDocumento) === normalizeText(clave);
+  });
+  return match ? _normalizarConfigPlantillaDoc_(match) : {};
 }
 
 function _leerCarpetaDoc(clave) {
@@ -3471,23 +3717,137 @@ function _resolverPlantillaDocumento_(clave, options) {
   var cfg = _leerPlantillaDoc(clave);
   if (cfg && cfg.plantillaId) return cfg;
 
+  var fija = _plantillaFijaDocumento_(clave, cfg);
+  if (fija && fija.plantillaId) {
+    _guardarPlantillaDoc_(clave, fija);
+    return fija;
+  }
+  if (_requierePlantillaManualDocumento_(clave)) return cfg || {};
+
   var candidatos = _candidatosPlantillaDocumento_(clave);
   if (cfg && cfg.nombreArchivo) candidatos.unshift(cfg.nombreArchivo);
   var folderId = (cfg && (cfg.folderId || cfg.carpetaId)) || CONFIG_DOC.CARPETA_PLANTILLAS;
-  var encontrado;
-  if (options.searchDrive === false) {
-    encontrado = _buscarArchivoEnCarpeta_(folderId, candidatos);
-  } else {
-    encontrado = _buscarArchivoEnCarpeta_(folderId, candidatos) || _buscarArchivoEnDrive_(candidatos);
-  }
+  var encontrado = _buscarArchivoEnCarpeta_(folderId, candidatos);
   if (encontrado) {
-    return {
-      plantillaId: encontrado.id,
-      carpetaId: folderId
+    var resolved = {
+      plantillaId: _idArchivoDrive_(encontrado),
+      folderId: folderId,
+      nombreArchivo: _nombreArchivoDrive_(encontrado)
     };
+    if (resolved.plantillaId) _guardarPlantillaDoc_(clave, resolved);
+    return resolved;
+  }
+
+  if (options.searchDrive !== false) {
+    encontrado = _buscarArchivoEnDrive_(candidatos);
+    if (encontrado) {
+      var driveResolved = {
+        plantillaId: _idArchivoDrive_(encontrado),
+        folderId: folderId,
+        nombreArchivo: _nombreArchivoDrive_(encontrado)
+      };
+      if (driveResolved.plantillaId) _guardarPlantillaDoc_(clave, driveResolved);
+      return driveResolved;
+    }
   }
 
   return cfg || {};
+}
+
+function _normalizarConfigPlantillaDoc_(row) {
+  row = row || {};
+  return {
+    clave: String(row.clave || row.tipo_documento || row.tipoDocumento || '').trim(),
+    plantillaId: String(row.plantillaId || row.template_id || row.templateId || row.id_plantilla || '').trim(),
+    carpetaId: String(row.carpetaId || row.carpeta_id || '').trim(),
+    folderId: String(row.folderId || row.folder_id || row.carpetaPlantillasId || row.carpeta_plantillas_id || '').trim(),
+    nombreArchivo: String(row.nombreArchivo || row.nombre_archivo || row.archivo || '').trim()
+  };
+}
+
+function _plantillaFijaDocumento_(clave, cfg) {
+  cfg = cfg || {};
+  var mapa = {
+    convocatoria_fadec: {
+      plantillaId: CONFIG_DOC.PLANTILLA_CONVOCATORIA,
+      nombreArchivo: 'Plantilla - Convocatoria oficial FADeC'
+    },
+    licencia_agencia_cordoba: {
+      plantillaId: CONFIG_DOC.PLANTILLA_LICENCIA_AGENCIA_CORDOBA,
+      nombreArchivo: 'Plantilla - Licencia deportiva Agencia Córdoba Deportes'
+    },
+    licencia_municipalidad_cordoba: {
+      plantillaId: CONFIG_DOC.PLANTILLA_LICENCIA_MUNICIPALIDAD_CORDOBA,
+      nombreArchivo: 'Plantilla - Solicitud de licencia Municipalidad de Córdoba'
+    }
+  };
+  var item = mapa[String(clave || '').trim()];
+  if (!item || !item.plantillaId) return null;
+  return {
+    plantillaId: item.plantillaId,
+    folderId: String(cfg.folderId || CONFIG_DOC.CARPETA_PLANTILLAS || '').trim(),
+    carpetaId: String(cfg.carpetaId || '').trim(),
+    nombreArchivo: String(cfg.nombreArchivo || item.nombreArchivo || '').trim()
+  };
+}
+
+function _requierePlantillaManualDocumento_(clave) {
+  return String(clave || '').trim() === 'certificacion_participacion';
+}
+
+function _guardarPlantillaDoc_(clave, cfg) {
+  cfg = cfg || {};
+  var plantillaId = String(cfg.plantillaId || '').trim();
+  if (!plantillaId) return;
+
+  var sheet = tryGetSheet(SHEETS.configPlantillas);
+  if (!sheet) {
+    sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).insertSheet(SHEETS.configPlantillas);
+  }
+  _ensureHeadersConfigPlantillas_(sheet);
+
+  var rows = sheetToObjects(sheet);
+  var idx = rows.findIndex(function(r) {
+    return normalizeText(r.clave || r.tipo_documento || r.tipoDocumento) === normalizeText(clave);
+  });
+  var rowNum = idx === -1 ? sheet.getLastRow() + 1 : idx + 2;
+  if (idx === -1) sheet.appendRow(['', '', '', '', '']);
+
+  setCell(sheet, rowNum, 'clave', String(clave || '').trim());
+  setCell(sheet, rowNum, 'plantillaId', plantillaId);
+  setCell(sheet, rowNum, 'folderId', String(cfg.folderId || CONFIG_DOC.CARPETA_PLANTILLAS || '').trim());
+  setCell(sheet, rowNum, 'nombreArchivo', String(cfg.nombreArchivo || '').trim());
+  setCell(sheet, rowNum, 'timestamp', new Date().toISOString());
+}
+
+function _ensureHeadersConfigPlantillas_(sheet) {
+  var headers = ['clave', 'plantillaId', 'folderId', 'nombreArchivo', 'timestamp'];
+  if (sheet.getLastRow() < 1 || sheet.getLastColumn() < 1) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+  var current = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function(h) {
+    return String(h || '').trim();
+  });
+  headers.forEach(function(h) {
+    if (current.indexOf(h) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h);
+      current.push(h);
+    }
+  });
+}
+
+function _idArchivoDrive_(file) {
+  if (!file) return '';
+  if (typeof file.getId === 'function') return file.getId();
+  return String(file.id || file.Id || '').trim();
+}
+
+function _nombreArchivoDrive_(file) {
+  if (!file) return '';
+  if (typeof file.getName === 'function') return file.getName();
+  return String(file.name || file.nombre || '').trim();
 }
 
 function _candidatosPlantillaDocumento_(clave) {
@@ -3499,15 +3859,25 @@ function _candidatosPlantillaDocumento_(clave) {
     ],
     licencia_agencia_cordoba: [
       'Plantilla - Licencia deportiva Agencia Córdoba Deportes.docx',
+      'Plantilla - Licencia deportiva Agencia Córdoba Deportes',
+      'Plantilla - Licencia Agencia Córdoba',
       'Licencia deportiva Agencia Córdoba Deportes',
+      'Licencia deportiva - Agencia Córdoba Deportes',
+      'Licencia Agencia Córdoba Deportes',
       'licencia agencia cordoba deportes'
     ],
     licencia_municipalidad_cordoba: [
       'Plantilla - Solicitud licencia Municipalidad Córdoba.docx',
+      'Plantilla - Solicitud licencia Municipalidad Córdoba',
+      'Plantilla - Solicitud de licencia Municipalidad de Córdoba',
       'Solicitud licencia Municipalidad Córdoba',
+      'Solicitud de licencia Municipalidad de Córdoba',
+      'Licencia Municipalidad Córdoba',
       'licencia municipalidad cordoba'
     ],
     certificacion_participacion: [
+      'Plantilla - Certificación de participación.docx',
+      'Plantilla - Certificación de participación',
       'Certificación de participación',
       'Certificacion de participacion',
       'certificacion participacion'
@@ -3565,7 +3935,7 @@ function _buscarArchivoEnDrive_(candidatos) {
 }
 
 function _nombreDocumentoConcentraciones(tipo, conc, persona) {
-  var base = conc && conc.nombre ? conc.nombre : 'Concentración';
+  var base = _nombreConcentracionHumana_(conc);
   var mapa = {
     convocatoria_fadec: 'Convocatoria FADEC',
     licencia_agencia_cordoba: 'Licencia Agencia Córdoba',
@@ -3630,7 +4000,42 @@ function _nombreCompletoPersona_(persona) {
   return [nombre, apellido].filter(function(v) { return v; }).join(' ');
 }
 
+function _normalizarProvinciaArgentina_(valor) {
+  var texto = _normalizarTextoSinAcentos_(valor).replace(/\s+/g, ' ');
+  var mapa = {
+    'buenos aires': 'Buenos Aires',
+    'ciudad autonoma de buenos aires': 'Ciudad Autónoma de Buenos Aires',
+    'capital federal': 'Ciudad Autónoma de Buenos Aires',
+    'caba': 'Ciudad Autónoma de Buenos Aires',
+    'catamarca': 'Catamarca',
+    'chaco': 'Chaco',
+    'chubut': 'Chubut',
+    'cordoba': 'Córdoba',
+    'corrientes': 'Corrientes',
+    'entre rios': 'Entre Ríos',
+    'formosa': 'Formosa',
+    'jujuy': 'Jujuy',
+    'la pampa': 'La Pampa',
+    'la rioja': 'La Rioja',
+    'mendoza': 'Mendoza',
+    'misiones': 'Misiones',
+    'neuquen': 'Neuquén',
+    'rio negro': 'Río Negro',
+    'salta': 'Salta',
+    'san juan': 'San Juan',
+    'san luis': 'San Luis',
+    'santa cruz': 'Santa Cruz',
+    'santa fe': 'Santa Fe',
+    'santiago del estero': 'Santiago del Estero',
+    'tierra del fuego': 'Tierra del Fuego',
+    'tierra del fuego, antartida e islas del atlantico sur': 'Tierra del Fuego',
+    'tucuman': 'Tucumán'
+  };
+  return mapa[texto] || '';
+}
+
 function _provinciaProcedenciaPersona_(persona) {
+  persona = persona || {};
   var clavesProvincia = [
     'Provincia', 'Provincia_Procedencia', 'ProvinciaProcedencia',
     'Provincia_Origen', 'ProvinciaOrigen', 'Provincia_de_Procedencia',
@@ -3647,7 +4052,8 @@ function _provinciaProcedenciaPersona_(persona) {
   ];
   for (var i = 0; i < clavesProvincia.length; i++) {
     var val = persona[clavesProvincia[i]];
-    if (val !== undefined && val !== null && String(val).trim() !== '') return String(val).trim();
+    var provinciaValida = _normalizarProvinciaArgentina_(val);
+    if (provinciaValida) return provinciaValida;
   }
 
   var clavesLugar = [
@@ -3660,7 +4066,8 @@ function _provinciaProcedenciaPersona_(persona) {
   ];
   for (var l = 0; l < clavesLugar.length; l++) {
     var lugar = _extraerProvinciaDesdeTexto_(persona[clavesLugar[l]], false);
-    if (lugar) return lugar;
+    var lugarNormalizado = _normalizarProvinciaArgentina_(lugar);
+    if (lugarNormalizado) return lugarNormalizado;
   }
 
   var keys = Object.keys(persona || {});
@@ -3673,14 +4080,25 @@ function _provinciaProcedenciaPersona_(persona) {
     var esOrigen = k.indexOf('procedencia') !== -1 || k.indexOf('origen') !== -1 || k.indexOf('nacimiento') !== -1 || k.indexOf('nac') !== -1 || k.indexOf('residencia') !== -1;
     var esLugar = k.indexOf('lugar') !== -1 || k.indexOf('ciudadprovincia') !== -1;
 
-    if (esProvincia && (esOrigen || k === 'provincia' || k === 'prov')) return String(dyn).trim();
+    if (esProvincia && (esOrigen || k === 'provincia' || k === 'prov')) {
+      var provinciaDyn = _normalizarProvinciaArgentina_(dyn);
+      if (provinciaDyn) return provinciaDyn;
+    }
     if (esLugar && esOrigen) {
       var desdeLugar = _extraerProvinciaDesdeTexto_(dyn, false);
-      if (desdeLugar) return desdeLugar;
+      var desdeLugarNormalizado = _normalizarProvinciaArgentina_(desdeLugar);
+      if (desdeLugarNormalizado) return desdeLugarNormalizado;
     }
   }
   var desdeDireccion = _extraerProvinciaDesdeTexto_(persona.Direccion || persona.direccion || '', true);
-  if (desdeDireccion) return desdeDireccion;
+  var provinciaDesdeDireccion = _normalizarProvinciaArgentina_(desdeDireccion);
+  if (provinciaDesdeDireccion) return provinciaDesdeDireccion;
+
+  var nombreNorm = _normalizarTextoSinAcentos_(_nombreCompletoPersona_(persona)).replace(/\s+/g, ' ');
+  var dniNorm = normalizarDNI_(persona.DNI || persona.dni || '');
+  if (PROVINCIA_FALLBACKS_[dniNorm]) return PROVINCIA_FALLBACKS_[dniNorm];
+  if (PROVINCIA_FALLBACKS_NOMBRE_[nombreNorm]) return PROVINCIA_FALLBACKS_NOMBRE_[nombreNorm];
+
   return '';
 }
 
