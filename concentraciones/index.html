@@ -144,7 +144,7 @@
   <script>
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false};
-    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',siteContext:{plantel:[],reportes:{rows:[],linkedRows:[],linkStats:{}}}};
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',siteContext:{plantel:[],reportes:{rows:[],linkedRows:[],linkStats:{}}},siteContextPromise:null,siteContextReady:false};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
 
@@ -180,21 +180,20 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [contextResult,concentracionesResult]=await Promise.allSettled([apiGet('site_getContext'),apiGet('concentraciones_getConcentraciones')]);
+        const [plantelResult,concentracionesResult]=await Promise.allSettled([
+          Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL),
+          Murci.apiGetCached('concentraciones_getConcentraciones', {}, { ttlMs: 60 * 1000 }, API_URL)
+        ]);
         if(concentracionesResult.status!=='fulfilled')throw concentracionesResult.reason;
         const concentraciones=concentracionesResult.value;
-        if(contextResult.status==='fulfilled'){
-          state.siteContext=normalizeSiteContext(contextResult.value);
-          state.plantel=Array.isArray(state.siteContext.plantel)?state.siteContext.plantel:[];
+        if(plantelResult.status==='fulfilled'){
+          state.plantel=Array.isArray(plantelResult.value?.plantel)?plantelResult.value.plantel:Array.isArray(plantelResult.value)?plantelResult.value:[];
         }else{
-          state.siteContext={plantel:[],reportes:{rows:[],linkedRows:[],linkStats:{}}};
-          try{
-            const plantel=await apiGet('site_getPlantel');
-            state.plantel=Array.isArray(plantel?.plantel)?plantel.plantel:Array.isArray(plantel)?plantel:[];
-          }catch(plantelErr){
-            state.plantel=[];
-          }
+          state.plantel=[];
         }
+        state.siteContext={plantel:state.plantel,reportes:{rows:[],linkedRows:[],linkStats:{}}};
+        state.siteContextReady=false;
+        loadSiteContextBackground();
         state.concentraciones=(Array.isArray(concentraciones)?concentraciones:[]).sort((a,b)=>String(dateValue(b,'fecha_inicio','fechaInicio','inicio')).localeCompare(String(dateValue(a,'fecha_inicio','fechaInicio','inicio'))));
         renderLista();
         if(state.actualId)renderDetalle();
@@ -398,6 +397,11 @@
       const c=currentConc();
       if(!c){cont.innerHTML='<div class="empty">Seleccioná una concentración.</div>';return}
       const reportes=normalizeReportes(state.siteContext&&state.siteContext.reportes);
+      if(!state.siteContextReady && !reportes.linkedRows.length){
+        cont.innerHTML='<div class="empty">Cargando contexto compartido...</div>';
+        loadSiteContextBackground();
+        return;
+      }
       const selected=new Set(convocatoriaDnisEfectivos(c).map(String));
       const linked=Array.isArray(reportes.linkedRows)?reportes.linkedRows:[];
       const rows=linked.filter(r=>{
@@ -557,6 +561,22 @@
     function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
     function normalizeSiteContext(ctx){return{generatedAt:ctx?.generatedAt||'',plantel:Array.isArray(ctx?.plantel)?ctx.plantel:[],reportes:normalizeReportes(ctx?.reportes)}}
     function normalizeReportes(reportes){return{rows:Array.isArray(reportes?.rows)?reportes.rows:[],linkedRows:Array.isArray(reportes?.linkedRows)?reportes.linkedRows:[],linkStats:reportes?.linkStats||{}}}
+    function loadSiteContextBackground(){
+      if(state.siteContextPromise)return state.siteContextPromise;
+      state.siteContextPromise=Murci.apiGetCached('site_getContext', {}, { ttlMs: 2 * 60 * 1000 }, API_URL)
+        .then(data=>{
+          if(data&&data.ok){
+            state.siteContext=normalizeSiteContext(data);
+            state.plantel=Array.isArray(state.siteContext.plantel)?state.siteContext.plantel:state.plantel;
+            state.siteContextReady=true;
+            if(state.actualId)renderTrainingContext();
+          }
+          return data;
+        })
+        .catch(()=>null)
+        .finally(()=>{state.siteContextPromise=null;});
+      return state.siteContextPromise;
+    }
     function documentUrl(result){if(!result)return'';return result.url||result.documentUrl||result.document_url||result.pdfUrl||result.pdf_url||result.link||''}
     function activityTipo(a){return a.tipo||a.Tipo||a.categoria||a.Categoria||a.tipoActividad||a.tipo_actividad||''}
     function tipoLabel(tipo){return ({entrenamiento:'Entrenamiento',charla_tactica:'Charla táctica',partido:'Partido',recuperacion:'Recuperación',medica:'Médica',comida:'Comida',libre:'Libre',otro:'Otro'})[tipo]||tipo}

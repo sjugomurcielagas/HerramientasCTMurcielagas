@@ -897,7 +897,7 @@ async function loadCanonicalPlantel(){
 
   canonicalPlantelPromise=(async()=>{
     try{
-      const plantel=await Murci.loadPlantel((action,params={},apiUrl=API_URL)=>Murci.apiGet(action,params,apiUrl),API_URL);
+      const plantel=await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL);
       canonicalPlantel=plantel.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
     }catch(err){
       canonicalPlantel=MURCIELAGAS.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);

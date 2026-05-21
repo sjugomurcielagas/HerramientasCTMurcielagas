@@ -2,6 +2,8 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
 
 (function initMurciSharedApi(global) {
   const Murci = global.Murci || (global.Murci = {});
+  const pendingGets = {};
+  const CACHE_PREFIX = 'murci_api_cache:';
 
   Murci.apiBaseUrl = API_BASE_URL;
 
@@ -49,8 +51,67 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     return Murci.parseApiResponse(response);
   };
 
+  Murci.cacheGet = function cacheGet(key, ttlMs = 0) {
+    if (!key || !global.localStorage) return null;
+    try {
+      const raw = global.localStorage.getItem(CACHE_PREFIX + key);
+      if (!raw) return null;
+      const entry = JSON.parse(raw);
+      if (!entry || typeof entry !== 'object' || !Object.prototype.hasOwnProperty.call(entry, 'data')) return null;
+      if (ttlMs > 0 && entry.ts && (Date.now() - entry.ts) > ttlMs) return null;
+      return entry.data;
+    } catch {
+      return null;
+    }
+  };
+
+  Murci.cacheSet = function cacheSet(key, data) {
+    if (!key || !global.localStorage) return data;
+    try {
+      global.localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
+        ts: Date.now(),
+        data
+      }));
+    } catch {
+      // Cache best-effort.
+    }
+    return data;
+  };
+
+  Murci.cacheRemove = function cacheRemove(key) {
+    if (!key || !global.localStorage) return;
+    try {
+      global.localStorage.removeItem(CACHE_PREFIX + key);
+    } catch {
+      // noop
+    }
+  };
+
+  Murci.apiGetCached = async function apiGetCached(action, params = {}, options = {}, apiUrl = API_BASE_URL) {
+    const ttlMs = Number(options.ttlMs || 0);
+    const forceRefresh = !!options.forceRefresh;
+    const cacheKey = options.cacheKey || `${apiUrl}|${action}|${JSON.stringify(params || {})}`;
+
+    if (!forceRefresh) {
+      const cached = Murci.cacheGet(cacheKey, ttlMs);
+      if (cached !== null) return cached;
+      if (pendingGets[cacheKey]) return pendingGets[cacheKey];
+    }
+
+    const promise = Murci.apiGet(action, params, apiUrl)
+      .then(data => Murci.cacheSet(cacheKey, data))
+      .finally(() => {
+        delete pendingGets[cacheKey];
+      });
+
+    pendingGets[cacheKey] = promise;
+    return promise;
+  };
+
   Murci.loadPlantel = async function loadPlantel(apiGetFn = Murci.apiGet, apiUrl = API_BASE_URL) {
-    const data = await apiGetFn('site_getPlantel', {}, apiUrl);
+    const data = apiGetFn === Murci.apiGet
+      ? await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, apiUrl)
+      : await apiGetFn('site_getPlantel', {}, apiUrl);
     return Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : [];
   };
 

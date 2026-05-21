@@ -230,7 +230,7 @@
       const cont=document.getElementById('frecuentesList');
       cont.innerHTML='<div class="empty">Cargando frecuentes...</div>';
       try{
-        const data=await apiGet('antidoping_getFrecuentes');
+        const data=await Murci.apiGetCached('antidoping_getFrecuentes', {}, { ttlMs: 30 * 60 * 1000 }, API_URL);
         state.frecuentes=Array.isArray(data)?data:[];
         state.frecuentesError='';
         state.loaded.frecuentes=true;
@@ -292,7 +292,7 @@
     async function loadHistorial(){
       const cont=document.getElementById('historialList');
       try{
-        const data=await apiGet('antidoping_getHistorial');
+        const data=await Murci.apiGetCached('antidoping_getHistorial', {}, { ttlMs: 3 * 60 * 1000 }, API_URL);
         state.historial=Array.isArray(data)?data:[];
         state.loaded.historial=true;
       }catch(err){state.historial=[]}
@@ -301,7 +301,7 @@
 
     async function loadPlantel(){
       try{
-        const data=await apiGet('site_getPlantel');
+        const data=await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL);
         state.plantel=(Array.isArray(data?.plantel)?data.plantel:Array.isArray(data)?data:[]).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
         state.loaded.plantel=true;
       }catch(err){
@@ -324,7 +324,7 @@
 
     async function loadTUEs(){
       try{
-        const data=await apiGet('antidoping_listarTUEs');
+        const data=await Murci.apiGetCached('antidoping_listarTUEs', {}, { ttlMs: 2 * 60 * 1000 }, API_URL);
         state.tues={resumen:data?.resumen||{},casos:Array.isArray(data?.casos)?data.casos:[]};
         state.loaded.tues=true;
       }catch(err){

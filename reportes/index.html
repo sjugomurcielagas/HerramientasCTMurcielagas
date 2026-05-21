@@ -1141,7 +1141,8 @@ let rawRows = [];
 let rows = [];
 let reportMode = 'ct';
 let lastSourceLabel = 'sin cargar';
-let sharedContext = { plantel: [], reportes: { rows: [], linkedRows: [], linkStats: {} } };
+    let sharedContext = { plantel: [], reportes: { rows: [], linkedRows: [], linkStats: {} } };
+    let analyticsLoadPromise = null;
 
 const tableSortState = {
   weeklyPlayers: {
@@ -1937,12 +1938,12 @@ function updateBlockLabel() {
     let data;
 
     try {
-      data = await callBackend('site_getAnalyticContext');
+      data = await Murci.apiGetCached('site_getContext', {}, { ttlMs: 2 * 60 * 1000 }, API_BASE_URL);
     } catch (contextError) {
       try {
-        data = await callBackend('site_getContext');
-      } catch (fallbackError) {
         data = await callBackend('getClientData');
+      } catch (fallbackError) {
+        data = null;
       }
     }
 
@@ -1996,6 +1997,7 @@ function updateBlockLabel() {
     }
 
     setRows(parsed, 'contexto compartido');
+    loadAnalyticsInBackground();
 
   } catch (error) {
     console.error(error);
@@ -2010,6 +2012,39 @@ function updateBlockLabel() {
     if (btnLoad) btnLoad.disabled = false;
   }
 }
+
+    async function loadAnalyticsInBackground() {
+      if (analyticsLoadPromise) return analyticsLoadPromise;
+      const el = $('status-contexto');
+      if (el && el.textContent === '—') el.textContent = 'cargando...';
+
+      analyticsLoadPromise = (async () => {
+        try {
+          const data = await Murci.apiGetCached('site_getAnalyticContext', {}, { ttlMs: 5 * 60 * 1000, forceRefresh: false }, API_BASE_URL);
+          if (!data || !data.ok) return null;
+
+          sharedContext = {
+            ...sharedContext,
+            plantel: Array.isArray(data.plantel) ? data.plantel : sharedContext.plantel,
+            analytics: data.analytics && typeof data.analytics === 'object'
+              ? data.analytics
+              : sharedContext.analytics || { summary: {} },
+            reportes: data.reportes && typeof data.reportes === 'object'
+              ? data.reportes
+              : sharedContext.reportes
+          };
+          updateContextStatus(data);
+          return data;
+        } catch (error) {
+          console.error(error);
+          return null;
+        } finally {
+          analyticsLoadPromise = null;
+        }
+      })();
+
+      return analyticsLoadPromise;
+    }
   function getSelectedSummary() {
   if (!rows.length) return null;
 
