@@ -56,7 +56,7 @@
       padding: 42px 330px 38px;
       margin-bottom: 18px;
       backdrop-filter: blur(3px);
-      overflow: hidden;
+      overflow: visible;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -101,6 +101,187 @@
       text-align: center;
       max-width: 760px;
       margin: 0 auto;
+    }
+
+    /* Campana de alertas sobre la portada. */
+    .hero-alerts {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .alerts-toggle {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      border: 1px solid rgba(0, 111, 166, .20);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 10px 24px rgba(16, 32, 51, .12);
+      color: var(--accent-dark);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
+    }
+
+    .alerts-toggle:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 159, 227, .52);
+      background: #fff;
+      box-shadow: 0 14px 28px rgba(16, 32, 51, .15);
+    }
+
+    .alerts-toggle svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+
+    .alerts-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #d7263d;
+      color: #fff;
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 22px;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(215, 38, 61, .28);
+    }
+
+    .alerts-popover {
+      width: min(390px, calc(100vw - 32px));
+      max-height: min(70vh, 640px);
+      overflow: auto;
+      background: rgba(255, 255, 255, .97);
+      border: 1px solid rgba(216, 229, 239, .95);
+      border-radius: 24px;
+      box-shadow: 0 24px 50px rgba(16, 32, 51, .22);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+      display: none;
+      animation: alertsPop .16s ease-out;
+    }
+
+    .alerts-popover.open {
+      display: block;
+    }
+
+    .alerts-popover-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .alerts-popover-title {
+      font-family: var(--condensed);
+      font-size: 22px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .alerts-popover-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .alerts-empty {
+      padding: 18px 10px 8px;
+      color: var(--muted);
+      font-size: 15px;
+      text-align: center;
+    }
+
+    .alerts-section + .alerts-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(216, 229, 239, .9);
+    }
+
+    .alerts-section-title {
+      font-family: var(--condensed);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+
+    .alerts-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .alerts-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      text-decoration: none;
+      color: inherit;
+      background: linear-gradient(180deg, rgba(244, 248, 252, .98), rgba(255,255,255,.98));
+      border: 1px solid rgba(216, 229, 239, .92);
+      border-radius: 16px;
+      padding: 12px 13px;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+      text-align: left;
+    }
+
+    .alerts-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 159, 227, .42);
+      box-shadow: 0 14px 24px rgba(16, 32, 51, .10);
+    }
+
+    .alerts-item-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.15;
+    }
+
+    .alerts-item-detail {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+      line-height: 1.25;
+    }
+
+    .alerts-item-meta {
+      flex: 0 0 auto;
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      white-space: nowrap;
+    }
+
+    @keyframes alertsPop {
+      from { transform: translateY(-6px) scale(.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
     }
 
     .eyebrow {
@@ -266,6 +447,11 @@
       .tool-title {
         font-size: 34px;
       }
+
+      .hero-alerts {
+        top: 14px;
+        right: 14px;
+      }
     }
 
     @media (max-width: 699px) {
@@ -310,6 +496,15 @@
       .hero-text {
         max-width: none;
         clear: both;
+      }
+
+      .hero-alerts {
+        top: 12px;
+        right: 12px;
+      }
+
+      .alerts-popover {
+        width: min(340px, calc(100vw - 24px));
       }
 
       .eyebrow {
@@ -408,6 +603,25 @@
         src="./assets/logo-murcielagas.webp"
         alt="Las Murciélagas"
       >
+
+      <div class="hero-alerts">
+        <!-- Campana de alertas activas de portada. -->
+        <button id="alertsToggle" class="alerts-toggle" type="button" aria-label="Ver alertas activas" aria-expanded="false" aria-controls="alertsPopover">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm8-5.5-1.4-1.4V11a6.6 6.6 0 0 0-5.3-6.47V3.5a1.3 1.3 0 0 0-2.6 0v1.03A6.6 6.6 0 0 0 5.4 11v4.1L4 16.5v1h16v-1ZM6.7 15.6V11a5.3 5.3 0 1 1 10.6 0v4.6l1 1H5.7l1-1Z"/>
+          </svg>
+          <span id="alertsBadge" class="alerts-badge hidden" aria-hidden="true"></span>
+        </button>
+        <div id="alertsPopover" class="alerts-popover hidden" aria-hidden="true">
+          <div class="alerts-popover-head">
+            <div>
+              <div class="alerts-popover-title">Alertas</div>
+              <div class="alerts-popover-sub" id="alertsPopoverSub">Cargando estado...</div>
+            </div>
+          </div>
+          <div id="alertsPopoverBody"></div>
+        </div>
+      </div>
     </section>
 
     <section class="grid" aria-label="Herramientas disponibles">
@@ -483,14 +697,28 @@
   <script>
     const API_URL=API_BASE_URL;
     const AUTH_DAYS=30;
+    const homeAlertState={sections:[],total:0,ready:false,loading:false,open:false};
+
     function authValida(){if(localStorage.getItem('mrcl_auth')!=='1')return false;const ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(!ts)return false;return(Date.now()-ts)<AUTH_DAYS*24*60*60*1000}
     function limpiarAuth(){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts')}
-    (function(){if(authValida()){document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}else{limpiarAuth()}})();
+    function escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+    function setAppVisible(visible){document.getElementById('loginView').classList.toggle('hidden',!!visible);document.getElementById('appContent').classList.toggle('hidden',!visible);if(visible)loadHomeAlerts()}
+    function setAlertsOpen(open){homeAlertState.open=!!open;renderAlertsPanel()}
+    function renderAlertsBadge(){const badge=document.getElementById('alertsBadge');if(!badge)return;if(homeAlertState.total>0){badge.textContent=String(homeAlertState.total);badge.classList.remove('hidden')}else{badge.textContent='';badge.classList.add('hidden')}}
+    function renderAlertsBody(){const body=document.getElementById('alertsPopoverBody'),sub=document.getElementById('alertsPopoverSub');if(!body||!sub)return;if(homeAlertState.loading&&!homeAlertState.ready){sub.textContent='Cargando estado...';body.innerHTML='<div class="alerts-empty">Cargando alertas...</div>';return}sub.textContent=homeAlertState.total>0?`${homeAlertState.total} alerta${homeAlertState.total===1?'':'s'} activas`:'Todo en orden';if(!homeAlertState.sections.length){body.innerHTML='<div class="alerts-empty">Todo en orden</div>';return}body.innerHTML=homeAlertState.sections.map(section=>`<section class="alerts-section"><div class="alerts-section-title">${escapeHtml(section.title)}</div><div class="alerts-list">${section.items.map(item=>`<a class="alerts-item" href="${escapeHtml(item.href||'#')}" target="_self" rel="noopener"><div><div class="alerts-item-name">${escapeHtml(item.name||'Sin nombre')}</div><div class="alerts-item-detail">${escapeHtml(item.kind?`${item.kind} · `:'')}${escapeHtml(item.detail||'')}</div></div><div class="alerts-item-meta">${escapeHtml(item.label||'Abrir')}</div></a>`).join('')}</div></section>`).join('')}
+    function renderAlertsPanel(){const popover=document.getElementById('alertsPopover'),toggle=document.getElementById('alertsToggle');if(!popover||!toggle)return;popover.classList.toggle('open',homeAlertState.open);popover.classList.toggle('hidden',!homeAlertState.open);popover.setAttribute('aria-hidden',String(!homeAlertState.open));toggle.setAttribute('aria-expanded',String(homeAlertState.open));renderAlertsBadge();renderAlertsBody()}
+    async function loadHomeAlerts(){if(homeAlertState.loading)return;homeAlertState.loading=true;renderAlertsPanel();try{const data=Murci&&Murci.loadHomeAlerts?await Murci.loadHomeAlerts(API_URL):{sections:[],total:0};homeAlertState.sections=Array.isArray(data?.sections)?data.sections:[];homeAlertState.total=Number(data?.total||0)||0}catch{homeAlertState.sections=[];homeAlertState.total=0}finally{homeAlertState.ready=true;homeAlertState.loading=false;renderAlertsPanel()}}
 
-    function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contraseña incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));document.getElementById('loginView').classList.add('hidden');document.getElementById('appContent').classList.remove('hidden')}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
+    function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contraseña incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));setAppVisible(true)}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
+    (function(){if(authValida()){setAppVisible(true)}else{limpiarAuth()}})();
+
     document.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('loginBtn').addEventListener('click',login);
       document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+      document.getElementById('alertsToggle').addEventListener('click',e=>{e.stopPropagation();setAlertsOpen(!homeAlertState.open)});
+      document.getElementById('alertsPopover').addEventListener('click',e=>e.stopPropagation());
+      document.addEventListener('click',()=>{if(homeAlertState.open)setAlertsOpen(false)});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&homeAlertState.open)setAlertsOpen(false)});
     });
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>

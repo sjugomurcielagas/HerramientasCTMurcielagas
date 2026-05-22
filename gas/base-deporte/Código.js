@@ -62,6 +62,7 @@ var TUE_FIELDS_ = [
   'TUE_IBSA_Enviado',
   'TUE_IBSA_Fecha_Envio',
   'TUE_Observaciones',
+  'TUE_Medico_Tratante',
   'TUE_Archivo'
 ];
 var DOCUMENT_LINK_FIELDS_ = [
@@ -1120,22 +1121,33 @@ function antidoping_guardarTUE(payload) {
   if (!row) throw new Error('Jugadora no encontrada');
 
   base_ensureTUEColumns_();
+  var ficha = getFicha(selector) || {};
+  var hasOwn = function(key) { return payload && Object.prototype.hasOwnProperty.call(payload, key); };
+  var pick = function(key, fallback, allowBlankDefault) {
+    if (hasOwn(key)) {
+      var raw = String(payload && payload[key] != null ? payload[key] : '').trim();
+      if (raw !== '') return raw;
+      return allowBlankDefault ? '' : fallback;
+    }
+    return fallback;
+  };
 
-  var fechaEmision = String((payload && payload.fecha_emision) || '').trim() || tue_todayIso_();
-  var fechaVencimiento = String((payload && payload.fecha_vencimiento) || '').trim();
+  var fechaEmision = pick('fecha_emision', String(ficha.TUE_Fecha_Emision || '').trim() || tue_todayIso_(), false);
+  var fechaVencimiento = pick('fecha_vencimiento', String(ficha.TUE_Fecha_Vencimiento || '').trim(), true);
   if (!fechaVencimiento) fechaVencimiento = tue_addDaysIso_(fechaEmision, TUE_DEFAULT_DURATION_DAYS);
 
   var cambios = {
-    TUE_Estado: String((payload && payload.estado) || '').trim() || 'En preparación',
-    TUE_Medicamento: String((payload && payload.medicamento) || '').trim(),
-    TUE_Sustancia: String((payload && payload.sustancia) || '').trim(),
-    TUE_Diagnostico: String((payload && payload.diagnostico) || '').trim(),
-    TUE_Justificacion: String((payload && payload.justificacion) || '').trim(),
+    TUE_Estado: pick('estado', String(ficha.TUE_Estado || '').trim() || 'En preparación', false) || 'En preparación',
+    TUE_Medicamento: pick('medicamento', String(ficha.TUE_Medicamento || '').trim(), true),
+    TUE_Sustancia: pick('sustancia', String(ficha.TUE_Sustancia || '').trim(), true),
+    TUE_Diagnostico: pick('diagnostico', String(ficha.TUE_Diagnostico || '').trim(), true),
+    TUE_Justificacion: pick('justificacion', String(ficha.TUE_Justificacion || '').trim(), true),
     TUE_Fecha_Emision: fechaEmision,
     TUE_Fecha_Vencimiento: fechaVencimiento,
-    TUE_IBSA_Enviado: String((payload && payload.ibsa_enviado) || '').trim() || 'NO',
-    TUE_IBSA_Fecha_Envio: String((payload && payload.ibsa_fecha_envio) || '').trim(),
-    TUE_Observaciones: String((payload && payload.observaciones) || '').trim()
+    TUE_IBSA_Enviado: pick('ibsa_enviado', String(ficha.TUE_IBSA_Enviado || '').trim() || 'NO', false) || 'NO',
+    TUE_IBSA_Fecha_Envio: pick('ibsa_fecha_envio', String(ficha.TUE_IBSA_Fecha_Envio || '').trim(), true),
+    TUE_Observaciones: pick('observaciones', String(ficha.TUE_Observaciones || '').trim(), true),
+    TUE_Medico_Tratante: pick('medico_tratante', String(ficha.TUE_Medico_Tratante || '').trim(), true)
   };
 
   guardarCambios(selector, cambios, payload && payload.usuario ? payload.usuario : 'Sistema — TUE');
@@ -1153,11 +1165,13 @@ function antidoping_listarTUEs() {
         r.TUE_Sustancia,
         r.TUE_Medicamento,
         r.TUE_Archivo,
+        r.TUE_Medico_Tratante,
         r.TUE_Fecha_Emision,
         r.TUE_Fecha_Vencimiento
       ].some(function(v) { return String(v || '').trim() !== ''; });
       if (!hasData) return null;
       return {
+        persona_id: String(r.Persona_ID || r.persona_id || '').trim(),
         dni: r.DNI || '',
         nombre: (r.Apellido || '') ? ((r.Apellido || '') + ', ' + (r.Nombre || '')) : (r.Nombre || ''),
         estado: estado || 'En preparación',
@@ -1170,6 +1184,7 @@ function antidoping_listarTUEs() {
         ibsa_enviado: String(r.TUE_IBSA_Enviado || '').trim() || 'NO',
         ibsa_fecha_envio: String(r.TUE_IBSA_Fecha_Envio || '').trim(),
         observaciones: String(r.TUE_Observaciones || '').trim(),
+        medico_tratante: String(r.TUE_Medico_Tratante || '').trim(),
         archivo: String(r.TUE_Archivo || '').trim(),
         vigente: !tue_isExpired_(r.TUE_Fecha_Vencimiento) && /vigente/i.test(estado || ''),
         vencido: tue_isExpired_(r.TUE_Fecha_Vencimiento)
@@ -1387,6 +1402,8 @@ function guardarCambios(dni, cambios, usuario) {
   var personaId = row[PERSONA_ID_COLUMN] || '';
 
   for (var campo in cambios) {
+    // Conserva el nombre real de la columna si la hoja usa un alias histórico.
+    campo = _resolveNumeroCamisetaHeader_(headers, campo);
     var colIdx = headers.indexOf(campo);
     if (colIdx === -1) {
       ensureColumn_(ws, campo);
@@ -1851,6 +1868,7 @@ function doPost(e) {
       case 'concentraciones_getConcentraciones':    result = concentraciones_getConcentraciones(); break;
       case 'concentraciones_crearConcentracion':    result = concentraciones_crearConcentracion(payload); break;
       case 'concentraciones_editarConcentracion':   result = concentraciones_editarConcentracion(payload); break;
+      case 'concentraciones_guardarAsistencia':     result = concentraciones_guardarAsistencia(payload); break;
       case 'concentraciones_eliminarConcentracion': result = concentraciones_eliminarConcentracion(payload); break;
       case 'concentraciones_getDias':               result = concentraciones_getDias(payload); break;
       case 'concentraciones_agregarActividad':      result = concentraciones_agregarActividad(payload); break;
@@ -1954,6 +1972,11 @@ function _firstExistingHeader_(headers, candidates) {
     if (list.indexOf(names[i]) !== -1) return names[i];
   }
   return '';
+}
+
+function _resolveNumeroCamisetaHeader_(headers, field) {
+  if (field !== 'Numero_Camiseta') return field;
+  return _firstExistingHeader_(headers, ['Numero_Camiseta', 'Nro_Camiseta', 'Camiseta', 'Dorsal']) || field;
 }
 
 function _splitNombreCompletoAlta_(nombreCompleto) {
@@ -2175,15 +2198,38 @@ function base_actualizarProvinciasFaltantes(p) {
 //
 
 function penales_getSesiones() {
-  return ok(true, sheetToObjects(getSheet(SHEETS.sesionesPenales)));
+  const partidos = sheetToObjects(getSheet(SHEETS.partidos));
+  const partidosMap = {};
+  partidos.forEach(function(p) {
+    const id = String(p.id || '').trim();
+    if (!id) return;
+    partidosMap[id] = p;
+  });
+  const rows = sheetToObjects(getSheet(SHEETS.sesionesPenales)).map(function(row) {
+    return _normalizarSesionPenales_(row, partidosMap);
+  });
+  return ok(true, rows);
 }
 
 function penales_crearSesion(p) {
   if (!p.nombre || !p.fecha) throw new Error('nombre y fecha son requeridos');
   const id = newId();
-  getSheet(SHEETS.sesionesPenales).appendRow([
+  const partidoId = _primerValorNoVacio_(p.partido_id, p.partidoId, p.partido);
+  const contexto = partidoId ? 'Competencia' : 'Entrenamiento';
+  const superficie = _primerValorNoVacio_(p.superficie);
+  const presionSituacional = _primerValorNoVacio_(p.presion_situacional, p.presionSituacional);
+  const sheet = getSheet(SHEETS.sesionesPenales);
+  sheet.appendRow([
     id, p.nombre, p.fecha, p.arquera || '', p.notas || '', new Date().toISOString()
   ]);
+  const row = findRowIndex(sheet, 'id', id);
+  if (row !== -1) {
+    ['partido_id', 'contexto', 'superficie', 'presion_situacional'].forEach(function(col) { ensureColumn_(sheet, col); });
+    setCell(sheet, row, 'partido_id', partidoId || '');
+    setCell(sheet, row, 'contexto', contexto);
+    setCell(sheet, row, 'superficie', superficie || '');
+    setCell(sheet, row, 'presion_situacional', presionSituacional || '');
+  }
   return ok(true, { id });
 }
 
@@ -2192,9 +2238,16 @@ function penales_editarSesion(p) {
   const sheet = getSheet(SHEETS.sesionesPenales);
   const row = findRowIndex(sheet, 'id', p.id);
   if (row === -1) throw new Error('Sesión no encontrada');
-  ['nombre', 'fecha', 'arquera', 'notas'].forEach(f => {
+  ['nombre', 'fecha', 'arquera', 'notas', 'partido_id', 'contexto', 'superficie', 'presion_situacional'].forEach(f => {
     if (p[f] !== undefined) setCell(sheet, row, f, p[f]);
   });
+  if (p.partido_id !== undefined || p.partidoId !== undefined || p.partido !== undefined) {
+    const partidoId = _primerValorNoVacio_(p.partido_id, p.partidoId, p.partido);
+    ensureColumn_(sheet, 'partido_id');
+    ensureColumn_(sheet, 'contexto');
+    setCell(sheet, row, 'partido_id', partidoId || '');
+    setCell(sheet, row, 'contexto', partidoId ? 'Competencia' : 'Entrenamiento');
+  }
   return ok(true, { id: p.id });
 }
 
@@ -2284,6 +2337,34 @@ function penales_eliminarPenal(p) {
   return ok(true, { id: p.id });
 }
 
+function _normalizarSesionPenales_(row, partidosMap) {
+  partidosMap = partidosMap || {};
+  const partidoId = _primerValorNoVacio_(row.partido_id, row.partidoId, row.partido);
+  const partido = partidosMap[partidoId] || null;
+  const contexto = _primerValorNoVacio_(row.contexto, partidoId ? 'Competencia' : 'Entrenamiento');
+  const partidoNombre = partido ? _resumenPartidoParaPenales_(partido) : '';
+  return {
+    ...row,
+    partido_id: partidoId,
+    partidoId: partidoId,
+    contexto: contexto,
+    superficie: String(row.superficie || '').trim(),
+    presion_situacional: String(row.presion_situacional || row.presionSituacional || '').trim(),
+    partido_nombre: partidoNombre,
+    partido_rival: partido ? String(partido.rival || '').trim() : '',
+    partido_fecha: partido ? String(partido.fecha || '').trim() : ''
+  };
+}
+
+function _resumenPartidoParaPenales_(partido) {
+  if (!partido) return '';
+  const rival = String(partido.rival || '').trim();
+  const fecha = String(partido.fecha || '').trim();
+  const nombre = String(partido.nombre || '').trim();
+  if (nombre) return nombre;
+  return [rival ? 'vs ' + rival : '', fecha].filter(function(v) { return String(v || '').trim() !== ''; }).join(' · ');
+}
+
 
 // ────────────────────────────────────────────────────────────────
 // ================================================================
@@ -2341,7 +2422,10 @@ function _parsePartido(r) {
 
     convocadas: safeJsonParse(r.convocadas, []),
     ratings: safeJsonParse(r.ratings, {}),
-    momentos: safeJsonParse(r.momentos, [])
+    momentos: safeJsonParse(r.momentos, []),
+    goleadoras_json: safeJsonParse(r.goleadoras_json, safeJsonParse(r.goleadoras, [])),
+    tipo_competencia: String(r.tipo_competencia || '').trim(),
+    tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim()
   };
 }
 
@@ -2387,13 +2471,18 @@ function partidos_actualizarPartido(p) {
 
   if (row === -1) throw new Error('Partido no encontrado');
 
+  ['goleadoras_json', 'tipo_competencia', 'tipo_competencia_otro'].forEach(function(col) {
+    ensureColumn_(sheet, col);
+  });
+
   const campos = [
     'rival', 'fecha', 'tipo', 'nombre',
     'goles_propios', 'goles_rival',
     'tiros_propios', 'tiros_rival',
     'corners_propios', 'corners_rival',
     'faltas_propias', 'faltas_rival',
-    'goles_primer_tiempo', 'notas'
+    'goles_primer_tiempo', 'notas',
+    'goleadoras_json', 'tipo_competencia', 'tipo_competencia_otro'
   ];
 
   campos.forEach(f => {
@@ -2663,7 +2752,7 @@ function concentraciones_crearConcentracion(p) {
   sheet.appendRow([id, p.nombre, p.fechaInicio, p.fechaFin || '', p.lugar || '', p.notas || '', new Date().toISOString()]);
   const row = findRowIndex(sheet, 'id', id);
   if (row !== -1) {
-    ['direccion', 'ciudad', 'convocadas_json'].forEach(f => {
+    ['direccion', 'ciudad', 'convocadas_json', 'asistencia_json'].forEach(f => {
       if (p[f] !== undefined && p[f] !== '') { ensureColumn_(sheet, f); setCell(sheet, row, f, p[f]); }
     });
   }
@@ -2675,13 +2764,23 @@ function concentraciones_editarConcentracion(p) {
   const sheet = getSheet(SHEETS.concentraciones);
   const row = findRowIndex(sheet, 'id', p.id);
   if (row === -1) throw new Error('Concentración no encontrada');
-  ['convocadas_json', 'direccion', 'ciudad'].forEach(f => {
+  ['convocadas_json', 'direccion', 'ciudad', 'asistencia_json'].forEach(f => {
     if (p[f] !== undefined) ensureColumn_(sheet, f);
   });
-  ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'direccion', 'ciudad', 'notas', 'convocadas_json'].forEach(f => {
+  ['nombre', 'fechaInicio', 'fechaFin', 'lugar', 'direccion', 'ciudad', 'notas', 'convocadas_json', 'asistencia_json'].forEach(f => {
     if (p[f] !== undefined) setCell(sheet, row, f, p[f]);
   });
   return ok(true, { id: p.id });
+}
+
+function concentraciones_guardarAsistencia(p) {
+  if (!p.id) throw new Error('id es requerido');
+  const sheet = getSheet(SHEETS.concentraciones);
+  const row = findRowIndex(sheet, 'id', p.id);
+  if (row === -1) throw new Error('Concentración no encontrada');
+  ensureColumn_(sheet, 'asistencia_json');
+  setCell(sheet, row, 'asistencia_json', p.asistencia_json || '[]');
+  return ok(true, { id: p.id, asistencia_json: p.asistencia_json || '[]' });
 }
 
 // Elimina la concentración y todos sus días en cascada
@@ -2881,6 +2980,7 @@ function concentraciones_generarDocumentos(p) {
 
   var plantel = sheetToObjects(getSheet(SHEETS.plantel));
   var convocadas = _convocadasConcentracion(conc, p);
+  var asistencia = _asistenciaConcentracion(conc);
   var fechaEmision = formatFechaTextoGas_(new Date());
   var fechaInicio = formatFechaTextoGas_(conc.fechaInicio);
   var fechaFin = conc.fechaFin ? formatFechaTextoGas_(conc.fechaFin) : fechaInicio;
@@ -2898,12 +2998,16 @@ function concentraciones_generarDocumentos(p) {
     tipoActividad: tipoActividad,
     conc: conc,
     convocadas: convocadas,
+    asistencia: asistencia,
     plantel: plantel
   };
 
   var documentos = [];
   tipos.forEach(function(tipo) {
     var cfg = tiposMap[tipo];
+    var convocadasDocumento = (tipo === 'certificacion_participacion' && Array.isArray(asistencia) && asistencia.length)
+      ? _presentesDesdeAsistencia_(asistencia, convocadas)
+      : convocadas;
     var faltantesGlobales = _faltantesGlobalesDocumento_(cfg, conc, convocadas);
     if (cfg && cfg.requierePersona) {
       var personas = _resolverPersonasDocumento_(tipo, plantel, convocadas);
@@ -2916,7 +3020,7 @@ function concentraciones_generarDocumentos(p) {
           estado: 'error',
           error: 'No hay personas configuradas para este documento',
           faltantes: validacion ? validacion.faltantes : [],
-          convocadas: convocadas,
+          convocadas: convocadasDocumento,
           plantillaId: cfg.plantillaId || '',
           carpetaId: cfg.carpetaId || CONFIG_DOC.CARPETA_GENERADOS
         });
@@ -2934,7 +3038,7 @@ function concentraciones_generarDocumentos(p) {
             estado: 'error',
             error: 'Faltan datos obligatorios: ' + faltantesPersona.join(', '),
             faltantes: faltantesPersona,
-            convocadas: convocadas,
+            convocadas: convocadasDocumento,
             plantillaId: cfg.plantillaId || '',
             carpetaId: cfg.carpetaId || CONFIG_DOC.CARPETA_GENERADOS,
             persona: {
@@ -2950,7 +3054,8 @@ function concentraciones_generarDocumentos(p) {
           cfg: cfg,
           conc: conc,
           persona: persona,
-          convocadas: convocadas,
+          convocadas: convocadasDocumento,
+          asistencia: asistencia,
           plantel: plantel,
           validacion: validacion,
           baseCtx: baseCtx
@@ -2969,7 +3074,7 @@ function concentraciones_generarDocumentos(p) {
         estado: 'error',
         error: 'Faltan datos obligatorios: ' + faltantesTipo.join(', '),
         faltantes: faltantesTipo,
-        convocadas: convocadas,
+        convocadas: convocadasDocumento,
         plantillaId: cfg && cfg.plantillaId ? cfg.plantillaId : '',
         carpetaId: cfg && cfg.carpetaId ? cfg.carpetaId : CONFIG_DOC.CARPETA_GENERADOS
       });
@@ -2980,7 +3085,8 @@ function concentraciones_generarDocumentos(p) {
       tipo: tipo,
       cfg: cfg,
       conc: conc,
-      convocadas: convocadas,
+      convocadas: convocadasDocumento,
+      asistencia: asistencia,
       plantel: plantel,
       validacion: validacion,
       baseCtx: baseCtx
@@ -3089,6 +3195,31 @@ function _convocadasConcentracion(conc, p) {
   return Array.isArray(parsed) ? parsed : [];
 }
 
+function _asistenciaConcentracion(conc) {
+  var raw = conc && (conc.asistencia_json || conc.asistenciaJson || conc.asistencia);
+  var parsed = parseJson(raw || '[]');
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map(function(item) {
+    return {
+      key: String(item && (item.key || item.id || item.dni || item.personaId || item.persona_id || '')).trim(),
+      estado: String(item && (item.estado || item.status || '')).trim().toLowerCase(),
+      motivo: String(item && (item.motivo || item.ausencia || '')).trim()
+    };
+  }).filter(function(item) { return item.key; });
+}
+
+function _presentesDesdeAsistencia_(asistencia, convocadas) {
+  var items = Array.isArray(asistencia) ? asistencia : [];
+  var selected = new Set(items.filter(function(item) {
+    var estado = String(item && item.estado || '').toLowerCase();
+    return estado === 'presente';
+  }).map(function(item) { return String(item.key || '').trim(); }).filter(Boolean));
+  if (!selected.size) return [];
+  return (Array.isArray(convocadas) ? convocadas : []).filter(function(value) {
+    return selected.has(String(value || '').trim());
+  });
+}
+
 function _validarDatosDocumentosConcentracion(p) {
   var conc = _getConcentracionParaDocumentos(p);
   var tipos = _normalizarTiposDocumento(p.tiposDocumento || p.tipoDocumento || p.tipos_documento || []);
@@ -3167,6 +3298,9 @@ function _generarDocumentoConcentracion_(ctx) {
   });
 
   _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, ctx.tipo, ctx.convocadas, ctx.plantel);
+  if (ctx.tipo === 'certificacion_participacion' && Array.isArray(ctx.asistencia) && ctx.asistencia.length) {
+    _marcarCertificacionParticipacionEfectiva_(body);
+  }
   doc.saveAndClose();
 
   var estado = 'generado';
@@ -3211,6 +3345,22 @@ function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convo
     _insertarTablaConvocatoria_(body, _armarConvocatoriaParticipantes_(plantel || [], convocadas || []));
   } else {
     body.replaceText(_escapeRegexDocumento_('{{TABLA_CONVOCADAS}}'), '');
+  }
+}
+
+function _marcarCertificacionParticipacionEfectiva_(body) {
+  var phrase = 'Certificación de participación';
+  var effective = 'Certificación de participación efectiva';
+  try {
+    body.replaceText(phrase, effective);
+  } catch (err) {
+    // Si el texto no existe, agregamos una aclaración visible al inicio.
+    var paragraph = body.insertParagraph(0, effective);
+    paragraph.editAsText().setBold(true);
+  }
+  if (String(body.getText ? body.getText() : '').indexOf(effective) === -1) {
+    var inserted = body.insertParagraph(0, effective);
+    inserted.editAsText().setBold(true);
   }
 }
 

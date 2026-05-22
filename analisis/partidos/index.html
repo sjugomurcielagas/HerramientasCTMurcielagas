@@ -97,6 +97,14 @@
     .match-stat-row{display:grid;grid-template-columns:40px 1fr 40px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--borde)}.match-stat-row:last-child{border-bottom:none}
     .ms-num{font-family:"Barlow Condensed",sans-serif;font-size:1.1rem;font-weight:700}.ms-num.propio{color:var(--azul-800);text-align:right}.ms-num.rival{color:var(--danger);text-align:left}
     .ms-label{font-size:.74rem;font-weight:800;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.04em}
+    .goleadoras-box{margin-top:10px;padding:10px 11px;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd}
+    .goleadoras-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+    .goleadoras-title{font-size:.82rem;font-weight:800;color:var(--azul-950);text-transform:uppercase;letter-spacing:.05em}
+    .goleadora-row{display:grid;grid-template-columns:1fr 92px auto;gap:8px;align-items:end;padding:8px 0;border-bottom:1px solid var(--borde)}
+    .goleadora-row:last-child{border-bottom:none}
+    .goleadoras-note{font-size:.8rem;color:var(--muted);margin-top:6px;line-height:1.35}
+    .goleadoras-note.warn{color:var(--warn);font-weight:700}
+    .tipo-comp-wrap{margin-top:10px;padding:10px 11px;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd}
 
     /* Modo toggle */
     .modo-toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--borde);border-radius:12px;overflow:hidden;margin-bottom:14px}
@@ -318,7 +326,7 @@
   <script src="../../assets/config.js"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],partidos:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{}};
+    const state={plantel:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:''};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -339,9 +347,10 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantel,partidos]=await Promise.all([obtenerPlantel(),apiGet('partidos_getPartidos')]);
-        state.plantel=Array.isArray(plantel)?plantel:[];
-        state.partidos=Array.isArray(partidos)?partidos.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))):[];
+        const [plantelRes,partidosRes,sesionesRes]=await Promise.allSettled([obtenerPlantel(),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones')]);
+        state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
+        state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
+        state.sesionesPenales=sesionesRes.status==='fulfilled'&&Array.isArray(sesionesRes.value)?sesionesRes.value:[];
         renderLista();
       }catch(e){alert('Error al cargar datos: '+e.message)}
       finally{app.classList.remove('loading')}
@@ -477,6 +486,9 @@
       const conv=Array.isArray(det.convocatoria)?det.convocatoria:[];
       const jugadoras=state.plantel.filter(x=>['Jugadora','Arquera'].includes(String(x.Tipo_Integrante||'').trim()));
       state.editScore={goles_propios:p.goles_propios,goles_rival:p.goles_rival,ht_propios:p.ht_propios??'',ht_rival:p.ht_rival??'',tiros_propios:p.tiros_propios||0,tiros_rival:p.tiros_rival||0,corners_propios:p.corners_propios||0,corners_rival:p.corners_rival||0,faltas_propias:p.faltas_propias||0,faltas_rival:p.faltas_rival||0};
+      state.editGoleadoras=normalizarGoleadoras(det.goleadoras_json||det.goleadoras||[]);
+      state.editTipoCompetencia=String(det.tipo_competencia||'').trim();
+      state.editTipoCompetenciaOtro=String(det.tipo_competencia_otro||'').trim();
 
       const hasStats=p.tiros_propios||p.tiros_rival||p.corners_propios||p.corners_rival||p.faltas_propias||p.faltas_rival;
       const hasTac=det.formacion_propia||det.formacion_rival||det.sistema_propio||det.sistema_rival;
@@ -533,6 +545,27 @@
               <div class="mini-stat"><div class="mini-stat-label">Faltas</div><div class="mini-stat-row"><button class="m-btn" onclick="adjEditStat('faltas_propias',1)">+</button><button class="m-btn minus" onclick="adjEditStat('faltas_propias',-1)">−</button><span class="mini-val" id="e_faltas_propias">${p.faltas_propias||0}</span><span class="mini-sep">·</span><span class="mini-val" id="e_faltas_rival">${p.faltas_rival||0}</span><button class="m-btn" onclick="adjEditStat('faltas_rival',1)">+</button><button class="m-btn minus" onclick="adjEditStat('faltas_rival',-1)">−</button></div></div>
             </div>
           </div>
+          <div class="goleadoras-box">
+            <div class="goleadoras-head">
+              <div class="goleadoras-title">Goleadoras</div>
+              <button class="btn small secondary" type="button" onclick="agregarFilaGoleadora()">+ Agregar</button>
+            </div>
+            <div id="goleadorasEditor"></div>
+            <div id="goleadorasWarn" class="goleadoras-note"></div>
+          </div>
+          <div class="tipo-comp-wrap">
+            <div class="goleadoras-title" style="margin-bottom:8px">Tipo de competencia</div>
+            <div class="form-row" style="margin-bottom:0">
+              <label for="eTipoCompetencia">Clasificación</label>
+              <select id="eTipoCompetencia" onchange="onTipoCompetenciaChange()">
+                ${['Mundial','Copa América','Torneo regional','Amistoso de preparación','Amistoso internacional','Otro'].map(op=>`<option value="${esc(op)}"${state.editTipoCompetencia===op?' selected':''}>${esc(op)}</option>`).join('')}
+              </select>
+            </div>
+            <div id="tipoCompetenciaOtroWrap" class="form-row" style="margin:10px 0 0;display:${state.editTipoCompetencia==='Otro'?'flex':'none'}">
+              <label for="eTipoCompetenciaOtro">Especificar otro</label>
+              <input id="eTipoCompetenciaOtro" type="text" value="${esc(state.editTipoCompetenciaOtro)}" placeholder="Ej: Copa local" oninput="onTipoCompetenciaOtroChange()">
+            </div>
+          </div>
           <div class="form-row" style="margin-top:10px"><label>Observaciones</label><textarea id="eNotas" style="min-height:52px">${esc(p.notas||'')}</textarea></div>
           <div class="btn-row"><button class="btn small" onclick="guardarResultado(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editRes')">Cancelar</button></div>
           <div id="stEditRes" class="status-line"></div>
@@ -581,6 +614,26 @@
         </div>
       </div>`;
 
+      /* === SESIONES DE PENALES ASOCIADAS === */
+      const sesionesAsociadas=state.sesionesPenales.filter(s=>String(s.partido_id||s.partidoId||s.partido||'')===String(p.id)).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+      h+=`<div class="panel">
+        <div class="panel-head"><h2>Sesiones de penales asociadas</h2><span class="badge info">${sesionesAsociadas.length} sesión${sesionesAsociadas.length!==1?'es':''}</span></div>
+        <div class="panel-body">
+          ${sesionesAsociadas.length?sesionesAsociadas.map(s=>{
+            const contexto=String(s.contexto||'').trim()||'Competencia';
+            const sesionNombre=String(s.nombre||'Sin nombre').trim();
+            const resumen=[formatDate(s.fecha), contexto, s.partido_nombre||''].filter(Boolean).join(' · ');
+            return `<div class="stat-row" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+              <div style="min-width:0">
+                <div class="stat-nombre" style="margin-bottom:3px">${esc(sesionNombre)}</div>
+                <div class="stat-hint">${esc(resumen)}</div>
+              </div>
+              <a class="btn small secondary" href="../penales/index.html#sesion=${encodeURIComponent(String(s.id))}">Ver sesión</a>
+            </div>`;
+          }).join(''):'<div class="empty">Sin sesiones de penales asociadas.</div>'}
+        </div>
+      </div>`;
+
       /* === VALORACIONES === */
       const convActual=conv.length?conv:jugadoras.map(j=>personaKey(j)).filter(Boolean);
       h+=`<div class="panel">
@@ -625,23 +678,150 @@
       </div>`;
 
       document.getElementById('fichaContent').innerHTML=h;
+      renderGoleadorasEditor(jugadoras);
     }
 
     function toggleSection(id){document.getElementById(id).classList.toggle('hidden')}
+
+    function normalizarGoleadoras(items){
+      if(typeof items==='string'){
+        try{items=JSON.parse(items)}catch(_){items=[]}
+      }
+      return (Array.isArray(items)?items:[]).map(item=>{
+        if(item===null||item===undefined)return null;
+        if(typeof item==='string')return {jugadora_dni:String(item).trim(),goles:1};
+        const jugadora_dni=String(item.jugadora_dni||item.dni||item.persona_id||item.personaId||item.id||'').trim();
+        const goles=Math.max(1,parseInt(item.goles??item.cantidad??item.total??1,10)||1);
+        if(!jugadora_dni)return null;
+        return {jugadora_dni,goles};
+      }).filter(Boolean);
+    }
+
+    function personaLabelFromDni(dni){
+      const key=String(dni||'').trim();
+      if(!key)return 'Sin jugadora';
+      const p=state.plantel.find(x=>personaKey(x)===key||String(x.DNI||x.dni||x.persona_id||x.Persona_ID||'').trim()===key);
+      return p?nombrar(p):key;
+    }
+
+    function renderGoleadorasEditor(jugadoras){
+      const cont=document.getElementById('goleadorasEditor');
+      const warn=document.getElementById('goleadorasWarn');
+      if(!cont||!warn)return;
+      const options=['<option value="">— Seleccionar —</option>'].concat(jugadoras.map(j=>{
+        const key=personaKey(j);
+        return `<option value="${esc(key)}">${esc(nombrar(j))}</option>`;
+      })).join('');
+      if(!state.editGoleadoras.length)state.editGoleadoras=[{jugadora_dni:'',goles:1}];
+      cont.innerHTML=state.editGoleadoras.map((g,i)=>`
+        <div class="goleadora-row">
+          <div class="form-row" style="margin:0">
+            <label>Jugadora</label>
+            <select data-gol-index="${i}" data-gol-field="jugadora_dni" onchange="onGoleadoraChange(this)">
+              ${options.replace(`value="${esc(String(g.jugadora_dni||''))}"`,`value="${esc(String(g.jugadora_dni||''))}" selected`)}
+            </select>
+          </div>
+          <div class="form-row" style="margin:0">
+            <label>Goles</label>
+            <input data-gol-index="${i}" data-gol-field="goles" type="number" min="1" step="1" value="${esc(String(g.goles||1))}" oninput="onGoleadoraChange(this)">
+          </div>
+          <div style="padding-bottom:2px">
+            <button class="btn small danger" type="button" onclick="quitarFilaGoleadora(${i})">×</button>
+          </div>
+        </div>
+      `).join('');
+      updateGoleadorasWarn();
+      renderTipoCompetenciaOtro();
+    }
+
+    function onGoleadoraChange(el){
+      const idx=parseInt(el.dataset.golIndex,10);
+      if(!Number.isFinite(idx)||!state.editGoleadoras[idx])return;
+      const field=el.dataset.golField;
+      if(field==='goles'){
+        state.editGoleadoras[idx].goles=Math.max(1,parseInt(el.value,10)||1);
+      }else if(field==='jugadora_dni'){
+        state.editGoleadoras[idx].jugadora_dni=String(el.value||'').trim();
+      }
+      updateGoleadorasWarn();
+    }
+
+    function agregarFilaGoleadora(){
+      state.editGoleadoras.push({jugadora_dni:'',goles:1});
+      renderGoleadorasEditor(state.plantel.filter(x=>['Jugadora','Arquera'].includes(String(x.Tipo_Integrante||'').trim())));
+    }
+
+    function quitarFilaGoleadora(idx){
+      state.editGoleadoras.splice(idx,1);
+      if(!state.editGoleadoras.length)state.editGoleadoras=[{jugadora_dni:'',goles:1}];
+      renderGoleadorasEditor(state.plantel.filter(x=>['Jugadora','Arquera'].includes(String(x.Tipo_Integrante||'').trim())));
+    }
+
+    function getGoleadorasDesdeEditor(){
+      const rows=[...document.querySelectorAll('#goleadorasEditor [data-gol-index]')];
+      const map={};
+      rows.forEach(el=>{
+        const idx=parseInt(el.dataset.golIndex,10);
+        const field=el.dataset.golField;
+        if(!Number.isFinite(idx))return;
+        if(!map[idx])map[idx]={jugadora_dni:'',goles:1};
+        if(field==='jugadora_dni')map[idx].jugadora_dni=String(el.value||'').trim();
+        if(field==='goles')map[idx].goles=Math.max(1,parseInt(el.value,10)||1);
+      });
+      return Object.keys(map).sort((a,b)=>Number(a)-Number(b)).map(k=>map[k]).filter(x=>x.jugadora_dni);
+    }
+
+    function updateGoleadorasWarn(){
+      const warn=document.getElementById('goleadorasWarn');
+      if(!warn)return;
+      const goleadoras=getGoleadorasDesdeEditor();
+      const total=goleadoras.reduce((s,g)=>s+(parseInt(g.goles,10)||0),0);
+      const faltan=(state.editScore.goles_propios||0)-total;
+      if(total===Number(state.editScore.goles_propios||0)){
+        warn.textContent=`Total de goles cargados: ${total}. Coincide con el resultado.`;
+        warn.className='goleadoras-note';
+      }else{
+        warn.textContent=`Total de goles cargados: ${total}. No coincide con el resultado (${state.editScore.goles_propios||0}). ${faltan>0?`Faltan ${faltan}.`:`Sobran ${Math.abs(faltan)}.`}`;
+        warn.className='goleadoras-note warn';
+      }
+    }
+
+    function onTipoCompetenciaChange(){
+      state.editTipoCompetencia=document.getElementById('eTipoCompetencia').value||'';
+      renderTipoCompetenciaOtro();
+    }
+
+    function onTipoCompetenciaOtroChange(){
+      const input=document.getElementById('eTipoCompetenciaOtro');
+      state.editTipoCompetenciaOtro=input?String(input.value||'').trim():'';
+    }
+
+    function renderTipoCompetenciaOtro(){
+      const wrap=document.getElementById('tipoCompetenciaOtroWrap');
+      if(!wrap)return;
+      const show=String(state.editTipoCompetencia||'')==='Otro';
+      wrap.style.display=show?'flex':'none';
+      if(show&&document.getElementById('eTipoCompetenciaOtro'))state.editTipoCompetenciaOtro=document.getElementById('eTipoCompetenciaOtro').value||state.editTipoCompetenciaOtro||'';
+    }
 
     async function guardarResultado(id){
       const st=document.getElementById('stEditRes');
       const htP=document.getElementById('eHtP').value;
       const htR=document.getElementById('eHtR').value;
       const notas=document.getElementById('eNotas').value.trim();
-      const payload={action:'partidos_actualizarPartido',id,...state.editScore,notas};
+      const goleadoras=normalizarGoleadoras(getGoleadorasDesdeEditor());
+      const tipoCompetencia=document.getElementById('eTipoCompetencia')?.value||state.editTipoCompetencia||'';
+      const tipoCompetenciaOtro=document.getElementById('eTipoCompetenciaOtro')?.value||state.editTipoCompetenciaOtro||'';
+      state.editTipoCompetencia=tipoCompetencia;
+      state.editTipoCompetenciaOtro=tipoCompetenciaOtro;
+      const payload={action:'partidos_actualizarPartido',id,...state.editScore,notas,goleadoras_json:JSON.stringify(goleadoras),tipo_competencia:tipoCompetencia,tipo_competencia_otro:tipoCompetencia==='Otro'?tipoCompetenciaOtro:''};
       if(htP!=='')payload.ht_propios=parseInt(htP);else payload.ht_propios=null;
       if(htR!=='')payload.ht_rival=parseInt(htR);else payload.ht_rival=null;
       st.textContent='Guardando...';st.className='status-line';
       try{
         await apiPost(payload);
         const p=state.partidos.find(x=>x.id===id);
-        if(p)Object.assign(p,state.editScore,{ht_propios:htP!==''?parseInt(htP):null,ht_rival:htR!==''?parseInt(htR):null,notas});
+        if(p)Object.assign(p,state.editScore,{ht_propios:htP!==''?parseInt(htP):null,ht_rival:htR!==''?parseInt(htR):null,notas,goleadoras_json:goleadoras,tipo_competencia:tipoCompetencia,tipo_competencia_otro:tipoCompetencia==='Otro'?tipoCompetenciaOtro:''});
         st.textContent='✓ Guardado';st.className='status-line ok';
         setTimeout(()=>openPartido(id),700);
       }catch(e){st.textContent='Error: '+e.message;st.className='status-line error'}

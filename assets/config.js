@@ -202,6 +202,143 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     return obtenerPlantel();
   };
 
+  // Alertas de portada: combina documentos, TUE y carga reciente sin exponer
+  // al frontend detalles de parsing o tolerancia a fallos.
+  function normalizeAlertKey_(value) {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function parseAlertDate_(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+    const text = String(value).trim();
+    if (!text) return null;
+
+    const ddmmyyyy = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (ddmmyyyy) {
+      const d = new Date(Number(ddmmyyyy[3]), Number(ddmmyyyy[2]) - 1, Number(ddmmyyyy[1]));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const ymd = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (ymd) {
+      const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatAlertDays_(days) {
+    if (days < 0) return 'vencido';
+    if (days === 0) return 'vence hoy';
+    return `en ${days} días`;
+  }
+
+  function shortAlertLabel_(label) {
+    const text = String(label || '');
+    if (/pasaporte/i.test(text)) return 'Pasaporte';
+    if (/cud/i.test(text)) return 'CUD';
+    if (/apto/i.test(text)) return 'Apto médico';
+    if (/tue/i.test(text)) return 'TUE';
+    return text.replace(/^Vencimiento\s+/i, '');
+  }
+
+  function buildHomeAlertsSummary_(plantel, alertas, reportes) {
+    const sections = [];
+    const totalBase = alertas && Array.isArray(alertas.vencimientos) ? alertas.vencimientos : [];
+
+    const documentAlerts = totalBase.filter(item => {
+      const campo = String(item?.categoria || '').toLowerCase() === 'documento' ? String(item?.tipo || '') : '';
+      return ['Vencimiento pasaporte', 'Vencimiento CUD', 'Vencimiento apto médico'].includes(campo);
+    }).map(item => ({
+      name: String(item.nombre || '').trim(),
+      kind: shortAlertLabel_(item.tipo),
+      days: Number(item.dias),
+      detail: formatAlertDays_(Number(item.dias)),
+      href: './base-datos/',
+      label: 'Abrir base de datos'
+    }));
+
+    const tueAlerts = totalBase.filter(item => String(item?.tipo || '').trim() === 'Vencimiento TUE').map(item => ({
+      name: String(item.nombre || '').trim(),
+      kind: 'TUE',
+      days: Number(item.dias),
+      detail: formatAlertDays_(Number(item.dias)),
+      href: './antidoping/',
+      label: 'Abrir antidoping'
+    }));
+
+    const activePlayers = Array.isArray(plantel)
+      ? plantel.filter(persona => persona && persona.activo !== false && persona.inactivo !== true)
+      : [];
+
+    const reportRows = reportes && Array.isArray(reportes.rows) ? reportes.rows : Array.isArray(reportes) ? reportes : [];
+    let cargaAlerts = [];
+    if (reportRows.length) {
+      const today = new Date();
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const latestByPlayer = new Map();
+
+      reportRows.forEach(row => {
+        const rowDate = parseAlertDate_(row?.fecha);
+        if (!rowDate || rowDate < sevenDaysAgo) return;
+        const key = normalizeAlertKey_(row?.jugadora);
+        if (!key) return;
+        const prev = latestByPlayer.get(key);
+        if (!prev || rowDate > prev.date) {
+          latestByPlayer.set(key, { date: rowDate, source: row });
+        }
+      });
+
+      cargaAlerts = activePlayers
+        .map(persona => {
+          const name = Murci.personName(persona);
+          const key = normalizeAlertKey_(name);
+          return { name, key, dni: String(persona?.DNI || persona?.dni || '').trim(), personaId: String(persona?.Persona_ID || persona?.persona_id || '').trim() };
+        })
+        .filter(persona => persona.name && !latestByPlayer.has(persona.key))
+        .map(persona => ({
+          name: persona.name,
+          detail: 'Sin registro de sRPE en los últimos 7 días',
+          href: './reportes/',
+          label: 'Abrir reportes'
+        }));
+    }
+
+    if (documentAlerts.length) sections.push({ key: 'documentos', title: 'Documentos', items: documentAlerts });
+    if (tueAlerts.length) sections.push({ key: 'tues', title: 'TUEs', items: tueAlerts });
+    if (cargaAlerts.length) sections.push({ key: 'carga', title: 'Carga sin registrar', items: cargaAlerts });
+
+    return {
+      sections,
+      total: sections.reduce((sum, section) => sum + section.items.length, 0)
+    };
+  }
+
+  Murci.loadHomeAlerts = async function loadHomeAlerts(apiUrl = API_BASE_URL) {
+    const [plantelResult, alertasResult, reportesResult] = await Promise.allSettled([
+      Murci.loadPlantel(),
+      Murci.apiGetCached('base_getAlertas', {}, { ttlMs: 2 * 60 * 1000 }, apiUrl),
+      Murci.apiGetCached('getClientData', {}, { ttlMs: 2 * 60 * 1000 }, apiUrl)
+    ]);
+
+    const plantel = plantelResult.status === 'fulfilled' && Array.isArray(plantelResult.value) ? plantelResult.value : [];
+    const alertas = alertasResult.status === 'fulfilled' ? alertasResult.value : null;
+    const reportes = reportesResult.status === 'fulfilled' ? reportesResult.value : null;
+
+    return buildHomeAlertsSummary_(plantel, alertas, reportes);
+  };
+
   Murci.normalizeText = function normalizeText(value) {
     return String(value || '')
       .toLowerCase()

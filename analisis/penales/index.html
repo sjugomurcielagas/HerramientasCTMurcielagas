@@ -34,7 +34,7 @@
     input:focus,select:focus{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(34,168,232,.13)}
 
     /* Buttons */
-    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem}
+    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}
     .btn:hover{transform:translateY(-1px);background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.83rem;padding:7px 10px;border-radius:10px}.btn:disabled{opacity:.48;cursor:not-allowed;transform:none}
     .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 
@@ -106,6 +106,19 @@
     .zsp{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;font-weight:700;line-height:1}
     .zst{font-size:.76rem;opacity:.72}
     .zona-legend{margin-top:9px;font-size:.8rem;color:var(--muted)}
+    .heatmap-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .heatmap-card{border:1px solid var(--borde);border-radius:16px;padding:12px;background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)}
+    .heatmap-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+    .heatmap-title h3{margin:0;font-family:"Barlow Condensed",sans-serif;font-size:1rem;color:var(--azul-950)}
+    .heatmap-sub{font-size:.8rem;color:var(--muted)}
+    .goal-svg{width:100%;height:auto;display:block;max-width:340px;margin:0 auto}
+    .goal-sector{stroke:#d5dee7;stroke-width:1.2}
+    .goal-label{font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:700;fill:#0f172a;pointer-events:none}
+    .goal-detail{font-size:9px;fill:#0f172a;opacity:.78;pointer-events:none}
+    .heatmap-legend{margin-top:10px;font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .heat-chip{display:inline-flex;align-items:center;gap:5px}
+    .heat-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(15,23,42,.08)}
+    @media(max-width:720px){.heatmap-grid{grid-template-columns:1fr}}
 
     /* Stats: table */
     .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--borde);background:#fff}
@@ -185,6 +198,31 @@
                     <div class="form-row">
                       <label for="nsFecha">Fecha</label>
                       <input id="nsFecha" type="date">
+                    </div>
+                    <div class="form-row">
+                      <label for="nsPartido">Partido asociado</label>
+                      <select id="nsPartido"><option value="">— Sin partido asociado · Entrenamiento —</option></select>
+                      <div id="nsPartidoHint" class="zona-label-hint">Se guardará como entrenamiento.</div>
+                    </div>
+                    <div class="form-row">
+                      <label for="nsSuperficie">Superficie</label>
+                      <select id="nsSuperficie">
+                        <option value="">— Opcional —</option>
+                        <option value="Cemento">Cemento</option>
+                        <option value="Parquet">Parquet</option>
+                        <option value="Césped sintético">Césped sintético</option>
+                        <option value="Césped natural">Césped natural</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+                    <div class="form-row">
+                      <label for="nsPresion">Presión situacional</label>
+                      <select id="nsPresion">
+                        <option value="">— Opcional —</option>
+                        <option value="Baja">Baja</option>
+                        <option value="Media">Media</option>
+                        <option value="Alta">Alta</option>
+                      </select>
                     </div>
                     <div class="btn-row">
                       <button id="crearSesionBtn" class="btn">Crear sesión</button>
@@ -340,7 +378,7 @@
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false,role_fallback_when_no_tipo:true};
     const LAST_ARQUERA_KEY='penales_last_arquera_dni';
-    const state={plantel:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null};
+    const state={plantel:[],partidos:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null};
     const MAX_PENALES_RENDER=120;
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -351,6 +389,7 @@
       document.getElementById('crearSesionBtn').addEventListener('click',crearSesion);
       document.getElementById('cancelarSesionBtn').addEventListener('click',()=>showNuevaSesionForm(false));
       document.getElementById('sesionSelect').addEventListener('change',onSesionChange);
+      document.getElementById('nsPartido').addEventListener('change',onPartidoAsociadoChange);
       document.getElementById('jugadoraSelect').addEventListener('change',checkRegistrarBtn);
       document.getElementById('arqueraSelect').addEventListener('change',onArqueraChange);
       document.getElementById('zonaSelector').addEventListener('click',e=>{const b=e.target.closest('[data-zona]');if(b)setZona(b.dataset.zona)});
@@ -360,6 +399,7 @@
       document.getElementById('refreshPenalesBtn').addEventListener('click',actualizarPenales);
       document.getElementById('listaPenalesBody').addEventListener('click',e=>{const b=e.target.closest('[data-delete-penal]');if(b)eliminarPenal(b.dataset.deletePenal)});
       document.getElementById('nsFecha').valueAsDate=new Date();
+      window.addEventListener('hashchange',applySesionHashFromLocation);
       loadAll();
     });
 
@@ -367,18 +407,22 @@
       const app=document.getElementById('appView');
       app.classList.add('loading');
       try{
-        const [plantel,sesiones]=await Promise.all([
+        const [plantelRes,partidosRes,sesionesRes]=await Promise.allSettled([
           obtenerPlantel(),
+          apiGet('partidos_getPartidos'),
           apiGet('penales_getSesiones')
         ]);
-        state.plantel=Array.isArray(plantel)?plantel:[];
-        state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
+        state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
+        state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
+        state.sesiones=sesionesRes.status==='fulfilled'&&Array.isArray(sesionesRes.value)?sesionesRes.value.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
         if(!state.sesionActualId&&state.sesiones.length){
           state.sesionActualId=state.sesiones[state.sesiones.length-1].id;
         }
         renderPlantelSelects();
+        renderPartidoSelect();
         renderSesionSelector();
         renderSesiones();
+        applySesionHashFromLocation();
         document.getElementById('listaPenalesBody').innerHTML='<div class="empty">Cargando penales...</div>';
         loadPenalesEnSegundoPlano();
       }catch(err){alert('Error al cargar datos: '+err.message)}
@@ -424,11 +468,23 @@
       restoreLastArquera();
       checkRegistrarBtn();
     }
+    function renderPartidoSelect(){
+      const sel=document.getElementById('nsPartido');
+      if(!sel)return;
+      sel.innerHTML='<option value="">— Sin partido asociado · Entrenamiento —</option>'+
+        state.partidos.map(p=>`<option value="${esc(String(p.id))}">${esc(partidoLabel(p))}</option>`).join('');
+      onPartidoAsociadoChange();
+    }
     function onArqueraChange(){
       const key=document.getElementById('arqueraSelect').value||'';
       if(key)localStorage.setItem(LAST_ARQUERA_KEY,key);
       else localStorage.removeItem(LAST_ARQUERA_KEY);
       checkRegistrarBtn();
+    }
+    function onPartidoAsociadoChange(){
+      const partidoId=document.getElementById('nsPartido')?.value||'';
+      const hint=document.getElementById('nsPartidoHint');
+      if(hint)hint.textContent=partidoId?'Se guardará como competencia.':'Se guardará como entrenamiento.';
     }
     function restoreLastArquera(){
       const sel=document.getElementById('arqueraSelect');
@@ -473,12 +529,11 @@
     function renderSesionSelector(){
       const sel=document.getElementById('sesionSelect');
       sel.innerHTML='<option value="">— Sin sesión activa —</option>'+
-        state.sesiones.slice().reverse().map(s=>`<option value="${esc(String(s.id))}" ${String(s.id)===String(state.sesionActualId)?'selected':''}>${esc(s.nombre)} · ${formatDate(s.fecha)}</option>`).join('');
+        state.sesiones.slice().reverse().map(s=>`<option value="${esc(String(s.id))}" ${String(s.id)===String(state.sesionActualId)?'selected':''}>${esc(sesionLabel(s))}</option>`).join('');
     }
 
     function onSesionChange(){
-      state.sesionActualId=document.getElementById('sesionSelect').value||null;
-      renderListaPenales();
+      setSesionActiva(document.getElementById('sesionSelect').value||null);
     }
 
     function toggleNuevaSesionForm(){
@@ -493,23 +548,43 @@
     async function crearSesion(){
       const nombre=document.getElementById('nsNombre').value.trim();
       const fecha=document.getElementById('nsFecha').value;
+      const partido_id=document.getElementById('nsPartido').value||'';
+      const superficie=document.getElementById('nsSuperficie').value||'';
+      const presion_situacional=document.getElementById('nsPresion').value||'';
       const status=document.getElementById('crearSesionStatus');
       const btn=document.getElementById('crearSesionBtn');
       if(!nombre){status.textContent='Ingresá un nombre.';status.className='status-line error';return}
       if(!fecha){status.textContent='Seleccioná una fecha.';status.className='status-line error';return}
       status.textContent='Creando...';status.className='status-line';btn.disabled=true;
       try{
-        const result=await apiPost({action:'penales_crearSesion',nombre,fecha});
-        const sesion={id:result.id,nombre,fecha};
+        const payload={action:'penales_crearSesion',nombre,fecha,superficie,presion_situacional};
+        if(partido_id)payload.partido_id=partido_id;
+        const result=await apiPost(payload);
+        const partido=state.partidos.find(p=>String(p.id)===String(partido_id));
+        const sesion={
+          id:result.id,
+          nombre,
+          fecha,
+          superficie,
+          presion_situacional,
+          partido_id:partido_id||'',
+          partidoId:partido_id||'',
+          contexto:partido_id?'Competencia':'Entrenamiento',
+          partido_nombre:partido?partidoLabel(partido):'',
+          partido_rival:partido?String(partido.rival||'').trim():'',
+          partido_fecha:partido?String(partido.fecha||'').trim():''
+        };
         state.sesiones.push(sesion);
         state.sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1);
-        state.sesionActualId=sesion.id;
+        setSesionActiva(sesion.id);
         document.getElementById('nsNombre').value='';
         document.getElementById('nsFecha').valueAsDate=new Date();
+        document.getElementById('nsPartido').value='';
+        document.getElementById('nsSuperficie').value='';
+        document.getElementById('nsPresion').value='';
+        onPartidoAsociadoChange();
         showNuevaSesionForm(false);
         status.textContent='';status.className='status-line';
-        renderSesionSelector();
-        renderListaPenales();
         renderSesiones();
       }catch(err){status.textContent='Error: '+err.message;status.className='status-line error'}
       finally{btn.disabled=false}
@@ -638,10 +713,17 @@
         const sp=state.penales.filter(p=>String(p.sesionId)===String(s.id));
         const goles=sp.filter(p=>p.resultado==='gol').length;
         const pct=sp.length?Math.round(goles/sp.length*100):null;
+        const partidoTexto=partidoLabelFromSesion(s);
         return `<div class="sesion-card">
           <div>
             <div class="sesion-nombre">${esc(s.nombre)}</div>
             <div class="sesion-meta">${formatDate(s.fecha)} · ${sp.length} penal${sp.length!==1?'es':''}${pct!==null?' · '+pct+'% efectividad':''}</div>
+            <div class="sesion-meta" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">
+              <span class="badge ${String(s.contexto||'').toLowerCase()==='competencia'?'info':''}">${esc(s.contexto|| (s.partido_id?'Competencia':'Entrenamiento'))}</span>
+              ${s.superficie?`<span class="badge">${esc(s.superficie)}</span>`:''}
+              ${s.presion_situacional?`<span class="badge">${esc(s.presion_situacional)}</span>`:''}
+              ${partidoTexto?`<span class="badge">${esc(partidoTexto)}</span>`:''}
+            </div>
           </div>
           <button class="btn small secondary" onclick="activarSesion(${JSON.stringify(String(s.id))})">Activar</button>
         </div>`;
@@ -649,10 +731,54 @@
     }
 
     function activarSesion(id){
-      state.sesionActualId=id;
+      setSesionActiva(id);
+      showView('registroView');
+    }
+
+    function setSesionActiva(id){
+      state.sesionActualId=id?String(id):null;
       renderSesionSelector();
       renderListaPenales();
-      showView('registroView');
+      if(state.sesionActualId)location.hash='sesion='+encodeURIComponent(state.sesionActualId);
+      else if((location.hash||'').startsWith('#sesion='))history.replaceState(null,'',location.pathname+location.search);
+    }
+
+    function applySesionHashFromLocation(){
+      const sesionId=getSesionIdFromHash();
+      if(!sesionId)return;
+      const exists=state.sesiones.some(s=>String(s.id)===String(sesionId));
+      if(exists&&String(state.sesionActualId||'')!==String(sesionId)){
+        state.sesionActualId=String(sesionId);
+        renderSesionSelector();
+        renderListaPenales();
+      }
+    }
+
+    function getSesionIdFromHash(){
+      const raw=String(location.hash||'').replace(/^#/, '').trim();
+      if(!raw)return '';
+      const normalized=raw.includes('=')?raw:`sesion=${raw}`;
+      const params=new URLSearchParams(normalized);
+      return params.get('sesion')||params.get('session')||params.get('id')||'';
+    }
+
+    function sesionLabel(s){
+      return [s.nombre||'Sin nombre', formatDate(s.fecha), s.contexto||''].filter(Boolean).join(' · ');
+    }
+
+    function partidoLabel(p){
+      if(!p)return '';
+      const nombre=String(p.nombre||'').trim();
+      if(nombre)return nombre;
+      const rival=String(p.rival||'').trim();
+      const fecha=formatDate(p.fecha);
+      return [rival?`vs ${rival}`:'', fecha].filter(Boolean).join(' · ');
+    }
+
+    function partidoLabelFromSesion(s){
+      if(!s)return '';
+      if(s.partido_nombre)return s.partido_nombre;
+      return partidoLabel({rival:s.partido_rival,fecha:s.partido_fecha});
     }
 
     /* ===== ESTADÍSTICAS ===== */
@@ -737,21 +863,80 @@
     }
 
     function renderStatsZonas(penales){
-      const zones=Array.from({length:9},(_,i)=>{const zp=penales.filter(p=>parseInt(p.zona)===i+1);return{zona:i+1,...calcEfect(zp)}});
-      function zColor(pct,total){if(!total)return'rgba(255,255,255,0.1)';if(pct>=60)return'rgba(4,120,87,0.84)';if(pct>=35)return'rgba(180,83,9,0.84)';return'rgba(185,28,28,0.78)'}
       const extDefs=[{id:'palo-izq',label:'Palo izq.'},{id:'travesano',label:'Travesaño'},{id:'palo-der',label:'Palo der.'},{id:'fuera-izq',label:'Fuera izq.'},{id:'fuera-arr',label:'Fuera arr.'},{id:'fuera-der',label:'Fuera der.'}];
       const extData=extDefs.map(d=>({...d,total:penales.filter(p=>p.zona===d.id).length}));
       const extTotal=extData.reduce((s,z)=>s+z.total,0);
-      let html=`<div class="zona-stats-grid">
-        ${zones.map(z=>`<div class="zona-stat-cell" style="background:${zColor(z.pct,z.total)}">
-          <div class="zsn">Z${z.zona}</div>
-          ${z.total?`<div class="zsp">${z.pct}%</div><div class="zst">${z.goles}/${z.total}</div>`:'<div class="zst">—</div>'}
-        </div>`).join('')}
-      </div><div class="zona-legend">Verde ≥60% · Naranja 35–59% · Rojo &lt;35%</div>`;
+      let html=`<div class="heatmap-grid">
+        ${renderHeatmapCard(penales,'ofensivo','Ofensiva','Gol / intento','verde = alta efectividad en tiro')}
+        ${renderHeatmapCard(penales,'defensivo','Defensiva','Atajada / intento','verde = alta respuesta de arquera')}
+      </div>
+      <div class="heatmap-legend">
+        <span class="heat-chip"><span class="heat-dot" style="background:#15803d"></span> Alta</span>
+        <span class="heat-chip"><span class="heat-dot" style="background:#d97706"></span> Media</span>
+        <span class="heat-chip"><span class="heat-dot" style="background:#b91c1c"></span> Baja</span>
+        <span class="heat-chip"><span class="heat-dot" style="background:#cbd5e1"></span> Sin datos</span>
+      </div>`;
       if(extTotal>0){html+=`<div style="margin-top:12px"><div class="zona-ext-section-label">Palos y fuera</div><div class="zona-ext-stats-grid">
         ${extData.filter(z=>z.total>0).map(z=>`<div class="zona-ext-stat-cell"><div class="zsn">${esc(z.label)}</div><div class="zsp" style="font-size:1.1rem">${z.total}</div></div>`).join('')}
       </div></div>`}
       document.getElementById('statsZonas').innerHTML=html;
+    }
+
+    function renderHeatmapCard(penales,modo,titulo,subtitulo,ayuda){
+      const stats=Array.from({length:9},(_,i)=>{
+        const sector=i+1;
+        const arr=penales.filter(p=>parseInt(p.zona,10)===sector);
+        const total=arr.length;
+        const exitos=modo==='defensivo'
+          ?arr.filter(p=>p.resultado==='atajado').length
+          :arr.filter(p=>p.resultado==='gol').length;
+        const pct=total?Math.round(exitos/total*100):0;
+        return {sector,total,exitos,pct,fill:sectorHeatColor(pct,total)};
+      });
+      const cellW=58, cellH=42, gap=6, x0=18, y0=20;
+      const pos={1:[0,0],2:[1,0],3:[2,0],4:[0,1],5:[1,1],6:[2,1],7:[0,2],8:[1,2],9:[2,2]};
+      const svgCells=stats.map(s=>{
+        const [cx,cy]=pos[s.sector];
+        const x=x0+cx*(cellW+gap);
+        const y=y0+cy*(cellH+gap);
+        const labelY=y+15;
+        const pctY=y+31;
+        const attemptText=s.total?`${s.exitos}/${s.total}`:'—';
+        return `<g>
+          <rect class="goal-sector" x="${x}" y="${y}" width="${cellW}" height="${cellH}" rx="10" fill="${s.fill}" opacity="${s.total?0.92:0.38}"></rect>
+          <text class="goal-label" x="${x+8}" y="${labelY}">${s.sector}</text>
+          <text class="goal-label" x="${x+cellW/2}" y="${pctY}" text-anchor="middle">${s.total?`${s.pct}%`:''}</text>
+          <text class="goal-detail" x="${x+cellW/2}" y="${pctY+12}" text-anchor="middle">${attemptText}</text>
+        </g>`;
+      }).join('');
+      return `<div class="heatmap-card">
+        <div class="heatmap-title">
+          <h3>${esc(titulo)}</h3>
+          <span class="heatmap-sub">${esc(subtitulo)}</span>
+        </div>
+        <svg class="goal-svg" viewBox="0 0 214 174" role="img" aria-label="${esc(titulo)}">
+          <defs>
+            <filter id="goalShadow-${esc(modo)}" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#0f172a" flood-opacity=".08"></feDropShadow>
+            </filter>
+          </defs>
+          <rect x="7" y="7" width="200" height="160" rx="18" fill="#eef5fb" stroke="#d8e4ee" filter="url(#goalShadow-${esc(modo)})"></rect>
+          <path d="M29 19h156v138H29z" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linejoin="round"></path>
+          ${svgCells}
+          <path d="M18 19h178" stroke="#cbd5e1" stroke-dasharray="4 4" stroke-width="1.2"></path>
+          <path d="M18 157h178" stroke="#cbd5e1" stroke-dasharray="4 4" stroke-width="1.2"></path>
+        </svg>
+        <div class="heatmap-legend" style="margin-top:8px">
+          ${ayuda}
+        </div>
+      </div>`;
+    }
+
+    function sectorHeatColor(pct,total){
+      if(!total)return'#cbd5e1';
+      if(pct>=60)return'#15803d';
+      if(pct>=35)return'#d97706';
+      return'#b91c1c';
     }
 
     function renderStatsCruces(penales){

@@ -72,6 +72,7 @@
               </div>
               <div class="form-row"><label for="tueIbsaFechaInput">Fecha de envío a IBSA</label><input id="tueIbsaFechaInput" type="date"></div>
               <div class="form-row"><label for="tueObservacionesInput">Observaciones</label><textarea id="tueObservacionesInput" placeholder="Seguimiento, doctor/a tratante, recordatorios, etc."></textarea></div>
+              <div class="form-row"><label for="tueMedicoTratanteInput">Médico tratante o profesional que avala</label><input id="tueMedicoTratanteInput" placeholder="Nombre y apellido del profesional"></div>
               <div class="actions">
                 <button id="guardarTUEBtn" class="btn" type="button">Guardar TUE</button>
                 <label class="btn secondary" for="tueFileInput">Subir TUE completo</label>
@@ -340,7 +341,7 @@
       const cont=document.getElementById('tueBoard');
       const casos=state.tues.casos||[];
       if(!casos.length){cont.innerHTML='<div class="empty">Sin casos TUE cargados.</div>';return}
-      cont.innerHTML=casos.map(t=>`<article class="tue-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(t.nombre||'Sin jugadora')}</div><div class="meta">${esc(t.medicamento||'Sin medicamento')} · ${esc(t.sustancia||'Sin sustancia')}</div></div>${estadoBadge(estadoNormalizado(t.estado||''))}</div><div class="meta">Emisión: ${esc(t.fecha_emision||'—')} · Vencimiento: ${esc(t.fecha_vencimiento||'—')}</div><div class="meta">IBSA enviado: ${esc(t.ibsa_enviado||'NO')}${t.ibsa_fecha_envio?` · ${esc(t.ibsa_fecha_envio)}`:''}</div>${t.observaciones?`<p>${esc(t.observaciones)}</p>`:''}<div class="actions" style="margin-top:10px"><button class="btn small secondary" data-action="edit-tue" data-persona-id="${esc(t.persona_id||t.Persona_ID||'')}" data-dni="${esc(t.dni||'')}">Editar</button>${t.archivo?`<a class="btn ghost small" href="${esc(t.archivo)}" target="_blank" rel="noopener noreferrer">Ver TUE</a>`:''}</div></article>`).join('');
+      cont.innerHTML=casos.map(t=>`<article class="tue-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(t.nombre||'Sin jugadora')}</div><div class="meta">${esc(t.medicamento||'Sin medicamento')} · ${esc(t.sustancia||'Sin sustancia')}</div></div>${estadoBadge(estadoNormalizado(t.estado||''))}</div><div class="meta">Emisión: ${esc(t.fecha_emision||'—')} · Vencimiento: ${esc(t.fecha_vencimiento||'—')}</div><div class="meta">Médico tratante: ${esc(t.medico_tratante||'Sin registrar')}</div><div class="meta">IBSA enviado: ${esc(t.ibsa_enviado||'NO')}${t.ibsa_fecha_envio?` · ${esc(t.ibsa_fecha_envio)}`:''}</div>${t.observaciones?`<p>${esc(t.observaciones)}</p>`:''}<div class="actions" style="margin-top:10px"><button class="btn small secondary" data-action="edit-tue" data-persona-id="${esc(t.persona_id||t.Persona_ID||'')}" data-dni="${esc(t.dni||'')}">Editar</button>${t.archivo?`<a class="btn ghost small" href="${esc(t.archivo)}" target="_blank" rel="noopener noreferrer">Ver TUE</a>`:''}</div></article>`).join('');
     }
 
     function handleResultadosClick(e){
@@ -406,6 +407,7 @@
       document.getElementById('tueVencimientoInput').value=toInputDate(data.fecha_vencimiento)||'';
       document.getElementById('tueIbsaFechaInput').value=toInputDate(data.ibsa_fecha_envio)||'';
       document.getElementById('tueObservacionesInput').value=data.observaciones||'';
+      document.getElementById('tueMedicoTratanteInput').value=data.medico_tratante||'';
       const link=document.getElementById('tueArchivoLink');
       if(data.archivo){link.href=data.archivo;link.classList.remove('hidden')}else{link.href='#';link.classList.add('hidden')}
     }
@@ -441,11 +443,13 @@
         fecha_vencimiento:document.getElementById('tueVencimientoInput').value||addOneYearIso_(document.getElementById('tueEmisionInput').value||hoyIso_()),
         ibsa_enviado:document.getElementById('tueIbsaSelect').value||'NO',
         ibsa_fecha_envio:document.getElementById('tueIbsaFechaInput').value||'',
-        observaciones:document.getElementById('tueObservacionesInput').value.trim()
+        observaciones:document.getElementById('tueObservacionesInput').value.trim(),
+        medico_tratante:document.getElementById('tueMedicoTratanteInput').value.trim()
       };
       status.textContent='Guardando TUE...';status.className='status-line';
       try{
         const ficha=await apiPost(payload);
+        if(Murci.cacheRemove)Murci.cacheRemove(`${API_URL}|antidoping_listarTUEs|{}`);
         state.tueDraft={personaId, dni};
         status.textContent='TUE guardada correctamente.';status.className='status-line ok';
         if(ficha&&ficha.TUE_Archivo){document.getElementById('tueArchivoLink').href=ficha.TUE_Archivo;document.getElementById('tueArchivoLink').classList.remove('hidden')}

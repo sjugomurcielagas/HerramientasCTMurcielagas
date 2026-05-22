@@ -232,6 +232,21 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   overflow-x:auto;flex-wrap:nowrap;
 }
 #anim-bar::-webkit-scrollbar{display:none}
+#anim-meta{
+  display:none;
+  min-width:180px;
+  max-width:340px;
+  flex-shrink:0;
+  padding:3px 8px;
+  border-radius:10px;
+  background:rgba(26,58,92,.06);
+  border:1px solid rgba(26,58,92,.12);
+  color:var(--text);
+  line-height:1.15;
+}
+#anim-meta.show{display:flex;flex-direction:column}
+.anim-meta-name{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--celeste2)}
+.anim-meta-desc{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Botones generales */
 .btn{padding:8px 14px;border-radius:18px;border:2px solid var(--border2);background:var(--blanco);color:var(--celeste2);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .15s;letter-spacing:.3px;display:flex;align-items:center;gap:4px;flex-shrink:0}
@@ -300,10 +315,19 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 #save-modal.show{display:flex}
 #save-card{background:var(--blanco);border-radius:14px;padding:18px;width:290px;box-shadow:0 8px 30px rgba(0,0,0,.2)}
 #save-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--celeste2);margin-bottom:10px}
+.save-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.save-row .einput{margin-bottom:0}
+.save-help{font-size:11px;color:var(--text-dim);line-height:1.35;margin-top:4px}
+.save-filter{width:100%;margin-bottom:8px}
 .saved-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);margin-bottom:4px;cursor:pointer;transition:all .15s}
 .saved-item:active{background:var(--celeste-light)}
-.saved-name{flex:1;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text)}
+.saved-item-wrap{display:flex;align-items:flex-start;gap:8px}
+.saved-main{flex:1;min-width:0}
+.saved-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text);line-height:1.05}
+.saved-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:3px}
 .saved-date{font-size:9px;color:var(--text-dim)}
+.saved-cat{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:800;background:var(--celeste-light);color:var(--celeste2)}
+.saved-desc{font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.25}
 
 /* RIVAL FORM */
 #rival-form{display:none;position:fixed;inset:0;z-index:250;background:rgba(26,58,92,.5);align-items:center;justify-content:center}
@@ -561,6 +585,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   <!-- Barra animación -->
   <div id="anim-bar" style="display:none">
     <span class="bar-label">Anim</span>
+    <div id="anim-meta" aria-live="polite"></div>
     <button class="btn btn-primary btn-sm" id="btn-play" onclick="playPauseAnim()">▶ Play</button>
     <button class="btn btn-sm" onclick="resetAnim()">↺ Reset</button>
     <div class="vsep"></div>
@@ -641,6 +666,38 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   <div id="save-card">
     <div id="save-title">💾 Ejercicios guardados</div>
     <input class="einput" id="save-name-input" placeholder="Nombre del ejercicio..." style="margin-bottom:8px">
+    <div class="save-row">
+      <select class="einput save-filter" id="save-category-select" onchange="toggleSaveOtherField()">
+        <option value="">— Categoría obligatoria —</option>
+        <option value="Ofensivo">Ofensivo</option>
+        <option value="Defensivo">Defensivo</option>
+        <option value="Transición">Transición</option>
+        <option value="Penal">Penal</option>
+        <option value="Córner">Córner</option>
+        <option value="Calentamiento">Calentamiento</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+    <div class="save-row" id="save-category-other-wrap" style="display:none">
+      <input class="einput" id="save-category-other" placeholder="Especificá la categoría">
+    </div>
+    <div class="save-row">
+      <textarea class="einput" id="save-description" maxlength="500" placeholder="Descripción breve e instrucciones verbales (máx. 500 caracteres)" style="min-height:72px;resize:vertical;margin-bottom:0"></textarea>
+    </div>
+    <div class="save-help">La descripción acompaña la jugada en la lista y durante la animación.</div>
+    <div class="save-row" style="margin-top:10px">
+      <select class="einput save-filter" id="saved-category-filter" onchange="renderSavedList()">
+        <option value="all">Todas las categorías</option>
+        <option value="Sin categoría">Sin categoría</option>
+        <option value="Ofensivo">Ofensivo</option>
+        <option value="Defensivo">Defensivo</option>
+        <option value="Transición">Transición</option>
+        <option value="Penal">Penal</option>
+        <option value="Córner">Córner</option>
+        <option value="Calentamiento">Calentamiento</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
     <div style="display:flex;gap:6px;margin-bottom:12px">
       <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center" onclick="saveExercise()">Guardar actual</button>
       <button class="btn btn-sm" onclick="exportJSON()">⬇ Exportar ejercicio</button>
@@ -836,6 +893,7 @@ let animPositions=[]; // posiciones actuales de jugadoras durante animación
 let recordedChunks=[];
 let mediaRecorder=null;
 let downloadBlob=null;
+let currentExerciseMeta=null;
 
 // =============================================
 // UI HELPERS
@@ -1315,6 +1373,7 @@ document.addEventListener('keydown',e=>{
 // GUARDADO DE EJERCICIOS
 // =============================================
 function showSaveModal(){
+  prefillSaveModalFields();
   renderSavedList();
   document.getElementById('save-modal').classList.add('show');
 }
@@ -1325,9 +1384,18 @@ function closeSaveModal(e){
 function saveExercise(){
   const name=document.getElementById('save-name-input').value.trim();
   if(!name){toast('Escribí un nombre para el ejercicio');return;}
+  const categoria=document.getElementById('save-category-select').value||'';
+  const categoriaOtro=document.getElementById('save-category-other').value.trim();
+  const descripcion=document.getElementById('save-description').value.trim();
+  if(!categoria){toast('Elegí una categoría');return;}
+  if(categoria==='Otro'&&!categoriaOtro){toast('Especificá la categoría');return;}
+  if(descripcion.length>500){toast('La descripción puede tener como máximo 500 caracteres');return;}
   const exercises=JSON.parse(localStorage.getItem('tb_exercises')||'[]');
-  exercises.unshift({
+  const savedExercise={
     name,date:new Date().toLocaleDateString('es-AR'),
+    categoria,
+    categoria_otro:categoria==='Otro'?categoriaOtro:'',
+    descripcion,
     players:JSON.parse(JSON.stringify(players)),
     arrows:JSON.parse(JSON.stringify(arrows)),
     breaks:[...manualPhaseBreaks],
@@ -1335,24 +1403,101 @@ function saveExercise(){
     phaseView,
     cA:counterA,cB:counterB,
     pm:[...placedMur]
-  });
+  };
+  exercises.unshift(savedExercise);
   if(exercises.length>30)exercises.pop();
   localStorage.setItem('tb_exercises',JSON.stringify(exercises));
   document.getElementById('save-name-input').value='';
+  document.getElementById('save-category-select').value='';
+  document.getElementById('save-category-other').value='';
+  document.getElementById('save-description').value='';
+  toggleSaveOtherField();
+  currentExerciseMeta=savedExercise;
   toast('✓ Ejercicio guardado: '+name);
   renderSavedList();
+  updateAnimMeta();
 }
 function renderSavedList(){
   const exercises=JSON.parse(localStorage.getItem('tb_exercises')||'[]');
+  const filter=document.getElementById('saved-category-filter')?.value||'all';
   const list=document.getElementById('saved-list');list.innerHTML='';
   if(!exercises.length){list.innerHTML='<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:10px">No hay ejercicios guardados</div>';return;}
   exercises.forEach((ex,i)=>{
+    const catLabel=getExerciseCategoryLabel(ex);
+    const rawCat=getExerciseCategoryValue(ex);
+    if(filter!=='all'){
+      if(filter==='Sin categoría'&&rawCat) return;
+      if(filter!=='Sin categoría'&&catLabel!==filter&&rawCat!==filter) return;
+    }
     const d=document.createElement('div');d.className='saved-item';
-    d.innerHTML=`<div class="saved-name">${ex.name}</div><div class="saved-date">${ex.date}</div>
-      <button onclick="deleteExercise(${i})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0 2px">✕</button>`;
-    d.querySelector('.saved-name').addEventListener('click',()=>loadExercise(i));
+    const desc=getExerciseDescription(ex);
+    d.innerHTML=`<div class="saved-item-wrap">
+      <div class="saved-main">
+        <div class="saved-name">${escapeHtml(ex.name)}</div>
+        <div class="saved-meta">
+          <span class="saved-cat">${escapeHtml(catLabel)}</span>
+          <span class="saved-date">${escapeHtml(ex.date||'')}</span>
+        </div>
+        ${desc?`<div class="saved-desc">${escapeHtml(desc)}</div>`:''}
+      </div>
+      <button onclick="deleteExercise(${i})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0">✕</button>
+    </div>`;
+    d.querySelector('.saved-main').addEventListener('click',()=>loadExercise(i));
+    d.querySelector('button').addEventListener('click',e=>e.stopPropagation());
     list.appendChild(d);
   });
+}
+function prefillSaveModalFields(){
+  const name=document.getElementById('save-name-input');
+  const category=document.getElementById('save-category-select');
+  const categoryOther=document.getElementById('save-category-other');
+  const description=document.getElementById('save-description');
+  if(!name||!category||!categoryOther||!description)return;
+  if(currentExerciseMeta){
+    name.value=currentExerciseMeta.name||'';
+    category.value=getExerciseCategoryValue(currentExerciseMeta);
+    categoryOther.value=currentExerciseMeta.categoria_otro||currentExerciseMeta.category_other||'';
+    description.value=getExerciseDescription(currentExerciseMeta)||'';
+  }
+  toggleSaveOtherField();
+}
+function toggleSaveOtherField(){
+  const wrap=document.getElementById('save-category-other-wrap');
+  const select=document.getElementById('save-category-select');
+  if(!wrap||!select)return;
+  wrap.style.display=select.value==='Otro'?'flex':'none';
+}
+function getExerciseCategoryValue(ex){
+  return String(ex?.categoria??ex?.category??'').trim();
+}
+function getExerciseCategoryLabel(ex){
+  const cat=getExerciseCategoryValue(ex);
+  if(!cat)return 'Sin categoría';
+  if(cat==='Otro'){
+    const other=String(ex?.categoria_otro??ex?.category_other??'').trim();
+    return other?`Otro · ${other}`:'Otro';
+  }
+  return cat;
+}
+function getExerciseDescription(ex){
+  return String(ex?.descripcion??ex?.description??'').trim();
+}
+function escapeHtml(v){
+  return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
+}
+function updateAnimMeta(){
+  const meta=document.getElementById('anim-meta');
+  if(!meta)return;
+  if(!currentExerciseMeta){
+    meta.classList.remove('show');
+    meta.innerHTML='';
+    return;
+  }
+  const cat=getExerciseCategoryLabel(currentExerciseMeta);
+  const desc=getExerciseDescription(currentExerciseMeta);
+  meta.innerHTML=`<div class="anim-meta-name">${escapeHtml(currentExerciseMeta.name||'Ejercicio')}</div>
+    <div class="anim-meta-desc">${escapeHtml(cat)}${desc?' · '+escapeHtml(desc):''}</div>`;
+  meta.classList.add('show');
 }
 function loadExercise(i){
   const exercises=JSON.parse(localStorage.getItem('tb_exercises')||'[]');
@@ -1365,8 +1510,10 @@ function loadExercise(i){
   phaseView=ex.phaseView||'all';
   counterA=ex.cA||1;counterB=ex.cB||1;
   placedMur=new Set(ex.pm||[]);
+  currentExerciseMeta=ex;
   updatePhaseBadge();draw();
   document.getElementById('save-modal').classList.remove('show');
+  updateAnimMeta();
   toast('✓ Ejercicio cargado: '+ex.name);
 }
 function deleteExercise(i){
@@ -1380,11 +1527,17 @@ function exportJSON(){
   const ahora=new Date();
   const fecha=ahora.toLocaleDateString('es-AR').replace(/\//g,'-');
   const hora=ahora.toTimeString().slice(0,5).replace(':','h');
+  const categoria=document.getElementById('save-category-select')?.value||getExerciseCategoryValue(currentExerciseMeta)||'';
+  const categoriaOtro=document.getElementById('save-category-other')?.value.trim()||currentExerciseMeta?.categoria_otro||currentExerciseMeta?.category_other||'';
+  const descripcion=document.getElementById('save-description')?.value.trim()||getExerciseDescription(currentExerciseMeta)||'';
   const data={
     meta:{
       app:'Tablero Táctico FADEC',
       version:'3',
       ejercicio:nombre,
+      categoria,
+      categoria_otro:categoria==='Otro'?categoriaOtro:'',
+      descripcion,
       fecha,
       hora,
       equipo:'Las Murciélagas'
@@ -1422,8 +1575,17 @@ function importJSON(event){
         // Prellenar el nombre en el input de guardado
         const inp=document.getElementById('save-name-input');
         if(inp&&meta.ejercicio) inp.value=meta.ejercicio;
+        currentExerciseMeta={
+          name:meta.ejercicio||'',
+          categoria:meta.categoria||'',
+          categoria_otro:meta.categoria_otro||'',
+          descripcion:meta.descripcion||''
+        };
+        updateAnimMeta();
       } else {
         toast('✓ Ejercicio importado');
+        currentExerciseMeta=null;
+        updateAnimMeta();
       }
     }catch(err){toast('Error al importar el archivo');}
   };
@@ -2247,6 +2409,7 @@ function startAnimation(){
   animRunning=true;animPaused=false;ballState=null;lastBallReceiver=null;ghostTrails=new Map();
   document.getElementById('anim-bar').style.display='flex';
   document.getElementById('btn-play').textContent='⏸ Pausa';
+  updateAnimMeta();
   animPositions=players.map(p=>({x:p.x,y:p.y}));
   resolvedGroups.length=0;
 
@@ -2611,6 +2774,8 @@ function resetAnim(){
 function stopAnimation(){
   resetAnim();
   document.getElementById('anim-bar').style.display='none';
+  const meta=document.getElementById('anim-meta');
+  if(meta)meta.classList.remove('show');
   document.getElementById('dl-btn').style.display='none';
 }
 function setSpeed(s){
