@@ -339,8 +339,8 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantel,partidos]=await Promise.all([apiGet('site_getPlantel'),apiGet('partidos_getPartidos')]);
-        state.plantel=Array.isArray(plantel?.plantel)?plantel.plantel:Array.isArray(plantel)?plantel:[];
+        const [plantel,partidos]=await Promise.all([obtenerPlantel(),apiGet('partidos_getPartidos')]);
+        state.plantel=Array.isArray(plantel)?plantel:[];
         state.partidos=Array.isArray(partidos)?partidos.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))):[];
         renderLista();
       }catch(e){alert('Error al cargar datos: '+e.message)}

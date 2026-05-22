@@ -108,11 +108,98 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     return promise;
   };
 
-  Murci.loadPlantel = async function loadPlantel(apiGetFn = Murci.apiGet, apiUrl = API_BASE_URL) {
-    const data = apiGetFn === Murci.apiGet
-      ? await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, apiUrl)
-      : await apiGetFn('site_getPlantel', {}, apiUrl);
-    return Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : [];
+  // Fuente unica del plantel: una sola lectura por pagina y normalizacion basica
+  // para no romper a los modulos que esperan aliases historicos.
+  let plantelCache = null;
+  let plantelPromise = null;
+
+  function normalizePlantelActivo_(persona) {
+    const normalizar = value => String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const activoRaw = normalizar(persona?.Activo ?? persona?.activo ?? '');
+    const estadoPlantel = normalizar(persona?.Estado_Plantel ?? persona?.estadoPlantel ?? '');
+    const estadoConvocatoria = normalizar(persona?.Estado_Convocatoria ?? persona?.estado ?? '');
+    const estadoCompuesto = `${activoRaw} ${estadoPlantel} ${estadoConvocatoria}`.trim();
+
+    if (!estadoCompuesto) return true;
+    if (/(^|[^a-z])(no|inactivo|inactiva|baja|bajas)([^a-z]|$)/.test(estadoCompuesto)) return false;
+    if (/(^|[^a-z])(si|activo|activa|vigente|alta)([^a-z]|$)/.test(estadoCompuesto)) return true;
+    return !estadoCompuesto.includes('baja') && !estadoCompuesto.includes('inactiv');
+  }
+
+  function normalizarPlantelItem_(persona) {
+    const apellido = String(persona?.Apellido || persona?.apellido || '').trim();
+    const nombre = String(persona?.Nombre || persona?.nombre || '').trim();
+    const nombreCompleto = String(persona?.nombre || '').trim() || [apellido, nombre].filter(Boolean).join(', ');
+    const tipoIntegrante = String(
+      persona?.Tipo_Integrante ||
+      persona?.tipoIntegrante ||
+      persona?.tipo_integrante ||
+      persona?.tipo ||
+      ''
+    ).trim();
+    const dni = String(persona?.DNI ?? persona?.dni ?? '').trim();
+    const personaId = String(persona?.Persona_ID ?? persona?.persona_id ?? persona?.personaId ?? '').trim();
+    const activo = normalizePlantelActivo_(persona);
+    const estadoPlantel = String(persona?.Estado_Plantel ?? persona?.estadoPlantel ?? '').trim();
+    const estadoConvocatoria = String(persona?.Estado_Convocatoria ?? persona?.estado ?? '').trim();
+
+    return {
+      ...persona,
+      Persona_ID: personaId || persona?.Persona_ID || '',
+      persona_id: personaId || persona?.persona_id || '',
+      personaId: personaId || persona?.personaId || '',
+      DNI: dni || persona?.DNI || '',
+      dni: dni || persona?.dni || '',
+      Apellido: apellido || persona?.Apellido || '',
+      Nombre: nombre || persona?.Nombre || '',
+      nombre: nombreCompleto || persona?.nombre || '',
+      tipo: tipoIntegrante || persona?.tipo || '',
+      Tipo_Integrante: tipoIntegrante || persona?.Tipo_Integrante || '',
+      tipoIntegrante: tipoIntegrante || persona?.tipoIntegrante || '',
+      tipo_integrante: tipoIntegrante || persona?.tipo_integrante || '',
+      estado: estadoConvocatoria || estadoPlantel || (activo ? 'Activo' : 'Inactivo'),
+      estadoNormalizado: activo ? 'Activo' : 'Inactivo',
+      activo,
+      inactivo: !activo
+    };
+  }
+
+  async function obtenerPlantel() {
+    if (Array.isArray(plantelCache)) return plantelCache;
+    if (plantelPromise) return plantelPromise;
+
+    plantelPromise = (async () => {
+      try {
+        const data = await Murci.apiGet('site_getPlantel', {}, API_BASE_URL);
+        const rawList = Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : [];
+        plantelCache = rawList.map(normalizarPlantelItem_);
+      } catch (error) {
+        console.error('[Murci] No se pudo obtener el plantel canónico desde site_getPlantel.', error);
+        plantelCache = [];
+      } finally {
+        plantelPromise = null;
+      }
+
+      return plantelCache;
+    })();
+
+    return plantelPromise;
+  }
+
+  obtenerPlantel.invalidate = function invalidatePlantelCache() {
+    plantelCache = null;
+    plantelPromise = null;
+  };
+
+  global.obtenerPlantel = obtenerPlantel;
+  Murci.obtenerPlantel = obtenerPlantel;
+  Murci.invalidatePlantelCache = obtenerPlantel.invalidate;
+  Murci.loadPlantel = async function loadPlantel() {
+    return obtenerPlantel();
   };
 
   Murci.normalizeText = function normalizeText(value) {

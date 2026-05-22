@@ -1793,6 +1793,10 @@ function doPost(e) {
     result = guardarCambios(payload.personaId || payload.persona_id || payload.dni || payload.id, payload.cambios, payload.usuario);
     break;
 
+  case 'base_agregarIntegrante':
+    result = base_agregarIntegrante(payload);
+    break;
+
   case 'base_actualizarProvinciasFaltantes':
     result = base_actualizarProvinciasFaltantes(payload);
     break;
@@ -1941,6 +1945,113 @@ function appendObjectRow_(sheet, valuesByHeader, requiredHeaders) {
     return valuesByHeader && valuesByHeader[h] !== undefined ? valuesByHeader[h] : '';
   });
   sheet.appendRow(row);
+}
+
+function _firstExistingHeader_(headers, candidates) {
+  var list = Array.isArray(headers) ? headers : [];
+  var names = Array.isArray(candidates) ? candidates : [candidates];
+  for (var i = 0; i < names.length; i++) {
+    if (list.indexOf(names[i]) !== -1) return names[i];
+  }
+  return '';
+}
+
+function _splitNombreCompletoAlta_(nombreCompleto) {
+  var texto = String(nombreCompleto || '').trim().replace(/\s+/g, ' ');
+  if (!texto) return { apellido: '', nombre: '' };
+  if (texto.indexOf(',') !== -1) {
+    var partes = texto.split(',');
+    return {
+      apellido: String(partes[0] || '').trim(),
+      nombre: String(partes.slice(1).join(',') || '').trim()
+    };
+  }
+
+  var tokens = texto.split(' ').filter(Boolean);
+  if (tokens.length === 1) {
+    return { apellido: '', nombre: tokens[0] };
+  }
+
+  return {
+    apellido: tokens[tokens.length - 1],
+    nombre: tokens.slice(0, -1).join(' ')
+  };
+}
+
+function base_agregarIntegrante(p) {
+  var payload = p || {};
+  var nombreCompleto = String(payload.nombreCompleto || payload.nombre || '').trim().replace(/\s+/g, ' ');
+  var tipo = String(payload.tipo || payload.Tipo_Integrante || payload.tipoIntegrante || payload.tipo_integrante || '').trim();
+  var dni = normalizarDNI_(payload.dni || payload.DNI || '');
+  var estadoInput = String(payload.estado || 'Activa').trim() || 'Activa';
+  var fechaNac = String(payload.fechaNacimiento || payload.fecha_nacimiento || payload.fechaNac || payload.fecha_nac || '').trim();
+  var telefono = String(payload.telefono || payload.telefonoCelular || payload.telefono_celular || '').trim();
+  var email = String(payload.email || '').trim();
+  var posicion = String(payload.posicion || payload.posicionCampo || payload.posicion_campo || '').trim();
+  var numeroCamiseta = String(payload.numeroCamiseta || payload.numero_camiseta || payload.nroCamiseta || payload.nro_camiseta || payload.camiseta || '').trim();
+  var clasifIBSA = String(payload.clasifVisualIBSA || payload.clasif_visual_ibsa || payload.clasifIBSA || '').trim();
+
+  if (!nombreCompleto) throw new Error('El nombre completo es obligatorio.');
+  if (!tipo) throw new Error('El tipo es obligatorio.');
+  if (!dni) throw new Error('El DNI es obligatorio.');
+
+  var ws = base_ensureProvinciaColumn_(base_ensureDocumentColumns_(base_ensureTUEColumns_(base_ensurePersonaIdColumn_(getSheet_()))));
+  var headers = ws.getDataRange().getValues()[0].map(String);
+  var personaId = newId();
+  var partesNombre = _splitNombreCompletoAlta_(nombreCompleto);
+  var esTecnico = _esCuerpoTecnico_(tipo);
+  var esJugador = /jugadora|arquera/i.test(normalizeText(tipo));
+  var activo = /inact/i.test(normalizeText(estadoInput)) ? 'NO' : 'SI';
+  var estadoTexto = activo === 'SI' ? 'Activa' : 'Inactiva';
+  var now = new Date();
+  var values = {
+    Persona_ID: personaId,
+    persona_id: personaId,
+    personaId: personaId,
+    DNI: dni,
+    dni: dni,
+    Apellido: partesNombre.apellido || '',
+    Nombre: partesNombre.nombre || nombreCompleto,
+    nombre: nombreCompleto,
+    'Tipo Integrante': tipo,
+    Tipo_Integrante: tipo,
+    tipoIntegrante: tipo,
+    tipo_integrante: tipo,
+    Rol: esTecnico ? tipo : '',
+    rol: esTecnico ? tipo : '',
+    Activo: activo,
+    estado: estadoTexto,
+    Estado_Convocatoria: estadoTexto,
+    Estado_Plantel: estadoTexto,
+    Fecha_Alta: now,
+    Fecha_Baja: '',
+    Motivo_Baja: '',
+    Fecha_Nac: fechaNac,
+    Telefono: telefono,
+    Email: email,
+    Posicion: posicion,
+    'Posición': posicion,
+    Clasif_Visual_IBSA: esJugador ? clasifIBSA : '',
+    Ultima_Actualizacion: Utilities.formatDate(now, 'GMT-3', 'dd/MM/yyyy HH:mm'),
+    Modificado_Por: 'Sistema — Alta'
+  };
+
+  var numeroHeader = _firstExistingHeader_(headers, ['Numero_Camiseta', 'Nro_Camiseta', 'Camiseta', 'Dorsal']);
+  if (numeroHeader) values[numeroHeader] = numeroCamiseta;
+
+  var clasifHeader = _firstExistingHeader_(headers, ['Clasif_Visual_IBSA']);
+  if (clasifHeader) values[clasifHeader] = esJugador ? clasifIBSA : '';
+
+  appendObjectRow_(ws, values, headers);
+
+  var row = getRowByPersona_(personaId, 'auto');
+  return ok(true, {
+    personaId: personaId,
+    persona_id: personaId,
+    dni: dni,
+    nombreCompleto: nombreCompleto,
+    row: row
+  });
 }
 
 // Obtiene o crea una subcarpeta por nombre dentro de una carpeta padre

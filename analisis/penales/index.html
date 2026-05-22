@@ -368,10 +368,10 @@
       app.classList.add('loading');
       try{
         const [plantel,sesiones]=await Promise.all([
-          apiGet('site_getPlantel'),
+          obtenerPlantel(),
           apiGet('penales_getSesiones')
         ]);
-        state.plantel=Array.isArray(plantel?.plantel)?plantel.plantel:Array.isArray(plantel)?plantel:[];
+        state.plantel=Array.isArray(plantel)?plantel:[];
         state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
         if(!state.sesionActualId&&state.sesiones.length){
           state.sesionActualId=state.sesiones[state.sesiones.length-1].id;

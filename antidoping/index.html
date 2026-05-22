@@ -300,13 +300,9 @@
     }
 
     async function loadPlantel(){
-      try{
-        const data=await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL);
-        state.plantel=(Array.isArray(data?.plantel)?data.plantel:Array.isArray(data)?data:[]).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
-        state.loaded.plantel=true;
-      }catch(err){
-        state.plantel=[];
-      }
+      const plantel=await obtenerPlantel();
+      state.plantel=Array.isArray(plantel)?plantel.sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))):[];
+      state.loaded.plantel=true;
       renderTUEPlayerOptions();
       syncTUEForm();
     }

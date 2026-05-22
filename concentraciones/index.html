@@ -180,17 +180,11 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantelResult,concentracionesResult]=await Promise.allSettled([
-          Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL),
+        const [plantel,concentraciones]=await Promise.all([
+          obtenerPlantel(),
           Murci.apiGetCached('concentraciones_getConcentraciones', {}, { ttlMs: 60 * 1000 }, API_URL)
         ]);
-        if(concentracionesResult.status!=='fulfilled')throw concentracionesResult.reason;
-        const concentraciones=concentracionesResult.value;
-        if(plantelResult.status==='fulfilled'){
-          state.plantel=Array.isArray(plantelResult.value?.plantel)?plantelResult.value.plantel:Array.isArray(plantelResult.value)?plantelResult.value:[];
-        }else{
-          state.plantel=[];
-        }
+        state.plantel=Array.isArray(plantel)?plantel:[];
         state.siteContext={plantel:state.plantel,reportes:{rows:[],linkedRows:[],linkStats:{}}};
         state.siteContextReady=false;
         loadSiteContextBackground();
