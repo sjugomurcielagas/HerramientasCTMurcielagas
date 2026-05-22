@@ -303,12 +303,7 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
         .filter(p => p.name && p.key);
     }
 
-    return (activePlayers || [])
-      .map(persona => {
-        const name = Murci.personName(persona);
-        return { name, key: normalizeAlertKey_(name) };
-      })
-      .filter(p => p.name && p.key);
+    return [];
   }
 
   function shortAlertLabel_(label) {

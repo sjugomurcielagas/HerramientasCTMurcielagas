@@ -569,6 +569,10 @@
     .login-status{margin-top:10px;font-size:.9rem;color:var(--muted);font-weight:600;min-height:20px}
     .login-status.error{color:#b91c1c}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    .install-fab{position:fixed;right:18px;bottom:18px;z-index:9998;display:none;align-items:center;gap:10px;padding:12px 16px;border:1px solid rgba(0,111,166,.2);border-radius:999px;background:rgba(255,255,255,.94);box-shadow:0 18px 36px rgba(16,32,51,.18);color:var(--text);font-family:var(--condensed);font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+    .install-fab.visible{display:inline-flex}
+    .install-fab svg{width:18px;height:18px;display:block;color:var(--accent-dark)}
+    @media (max-width:640px){.install-fab{right:12px;bottom:12px;padding:11px 14px}}
     @media (max-width:1024px){.page-version-tag{display:none}}
 
   </style>
@@ -695,8 +699,17 @@
     </div>
   </main>
 
+  <button id="installFab" class="install-fab" type="button" aria-label="Instalar la aplicación">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 2a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 1.4-1.42L11 11.59V3a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+    </svg>
+    Instalar app
+  </button>
+
   <script src="./assets/config.js"></script>
   <script>
+    let deferredInstallPrompt=null;
+    const installFab=document.getElementById('installFab');
     if('serviceWorker' in navigator&&window.isSecureContext){window.addEventListener('load',()=>{navigator.serviceWorker.register(new URL('service-worker.js',window.location.href),{scope:'./'}).catch(()=>{})})}
     const API_URL=API_BASE_URL;
     const AUTH_DAYS=30;
@@ -707,6 +720,7 @@
     function escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
     function setAppVisible(visible){document.getElementById('loginView').classList.toggle('hidden',!!visible);document.getElementById('appContent').classList.toggle('hidden',!visible);if(visible)loadHomeAlerts()}
     function setAlertsOpen(open){homeAlertState.open=!!open;renderAlertsPanel()}
+    function updateInstallFab(){if(!installFab)return;installFab.classList.toggle('visible',!!deferredInstallPrompt)}
     function renderAlertsBadge(){const badge=document.getElementById('alertsBadge');if(!badge)return;if(homeAlertState.total>0){badge.textContent=String(homeAlertState.total);badge.classList.remove('hidden')}else{badge.textContent='';badge.classList.add('hidden')}}
     function renderAlertsBody(){const body=document.getElementById('alertsPopoverBody'),sub=document.getElementById('alertsPopoverSub');if(!body||!sub)return;if(homeAlertState.loading&&!homeAlertState.ready){sub.textContent='Cargando estado...';body.innerHTML='<div class="alerts-empty">Cargando alertas...</div>';return}sub.textContent=homeAlertState.total>0?`${homeAlertState.total} alerta${homeAlertState.total===1?'':'s'} activas`:'Todo en orden';if(!homeAlertState.sections.length){body.innerHTML='<div class="alerts-empty">Todo en orden</div>';return}body.innerHTML=homeAlertState.sections.map(section=>`<section class="alerts-section"><div class="alerts-section-title">${escapeHtml(section.title)}</div><div class="alerts-list">${section.items.map(item=>`<a class="alerts-item" href="${escapeHtml(item.href||'#')}" target="_self" rel="noopener"><div><div class="alerts-item-name">${escapeHtml(item.name||'Sin nombre')}</div><div class="alerts-item-detail">${escapeHtml(item.kind?`${item.kind} · `:'')}${escapeHtml(item.detail||'')}</div></div><div class="alerts-item-meta">${escapeHtml(item.label||'Abrir')}</div></a>`).join('')}</div></section>`).join('')}
     function renderAlertsPanel(){const popover=document.getElementById('alertsPopover'),toggle=document.getElementById('alertsToggle');if(!popover||!toggle)return;popover.classList.toggle('open',homeAlertState.open);popover.classList.toggle('hidden',!homeAlertState.open);popover.setAttribute('aria-hidden',String(!homeAlertState.open));toggle.setAttribute('aria-expanded',String(homeAlertState.open));renderAlertsBadge();renderAlertsBody()}
@@ -715,6 +729,9 @@
     function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contraseña incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));setAppVisible(true)}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
     (function(){if(authValida()){setAppVisible(true)}else{limpiarAuth()}})();
 
+    window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;updateInstallFab()});
+    window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallFab()});
+
     document.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('loginBtn').addEventListener('click',login);
       document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
@@ -722,6 +739,8 @@
       document.getElementById('alertsPopover').addEventListener('click',e=>e.stopPropagation());
       document.addEventListener('click',()=>{if(homeAlertState.open)setAlertsOpen(false)});
       document.addEventListener('keydown',e=>{if(e.key==='Escape'&&homeAlertState.open)setAlertsOpen(false)});
+      if(installFab){installFab.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();try{await deferredInstallPrompt.userChoice}catch{}deferredInstallPrompt=null;updateInstallFab()})}
+      updateInstallFab();
     });
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
