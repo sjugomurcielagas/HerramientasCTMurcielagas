@@ -266,6 +266,51 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     return d;
   }
 
+  function getTrainingPeriodStart_(date) {
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    const day = d.getDay();
+    const daysSinceMonday = (day + 6) % 7;
+    d.setDate(d.getDate() - daysSinceMonday);
+    d.setDate(d.getDate() - 7);
+    return d;
+  }
+
+  function isoWeekKey_(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-S${String(weekNo).padStart(2, '0')}`;
+  }
+
+  function trainingPeriodKey_(date) {
+    return isoWeekKey_(getTrainingPeriodStart_(date));
+  }
+
+  function getHomeExpectedPlayers_(activePlayers) {
+    let stored = [];
+    try {
+      stored = JSON.parse(global.localStorage?.getItem('murcielagasIncludedPlayers') || '[]');
+    } catch (_) {
+      stored = [];
+    }
+
+    if (Array.isArray(stored) && stored.filter(Boolean).length) {
+      return stored
+        .map(name => ({ name: String(name || '').trim(), key: normalizeAlertKey_(name) }))
+        .filter(p => p.name && p.key);
+    }
+
+    return (activePlayers || [])
+      .map(persona => {
+        const name = Murci.personName(persona);
+        return { name, key: normalizeAlertKey_(name) };
+      })
+      .filter(p => p.name && p.key);
+  }
+
   function shortAlertLabel_(label) {
     const text = String(label || '');
     if (/pasaporte/i.test(text)) return 'Pasaporte';
@@ -366,16 +411,12 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     if (reportRows.length) {
       const today = new Date();
       today.setHours(23, 59, 59, 999);
-      // La carga se revisa por semana calendario y la alerta arranca el martes.
-      if (today.getDay() === 1) {
-        cargaAlerts = [];
-      } else {
-        const weekStart = startOfCurrentWeek_(today);
+      const currentTrainingPeriod = trainingPeriodKey_(today);
       const latestByPlayer = new Map();
 
       reportRows.forEach(row => {
         const rowDate = parseAlertDate_(row?.fecha);
-        if (!rowDate || rowDate < weekStart || rowDate > today) return;
+        if (!rowDate || rowDate > today || trainingPeriodKey_(rowDate) !== currentTrainingPeriod) return;
         const key = normalizeAlertKey_(row?.jugadora);
         if (!key) return;
         const prev = latestByPlayer.get(key);
@@ -384,20 +425,20 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
         }
       });
 
-      cargaAlerts = activePlayers
-        .map(persona => {
-          const name = Murci.personName(persona);
-          const key = normalizeAlertKey_(name);
-          return { name, key, dni: String(persona?.DNI || persona?.dni || '').trim(), personaId: String(persona?.Persona_ID || persona?.persona_id || '').trim() };
-        })
-        .filter(persona => persona.name && !latestByPlayer.has(persona.key))
+      const expectedPlayers = getHomeExpectedPlayers_(activePlayers);
+      const expectedCount = expectedPlayers.length;
+      const reportedCount = expectedPlayers.filter(persona => latestByPlayer.has(persona.key)).length;
+
+      cargaAlerts = expectedCount && reportedCount >= expectedCount
+        ? []
+        : expectedPlayers
+        .filter(persona => !latestByPlayer.has(persona.key))
         .map(persona => ({
           name: persona.name,
-          detail: 'Sin registro de sRPE en la semana actual',
+          detail: `Sin registro de sRPE del período vencido (${reportedCount}/${expectedCount || activePlayers.length})`,
           href: './reportes/',
           label: 'Abrir reportes'
         }));
-      }
     }
 
     if (documentAlerts.length) sections.push({ key: 'documentos', title: 'Documentos', items: documentAlerts });

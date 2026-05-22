@@ -159,6 +159,7 @@ function getAllRows_() {
   base_ensureTUEColumns_(ws);
   base_ensureDocumentColumns_(ws);
   base_ensureProvinciaColumn_(ws);
+  base_ensureSportsColumns_(ws);
   base_ensurePersonaIds_(ws);
   var data = ws.getDataRange().getValues();
   var headers = data[0];
@@ -256,6 +257,13 @@ function base_ensureDocumentColumns_(sheet) {
 function base_ensureProvinciaColumn_(sheet) {
   var ws = sheet || getSheet_();
   ensureColumn_(ws, 'Provincia');
+  return ws;
+}
+
+function base_ensureSportsColumns_(sheet) {
+  var ws = sheet || getSheet_();
+  ensureColumn_(ws, 'Posicion');
+  ensureColumn_(ws, 'Rol');
   return ws;
 }
 
@@ -1418,7 +1426,7 @@ function getFaltantes() {
  * guardarCambios — escribe los cambios en la hoja y registra cada uno en Log_Cambios.
  */
 function guardarCambios(dni, cambios, usuario) {
-  var ws      = base_ensureProvinciaColumn_(base_ensureTUEColumns_(getSheet_()));
+  var ws      = base_ensureSportsColumns_(base_ensureProvinciaColumn_(base_ensureTUEColumns_(getSheet_())));
   var headers = ws.getDataRange().getValues()[0];
   var row     = getRowByPersona_(dni, 'auto');
   if (!row) return ok(false, null, 'Persona no encontrada');
@@ -2046,7 +2054,7 @@ function base_agregarIntegrante(p) {
   if (!tipo) throw new Error('El tipo es obligatorio.');
   if (!dni) throw new Error('El DNI es obligatorio.');
 
-  var ws = base_ensureProvinciaColumn_(base_ensureDocumentColumns_(base_ensureTUEColumns_(base_ensurePersonaIdColumn_(getSheet_()))));
+  var ws = base_ensureSportsColumns_(base_ensureProvinciaColumn_(base_ensureDocumentColumns_(base_ensureTUEColumns_(base_ensurePersonaIdColumn_(getSheet_())))));
   var headers = ws.getDataRange().getValues()[0].map(String);
   var personaId = newId();
   var partesNombre = _splitNombreCompletoAlta_(nombreCompleto);
