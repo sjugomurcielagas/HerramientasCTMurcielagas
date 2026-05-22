@@ -6,6 +6,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#009fe3" />
   <title>Herramientas Cuerpo Técnico · Las Murciélagas</title>
 
   <style>
@@ -695,6 +697,7 @@
 
   <script src="./assets/config.js"></script>
   <script>
+    if('serviceWorker' in navigator&&window.isSecureContext){window.addEventListener('load',()=>{navigator.serviceWorker.register(new URL('service-worker.js',window.location.href),{scope:'./'}).catch(()=>{})})}
     const API_URL=API_BASE_URL;
     const AUTH_DAYS=30;
     const homeAlertState={sections:[],total:0,ready:false,loading:false,open:false};

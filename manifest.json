@@ -1,0 +1,24 @@
+{
+  "name": "Herramientas CT Murciélagas",
+  "short_name": "CT Murciélagas",
+  "description": "Herramientas internas del cuerpo técnico de Las Murciélagas.",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f8fc",
+  "theme_color": "#009fe3",
+  "icons": [
+    {
+      "src": "assets/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
