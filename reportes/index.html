@@ -1060,7 +1060,7 @@ footer {
         <label>Informe con IA</label>
 
         <div class="notice">
-          Esta sección permite generar un informe redactado a partir de la vista operativa.
+          Esta sección permite generar un informe redactado a partir de un bloque de semanas. No está pensada para una semana puntual.
         </div>
 
         <div class="field">
@@ -1072,19 +1072,22 @@ footer {
         </div>
 
         <div class="field">
-          <label for="focus">Enfoque del informe</label>
-          <select id="focus">
-            <option value="general">Resumen general</option>
-            <option value="semana_actual">Esta semana</option>
-            <option value="comparativo">Comparativo del plantel</option>
-            <option value="alertas">Alertas y disponibilidad</option>
-            <option value="tecnico">Trabajo técnico-táctico</option>
-            <option value="carga">Volumen y continuidad</option>
+          <label for="ai-objective">Objetivo del informe</label>
+          <select id="ai-objective">
+            <option value="comparativa_plantel" selected>Comparativa con el plantel</option>
+            <option value="balance_fisico_tecnico">Balance físico-técnico</option>
+            <option value="evolucion_personal">Evolución personal</option>
           </select>
         </div>
 
+        <div class="field">
+          <label for="ai-adjustment">Ajuste específico</label>
+          <textarea id="ai-adjustment" maxlength="220" placeholder="Ej.: priorizá continuidad, marcá qué semanas sostienen la tendencia y evitá conclusiones generales."></textarea>
+          <div class="hint">Opcional. Sirve para pedirle un ajuste puntual al texto sin cambiar el objetivo general.</div>
+        </div>
+
         <div class="btn-row">
-          <button class="primary" id="btn-ai">Generar informe IA</button>
+          <button class="primary" id="btn-ai">Generar informe del bloque</button>
           <button id="btn-close-ai">Cerrar</button>
         </div>
       </div>
@@ -2255,7 +2258,8 @@ function updateBlockLabel() {
       totalPlayers: playerStats.length,
       comments,
       alerts: detectAlerts(comments),
-      focus: $('focus').value,
+      aiObjective: $('ai-objective') ? $('ai-objective').value : 'comparativa_plantel',
+      aiAdjustment: $('ai-adjustment') ? $('ai-adjustment').value.trim() : '',
       audience: $('audience').value,
       notes: getManualContext(),
       mode: reportMode,
@@ -2405,7 +2409,8 @@ return {
   lowLoad: [...playerStats].sort((a, b) => a.prom - b.prom).slice(0, 5),
   alerts: allAlerts,
   playersWithAlerts: playerStats.filter(p => p.alertas.length),
-  focus: $('focus').value,
+  aiObjective: $('ai-objective') ? $('ai-objective').value : 'comparativa_plantel',
+  aiAdjustment: $('ai-adjustment') ? $('ai-adjustment').value.trim() : '',
   audience: $('audience').value,
   notes: getManualContext(),
   mode: reportMode,
@@ -2972,6 +2977,15 @@ function buildPrompt() {
 
   const audience = $('audience') ? $('audience').value : 'ct_completo';
   const destinatario = audience === 'jugadora' ? 'jugadora' : 'cuerpo técnico';
+  const objective = $('ai-objective') ? $('ai-objective').value : 'comparativa_plantel';
+  const adjustment = $('ai-adjustment') ? $('ai-adjustment').value.trim() : '';
+
+  const objectiveMap = {
+    comparativa_plantel: 'Comparativa con el plantel',
+    balance_fisico_tecnico: 'Balance físico-técnico',
+    evolucion_personal: 'Evolución personal'
+  };
+  const objectiveLabel = objectiveMap[objective] || objectiveMap.comparativa_plantel;
 
   const estilo = audience === 'jugadora'
     ? 'claro, respetuoso, humano y comprensible, en segunda persona singular, sin infantilizar ni usar tono de reto'
@@ -3018,14 +3032,15 @@ Criterios importantes:
 - El análisis debe centrarse en: si cargó o no cargó, qué valores reportó, qué promedios aparecen y qué observaciones requieren seguimiento.
 - No conviertas la salida en una lista mecánica de métricas. Primero interpretá qué muestran los datos y recién después redactá.
 - Si hay pendientes de carga, aclará cómo eso limita la lectura del informe.
-- Si el período es semanal, priorizá cobertura de carga, volumen reportado de la semana, alertas y comentarios concretos.
-- Si el período es periódico, priorizá continuidad, tendencia del bloque, semanas con más o menos reporte y alertas acumuladas.
+- El informe debe trabajar sobre un bloque de semanas, no sobre una semana aislada.
+- Priorizá continuidad, tendencia del bloque, semanas con más o menos reporte y alertas acumuladas.
 - Escribí como una persona del CT que leyó la información y la ordenó, no como una IA que comenta un JSON.
 - Si el destinatario es la jugadora, escribí todo el informe hablándole directamente a ella. Usá segunda persona singular de principio a fin.
 - Si el destinatario es la jugadora, evitá frases como "la jugadora presentó", "se ubicó", "ella mostró". Reemplazalas por formulaciones como "lograste", "mostraste", "tu volumen reportado fue", "debés mejorar", "se observa".
 - Si el destinatario es la jugadora, cerrá cada sección con una orientación concreta y breve sobre qué sostener, revisar o mejorar.
 
-Enfoque elegido: ${$('focus') ? $('focus').value : 'general'}.
+Objetivo elegido: ${objectiveLabel}.
+Ajuste específico pedido por el usuario: ${adjustment || 'sin ajuste adicional'}.
 
 Resumen humano de la vista operativa:
 ${humanSummary}
@@ -3051,6 +3066,12 @@ async function generateWithAI() {
     return;
   }
 
+  if (temporalMode !== 'periodic') {
+    $('output').innerHTML =
+      '<div class="notice warn">La IA ahora está pensada para bloques de semanas. Cambiá a <strong>Análisis periódicos</strong> antes de generar el informe.</div>';
+    return;
+  }
+
   const btnAi = $('btn-ai');
   if (btnAi) btnAi.disabled = true;
   const requestId = ++aiRequestCounter;
@@ -3072,7 +3093,8 @@ async function generateWithAI() {
     prompt: buildPrompt(),
     summary,
     audience: $('audience') ? $('audience').value : 'ct_completo',
-    focus: $('focus') ? $('focus').value : 'general'
+    objective: $('ai-objective') ? $('ai-objective').value : 'comparativa_plantel',
+    adjustment: $('ai-adjustment') ? $('ai-adjustment').value.trim() : ''
   };
 
   try {

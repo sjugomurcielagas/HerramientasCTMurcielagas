@@ -222,16 +222,29 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     const text = String(value).trim();
     if (!text) return null;
 
+    const parseParts = (year, month, day, hour = 0, minute = 0, second = 0) => {
+      const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
     const ddmmyyyy = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (ddmmyyyy) {
-      const d = new Date(Number(ddmmyyyy[3]), Number(ddmmyyyy[2]) - 1, Number(ddmmyyyy[1]));
-      return Number.isNaN(d.getTime()) ? null : d;
+      return parseParts(ddmmyyyy[3], ddmmyyyy[2], ddmmyyyy[1]);
+    }
+
+    const ddmmyyyyTime = text.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+|T)(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (ddmmyyyyTime) {
+      return parseParts(ddmmyyyyTime[3], ddmmyyyyTime[2], ddmmyyyyTime[1], ddmmyyyyTime[4], ddmmyyyyTime[5], ddmmyyyyTime[6] || 0);
     }
 
     const ymd = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (ymd) {
-      const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
-      return Number.isNaN(d.getTime()) ? null : d;
+      return parseParts(ymd[1], ymd[2], ymd[3]);
+    }
+
+    const ymdTime = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s])(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (ymdTime) {
+      return parseParts(ymdTime[1], ymdTime[2], ymdTime[3], ymdTime[4], ymdTime[5], ymdTime[6] || 0);
     }
 
     const parsed = new Date(text);
@@ -244,6 +257,15 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     return `en ${days} días`;
   }
 
+  function startOfCurrentWeek_(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay(); // 0 = domingo, 1 = lunes, ...
+    const diff = day === 0 ? -6 : 1 - day; // arrancar en lunes
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
   function shortAlertLabel_(label) {
     const text = String(label || '');
     if (/pasaporte/i.test(text)) return 'Pasaporte';
@@ -251,6 +273,63 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     if (/apto/i.test(text)) return 'Apto médico';
     if (/tue/i.test(text)) return 'TUE';
     return text.replace(/^Vencimiento\s+/i, '');
+  }
+
+  function isCuerpoTecnico_(persona) {
+    const fields = [
+      persona?.Tipo_Integrante,
+      persona?.tipoIntegrante,
+      persona?.tipo_integrante,
+      persona?.tipo,
+      persona?.Rol,
+      persona?.rol,
+      persona?.Puesto,
+      persona?.puesto,
+      persona?.Función,
+      persona?.Funcion,
+      persona?.funcion
+    ];
+    const text = normalizeAlertKey_(fields.filter(Boolean).join(' '));
+    if (!text) return false;
+    return [
+      'cuerpo tecnico',
+      'cuerpo tecnico auxiliar',
+      'tecnico',
+      'tecnica',
+      'entrenador',
+      'entrenadora',
+      'profe',
+      'profesora',
+      'pf',
+      'preparador fisico',
+      'preparadora fisica',
+      'medico',
+      'medica',
+      'kinesio',
+      'kinesiologa',
+      'nutricionista',
+      'psicologa',
+      'psicologo',
+      'ayudante tecnico',
+      'analista'
+    ].some(term => text.includes(term));
+  }
+
+  function isHomeReportablePlayer_(persona) {
+    if (!persona) return false;
+    if (persona.activo === false || persona.inactivo === true) return false;
+    if (isCuerpoTecnico_(persona)) return false;
+
+    const tipo = normalizeAlertKey_(persona?.Tipo_Integrante || persona?.tipoIntegrante || persona?.tipo_integrante || persona?.tipo || '');
+    if (tipo) {
+      if (/arquera|jugadora|deportista|atleta|jugador/.test(tipo)) return true;
+      return false;
+    }
+
+    const nombre = normalizeAlertKey_(Murci.personName(persona));
+    if (!nombre) return false;
+    if (isCuerpoTecnico_(persona)) return false;
+    return true;
   }
 
   function buildHomeAlertsSummary_(plantel, alertas, reportes) {
@@ -279,19 +358,24 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
     }));
 
     const activePlayers = Array.isArray(plantel)
-      ? plantel.filter(persona => persona && persona.activo !== false && persona.inactivo !== true)
+      ? plantel.filter(isHomeReportablePlayer_)
       : [];
 
     const reportRows = reportes && Array.isArray(reportes.rows) ? reportes.rows : Array.isArray(reportes) ? reportes : [];
     let cargaAlerts = [];
     if (reportRows.length) {
       const today = new Date();
-      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      today.setHours(23, 59, 59, 999);
+      // La carga se revisa por semana calendario y la alerta arranca el martes.
+      if (today.getDay() === 1) {
+        cargaAlerts = [];
+      } else {
+        const weekStart = startOfCurrentWeek_(today);
       const latestByPlayer = new Map();
 
       reportRows.forEach(row => {
         const rowDate = parseAlertDate_(row?.fecha);
-        if (!rowDate || rowDate < sevenDaysAgo) return;
+        if (!rowDate || rowDate < weekStart || rowDate > today) return;
         const key = normalizeAlertKey_(row?.jugadora);
         if (!key) return;
         const prev = latestByPlayer.get(key);
@@ -309,10 +393,11 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
         .filter(persona => persona.name && !latestByPlayer.has(persona.key))
         .map(persona => ({
           name: persona.name,
-          detail: 'Sin registro de sRPE en los últimos 7 días',
+          detail: 'Sin registro de sRPE en la semana actual',
           href: './reportes/',
           label: 'Abrir reportes'
         }));
+      }
     }
 
     if (documentAlerts.length) sections.push({ key: 'documentos', title: 'Documentos', items: documentAlerts });

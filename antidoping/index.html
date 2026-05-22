@@ -192,13 +192,18 @@
       const contexto=(r.en_competencia||r.fuera_competencia)?`<div class="meta">En competencia: ${esc(r.en_competencia||'N/D')} · Fuera de competencia: ${esc(r.fuera_competencia||'N/D')}</div>`:'';
       const decision=decisionBlock(r,estado,index);
       const criterio=r.criterio_wada?`<p><strong>Criterio:</strong> ${esc(r.criterio_wada)}</p>`:'';
-      const observaciones=r.observaciones?`<p>${esc(r.observaciones)}</p>`:'';
+      const criterioPlano=(r.criterio_wada||'').trim().toLowerCase();
+      const observacionesPlano=(r.observaciones||'').trim().toLowerCase();
+      const observaciones=r.observaciones&&observacionesPlano!==criterioPlano?`<p>${esc(r.observaciones)}</p>`:'';
       return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${presentacion}${laboratorio}${contexto}</div>${estadoBadge(estado)}</div>${decision}${criterio}${observaciones}${fuentes}</article>`;
     }
     function decisionBlock(r,estado,index){
       const s=estadoNormalizado(estado||'');
       const detail=r.advertencia_detalle||'';
       const tueBtn=shouldOfferTUE(r,estado)?`<div class="actions" style="margin-top:10px"><button class="btn small" data-action="open-tue" data-index="${index}">Requiere TUE</button></div>`:'';
+      if(s.includes('NO RECONOCE')||s.includes('NO HABILITAR')||s.includes('REQUIERE REVISIÓN')||s.includes('NO ENCONTRADO')){
+        return `<div class="decision-btn block">🔴 No habilitar uso</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:'<p><strong>Motivo:</strong> no se pudo identificar un principio activo confiable para validar en WADA.</p>'}${tueBtn}`;
+      }
       if(s.includes('PROHIBIDO')){
         return `<div class="decision-btn block">🔴 No habilitar uso</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:''}${tueBtn}`;
       }
@@ -499,7 +504,7 @@
     function guessMimeType(ext){ext=String(ext||'').toLowerCase();if(ext==='jpg'||ext==='jpeg')return'image/jpeg';if(ext==='png')return'image/png';if(ext==='pdf')return'application/pdf';return'application/octet-stream'}
     function normalizeAliasKey(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
     function estadoNormalizado(v){return String(v||'').trim().toUpperCase()}
-    function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')?'danger':estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')||estado.includes('PERMITIDO')||estado.includes('VIGENTE')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado||'SIN ESTADO')}</span>`}
+    function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')||estado.includes('NO RECONOCE')||estado.includes('NO HABILITAR')||estado.includes('NO ENCONTRADO')?'danger':estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')||estado.includes('PERMITIDO')||estado.includes('VIGENTE')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado||'SIN ESTADO')}</span>`}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build e1f2a3b</div>

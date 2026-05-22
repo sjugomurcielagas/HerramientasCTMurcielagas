@@ -49,6 +49,7 @@ var PERSONA_ID_ALIASES_ = ['persona_id', 'personaId', 'id'];
 
 var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
+var ANTIDOPING_CACHE_VERSION = 'v2';
 var ANTIDOPING_BACKEND_VERSION = '2026-05-17.3';
 var TUE_DEFAULT_DURATION_DAYS = 365;
 var TUE_FIELDS_ = [
@@ -377,8 +378,9 @@ function antidoping_getCacheSheet_() {
 function antidoping_readCache_(queryNorm) {
   var sh = antidoping_getCacheSheet_();
   var rows = sheetToObjects(sh);
+  var cacheKey = ANTIDOPING_CACHE_VERSION + '|' + queryNorm;
   for (var i = 0; i < rows.length; i++) {
-    if (normalizeText(rows[i].query_norm) === queryNorm) {
+    if (normalizeText(rows[i].query_norm) === cacheKey) {
       var result = parseJson(rows[i].result_json);
       if (!result || antidoping_hasExpired_(rows[i].fetched_at)) return null;
       var rowNum = i + 2;
@@ -423,8 +425,9 @@ function antidoping_writeCache_(queryNorm, queryRaw, source, resultObj) {
   var sh = antidoping_getCacheSheet_();
   var rows = sheetToObjects(sh);
   var idx = -1;
+  var cacheKey = ANTIDOPING_CACHE_VERSION + '|' + queryNorm;
   for (var i = 0; i < rows.length; i++) {
-    if (normalizeText(rows[i].query_norm) === queryNorm) {
+    if (normalizeText(rows[i].query_norm) === cacheKey) {
       idx = i + 2;
       break;
     }
@@ -432,7 +435,7 @@ function antidoping_writeCache_(queryNorm, queryRaw, source, resultObj) {
   var fetched = antidoping_nowIso_();
   var expires = Utilities.formatDate(new Date(new Date().getTime() + (ANTIDOPING_CACHE_TTL_DAYS * 24 * 60 * 60 * 1000)), 'GMT-3', 'yyyy-MM-dd HH:mm:ss');
   var data = [
-    queryNorm,
+    cacheKey,
     queryRaw,
     source,
     JSON.stringify(resultObj || []),
@@ -837,6 +840,31 @@ function antidoping_buscarMedicamento(payload) {
         principio = mappedActive;
       }
     }
+    var resolvedActive = !!normalizeText(principio) && (
+      !!directActiveQuery ||
+      !!knownActiveFromQuery ||
+      source === 'catalogo_local' ||
+      normalizeText(principio) !== normalizeText(item.medicamento || consulta)
+    );
+    if (!resolvedActive) {
+      return {
+        medicamento: item.medicamento || consulta,
+        principio_activo: '',
+        presentacion: item.presentacion || '',
+        laboratorio: item.laboratorio || '',
+        estado: 'NO RECONOCE PRINCIPIO ACTIVO',
+        observaciones: 'No se pudo identificar un principio activo confiable para evaluar en WADA.',
+        advertencia_detalle: 'No se pudo identificar un principio activo confiable para evaluar en WADA.',
+        criterio_wada: 'No se reconoce un principio activo válido para hacer una búsqueda automática en la base WADA.',
+        fuente_argentina: item.fuente_argentina || 'PR Vademecum',
+        fuente_wada: 'Sin evaluación WADA',
+        fuente_secundaria: item.fuente_secundaria || '',
+        en_competencia: 'N/D',
+        fuera_competencia: 'N/D',
+        fuente_url: item.fuente_url || '',
+        fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+      };
+    }
     var evalWada = antidoping_evalWada_(principio);
     return {
       medicamento: item.medicamento || consulta,
@@ -862,12 +890,12 @@ function antidoping_buscarMedicamento(payload) {
       medicamento: consulta,
       principio_activo: '',
       presentacion: '',
-      estado: 'NO ENCONTRADO / REQUIERE VERIFICACIÓN',
-      observaciones: 'Sin coincidencia en fuentes configuradas. Requiere validación manual.',
-      advertencia_detalle: '',
-      criterio_wada: '',
+      estado: 'NO RECONOCE PRINCIPIO ACTIVO',
+      observaciones: 'No se encontró coincidencia confiable para identificar un principio activo.',
+      advertencia_detalle: 'No se encontró coincidencia confiable para identificar un principio activo.',
+      criterio_wada: 'No se puede habilitar el uso hasta identificar un principio activo confiable.',
       fuente_argentina: 'PR Vademecum / Catálogo local',
-      fuente_wada: 'WADA_Sustancias',
+      fuente_wada: 'Sin evaluación WADA',
       fuente_secundaria: '',
       fuente_url: '',
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
