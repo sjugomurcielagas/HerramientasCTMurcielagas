@@ -1,9 +1,11 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
+const UI_VERSION = '2026.05.22 · c759857';
 
 (function initMurciSharedApi(global) {
   const Murci = global.Murci || (global.Murci = {});
   const pendingGets = {};
   const CACHE_PREFIX = 'murci_api_cache:';
+  Murci.uiVersion = UI_VERSION;
 
   Murci.apiBaseUrl = API_BASE_URL;
 
@@ -481,4 +483,19 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
       .join(', ')
       .trim();
   };
+
+  function syncUiVersionTags() {
+    const tags = global.document ? global.document.querySelectorAll('.page-version-tag') : [];
+    tags.forEach(tag => {
+      tag.textContent = `Versión UI ${UI_VERSION}`;
+    });
+  }
+
+  if (global.document) {
+    if (global.document.readyState === 'loading') {
+      global.document.addEventListener('DOMContentLoaded', syncUiVersionTags, { once: true });
+    } else {
+      syncUiVersionTags();
+    }
+  }
 })(globalThis);

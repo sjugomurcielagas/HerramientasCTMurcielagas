@@ -507,6 +507,6 @@
     function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')||estado.includes('NO RECONOCE')||estado.includes('NO HABILITAR')||estado.includes('NO ENCONTRADO')?'danger':estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')||estado.includes('PERMITIDO')||estado.includes('VIGENTE')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado||'SIN ESTADO')}</span>`}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
-  <div class="page-version-tag">Versión UI 2026.05.17 · build e1f2a3b</div>
+  <div class="page-version-tag">Versión UI</div>
 </body>
 </html>
