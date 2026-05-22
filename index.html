@@ -105,7 +105,7 @@
       margin: 0 auto;
     }
 
-    /* Campana de alertas sobre la portada. */
+    /* Campana de alertas + botón instalación sobre la portada. */
     .hero-alerts {
       position: absolute;
       top: 18px;
@@ -115,6 +115,21 @@
       flex-direction: column;
       align-items: flex-end;
       gap: 10px;
+    }
+
+    .hero-alerts-buttons {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .install-topbar-btn {
+      display: none;
+    }
+
+    .install-topbar-btn.visible {
+      display: inline-flex;
     }
 
     .alerts-toggle {
@@ -611,13 +626,21 @@
       >
 
       <div class="hero-alerts">
-        <!-- Campana de alertas activas de portada. -->
-        <button id="alertsToggle" class="alerts-toggle" type="button" aria-label="Ver alertas activas" aria-expanded="false" aria-controls="alertsPopover">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm8-5.5-1.4-1.4V11a6.6 6.6 0 0 0-5.3-6.47V3.5a1.3 1.3 0 0 0-2.6 0v1.03A6.6 6.6 0 0 0 5.4 11v4.1L4 16.5v1h16v-1ZM6.7 15.6V11a5.3 5.3 0 1 1 10.6 0v4.6l1 1H5.7l1-1Z"/>
-          </svg>
-          <span id="alertsBadge" class="alerts-badge hidden" aria-hidden="true"></span>
-        </button>
+        <div class="hero-alerts-buttons">
+          <!-- Botón de instalación PWA. -->
+          <button id="installTopbarBtn" class="alerts-toggle install-topbar-btn" type="button" aria-label="Instalar aplicación">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 2a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 1.4-1.42L11 11.59V3a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+            </svg>
+          </button>
+          <!-- Campana de alertas activas de portada. -->
+          <button id="alertsToggle" class="alerts-toggle" type="button" aria-label="Ver alertas activas" aria-expanded="false" aria-controls="alertsPopover">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm8-5.5-1.4-1.4V11a6.6 6.6 0 0 0-5.3-6.47V3.5a1.3 1.3 0 0 0-2.6 0v1.03A6.6 6.6 0 0 0 5.4 11v4.1L4 16.5v1h16v-1ZM6.7 15.6V11a5.3 5.3 0 1 1 10.6 0v4.6l1 1H5.7l1-1Z"/>
+            </svg>
+            <span id="alertsBadge" class="alerts-badge hidden" aria-hidden="true"></span>
+          </button>
+        </div>
         <div id="alertsPopover" class="alerts-popover hidden" aria-hidden="true">
           <div class="alerts-popover-head">
             <div>
@@ -720,7 +743,7 @@
     function escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
     function setAppVisible(visible){document.getElementById('loginView').classList.toggle('hidden',!!visible);document.getElementById('appContent').classList.toggle('hidden',!visible);if(visible)loadHomeAlerts()}
     function setAlertsOpen(open){homeAlertState.open=!!open;renderAlertsPanel()}
-    function updateInstallFab(){if(!installFab)return;installFab.classList.toggle('visible',!!deferredInstallPrompt)}
+    function updateInstallFab(){if(installFab)installFab.classList.toggle('visible',!!deferredInstallPrompt);const topBtn=document.getElementById('installTopbarBtn');if(topBtn)topBtn.classList.toggle('visible',!!deferredInstallPrompt)}
     function renderAlertsBadge(){const badge=document.getElementById('alertsBadge');if(!badge)return;if(homeAlertState.total>0){badge.textContent=String(homeAlertState.total);badge.classList.remove('hidden')}else{badge.textContent='';badge.classList.add('hidden')}}
     function renderAlertsBody(){const body=document.getElementById('alertsPopoverBody'),sub=document.getElementById('alertsPopoverSub');if(!body||!sub)return;if(homeAlertState.loading&&!homeAlertState.ready){sub.textContent='Cargando estado...';body.innerHTML='<div class="alerts-empty">Cargando alertas...</div>';return}sub.textContent=homeAlertState.total>0?`${homeAlertState.total} alerta${homeAlertState.total===1?'':'s'} activas`:'Todo en orden';if(!homeAlertState.sections.length){body.innerHTML='<div class="alerts-empty">Todo en orden</div>';return}body.innerHTML=homeAlertState.sections.map(section=>`<section class="alerts-section"><div class="alerts-section-title">${escapeHtml(section.title)}</div><div class="alerts-list">${section.items.map(item=>`<a class="alerts-item" href="${escapeHtml(item.href||'#')}" target="_self" rel="noopener"><div><div class="alerts-item-name">${escapeHtml(item.name||'Sin nombre')}</div><div class="alerts-item-detail">${escapeHtml(item.kind?`${item.kind} · `:'')}${escapeHtml(item.detail||'')}</div></div><div class="alerts-item-meta">${escapeHtml(item.label||'Abrir')}</div></a>`).join('')}</div></section>`).join('')}
     function renderAlertsPanel(){const popover=document.getElementById('alertsPopover'),toggle=document.getElementById('alertsToggle');if(!popover||!toggle)return;popover.classList.toggle('open',homeAlertState.open);popover.classList.toggle('hidden',!homeAlertState.open);popover.setAttribute('aria-hidden',String(!homeAlertState.open));toggle.setAttribute('aria-expanded',String(homeAlertState.open));renderAlertsBadge();renderAlertsBody()}
@@ -739,7 +762,9 @@
       document.getElementById('alertsPopover').addEventListener('click',e=>e.stopPropagation());
       document.addEventListener('click',()=>{if(homeAlertState.open)setAlertsOpen(false)});
       document.addEventListener('keydown',e=>{if(e.key==='Escape'&&homeAlertState.open)setAlertsOpen(false)});
-      if(installFab){installFab.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();try{await deferredInstallPrompt.userChoice}catch{}deferredInstallPrompt=null;updateInstallFab()})}
+      async function triggerInstall(){if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();try{await deferredInstallPrompt.userChoice}catch{}deferredInstallPrompt=null;updateInstallFab()}
+      if(installFab){installFab.addEventListener('click',triggerInstall)}
+      const installTopbarBtn=document.getElementById('installTopbarBtn');if(installTopbarBtn){installTopbarBtn.addEventListener('click',triggerInstall)}
       updateInstallFab();
     });
   </script>
