@@ -699,7 +699,7 @@ footer {
 
 @media print {
   body { background: #fff; color: #111; padding: 0; }
-  .controls-panel, header, footer, .panel-head .actions, .notice, button { display: none !important; }
+  .controls-panel, header, footer, .panel-head .actions, #ai-config-panel, .notice, button { display: none !important; }
   .layout { display: block; }
   .panel { border: none; box-shadow: none; }
   .report-output { background: #fff; color: #111; padding: 20px; }
@@ -842,43 +842,6 @@ footer {
   </div>
 </div>
 
-      <div class="btn-row">
-        <button id="btn-open-ai">Redactar informe con IA</button>
-      </div>
-
-      <div class="field hidden" id="ai-config-panel">
-        <label>Informe con IA</label>
-
-        <div class="notice">
-          Esta sección permite generar un informe redactado a partir de la vista operativa.
-        </div>
-
-        <div class="field">
-          <label for="audience">Destinatario</label>
-          <select id="audience">
-            <option value="ct_completo">Cuerpo técnico</option>
-            <option value="jugadora">Jugadora</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="focus">Enfoque del informe</label>
-          <select id="focus">
-            <option value="general">Resumen general</option>
-            <option value="semana_actual">Esta semana</option>
-            <option value="comparativo">Comparativo del plantel</option>
-            <option value="alertas">Alertas y disponibilidad</option>
-            <option value="tecnico">Trabajo técnico-táctico</option>
-            <option value="carga">Volumen y continuidad</option>
-          </select>
-        </div>
-
-        <div class="btn-row">
-          <button class="primary" id="btn-ai">Generar informe IA</button>
-          <button id="btn-close-ai">Cerrar</button>
-        </div>
-      </div>
-
       <div class="field hidden" id="audit-panel">
         <label>Auditoría interna</label>
 
@@ -900,8 +863,42 @@ footer {
     <div class="panel-head">
       <div class="panel-title">Vista operativa</div>
       <div class="actions btn-row" style="margin:0;">
+        <button id="btn-open-ai">Redactar informe con IA</button>
         <button id="btn-copy">Copiar</button>
         <button id="btn-print">Imprimir</button>
+      </div>
+    </div>
+
+    <div class="panel-body hidden" id="ai-config-panel">
+      <label>Informe con IA</label>
+
+      <div class="notice">
+        Esta sección permite generar un informe redactado a partir de la vista operativa.
+      </div>
+
+      <div class="field">
+        <label for="audience">Destinatario</label>
+        <select id="audience">
+          <option value="ct_completo">Cuerpo técnico</option>
+          <option value="jugadora">Jugadora</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="focus">Enfoque del informe</label>
+        <select id="focus">
+          <option value="general">Resumen general</option>
+          <option value="semana_actual">Esta semana</option>
+          <option value="comparativo">Comparativo del plantel</option>
+          <option value="alertas">Alertas y disponibilidad</option>
+          <option value="tecnico">Trabajo técnico-táctico</option>
+          <option value="carga">Volumen y continuidad</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="primary" id="btn-ai">Generar informe IA</button>
+        <button id="btn-close-ai">Cerrar</button>
       </div>
     </div>
 

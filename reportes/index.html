@@ -962,7 +962,7 @@ footer {
 
 @media print {
   body { background: #fff; color: #111; padding: 0; }
-  .controls-panel, header, footer, .top-nav, .panel-head .actions, .notice, button { display: none !important; }
+  .controls-panel, header, footer, .top-nav, .panel-head .actions, #ai-config-panel, .notice, button { display: none !important; }
   .layout { display: block; }
   .panel { border: none; box-shadow: none; }
   .report-output { background: #fff; color: #111; padding: 20px; }
@@ -1134,58 +1134,6 @@ footer {
         <div class="hint">Se aplica por comentarios y también por semanas inferidas cuando el volumen colectivo del plantel sube de forma atípica respecto de lo habitual.</div>
       </div>
 
-      <div class="btn-row secondary-action-row hidden" id="ai-action-row">
-        <button id="btn-open-ai">Redactar informe con IA</button>
-      </div>
-
-      <div class="field hidden" id="ai-config-panel">
-        <label>Informe con IA</label>
-
-        <div class="notice">
-          Esta sección permite generar un informe redactado a partir de un bloque de semanas. No está pensada para una semana puntual.
-        </div>
-
-        <div class="field">
-          <label for="audience">Destinatario</label>
-          <select id="audience">
-            <option value="ct_completo">Cuerpo técnico</option>
-            <option value="jugadora">Jugadora</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="ai-objective">Objetivo del informe</label>
-          <select id="ai-objective">
-            <option value="comparativa_plantel" selected>Comparativa con el plantel</option>
-            <option value="balance_fisico_tecnico">Balance físico-técnico</option>
-            <option value="evolucion_personal">Evolución personal</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="ai-group-filter">Grupo de comparación</label>
-          <select id="ai-group-filter">
-            <option value="all" selected>Todas las jugadoras habilitadas</option>
-            <option value="arqueras">Arqueras</option>
-            <option value="alas">Alas</option>
-            <option value="pivotes">Pivotes</option>
-            <option value="cierres">Cierres / defensas</option>
-          </select>
-          <div class="hint">Usa el rol y las posiciones cargadas en Base de Datos. Para varias posiciones, separalas con coma.</div>
-        </div>
-
-        <div class="field">
-          <label for="ai-adjustment">Ajuste específico</label>
-          <textarea id="ai-adjustment" maxlength="220" placeholder="Ej.: priorizá continuidad, marcá qué semanas sostienen la tendencia y evitá conclusiones generales."></textarea>
-          <div class="hint">Opcional. Sirve para pedirle un ajuste puntual al texto sin cambiar el objetivo general.</div>
-        </div>
-
-        <div class="btn-row">
-          <button class="primary" id="btn-ai">Generar informe del bloque</button>
-          <button id="btn-close-ai">Cerrar</button>
-        </div>
-      </div>
-
       <div class="btn-row maintenance-actions">
         <button class="primary" id="btn-load">Actualizar datos</button>
         <button id="btn-local">Actualizar vista</button>
@@ -1212,8 +1160,59 @@ footer {
     <div class="panel-head">
       <div class="panel-title">Vista operativa</div>
       <div class="actions btn-row" style="margin:0;">
+        <span class="btn-row secondary-action-row hidden" id="ai-action-row" style="margin:0;">
+          <button id="btn-open-ai">Redactar informe con IA</button>
+        </span>
         <button id="btn-copy">Copiar</button>
         <button id="btn-print">Imprimir</button>
+      </div>
+    </div>
+
+    <div class="panel-body hidden" id="ai-config-panel">
+      <label>Informe con IA</label>
+
+      <div class="notice">
+        Esta sección permite generar un informe redactado a partir de un bloque de semanas. No está pensada para una semana puntual.
+      </div>
+
+      <div class="field">
+        <label for="audience">Destinatario</label>
+        <select id="audience">
+          <option value="ct_completo">Cuerpo técnico</option>
+          <option value="jugadora">Jugadora</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="ai-objective">Objetivo del informe</label>
+        <select id="ai-objective">
+          <option value="comparativa_plantel" selected>Comparativa con el plantel</option>
+          <option value="balance_fisico_tecnico">Balance físico-técnico</option>
+          <option value="evolucion_personal">Evolución personal</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="ai-group-filter">Grupo de comparación</label>
+        <select id="ai-group-filter">
+          <option value="all" selected>Todas las jugadoras habilitadas</option>
+          <option value="arqueras">Arqueras</option>
+          <option value="alas">Alas</option>
+          <option value="pivotes">Pivotes</option>
+          <option value="cierres">Cierres / defensas</option>
+        </select>
+        <div class="hint">Usa el rol y las posiciones cargadas en Base de Datos. Para varias posiciones, separalas con coma.</div>
+      </div>
+
+      <div class="field">
+        <label for="ai-adjustment">Ajuste específico</label>
+        <textarea id="ai-adjustment" maxlength="220" placeholder="Ej.: priorizá continuidad, marcá qué semanas sostienen la tendencia y evitá conclusiones generales."></textarea>
+        <div class="hint">Opcional. Sirve para pedirle un ajuste puntual al texto sin cambiar el objetivo general.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="primary" id="btn-ai">Generar informe del bloque</button>
+        <button id="btn-close-ai">Cerrar</button>
       </div>
     </div>
 
