@@ -5,7 +5,7 @@
   var originalRenderLocalReport = renderLocalReport;
   var analyticsWanted = false;
 
-  loadAnalyticsInBackground = async function () {
+  loadAnalyticsInBackground = function () {
     if (!analyticsWanted) return null;
     return originalLoadAnalyticsInBackground();
   };
@@ -27,8 +27,44 @@
 
   renderLocalReport = function () {
     originalRenderLocalReport();
+    sanitizeControlsCopy();
+    sanitizeReportOutput();
     collapseOptionalSections();
   };
+
+  function sanitizeControlsCopy() {
+    var root = document.querySelector('.controls-panel');
+    if (!root) return;
+
+    root.querySelectorAll('.hint, .panel-head p').forEach(function (node) {
+      node.remove();
+    });
+
+    var aiPanel = document.getElementById('ai-config-panel');
+    if (aiPanel) {
+      aiPanel.querySelectorAll('.notice, .hint').forEach(function (node) {
+        node.remove();
+      });
+    }
+  }
+
+  function sanitizeReportOutput() {
+    var output = document.getElementById('output');
+    if (!output) return;
+
+    var replacePairs = [
+      ['Este dato debe leerse como volumen reportado, no como carga fisiológica completa.', ''],
+      ['Sección pendiente de diseño. Por ahora, los pesos y referencias máximas se trabajan por fuera del sistema hasta definir una carga más intuitiva y específica.', ''],
+      ['No hay cargas informadas en la semana seleccionada, así que no conviene leer tendencias de volumen hasta completar registros.', 'No hay cargas informadas en la semana seleccionada.'],
+      ['La semana muestra', 'La semana muestra']
+    ];
+
+    var html = output.innerHTML;
+    replacePairs.forEach(function (pair) {
+      html = html.split(pair[0]).join(pair[1]);
+    });
+    output.innerHTML = html;
+  }
 
   function collapseOptionalSections() {
     var output = document.getElementById('output');
