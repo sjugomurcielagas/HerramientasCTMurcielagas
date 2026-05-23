@@ -52,7 +52,8 @@ function isAppsScriptRequest(request) {
 
 function isStaticAsset(request) {
   const url = new URL(request.url);
-  return ['style:', 'script:', 'image:', 'font:'].includes(`${request.destination}:`) || url.origin === self.location.origin;
+  if (request.mode === 'navigate') return false;
+  return ['style:', 'script:', 'image:', 'font:'].includes(`${request.destination}:`) || (url.origin === self.location.origin && request.destination !== 'document');
 }
 
 function injectPatchScript(html, scriptSrc) {
@@ -81,20 +82,6 @@ self.addEventListener('fetch', event => {
           const cached = await caches.match(request);
           return cached || Response.error();
         })
-    );
-    return;
-  }
-
-  if (isStaticAsset(request)) {
-    event.respondWith(
-      caches.match(request).then(cached => {
-        if (cached) return cached;
-        return fetch(request).then(response => {
-          const clone = response.clone();
-          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone)).catch(() => {});
-          return response;
-        });
-      })
     );
     return;
   }
@@ -128,5 +115,21 @@ self.addEventListener('fetch', event => {
         return cached || caches.match('./');
       }
     })());
+    return;
   }
+
+  if (isStaticAsset(request)) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+        return fetch(request).then(response => {
+          const clone = response.clone();
+          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone)).catch(() => {});
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
 });

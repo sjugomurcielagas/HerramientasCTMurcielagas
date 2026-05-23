@@ -99,7 +99,7 @@
 
       <section id="historialView" class="app-section hidden">
         <div class="panel">
-          <div class="panel-head"><div><h2>Historial de consultas</h2><p>Últimas consultas registradas por la base interna.</p></div><button id="recargarHistorialBtn" class="btn secondary small">Recargar</button></div>
+          <div class="panel-head"><div><h2>Historial de consultas</h2><p>Últimas consultas registradas.</p></div><button id="recargarHistorialBtn" class="btn secondary small">Recargar</button></div>
           <div id="historialList" class="grid"><div class="empty">Sin historial cargado.</div></div>
         </div>
       </section>
@@ -108,14 +108,14 @@
         <div class="panel">
           <div class="panel-head"><div><h2>Criterios del módulo</h2><p>Reglas de interpretación y fuentes aceptadas.</p></div><div class="actions"><a class="btn ghost tiny" id="wadaAnnualBtn" href="#" target="_blank" rel="noopener noreferrer" title="Usar el 1 de enero para actualizar la lista vigente">Actualizar WADA anual</a></div></div>
           <div class="grid">
-            <article class="source-row"><div class="source-k">Fuente antidopaje principal</div><div class="source-v">Lista Prohibida WADA vigente, procesada en base interna.</div></article>
+            <article class="source-row"><div class="source-k">Fuente antidopaje principal</div><div class="source-v">Lista Prohibida WADA vigente.</div></article>
             <article class="source-row"><div class="source-k">Fuente argentina farmacológica</div><div class="source-v">ANMAT/VNM, PAMI u otra fuente argentina confiable para identificar medicamento y principio activo.</div></article>
             <article class="source-row"><div class="source-k">Fuente secundaria</div><div class="source-v">Global DRO solo si hay integración estable. Si no, NADAmed u otra base oficial nacional, por principio activo.</div></article>
             <article class="source-row"><div class="source-k">Regla crítica</div><div class="source-v">Si no aparece en WADA, no decir permitido. Mostrar “No figura como prohibido...” solo si también se consultó fuente secundaria.</div></article>
           </div>
         </div>
       </section>
-      <div class="footer-note">Herramienta interna · No reemplaza criterio médico, TUE ni revisión formal ante competencia.</div>
+      <div class="footer-note">Las Murciélagas · Cuerpo técnico</div>
       <div class="footer-note" style="margin-top:6px">Sugerencia operativa: el 1 de enero revisar y cargar la nueva Lista Prohibida WADA.</div>
     </section>
   </main>
@@ -165,7 +165,7 @@
     async function buscar(){
       const q=document.getElementById('queryInput').value.trim(),status=document.getElementById('buscarStatus');
       if(!q){status.textContent='Ingresá un medicamento o principio activo.';status.className='status-line error';return}
-      status.textContent='Consultando base interna...';status.className='status-line';
+      status.textContent='Buscando coincidencias...';status.className='status-line';
       document.getElementById('resultados').innerHTML='<div class="empty">Buscando coincidencias...</div>';
       try{
         const resolved=await buscarConAliases(q);
@@ -173,7 +173,7 @@
         status.textContent=resolved.usedAlias?`Consulta completada usando alias: ${resolved.usedAlias}.`:'Consulta completada.';status.className='status-line ok';
         loadHistorial();
       }catch(err){
-        status.textContent='No se pudo consultar la API interna: '+err.message;status.className='status-line error';
+        status.textContent='No se pudo completar la consulta: '+err.message;status.className='status-line error';
         renderResultados([]);
       }
     }
@@ -242,9 +242,9 @@
         state.loaded.frecuentes=true;
       }catch(err){
         state.frecuentes=STRICT_MODE.synthetic_frecuentes
-          ? FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual y carga en base interna.'}))
+          ? FALLBACK_FRECUENTES.map(nombre=>({medicamento:nombre,estado:'REQUIERE REVISIÓN',observaciones:'Pendiente de revisión manual.'}))
           : [];
-        state.frecuentesError=STRICT_MODE.synthetic_frecuentes?'':'No se pudo cargar frecuentes desde la API interna.';
+        state.frecuentesError=STRICT_MODE.synthetic_frecuentes?'':'No se pudieron cargar medicamentos frecuentes.';
       }
       renderFrecuentes();
     }
@@ -302,7 +302,7 @@
         state.historial=Array.isArray(data)?data:[];
         state.loaded.historial=true;
       }catch(err){state.historial=[]}
-      cont.innerHTML=state.historial.length?state.historial.map(h=>`<article class="med-card"><div class="med-title">${esc(h.medicamento||h.consulta||'Consulta')}</div><div class="meta">${esc(h.principio_activo||h.principioActivo||'')} · ${esc(h.fecha_revision||h.fechaRevision||'sin fecha')}</div>${estadoBadge(estadoNormalizado(h.estado||h.resultado||'REQUIERE REVISIÓN'))}</article>`).join(''):'<div class="empty">Sin historial disponible en la API interna.</div>';
+      cont.innerHTML=state.historial.length?state.historial.map(h=>`<article class="med-card"><div class="med-title">${esc(h.medicamento||h.consulta||'Consulta')}</div><div class="meta">${esc(h.principio_activo||h.principioActivo||'')} · ${esc(h.fecha_revision||h.fechaRevision||'sin fecha')}</div>${estadoBadge(estadoNormalizado(h.estado||h.resultado||'REQUIERE REVISIÓN'))}</article>`).join(''):'<div class="empty">Sin historial disponible.</div>';
     }
 
     async function loadPlantel(){
@@ -488,7 +488,7 @@
     }
 
     function limpiarBusqueda(){document.getElementById('queryInput').value='';document.getElementById('buscarStatus').textContent='';document.getElementById('resultados').innerHTML='<div class="empty">Ingresá una consulta para ver resultados.</div>';state.lastResults=[]}
-    function fallbackResultado(q){return{consulta:q,estado:'NO ENCONTRADO / REQUIERE VERIFICACIÓN',observaciones:'La API interna antidoping no devolvió una revisión registrada. No se debe interpretar como permitido.'}}
+    function fallbackResultado(q){return{consulta:q,estado:'NO ENCONTRADO / REQUIERE VERIFICACIÓN',observaciones:'No hay revisión registrada para esta consulta.'}}
     function hoyIso_(){return new Date().toISOString().slice(0,10)}
     function addOneYearIso_(iso){const d=new Date(`${iso}T12:00:00Z`);if(Number.isNaN(d.getTime()))return'';d.setUTCDate(d.getUTCDate()+365);return d.toISOString().slice(0,10)}
     function getSelectedTUEIdentity(){

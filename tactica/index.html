@@ -2797,11 +2797,10 @@ function doDownload(){
 // =============================================
 // GENERACIÓN DE JUGADAS CON IA (Claude)
 // =============================================
-const IA_KEY_STORAGE='mrcl_claude_key';
-function getIAKey(){return localStorage.getItem(IA_KEY_STORAGE)||'';}
-async function saveIAKey(){const v=document.getElementById('ia-key-input').value.trim();if(!v){iaStatus('Ingresá la API key.','err');return;}iaStatus('Verificando key...','loading');document.getElementById('ia-save-btn').disabled=true;try{await testIAKey(v);localStorage.setItem(IA_KEY_STORAGE,v);renderIAModal();iaStatus('Key válida y guardada','ok');}catch(err){iaStatus('Key inválida: '+(err.message||'error desconocido'),'err');}finally{document.getElementById('ia-save-btn').disabled=false;}}
-async function testIAKey(key){const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:5,messages:[{role:'user',content:'ok'}]})});if(!resp.ok){let msg='Error '+resp.status;try{const d=await resp.json();if(d.error&&d.error.message)msg=d.error.message;}catch(e){}throw new Error(msg);}return true;}
-function clearIAKey(){localStorage.removeItem(IA_KEY_STORAGE);renderIAModal();iaStatus('','');}
+let iaSessionKey='';
+function getIAKey(){return iaSessionKey;}
+async function saveIAKey(){const v=document.getElementById('ia-key-input').value.trim();if(!v){iaStatus('Ingresá la API key.','err');return;}iaSessionKey=v;renderIAModal();iaStatus('Key cargada para esta sesión.','ok');}
+function clearIAKey(){iaSessionKey='';document.getElementById('ia-key-input').value='';renderIAModal();iaStatus('','');}
 function renderIAModal(){const hasKey=!!getIAKey();document.getElementById('ia-cfg-panel').style.display=hasKey?'none':'block';document.getElementById('ia-gen-panel').style.display=hasKey?'block':'none';document.getElementById('ia-gen-btn').style.display=hasKey?'':'none';}
 function showIAModal(){document.getElementById('ia-modal').classList.add('show');document.getElementById('ia-status').textContent='';document.getElementById('ia-status').className='ia-status';renderIAModal();}
 function closeIAModal(e){if(!e||e.target===document.getElementById('ia-modal'))document.getElementById('ia-modal').classList.remove('show');}
@@ -2819,8 +2818,7 @@ async function triggerGenerarJugada(){
     iaStatus('Jugada generada','ok');
     setTimeout(()=>document.getElementById('ia-modal').classList.remove('show'),800);
   }catch(err){
-    const tipo=err instanceof TypeError?'Red/CORS: ':'API: ';
-    iaStatus(tipo+(err.message||'Error desconocido'),'err');
+    iaStatus(err?.message||'No se pudo generar la jugada en este momento.','err');
   }finally{
     document.getElementById('ia-gen-btn').disabled=false;
   }
@@ -2921,7 +2919,7 @@ EJEMPLO — presión sobre rival:
 {"players":[{"num":21,"team":"A","x":600,"y":200,"gk":false},{"num":51,"team":"B","x":650,"y":200,"gk":false}],"arrows":[{"kind":"straight","fromNum":21,"toNum":51,"type":"press"}]}`;
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2048,system:systemPrompt,messages:[{role:'user',content:texto}]})
   });
   if(!resp.ok){
@@ -2977,33 +2975,7 @@ draw();
 updatePhaseBadge();
 </script>
 <script>
-// Service Worker solo se registra desde HTTPS (GitHub Pages, no archivo local)
-if('serviceWorker' in navigator && location.protocol==='https:'){
-  const swCode=`
-    const CACHE='tablero-tactico-v3';
-    const FILES=['/'];
-    self.addEventListener('install', e=>{
-      e.waitUntil(
-        caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())
-      );
-    });
-    self.addEventListener('activate', e=>{
-      e.waitUntil(
-        caches.keys().then(keys=>Promise.all(
-          keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))
-        )).then(()=>self.clients.claim())
-      );
-    });
-    self.addEventListener('fetch', e=>{
-      e.respondWith(
-        caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('/')))
-      );
-    });
-  `;
-  const blob=new Blob([swCode],{type:'application/javascript'});
-  const swUrl=URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(()=>{});
-}
+// El service worker global se registra desde la landing.
 
 // ── Banner de instalación ──
 let deferredPrompt=null;

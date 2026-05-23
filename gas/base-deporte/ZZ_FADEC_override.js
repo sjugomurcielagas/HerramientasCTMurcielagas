@@ -1,19 +1,19 @@
-// Override pequeño para mantener el nombre completo de la entidad convocante
-// sin reescribir el archivo principal del módulo Base de Deporte.
+// Override pequeno para mantener el nombre completo de la entidad convocante
+// sin reescribir el archivo principal del modulo Base de Deporte.
 
-var FADEC_NOMBRE_COMPLETO_ = 'Federación Argentina de Deportes para Ciegos';
+var FADEC_NOMBRE_COMPLETO_ = 'Federacion Argentina de Deportes para Ciegos';
 var FADEC_DOCUMENTO_CONVOCATORIA_ = 'Convocatoria oficial ' + FADEC_NOMBRE_COMPLETO_;
 
 function _nombreDocumentoConcentraciones(tipo, conc, persona) {
   var base = _nombreConcentracionHumana_(conc);
   var mapa = {
     convocatoria_fadec: FADEC_DOCUMENTO_CONVOCATORIA_,
-    licencia_agencia_cordoba: 'Licencia Agencia Córdoba',
-    licencia_municipalidad_cordoba: 'Licencia Municipalidad Córdoba',
-    certificacion_participacion: 'Certificación de participación'
+    licencia_agencia_cordoba: 'Licencia Agencia Cordoba',
+    licencia_municipalidad_cordoba: 'Licencia Municipalidad Cordoba',
+    certificacion_participacion: 'Certificacion de participacion'
   };
-  var nombre = (mapa[tipo] || tipo) + ' · ' + base;
-  if (persona && persona.nombreCompleto) nombre += ' · ' + persona.nombreCompleto;
+  var nombre = (mapa[tipo] || tipo) + ' - ' + base;
+  if (persona && persona.nombreCompleto) nombre += ' - ' + persona.nombreCompleto;
   return nombre;
 }
 
@@ -70,11 +70,11 @@ function _plantillaFijaDocumento_(clave, cfg) {
     },
     licencia_agencia_cordoba: {
       plantillaId: CONFIG_DOC.PLANTILLA_LICENCIA_AGENCIA_CORDOBA,
-      nombreArchivo: 'Plantilla - Licencia deportiva Agencia Córdoba Deportes'
+      nombreArchivo: 'Plantilla - Licencia deportiva Agencia Cordoba Deportes'
     },
     licencia_municipalidad_cordoba: {
       plantillaId: CONFIG_DOC.PLANTILLA_LICENCIA_MUNICIPALIDAD_CORDOBA,
-      nombreArchivo: 'Plantilla - Solicitud de licencia Municipalidad de Córdoba'
+      nombreArchivo: 'Plantilla - Solicitud de licencia Municipalidad de Cordoba'
     }
   };
   var item = mapa[String(clave || '').trim()];
@@ -104,7 +104,7 @@ function _defaultDocumentDefinitions_() {
     },
     {
       tipo_documento: 'certificacion_participacion',
-      nombre_visible: 'Certificación de participación',
+      nombre_visible: 'Certificacion de participacion',
       template_id: '',
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'colectivo',
@@ -118,7 +118,7 @@ function _defaultDocumentDefinitions_() {
     },
     {
       tipo_documento: 'licencia_agencia_cordoba',
-      nombre_visible: 'Licencia deportiva — Agencia Córdoba Deportes',
+      nombre_visible: 'Licencia deportiva - Agencia Cordoba Deportes',
       template_id: CONFIG_DOC.PLANTILLA_LICENCIA_AGENCIA_CORDOBA,
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'individual',
@@ -128,11 +128,11 @@ function _defaultDocumentDefinitions_() {
       requiere_fecha: true,
       requiere_convocadas: false,
       requiere_tabla_convocadas: false,
-      descripcion: 'Formulario individual para solicitud ante Agencia Córdoba Deportes'
+      descripcion: 'Formulario individual para solicitud ante Agencia Cordoba Deportes'
     },
     {
       tipo_documento: 'licencia_municipalidad_cordoba',
-      nombre_visible: 'Solicitud de licencia — Municipalidad de Córdoba',
+      nombre_visible: 'Solicitud de licencia - Municipalidad de Cordoba',
       template_id: CONFIG_DOC.PLANTILLA_LICENCIA_MUNICIPALIDAD_CORDOBA,
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'individual_compuesto',
@@ -142,7 +142,7 @@ function _defaultDocumentDefinitions_() {
       requiere_fecha: true,
       requiere_convocadas: false,
       requiere_tabla_convocadas: false,
-      descripcion: 'Paquete individual con nota del agente y nota de elevación'
+      descripcion: 'Paquete individual con nota del agente y nota de elevacion'
     }
   ];
 }

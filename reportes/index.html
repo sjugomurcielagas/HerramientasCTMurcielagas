@@ -1222,7 +1222,7 @@ footer {
 </main>
 
     <footer>
-      <span>Murciélagas Analytics · uso interno del cuerpo técnico</span>
+      <span>Murciélagas Analytics</span>
       <span id="footer-date"></span>
     </footer>
 
@@ -1299,7 +1299,7 @@ let includedPlayers = new Set(lsGet('murcielagasIncludedPlayers', []));
       try {
         data = text ? JSON.parse(text) : null;
       } catch (error) {
-        throw new Error(`La API respondió, pero no devolvió JSON válido. Estado ${response.status}. Respuesta: ${text.slice(0, 300)}`);
+        throw new Error(`No se pudo procesar la respuesta del servidor (estado ${response.status}).`);
       }
 
       if (!response.ok) {
@@ -2186,7 +2186,7 @@ function syncScopeControls() {
     updateContextStatus(null);
 
     $('output').innerHTML =
-      `<div class="notice warn"><strong>Error de comunicación con la API.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si este mensaje aparece desde GitHub Pages, revisá que el Worker tenga CORS habilitado y que esté reenviando correctamente site_getAnalyticContext o getClientData al Apps Script.</div>`;
+      `<div class="notice warn"><strong>No se pudieron cargar los datos.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
   } finally {
     if (btnLoad) btnLoad.disabled = false;
   }
@@ -3329,7 +3329,7 @@ async function generateWithAI() {
     if (requestId !== activeAiRequestId) return;
 
     $('output').innerHTML =
-      `<div class="notice warn"><strong>Error al generar el informe con IA.</strong><br>${escapeHtml(error && error.message ? error.message : error)}<br><br>Si el Worker responde pero el informe no se genera, revisá que la acción generateClientReport esté conectada con Apps Script y que acepte el prompt enviado por JSON.</div>`;
+      `<div class="notice warn"><strong>No se pudo generar el informe con IA.</strong><br>${escapeHtml(error && error.message ? error.message : error)}</div>`;
   } finally {
     if (requestId === activeAiRequestId && btnAi) btnAi.disabled = false;
   }
@@ -3480,7 +3480,7 @@ async function runAudit() {
     $('audit-result').innerHTML =
       'Error al ejecutar auditoría: ' +
       escapeHtml(error && error.message ? error.message : error) +
-      '<br>Revisá que el Worker tenga habilitada la acción generarAuditoriaDatos y que Apps Script permita ejecutarla desde la API.';
+      '';
   } finally {
     if (btnAudit) btnAudit.disabled = false;
   }
