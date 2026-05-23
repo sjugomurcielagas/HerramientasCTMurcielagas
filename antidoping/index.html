@@ -172,12 +172,14 @@
       document.getElementById('resultados').innerHTML='<div class="empty">Buscando coincidencias...</div>';
       try{
         const resolved=await buscarConAliases(q);
-        renderResultados(resolved.items.filter(Boolean));
-        status.textContent=resolved.usedAlias?`Consulta completada usando alias: ${resolved.usedAlias}.`:'Consulta completada.';status.className='status-line ok';
+        const items=(resolved.items||[]).filter(Boolean);
+        renderResultados(items);
+        const aliasText=resolved.usedAlias?` usando alias: ${resolved.usedAlias}`:'';
+        status.textContent=items.length?`Consulta completada${aliasText}.`:'Sin coincidencias confiables.';status.className=items.length?'status-line ok':'status-line error';
         loadHistorial();
       }catch(err){
-        status.textContent='No se pudo completar la consulta: '+err.message;status.className='status-line error';
-        renderResultados([]);
+        status.textContent='No se pudo completar la consulta en este momento.';status.className='status-line error';
+        renderResultados([fallbackResultado(q)]);
       }
     }
 
@@ -260,42 +262,46 @@
 
     async function buscarConAliases(query){
       const variantes=searchVariants(query);
-      let mejor={items:[fallbackResultado(query)],usedAlias:''},mejorScore=-1;
+      const agregados=[];
+      const seen=new Set();
+      let usedAlias='';
       for(const variante of variantes){
         try{
           const data=await apiPost({action:'antidoping_buscarMedicamento',consulta:variante});
           const items=(Array.isArray(data)?data:(Array.isArray(data?.resultados)?data.resultados:[data])).filter(Boolean);
-          const score=resultadoScore(items);
-          if(score>mejorScore){
-            mejor={items:items.length?items:[fallbackResultado(query)],usedAlias:variante!==query?variante:''};
-            mejorScore=score;
+          for(const item of items){
+            const key=resultadoKey(item);
+            if(!key||seen.has(key))continue;
+            seen.add(key);
+            agregados.push({...item,__consulta:variante,__score:resultadoScoreItem(item)});
           }
-          const isConclusivo=mejor.items.some(i=>{const e=estadoNormalizado(i.estado||'');return e.includes('PROHIBIDO')||e.includes('ADVERTENCIA');});
-          if(score>=4&&isConclusivo)break;
-        }catch(err){}
+          if(!usedAlias&&variante!==query&&items.length)usedAlias=variante;
+        }catch(_err){}
       }
-      return mejor;
+      const confiables=agregados.filter(r=>r.__score>=0).sort((a,b)=>b.__score-a.__score);
+      if(!confiables.length)return{items:[fallbackResultado(query)],usedAlias:''};
+      return{items:confiables,usedAlias};
     }
     function searchVariants(query){
-      const normalized=normalizeAliasKey(query).replace(/[^a-z0-9]+/g,' ').trim();
       const direct=String(query||'').trim();
+      const normalized=normalizeAliasKey(direct).replace(/[^a-z0-9]+/g,' ').trim();
       const extras=SEARCH_ALIASES[normalized]||[];
       const singular=normalized.length>3&&normalized.endsWith('s')?normalized.slice(0,-1):'';
-      return Array.from(new Set([singular,direct,...extras].filter(Boolean)));
+      return Array.from(new Set([direct,...extras,singular].filter(Boolean)));
     }
-    function resultadoScore(items){
-      if(!Array.isArray(items)||!items.length)return 0;
-      return Math.max(...items.map(item=>{
-        const estado=estadoNormalizado(item.estado||item.resultado||'');
-        const esProhibido=estado.includes('PROHIBIDO');
-        if(esProhibido)return 10;
-        let score=0;
-        if(item.principio_activo||item.principioActivo)score+=2;
-        if(item.fuente_argentina||item.fuente_wada||item.fuente_secundaria)score+=1;
-        if(estado.includes('PERMITIDO')||estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO'))score+=2;
-        if(estado.includes('NO ENCONTRADO')||estado.includes('REQUIERE VERIFICACION'))score-=2;
-        return score;
-      }));
+    function resultadoKey(item){
+      return normalizeAliasKey([item?.medicamento||item?.nombre_comercial||item?.consulta||'',item?.principio_activo||item?.principioActivo||'',item?.presentacion||'',item?.laboratorio||''].join('|')).trim();
+    }
+    function resultadoScoreItem(item){
+      const estado=estadoNormalizado(item?.estado||item?.resultado||'');
+      let score=0;
+      if(estado.includes('PROHIBIDO'))score+=10;
+      if(estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO'))score+=6;
+      if(estado.includes('PERMITIDO')||estado.includes('NO FIGURA'))score+=4;
+      if(item?.principio_activo||item?.principioActivo)score+=2;
+      if(item?.fuente_argentina||item?.fuente_wada||item?.fuente_secundaria)score+=1;
+      if(estado.includes('NO ENCONTRADO')||estado.includes('REQUIERE VERIFICACION'))score-=4;
+      return score;
     }
 
     async function loadHistorial(){

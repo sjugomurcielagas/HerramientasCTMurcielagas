@@ -894,7 +894,19 @@ function tacticaNormalizePlayer(p, idx){
   if(!p)return null;
   const nombre=tacticaNameDisplay(p);
   const num=tacticaNumberFromLocal(p);
-  const gk=!!(p?.gk||String(p?.Posicion||p?.posicion||p?.Rol||p?.rol||'').toLowerCase().includes('arquera'));
+  const localMatch=MURCIELAGAS.find(item=>tacticaNameKey(item)===tacticaNameKey(p));
+  const keeperSignals=[
+    p?.gk,
+    localMatch?.gk,
+    p?.Posicion,
+    p?.posicion,
+    p?.Rol,
+    p?.rol,
+    p?.Tipo_Integrante,
+    p?.tipoIntegrante,
+    p?.tipo_integrante
+  ].map(v=>normalizeTacticaText(v)).join(' ');
+  const gk=keeperSignals.includes('arquera')||keeperSignals.includes('arq');
   const apellido=String(p?.Apellido||p?.apellido||'').trim();
   const nombreSolo=String(p?.Nombre||p?.nombre||'').trim();
   return {
