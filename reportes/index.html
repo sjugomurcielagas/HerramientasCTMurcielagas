@@ -2928,6 +2928,11 @@ const tableRows = sortTableRows(s.selectedWeekByPlayer, 'weeklyPlayers').map(r =
     </div>
 
     <div class="section">
+      <h2>Observaciones de lesiones, faltas o problemas</h2>
+      ${alertsBlock}
+    </div>
+
+    <div class="section">
       <h2>Carga semanal por jugadora</h2>
       <div class="table-wrap">
         <table>
@@ -2962,11 +2967,6 @@ ${sortableTh('weeklyPlayers', 'tecnico', 'Técnico-táctico')}
     <div class="section">
       <h2>Comparación visual de la semana</h2>
       ${renderWeekVolumeBars(s.selectedWeekByPlayer)}
-    </div>
-
-    <div class="section">
-      <h2>Observaciones de lesiones, faltas o problemas</h2>
-      ${alertsBlock}
     </div>
 
     <div class="section">

@@ -85,8 +85,10 @@
               </div>
               <div class="actions" style="margin:10px 0"><button id="marcarTodasBtn" class="btn secondary small" type="button">Marcar todas</button><button id="limpiarConvBtn" class="btn ghost small" type="button">Limpiar</button></div>
               <div id="convocatoriaList" class="check-grid"><div class="empty">Cargando plantel...</div></div>
-              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><span id="convCount" class="badge info"></span></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="editarConvBtn" class="btn ghost small hidden" type="button">Editar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
+              <div id="asistenciaInlineContainer" style="margin-top:12px"></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarAsistenciaInlineBtn" class="btn small hidden" type="button">Guardar asistencia</button></div>
               <div class="docs-block">
                 <div class="card-title" style="margin-bottom:12px">Documentos oficiales</div>
                 <div class="actions"><button id="generarOficialesBtn" class="btn secondary small" type="button">Generar documentos oficiales (Santiago y Gonzalo)</button></div>
@@ -97,7 +99,7 @@
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel hidden" id="asistenciaLegacyPanel">
           <div class="panel-head"><div><h2>Asistencia real</h2><p>Registro explícito de participación efectiva para esta concentración.</p></div><button id="guardarAsistenciaBtn" class="btn small" type="button">Guardar asistencia</button></div>
           <div id="asistenciaRealContainer"></div>
           <div id="asistenciaStatus" class="status-line"></div>
@@ -146,7 +148,7 @@
   <script>
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false};
-    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',siteContext:{plantel:[],reportes:{rows:[],linkedRows:[],linkStats:{}}},siteContextPromise:null,siteContextReady:false,asistenciaDrafts:{}};
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',siteContext:{plantel:[],reportes:{rows:[],linkedRows:[],linkStats:{}}},siteContextPromise:null,siteContextReady:false,asistenciaDrafts:{},convocatoriaEditById:{}};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
 
@@ -158,7 +160,9 @@
       document.getElementById('crearBtn').addEventListener('click',crearConcentracion);
       document.getElementById('guardarDatosBtn').addEventListener('click',guardarDatos);
       document.getElementById('guardarAsistenciaBtn').addEventListener('click',guardarAsistenciaReal);
+      document.getElementById('guardarAsistenciaInlineBtn').addEventListener('click',guardarAsistenciaReal);
       document.getElementById('guardarConvBtn').addEventListener('click',guardarConvocatoria);
+      document.getElementById('editarConvBtn').addEventListener('click',()=>{const c=currentConc();if(!c)return;state.convocatoriaEditById[concId(c)]=true;renderConvocatoria();renderAsistenciaReal();});
       document.getElementById('validarDocsBtn').addEventListener('click',validarDocumentos);
       document.getElementById('generarDocsBtn').addEventListener('click',()=>openDocsModal('general'));
       document.getElementById('generarOficialesBtn').addEventListener('click',()=>openDocsModal('oficiales'));
@@ -290,9 +294,21 @@
 
     function renderConvocatoria(){
       const c=currentConc(),cont=document.getElementById('convocatoriaList');
+      const editBtn=document.getElementById('editarConvBtn');
+      const saveBtn=document.getElementById('guardarConvBtn');
+      const asistenciaBtn=document.getElementById('guardarAsistenciaInlineBtn');
+      const locked=isConvocatoriaLocked(c);
+      if(editBtn)editBtn.classList.toggle('hidden',!locked);
+      if(saveBtn)saveBtn.classList.toggle('hidden',locked);
+      if(asistenciaBtn)asistenciaBtn.classList.toggle('hidden',!locked);
       const selected=new Set(convocatoriaDnisEfectivos(c).map(String));
       const convocables=state.plantel.filter(isConvocable).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       if(!convocables.length){cont.innerHTML='<div class="empty">No hay integrantes disponibles en el plantel.</div>';updateConvCount();return}
+      if(locked){
+        cont.innerHTML=convocables.filter(p=>selected.has(String(p.persona_id||p.Persona_ID||p.DNI||p.dni||'').trim())).map(p=>`<article class="activity-card"><div class="activity-title">${esc(nombrePersona(p))}</div><div class="activity-meta">${esc(rolIntegrante(p)||tipoIntegrante(p)||'Integrante')}</div></article>`).join('')||'<div class="empty">No hay convocadas.</div>';
+        document.getElementById('convCount').textContent=`${selected.size} seleccionadas`;
+        return;
+      }
       cont.innerHTML=convocables.map(p=>{
         const dni=String(p.DNI||p.dni||'').trim(),personaId=String(p.persona_id||p.Persona_ID||'').trim(),key=personaId||dni,nombre=nombrePersona(p),tipo=tipoIntegrante(p),rol=rolIntegrante(p),etiqueta=tipo||rol||'Integrante';
         const fijo=isCuerpoTecnico(p);
@@ -300,6 +316,11 @@
       }).join('');
       cont.querySelectorAll('input').forEach(input=>input.addEventListener('change',updateConvCount));
       updateConvCount();
+    }
+    function isConvocatoriaLocked(c){
+      const id=concId(c);if(!id)return false;
+      const saved=parseConvocadas(c);
+      return saved.length>0&&!state.convocatoriaEditById[id];
     }
     function asistenciaKeyForPerson(p){
       return String(p.persona_id||p.Persona_ID||p.DNI||p.dni||'').trim();
@@ -352,8 +373,9 @@
       });
     }
     function renderAsistenciaReal(){
-      const c=currentConc(),cont=document.getElementById('asistenciaRealContainer'),st=document.getElementById('asistenciaStatus');
+      const c=currentConc(),cont=document.getElementById('asistenciaInlineContainer')||document.getElementById('asistenciaRealContainer'),st=document.getElementById('asistenciaStatus');
       if(!c||!cont)return;
+      if(!isConvocatoriaLocked(c)){cont.innerHTML='';if(st)st.textContent='';return}
       const convocadas=convocatoriaDnisEfectivos(c);
       const personMap=new Map((state.plantel||[]).map(p=>[asistenciaKeyForPerson(p),p]).filter(([k])=>k));
       if(!convocadas.length){
@@ -406,7 +428,7 @@
       const payload={action:'concentraciones_editarConcentracion',id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas)};
       const st=document.getElementById('convStatus'),btn=document.getElementById('guardarConvBtn');
       st.textContent='Guardando convocatoria...';st.className='status-line';btn.disabled=true;
-      try{await apiPost(payload);mergeConc({id:concId(c),convocadas_json:payload.convocadas_json});st.textContent='Convocatoria guardada.';st.className='status-line ok';renderLista();updateConvCount();renderAsistenciaReal()}
+      try{await apiPost(payload);mergeConc({id:concId(c),convocadas_json:payload.convocadas_json});state.convocatoriaEditById[concId(c)]=false;st.textContent='Convocatoria guardada.';st.className='status-line ok';renderLista();updateConvCount();renderConvocatoria();renderAsistenciaReal()}
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }

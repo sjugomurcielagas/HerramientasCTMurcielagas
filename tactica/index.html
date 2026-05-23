@@ -1060,7 +1060,7 @@ function updatePhaseViewUI(){
 // =============================================
 // ROSTER
 // =============================================
-function showRoster(){renderRoster();document.getElementById('roster-modal').classList.add('show');}
+function showRoster(){loadCanonicalPlantel().finally(()=>{renderRoster();document.getElementById('roster-modal').classList.add('show');});}
 function hideRoster(){document.getElementById('roster-modal').classList.remove('show');}
 function closeRosterModal(e){if(e.target===document.getElementById('roster-modal'))hideRoster();}
 function setRosterTeam(t){
@@ -1074,13 +1074,14 @@ function renderRoster(){
   const sec=document.createElement('div');sec.className='rsection';
   sec.innerHTML='<span>⚡ Nómina base</span>';
   body.appendChild(sec);
-  const sorted=[...MURCIELAGAS].sort((a,b)=>{
+  const rosterSource=(canonicalPlantel&&canonicalPlantel.length)?canonicalPlantel:MURCIELAGAS;
+  const sorted=[...rosterSource].sort((a,b)=>{
     if(a.gk!==b.gk)return a.gk?-1:1;
     if(a.num&&b.num)return a.num-b.num;
     if(a.num)return -1;if(b.num)return 1;return 0;
   });
   sorted.forEach(p=>{
-    const ri=MURCIELAGAS.indexOf(p);const placed=placedMur.has(ri);
+    const ri=rosterSource.indexOf(p);const placed=placedMur.has(ri);
     const c=document.createElement('div');c.className='rcard'+(placed?' placed':'');
     c.innerHTML=`<span class="rnum">${p.num||'—'}</span>
       <span class="rinfo"><span class="rapellido">${p.apellido}</span><br><span class="rnombre">${p.nombre}</span></span>
