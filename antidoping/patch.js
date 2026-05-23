@@ -42,6 +42,30 @@
     return !!(principal || fuentes || /PROHIBIDO|ADVERTENCIA|CONDICIONADO|PERMITIDO|NO FIGURA|VIGENTE/.test(estado));
   }
 
+  function sanitizeChromeCopy() {
+    var root = document.getElementById('appView');
+    if (!root) return;
+
+    var selectors = [
+      '.brand-subtitle',
+      '.panel-head p',
+      '.notice',
+      '.tue-helper',
+      '.footer-note'
+    ];
+
+    selectors.forEach(function (selector) {
+      root.querySelectorAll(selector).forEach(function (node) {
+        node.remove();
+      });
+    });
+
+    var criteriaGrid = document.querySelector('#criteriosView .grid');
+    if (criteriaGrid) {
+      criteriaGrid.innerHTML = '';
+    }
+  }
+
   searchVariants = function (query) {
     var normalized = norm(query);
     var extras = [];
@@ -169,9 +193,12 @@
 
   showView = function (id) {
     if (typeof originalShowView === 'function') originalShowView(id);
+    sanitizeChromeCopy();
     if (id === 'frecuentesView') {
       window.__frecuentesCanLoad = true;
       if (!state.loaded.frecuentes) loadFrecuentes(true);
     }
   };
+
+  sanitizeChromeCopy();
 })();
