@@ -180,7 +180,7 @@ const UI_VERSION = '2026.05.22 · c759857';
         const rawList = Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : [];
         plantelCache = rawList.map(normalizarPlantelItem_);
       } catch (error) {
-        console.error('[Murci] No se pudo obtener el plantel canónico desde site_getPlantel.', error);
+        console.error('[Murci] No se pudo obtener el plantel can\u00f3nico desde site_getPlantel.', error);
         plantelCache = [];
       } finally {
         plantelPromise = null;
@@ -256,7 +256,7 @@ const UI_VERSION = '2026.05.22 · c759857';
   function formatAlertDays_(days) {
     if (days < 0) return 'vencido';
     if (days === 0) return 'vence hoy';
-    return `en ${days} días`;
+    return `en ${days} d\u00edas`;
   }
 
   function startOfCurrentWeek_(date) {
@@ -312,7 +312,7 @@ const UI_VERSION = '2026.05.22 · c759857';
     const text = String(label || '');
     if (/pasaporte/i.test(text)) return 'Pasaporte';
     if (/cud/i.test(text)) return 'CUD';
-    if (/apto/i.test(text)) return 'Apto médico';
+    if (/apto/i.test(text)) return 'Apto m\u00e9dico';
     if (/tue/i.test(text)) return 'TUE';
     return text.replace(/^Vencimiento\s+/i, '');
   }
@@ -327,7 +327,7 @@ const UI_VERSION = '2026.05.22 · c759857';
       persona?.rol,
       persona?.Puesto,
       persona?.puesto,
-      persona?.Función,
+      persona?.Funci\u00f3n,
       persona?.Funcion,
       persona?.funcion
     ];
@@ -380,7 +380,7 @@ const UI_VERSION = '2026.05.22 · c759857';
 
     const documentAlerts = totalBase.filter(item => {
       const campo = String(item?.categoria || '').toLowerCase() === 'documento' ? String(item?.tipo || '') : '';
-      return ['Vencimiento pasaporte', 'Vencimiento CUD', 'Vencimiento apto médico'].includes(campo);
+      return ['Vencimiento pasaporte', 'Vencimiento CUD', 'Vencimiento apto m\u00e9dico'].includes(campo);
     }).map(item => ({
       name: String(item.nombre || '').trim(),
       kind: shortAlertLabel_(item.tipo),
@@ -432,7 +432,7 @@ const UI_VERSION = '2026.05.22 · c759857';
         .filter(persona => !latestByPlayer.has(persona.key))
         .map(persona => ({
           name: persona.name,
-          detail: `Sin registro de sRPE del período vencido (${reportedCount}/${expectedCount || activePlayers.length})`,
+          detail: `Sin registro de sRPE del per\u00edodo vencido (${reportedCount}/${expectedCount || activePlayers.length})`,
           href: './reportes/',
           label: 'Abrir reportes'
         }));
@@ -462,6 +462,22 @@ const UI_VERSION = '2026.05.22 · c759857';
     return buildHomeAlertsSummary_(plantel, alertas, reportes);
   };
 
+  Murci.toInputDate = function toInputDate(value) {
+    if (value === null || value === undefined || value === '') return '';
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value.toISOString().slice(0, 10);
+    }
+    const text = String(value).trim();
+    if (!text) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const dmY = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (dmY) return `${dmY[3]}-${dmY[2]}-${dmY[1]}`;
+    const parsed = new Date(text);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+    return text;
+  };
+  global.toInputDate = Murci.toInputDate;
+
   Murci.normalizeText = function normalizeText(value) {
     return String(value || '')
       .toLowerCase()
@@ -487,7 +503,7 @@ const UI_VERSION = '2026.05.22 · c759857';
   function syncUiVersionTags() {
     const tags = global.document ? global.document.querySelectorAll('.page-version-tag') : [];
     tags.forEach(tag => {
-      tag.textContent = `Versión UI ${UI_VERSION}`;
+      tag.textContent = `Versi\u00f3n UI ${UI_VERSION}`;
     });
   }
 
