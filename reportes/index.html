@@ -861,7 +861,7 @@ footer {
 
 @media (max-width: 560px) {
   .top-nav {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr;
     gap: 8px;
     padding: 8px 9px;
     border-radius: 15px;
@@ -884,6 +884,7 @@ footer {
 
   .report-brand {
     gap: 6px;
+    justify-content: flex-start;
   }
 
   .report-brand .logo-fadec {
@@ -980,29 +981,21 @@ footer {
 
     <nav class="top-nav" aria-label="Navegación principal">
       <a class="back-home" href="../" aria-label="Volver al inicio">← Inicio</a>
-
+      <div class="module-title" aria-label="Módulo actual"><strong>Reportes</strong></div>
       <div class="report-brand" aria-label="Identidad institucional">
         <img class="logo-fadec" src="../assets/fadec-logo.webp" alt="FADEC">
         <img class="logo-murcielagas" src="../assets/logo-murcielagas.webp" alt="Las Murciélagas">
-      </div>
-
-      <div class="module-title" aria-label="Módulo actual">
-        <span>Las Murciélagas</span>
-        <strong>Reportes de entrenamiento</strong>
       </div>
     </nav>
 
     <header class="report-header">
       <div class="header-copy">
         <div class="eyebrow">Vista operativa</div>
-        <h1>Seguimiento del plantel</h1>
+        <h1>Control semanal del cuerpo técnico</h1>
         <p class="subtitle">Control semanal · análisis periódicos · informes internos</p>
       </div>
       <aside class="status-panel" aria-label="Estado del sistema">
-        <div class="status-line"><span class="status-k">Datos</span><span class="status-v" id="status-data">sin cargar</span></div>
         <div class="status-line"><span class="status-k">Jugadoras</span><span class="status-v" id="status-players">0</span></div>
-        <div class="status-line"><span class="status-k">Registros</span><span class="status-v" id="status-rows">0</span></div>
-        <div class="status-line"><span class="status-k">Cruce</span><span class="status-v" id="status-contexto">—</span></div>
         <div class="status-line"><span class="status-k">Actualizado</span><span class="status-v" id="status-date">—</span></div>
       </aside>
     </header>
@@ -1157,13 +1150,6 @@ footer {
   <section class="panel main-report-panel" aria-label="Vista operativa">
     <div class="panel-head">
       <div class="panel-title">Vista operativa</div>
-      <div class="actions btn-row" style="margin:0;">
-        <span class="btn-row secondary-action-row hidden" id="ai-action-row" style="margin:0;">
-          <button id="btn-open-ai">Redactar informe con IA</button>
-        </span>
-        <button id="btn-copy">Copiar</button>
-        <button id="btn-print">Imprimir</button>
-      </div>
     </div>
 
     <div class="panel-body hidden" id="ai-config-panel">
@@ -1199,13 +1185,11 @@ footer {
           <option value="pivotes">Pivotes</option>
           <option value="cierres">Cierres / defensas</option>
         </select>
-        <div class="hint">Usa el rol y las posiciones cargadas en Base de Datos. Para varias posiciones, separalas con coma.</div>
       </div>
 
       <div class="field">
         <label for="ai-adjustment">Ajuste específico</label>
         <textarea id="ai-adjustment" maxlength="220" placeholder="Ej.: priorizá continuidad, marcá qué semanas sostienen la tendencia y evitá conclusiones generales."></textarea>
-        <div class="hint">Opcional. Sirve para pedirle un ajuste puntual al texto sin cambiar el objetivo general.</div>
       </div>
 
       <div class="btn-row">
@@ -1215,7 +1199,14 @@ footer {
     </div>
 
     <div class="report-output" id="output">
-      <div class="notice">Cargando vista rápida operativa...</div>
+      <div class="notice">Cargando vista operativa...</div>
+    </div>
+    <div class="actions btn-row" style="margin-top:12px;">
+      <span class="btn-row secondary-action-row hidden" id="ai-action-row" style="margin:0;">
+        <button id="btn-open-ai">Redactar informe con IA</button>
+      </span>
+      <button id="btn-copy">Copiar</button>
+      <button id="btn-print">Imprimir</button>
     </div>
   </section>
 
@@ -2069,9 +2060,9 @@ function syncScopeControls() {
 
     function updateStatus(sourceLabel) {
       const players = new Set(rows.map(r => r.jugadora));
-      $('status-data').textContent = sourceLabel || 'cargados';
+      const stData = $('status-data'); if (stData) stData.textContent = sourceLabel || 'cargados';
       $('status-players').textContent = players.size;
-      $('status-rows').textContent = rows.length;
+      const stRows = $('status-rows'); if (stRows) stRows.textContent = rows.length;
       $('status-date').textContent = rows.length ? fmtDate.format(rows[rows.length - 1].fecha) : '—';
     }
 
@@ -2090,7 +2081,7 @@ function syncScopeControls() {
     }
 
    async function loadServerData() {
-  $('status-data').textContent = 'cargando...';
+  const stDataLoading = $('status-data'); if (stDataLoading) stDataLoading.textContent = 'cargando...';
 
   const btnLoad = $('btn-load');
   if (btnLoad) btnLoad.disabled = true;

@@ -14,12 +14,9 @@ const APP_SHELL = [
   './analisis/partidos/index.html',
   './analisis/penales/index.html',
   './antidoping/index.html',
-  './antidoping/patch.js',
   './base-datos/index.html',
-  './base-datos/patch.js',
   './concentraciones/index.html',
   './reportes/index.html',
-  './reportes/patch.js',
   './tactica/index.html'
 ];
 
@@ -56,15 +53,6 @@ function isStaticAsset(request) {
   return ['style:', 'script:', 'image:', 'font:'].includes(`${request.destination}:`) || (url.origin === self.location.origin && request.destination !== 'document');
 }
 
-function injectPatchScript(html, scriptSrc) {
-  if (!html || !scriptSrc || html.includes(scriptSrc)) return html;
-  const tag = `<script src="${scriptSrc}"></script>`;
-  if (html.includes('</body>')) {
-    return html.replace('</body>', `${tag}</body>`);
-  }
-  return `${html}${tag}`;
-}
-
 self.addEventListener('fetch', event => {
   const { request } = event;
 
@@ -89,27 +77,7 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request);
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('text/html')) return response;
-
-        const url = new URL(request.url);
-        let html = await response.text();
-        if (/\/antidoping\/?(?:index\.html)?$/i.test(url.pathname)) {
-          html = injectPatchScript(html, './patch.js');
-        } else if (/\/base-datos\/?(?:index\.html)?$/i.test(url.pathname)) {
-          html = injectPatchScript(html, './patch.js');
-        } else if (/\/reportes\/?(?:index\.html)?$/i.test(url.pathname)) {
-          html = injectPatchScript(html, './patch.js');
-        }
-
-        const headers = new Headers(response.headers);
-        headers.delete('content-length');
-        return new Response(html, {
-          status: response.status,
-          statusText: response.statusText,
-          headers
-        });
+        return await fetch(request);
       } catch (error) {
         const cached = await caches.match('./index.html');
         return cached || caches.match('./');

@@ -92,11 +92,7 @@
                 <div class="actions"><button id="generarOficialesBtn" class="btn secondary small" type="button">Generar documentos oficiales (Santiago y Gonzalo)</button></div>
                 <div class="muted" style="font-size:.86rem;margin-top:8px">Este acceso genera solo Licencia Agencia Córdoba y Licencia Municipalidad Córdoba para las personas configuradas en documentos oficiales.</div>
               </div>
-              <div class="docs-block">
-                <div class="card-title" style="margin-bottom:12px">Reporte de entrenamiento vinculado</div>
-                <div class="muted" style="font-size:.86rem;margin-bottom:8px">Cruza la convocatoria con las últimas cargas del módulo de reportes para ver el contexto del plantel seleccionado.</div>
-                <div id="reporteContextoList" class="grid"><div class="empty">Cargando contexto compartido...</div></div>
-              </div>
+
             </div>
           </div>
         </div>
@@ -192,9 +188,8 @@
           Murci.apiGetCached('concentraciones_getConcentraciones', {}, { ttlMs: 60 * 1000 }, API_URL)
         ]);
         state.plantel=Array.isArray(plantel)?plantel:[];
-        state.siteContext={plantel:state.plantel,reportes:{rows:[],linkedRows:[],linkStats:{}}};
+      state.siteContext={plantel:state.plantel,reportes:{rows:[],linkedRows:[],linkStats:{}}};
       state.siteContextReady=false;
-      loadSiteContextBackground();
       state.concentraciones=(Array.isArray(concentraciones)?concentraciones:[]).sort((a,b)=>String(dateValue(b,'fecha_inicio','fechaInicio','inicio')).localeCompare(String(dateValue(a,'fecha_inicio','fechaInicio','inicio'))));
       state.asistenciaDrafts={};
       renderLista();
@@ -278,7 +273,6 @@
       resetActividadForm();
       renderConvocatoria();
       renderAsistenciaReal();
-      renderTrainingContext();
     }
 
     async function guardarDatos(){
@@ -372,13 +366,12 @@
         const current=entries.find(e=>String(e.key)===String(key))||{key:String(key),estado:'presente',motivo:''};
         const esAusente=current.estado==='ausente';
         const nombre=nombrePersona(p)||String(key);
-        const meta=[tipoIntegrante(p),rolIntegrante(p),p.DNI||p.dni||''].filter(Boolean).join(' · ');
-        return {key,current,html:`<article class="attendance-person" data-attendance-key="${esc(key)}"><div class="attendance-head"><div><div class="attendance-name">${esc(nombre)}</div><div class="attendance-meta">${esc(meta||'Sin datos')}</div></div><div class="attendance-toggle" role="group" aria-label="Asistencia de ${esc(nombre)}"><button type="button" class="${current.estado==='presente'?'active presente':''}" data-att-state="presente" data-att-key="${esc(key)}" aria-pressed="${current.estado==='presente'?'true':'false'}">Presente</button><button type="button" class="${current.estado==='ausente'?'active ausente':''}" data-att-state="ausente" data-att-key="${esc(key)}" aria-pressed="${current.estado==='ausente'?'true':'false'}">Ausente</button></div></div>${esAusente?`<div class="attendance-motive form-row"><label>Motivo de ausencia</label><textarea data-att-motivo="${esc(key)}" placeholder="Motivo libre">${esc(current.motivo||'')}</textarea></div>`:''}</article>`};
+        return {key,current,html:`<article class="attendance-person" data-attendance-key="${esc(key)}"><div class="attendance-head"><div><div class="attendance-name">${esc(nombre)}</div></div><div class="attendance-toggle" role="group" aria-label="Asistencia de ${esc(nombre)}"><button type="button" class="${current.estado==='presente'?'active presente':''}" data-att-state="presente" data-att-key="${esc(key)}" aria-pressed="${current.estado==='presente'?'true':'false'}">✓</button><button type="button" class="${current.estado==='ausente'?'active ausente':''}" data-att-state="ausente" data-att-key="${esc(key)}" aria-pressed="${current.estado==='ausente'?'true':'false'}">✕</button></div></div>${esAusente?`<div class="attendance-motive form-row"><label>Motivo de ausencia</label><textarea data-att-motivo="${esc(key)}" placeholder="Motivo">${esc(current.motivo||'')}</textarea></div>`:''}</article>`};
       });
       const total=filas.length;
       const presentes=filas.filter(r=>r.current.estado!=='ausente').length;
       const ausentes=total-presentes;
-      cont.innerHTML=`<div class="attendance-card"><div class="attendance-note">Registrá la asistencia antes de generar la certificación para que el documento use sólo las presentes.</div><div class="attendance-list" style="margin-top:10px">${filas.map(r=>r.html).join('')}</div><div class="attendance-summary"><span class="summary-pill">Total convocadas: ${total}</span><span class="summary-pill ok">Presentes: ${presentes}</span><span class="summary-pill danger">Ausentes: ${ausentes}</span></div></div>`;
+      cont.innerHTML=`<div class="attendance-card"><div class="attendance-list">${filas.map(r=>r.html).join('')}</div><div class="attendance-summary"><span class="summary-pill">Total: ${total}</span><span class="summary-pill ok">✓ ${presentes}</span><span class="summary-pill danger">✕ ${ausentes}</span></div></div>`;
       cont.querySelectorAll('[data-att-state]').forEach(btn=>btn.addEventListener('click',()=>{
         const key=btn.dataset.attKey;
         syncAsistenciaDraft(c,key,{estado:btn.dataset.attState});

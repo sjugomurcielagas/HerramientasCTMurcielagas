@@ -416,7 +416,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
       <img src="../assets/logo-murcielagas.webp" alt="Las Murciélagas" onerror="this.style.display='none'">
       <div>
         <div class="brand-title">Tablero Táctico</div>
-        <div class="brand-subtitle">Herramienta táctica · Las Murciélagas</div>
+        <div class="brand-subtitle">Tablero táctico</div>
       </div>
     </div>
   </div>
@@ -576,7 +576,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
     <div id="roster-team-toggle">
       <button class="btn btn-sm" style="border-color:var(--team-a);color:var(--team-a);background:#fff3ef" id="rs-A" onclick="setRosterTeam('A')">⚫ Local</button>
       <button class="btn btn-sm" style="border-color:var(--team-b);color:var(--team-b);background:#eff6ff" id="rs-B" onclick="setRosterTeam('B')">⚪ Visita</button>
-      <div style="flex:1"></div>
+      <span id="roster-team-hint" style="margin-left:auto;font-size:12px;color:var(--text-dim);font-weight:700">Carga en: Local</span>
       <button class="btn btn-sm" onclick="showRivalForm()" style="font-size:10px">+ Rival</button>
     </div>
     <div id="roster-body"></div>
@@ -1056,6 +1056,7 @@ function setRosterTeam(t){
   rosterTeam=t;
   document.getElementById('rs-A').style.fontWeight=t==='A'?'900':'700';
   document.getElementById('rs-B').style.fontWeight=t==='B'?'900':'700';
+  const hint=document.getElementById('roster-team-hint');if(hint)hint.textContent='Carga en: '+(t==='A'?'Local':'Visita');
 }
 function renderRoster(){
   const body=document.getElementById('roster-body');body.innerHTML='';
@@ -1073,7 +1074,7 @@ function renderRoster(){
     c.innerHTML=`<span class="rnum">${p.num||'—'}</span>
       <span class="rinfo"><span class="rapellido">${p.apellido}</span><br><span class="rnombre">${p.nombre}</span></span>
       ${p.gk?'<span class="rgk">ARQ</span>':''}`;
-    if(!placed)c.addEventListener('click',()=>{addFromRoster(p,ri,false);hideRoster();});
+    if(!placed)c.addEventListener('click',()=>{addFromRoster(p,ri,false);});
     body.appendChild(c);
   });
   rivals.forEach((r,ri)=>{
@@ -1083,7 +1084,7 @@ function renderRoster(){
     (r.players||[]).forEach((p,pi)=>{
       const c=document.createElement('div');c.className='rcard';
       c.innerHTML=`<span class="rnum">${p.num||'—'}</span><span class="rinfo"><span class="rapellido">${p.apellido}</span></span>`;
-      c.addEventListener('click',()=>{addFromRoster(p,pi,true);hideRoster();});
+      c.addEventListener('click',()=>{addFromRoster(p,pi,true);});
       body.appendChild(c);
     });
     const ar=document.createElement('div');ar.style='display:flex;gap:6px;margin-bottom:6px';

@@ -116,12 +116,13 @@
         </div>
       </section>
       <div class="footer-note">Las Murciélagas · Cuerpo técnico</div>
-      <div class="footer-note" style="margin-top:6px">Actualizar lista WADA al inicio de cada temporada.</div>
     </section>
   </main>
 
   <script src="../assets/config.js"></script>
   <script>
+    window.resultCardPatched = window.resultCardPatched || false;
+    window.resultcardpatched = window.resultcardpatched || false;
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false,synthetic_frecuentes:false};
     const WADA_LISTA_VIGENTE_URL='https://drive.google.com/file/d/1vuOT1Yclhb0c_m6P5r1PUyAHb6FlZRX2/view?usp=drive_link';
@@ -344,7 +345,7 @@
 
     function renderTUEBoard(){
       const cont=document.getElementById('tueBoard');
-      const casos=state.tues.casos||[];
+      const casos=(state.tues.casos||[]).filter(t=>String(t?.nombre||t?.medicamento||t?.sustancia||t?.estado||'').trim());
       if(!casos.length){cont.innerHTML='<div class="empty">Sin casos TUE cargados.</div>';return}
       cont.innerHTML=casos.map(t=>`<article class="tue-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(t.nombre||'Sin jugadora')}</div><div class="meta">${esc(t.medicamento||'Sin medicamento')} · ${esc(t.sustancia||'Sin sustancia')}</div></div>${estadoBadge(estadoNormalizado(t.estado||''))}</div><div class="meta">Emisión: ${esc(t.fecha_emision||'—')} · Vencimiento: ${esc(t.fecha_vencimiento||'—')}</div><div class="meta">Médico tratante: ${esc(t.medico_tratante||'Sin registrar')}</div><div class="meta">IBSA enviado: ${esc(t.ibsa_enviado||'NO')}${t.ibsa_fecha_envio?` · ${esc(t.ibsa_fecha_envio)}`:''}</div>${t.observaciones?`<p>${esc(t.observaciones)}</p>`:''}<div class="actions" style="margin-top:10px"><button class="btn small secondary" data-action="edit-tue" data-persona-id="${esc(t.persona_id||t.Persona_ID||'')}" data-dni="${esc(t.dni||'')}">Editar</button>${t.archivo?`<a class="btn ghost small" href="${esc(t.archivo)}" target="_blank" rel="noopener noreferrer">Ver TUE</a>`:''}</div></article>`).join('');
     }

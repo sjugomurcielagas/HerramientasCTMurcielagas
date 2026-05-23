@@ -157,7 +157,7 @@
         <img src="../../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'">
         <div>
           <div class="brand-title">Penales</div>
-          <div class="brand-subtitle">Registro y análisis · Las Murciélagas</div>
+          <div class="brand-subtitle">Registro y análisis</div>
         </div>
       </div>
     </div>
@@ -322,7 +322,7 @@
             </div>
           </div>
         </div>
-        <div class="footer-note">Las Murciélagas · Cuerpo técnico</div>
+        <div class="footer-note">Cuerpo técnico</div>
       </section>
 
       <!-- TAB: SESIONES -->
@@ -1034,7 +1034,20 @@
       return state.penalesPorSesion.get(String(sesionId??''))||[];
     }
     function normalizeText(v){return Murci.normalizeText(v)}
-    function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+    function formatDate(d){
+      if(!d)return'';
+      const raw=String(d).trim();
+      const ymd=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(ymd)return`${ymd[3]}/${ymd[2]}/${ymd[1]}`;
+      const parsed=new Date(raw);
+      if(!Number.isNaN(parsed.getTime())){
+        const dd=String(parsed.getDate()).padStart(2,'0');
+        const mm=String(parsed.getMonth()+1).padStart(2,'0');
+        const yy=parsed.getFullYear();
+        return`${dd}/${mm}/${yy}`;
+      }
+      return raw;
+    }
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
   <div class="page-version-tag">Versión UI 2026.05.17 · build cde78f1</div>
