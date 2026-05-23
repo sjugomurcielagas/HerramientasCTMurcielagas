@@ -1322,13 +1322,16 @@ function setupOutputCollapsible(){
     sections.forEach((section,idx)=>{
       if(idx<2)return;
       if(section.parentElement&&section.parentElement.tagName==='DETAILS')return;
-      const title=(section.querySelector('h2')?.textContent||'Detalle').trim();
+      const h2=section.querySelector('h2');
+      const title=(h2?.textContent||'Detalle').trim();
       const details=document.createElement('details');
       details.className='section-collapsible';
-      details.open=false;
+      const titleNorm=title.toLowerCase();
+      details.open=titleNorm.includes('observaciones de lesiones, faltas o problemas');
       const summary=document.createElement('summary');
       summary.textContent=title;
       details.appendChild(summary);
+      if(h2)h2.remove();
       section.parentNode.insertBefore(details,section);
       details.appendChild(section);
     });
