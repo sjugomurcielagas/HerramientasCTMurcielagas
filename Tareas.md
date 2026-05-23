@@ -3,30 +3,30 @@
 > Tablero vivo de continuidad. No es historial permanente.
 > En cada commit/push grande se elimina lo resuelto.
 
-## 1) Pendiente de la sesión anterior
+## 1) Pendiente heredado y estado actual
 
-| Pendiente heredado | Qué se hizo en esta sesión | Estado |
+| Pendiente heredado | Que se hizo en esta sesion | Estado |
 |---|---|---|
-| Unificación técnica inicial en landing | Se unificó login de `index.html` al cliente compartido `Murci.apiPost` y se alineó `API_URL` con `Murci.apiBaseUrl`. | Resuelto |
-| Estructura de seguimiento viva | Se volvió a ordenar este archivo al formato operativo pedido (continuidad + estado). | Resuelto |
+| Limpieza de textos tecnicos visibles en frontend | Se limpio portada y modulos principales, y se hizo barrido transversal con QA automatizado. | En proceso |
+| Unificacion transversal de patrones compartidos (`Murci` + UX) | `reportes/index.html` migro su capa de backend a `Murci` y se consolido el flujo de chequeo previo a push. | En proceso |
+| Auditoria de duplicaciones visuales y simplificacion de vistas/botones | Se redujo ruido en varias vistas; queda pasada fina en superficies secundarias. | En proceso |
 
 ## 2) En proceso
 
 | Tarea en curso | Estado | Nota operativa |
 |---|---|---|
-| Limpieza de textos técnicos visibles en frontend (todos los módulos) | En proceso | Queda barrido fino final en copys secundarios; portada y módulos críticos ya ajustados. |
-| Unificación transversal de patrones compartidos (`Murci` + mensajes UX) | En proceso | `reportes/index.html` ya usa `Murci` para su capa de backend; seguir con módulos restantes por tandas. |
-| Auditoría de duplicaciones visuales y simplificación de vistas/botones | En proceso | Prioridad en pantallas con más carga inicial o bloques redundantes. |
+| Revision visual final completa del sitio | En proceso | Validar desktop/mobile en todos los modulos activos sin solapamientos ni texto tecnico innecesario. |
+| Barrido final de copys secundarios | En proceso | Ajustar titulos, subtitulos y ayudas breves donde todavia quede redaccion redundante. |
+| Cierre operativo de tanda transversal | En proceso | Commit/push final usando `scripts/ship-safe.ps1` cuando cierre la pasada completa. |
 
 ## 3) Nuevos pendientes agregados
 
 | Nuevo pendiente | Estado | Nota |
 |---|---|---|
-| Revisión visual final completa del sitio | Pendiente | Validar que no queden textos técnicos visibles ni solapamientos UI. |
-| Cierre operativo | Pendiente | Commit/push final cuando cierre la tanda transversal. |
+| Mantener QA automatizado como paso obligatorio pre-push | Pendiente | Ejecutar `scripts/qa-fast.ps1` o `scripts/ship-safe.ps1` en cada corte grande. |
 
 ## 4) Regla de mantenimiento (obligatoria)
 
 - Este archivo se usa como tablero vivo.
 - Al finalizar cada commit/push grande, eliminar lo ya resuelto.
-- Mantener solo: pendiente heredado, hecho/estado, en proceso y nuevos pendientes.
+- Mantener solo: pendiente heredado, estado actual, en proceso y nuevos pendientes.

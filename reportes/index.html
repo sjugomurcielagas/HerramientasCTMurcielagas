@@ -1276,10 +1276,14 @@ let includedPlayers = new Set(lsGet('murcielagasIncludedPlayers', []));
       const method = options.method || (payload && Object.keys(payload).length ? 'POST' : 'GET');
       let result;
 
-      if (method === 'GET') {
-        result = await Murci.apiGet(action, {}, API_BASE_URL);
-      } else {
-        result = await Murci.apiPost({ action, ...payload }, API_BASE_URL);
+      try {
+        if (method === 'GET') {
+          result = await Murci.apiGet(action, {}, API_BASE_URL);
+        } else {
+          result = await Murci.apiPost({ action, ...payload }, API_BASE_URL);
+        }
+      } catch (error) {
+        throw new Error(error && error.message ? error.message : 'No se pudo completar la consulta al servidor.');
       }
 
       if (result && typeof result === 'object') {
