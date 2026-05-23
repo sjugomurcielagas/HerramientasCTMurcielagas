@@ -40,6 +40,13 @@
       node.remove();
     });
 
+    var headerCopy = document.querySelector('.report-header');
+    if (headerCopy) {
+      headerCopy.querySelectorAll('.eyebrow, .subtitle').forEach(function (node) {
+        node.remove();
+      });
+    }
+
     var aiPanel = document.getElementById('ai-config-panel');
     if (aiPanel) {
       aiPanel.querySelectorAll('.notice, .hint').forEach(function (node) {
@@ -56,6 +63,7 @@
       ['Este dato debe leerse como volumen reportado, no como carga fisiológica completa.', ''],
       ['Sección pendiente de diseño. Por ahora, los pesos y referencias máximas se trabajan por fuera del sistema hasta definir una carga más intuitiva y específica.', ''],
       ['No hay cargas informadas en la semana seleccionada, así que no conviene leer tendencias de volumen hasta completar registros.', 'No hay cargas informadas en la semana seleccionada.'],
+      ['No está pensada para una semana puntual.', ''],
       ['La semana muestra', 'La semana muestra']
     ];
 
