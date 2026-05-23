@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ct-murcielagas-pwa-v1';
+const CACHE_NAME = 'ct-murcielagas-pwa-v2';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [
@@ -35,6 +35,12 @@ self.addEventListener('activate', event => {
       )
     ).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 function isAppsScriptRequest(request) {
