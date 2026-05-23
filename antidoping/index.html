@@ -178,7 +178,7 @@
         status.textContent=items.length?`Consulta completada${aliasText}.`:'Sin coincidencias confiables.';status.className=items.length?'status-line ok':'status-line error';
         loadHistorial();
       }catch(err){
-        status.textContent='No se pudo completar la consulta en este momento.';status.className='status-line error';
+        status.textContent='Sin respuesta del servicio en este momento. Mostrando resultado orientativo.';status.className='status-line warn';
         renderResultados([fallbackResultado(q)]);
       }
     }

@@ -895,6 +895,7 @@ function tacticaNormalizePlayer(p, idx){
   const nombre=tacticaNameDisplay(p);
   const num=tacticaNumberFromLocal(p);
   const localMatch=MURCIELAGAS.find(item=>tacticaNameKey(item)===tacticaNameKey(p));
+  const rawAll=Object.values(p||{}).map(v=>String(v??'')).join(' ');
   const keeperSignals=[
     p?.gk,
     localMatch?.gk,
@@ -906,7 +907,8 @@ function tacticaNormalizePlayer(p, idx){
     p?.tipoIntegrante,
     p?.tipo_integrante
   ].map(v=>normalizeTacticaText(v)).join(' ');
-  const gk=keeperSignals.includes('arquera')||keeperSignals.includes('arq');
+  const allSignals=normalizeTacticaText(rawAll)+' '+keeperSignals;
+  const gk=allSignals.includes('arquera')||allSignals.includes('arquero')||allSignals.includes('arq')||allSignals.includes('portera')||allSignals.includes('portero')||!!localMatch?.gk||!!p?.gk;
   const apellido=String(p?.Apellido||p?.apellido||'').trim();
   const nombreSolo=String(p?.Nombre||p?.nombre||'').trim();
   return {

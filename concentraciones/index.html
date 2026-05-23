@@ -305,7 +305,7 @@
       const convocables=state.plantel.filter(isConvocable).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       if(!convocables.length){cont.innerHTML='<div class="empty">No hay integrantes disponibles en el plantel.</div>';updateConvCount();return}
       if(locked){
-        cont.innerHTML=convocables.filter(p=>selected.has(String(p.persona_id||p.Persona_ID||p.DNI||p.dni||'').trim())).map(p=>`<article class="activity-card"><div class="activity-title">${esc(nombrePersona(p))}</div><div class="activity-meta">${esc(rolIntegrante(p)||tipoIntegrante(p)||'Integrante')}</div></article>`).join('')||'<div class="empty">No hay convocadas.</div>';
+        cont.innerHTML='<div class="empty">Convocatoria guardada. Usá "Editar convocatoria" para modificar jugadoras.</div>';
         document.getElementById('convCount').textContent=`${selected.size} seleccionadas`;
         return;
       }
