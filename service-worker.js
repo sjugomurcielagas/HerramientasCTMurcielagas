@@ -14,9 +14,11 @@ const APP_SHELL = [
   './analisis/partidos/index.html',
   './analisis/penales/index.html',
   './antidoping/index.html',
+  './antidoping/patch.js',
   './base-datos/index.html',
   './concentraciones/index.html',
   './reportes/index.html',
+  './reportes/patch.js',
   './tactica/index.html'
 ];
 
@@ -50,6 +52,15 @@ function isAppsScriptRequest(request) {
 function isStaticAsset(request) {
   const url = new URL(request.url);
   return ['style:', 'script:', 'image:', 'font:'].includes(`${request.destination}:`) || url.origin === self.location.origin;
+}
+
+function injectPatchScript(html, scriptSrc) {
+  if (!html || !scriptSrc || html.includes(scriptSrc)) return html;
+  const tag = `<script src="${scriptSrc}"></script>`;
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${tag}</body>`);
+  }
+  return `${html}${tag}`;
 }
 
 self.addEventListener('fetch', event => {
@@ -88,11 +99,31 @@ self.addEventListener('fetch', event => {
   }
 
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(async () => {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('text/html')) return response;
+
+        const url = new URL(request.url);
+        let html = await response.text();
+        if (/\/antidoping\/?(?:index\.html)?$/i.test(url.pathname)) {
+          html = injectPatchScript(html, './patch.js');
+        } else if (/\/reportes\/?(?:index\.html)?$/i.test(url.pathname)) {
+          html = injectPatchScript(html, './patch.js');
+        }
+
+        const headers = new Headers(response.headers);
+        headers.delete('content-length');
+        return new Response(html, {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        });
+      } catch (error) {
         const cached = await caches.match('./index.html');
         return cached || caches.match('./');
-      })
-    );
+      }
+    })());
   }
 });
