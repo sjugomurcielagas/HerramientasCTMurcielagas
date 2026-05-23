@@ -237,7 +237,7 @@
     const installFab = document.getElementById('installFab');
     const updateToast = document.getElementById('updateToast');
     const updateToastBtn = document.getElementById('updateToastBtn');
-    const API_URL = API_BASE_URL;
+    const API_URL = (window.Murci && Murci.apiBaseUrl) ? Murci.apiBaseUrl : API_BASE_URL;
     const AUTH_DAYS = 30;
     const homeAlertState = { sections: [], total: 0, ready: false, loading: false, open: false };
     let swRegistration = null;
@@ -255,7 +255,7 @@
     function showUpdateToast(){if(!updateToast)return;updateToast.classList.remove('hidden')}
     function hideUpdateToast(){if(!updateToast)return;updateToast.classList.add('hidden')}
     async function applyUpdate(){if(!swRegistration){window.location.reload();return}const waiting=swRegistration.waiting;if(waiting){pendingUpdateReload=true;hideUpdateToast();waiting.postMessage({type:'SKIP_WAITING'});return}if(swRegistration.installing){pendingUpdateReload=true;hideUpdateToast();return}window.location.reload()}
-    function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})}).then(r=>r.text()).then(t=>{let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');if(d.data!==true){st.textContent='Contrasena incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));setAppVisible(true)}).catch(err=>{st.textContent='Error: '+err.message;st.className='login-status error'})}
+    async function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';try{const ok=Murci&&Murci.apiPost?await Murci.apiPost({action:'base_verificarPassword',password:pass},API_URL):await (async()=>{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})});const t=await r.text();let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data})();if(ok!==true){st.textContent='Contrasena incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));setAppVisible(true)}catch(err){st.textContent='Error: '+(err&&err.message?err.message:'No se pudo validar');st.className='login-status error'}}
     (function(){if(authValida()){setAppVisible(true)}else{limpiarAuth()}})();
     window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;updateInstallFab()});
     window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallFab()});
