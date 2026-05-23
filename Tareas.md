@@ -16,8 +16,8 @@ En los documentos generados desde Concentraciones, la entidad convocante aparece
 
 ### Reportes — Distribución y modelo de IA
 - Revisar la distribución visual del módulo; hay margen para mejorar el uso del espacio.
-- El prompt enviado a la IA puede mejorarse para producir reportes más específicos y útiles.
-- Evaluar si `claude-haiku-4-5-20251001` sigue siendo el modelo adecuado o conviene subir a Sonnet para mejor calidad narrativa.
+- El prompt enviado a la IA quedó más específico y operativo para producir reportes más claros.
+- El backend usa `gpt-4.1-mini` por defecto y el modelo sigue siendo configurable desde Script Properties si conviene subir calidad.
 
 ### Rendimiento — Precarga lenta en algunos módulos
 Algunos módulos navegan y precargan lento. Identificar cuáles (probablemente los que hacen llamadas al Worker al montar) y evaluar:
