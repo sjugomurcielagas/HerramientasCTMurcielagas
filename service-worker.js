@@ -16,6 +16,7 @@ const APP_SHELL = [
   './antidoping/index.html',
   './antidoping/patch.js',
   './base-datos/index.html',
+  './base-datos/patch.js',
   './concentraciones/index.html',
   './reportes/index.html',
   './reportes/patch.js',
@@ -108,6 +109,8 @@ self.addEventListener('fetch', event => {
         const url = new URL(request.url);
         let html = await response.text();
         if (/\/antidoping\/?(?:index\.html)?$/i.test(url.pathname)) {
+          html = injectPatchScript(html, './patch.js');
+        } else if (/\/base-datos\/?(?:index\.html)?$/i.test(url.pathname)) {
           html = injectPatchScript(html, './patch.js');
         } else if (/\/reportes\/?(?:index\.html)?$/i.test(url.pathname)) {
           html = injectPatchScript(html, './patch.js');
