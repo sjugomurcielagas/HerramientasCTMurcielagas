@@ -15,8 +15,8 @@
 
 | Tarea en curso | Estado | Nota operativa |
 |---|---|---|
-| Revision visual final completa del sitio | En proceso | Validar desktop/mobile en todos los modulos activos sin solapamientos ni texto tecnico innecesario. |
-| Barrido final de copys secundarios | En proceso | Ajustar titulos, subtitulos y ayudas breves donde todavia quede redaccion redundante. |
+| Revision visual final completa del sitio | En proceso | Validacion tecnica completa OK; queda chequeo manual final en navegacion real desktop/mobile. |
+| Barrido final de copys secundarios | En proceso | Se ajustaron portada y antidoping; quedan detalles menores a revisar por uso diario del CT. |
 | Cierre operativo de tanda transversal | En proceso | Commit/push final usando `scripts/ship-safe.ps1` cuando cierre la pasada completa. |
 
 ## 3) Nuevos pendientes agregados
