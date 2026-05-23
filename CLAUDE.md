@@ -19,6 +19,13 @@ No hay npm, webpack, transpilación ni dependencias instalables. Todo el JS y CS
 
 Siempre leer todos los archivos relevantes antes de modificar cualquier cosa. Si un cambio toca múltiples módulos, leer cada uno primero.
 
+## Cómo encarar cambios
+
+- Si el pedido es general o transversal, revisar y aplicar el cambio en todos los módulos que puedan compartir el problema, no solo en el primero que lo muestra.
+- Para limpieza de textos de ayuda, simplificación visual, duplicaciones o precargas, auditar al menos `antidoping`, `base-datos`, `reportes`, `analisis`, `concentraciones` y `tactica` cuando aplique.
+- No asumir que un fix en un módulo resuelve a los demás: buscar el patrón repetido y corregirlo en toda la superficie afectada.
+- Si el cambio es de interfaz o copy y hay varios módulos con la misma estructura, preferir una corrección sistemática por archivo o por parche compartido antes que una edición aislada.
+
 ## Arquitectura
 
 Cada módulo es un único archivo HTML autocontenido con CSS y JS inline. Todos los módulos comparten el mismo patrón estructural:
@@ -49,6 +56,7 @@ analisis/
   index.html                — sub-landing del módulo de análisis
   penales/index.html        — registro y estadísticas de penales
 base-datos/index.html       — gestión del plantel (fichas, alertas, archivos)
+concentraciones/index.html  — documentos y seguimiento de concentraciones
 reportes/index.html         — reportes de entrenamiento
 tactica/index.html          — tablero táctico (con manifest.json para PWA)
 assets/
@@ -57,11 +65,12 @@ assets/
   logo-murcielagas.webp
 ```
 
-## Estado actual relevante
+## Estado actual vigente
 
-- `antidoping/index.html` ya no es solo consulta: incluye flujo TUE operativo.
-- `gas/base-deporte/Código.js` expone acciones antidoping y TUE vía el mismo Apps Script.
-- La ficha del plantel se auto-extiende con columnas TUE si no existen todavía en Sheets.
+- `antidoping/index.html` incluye flujo TUE operativo y búsqueda por variantes comerciales.
+- `gas/base-deporte/Código.js` expone acciones antidoping, TUE y generación documental vía el mismo Apps Script.
+- La ficha del plantel autoextiende columnas TUE si no existen todavía en Sheets.
+- Cuando un texto, aviso o bloque de ayuda ya quedó resuelto, no dejarlo congelado en este archivo: actualizar `CLAUDE.md` y mover el seguimiento vivo a `Tareas.md`.
 
 ## Recuperación del sitio
 
@@ -110,11 +119,11 @@ Importante:
 
 - Hoy el sistema maneja una sola TUE activa por jugadora en la ficha.
 - La vigencia por defecto se propone a `365 días`, pero es editable y no debe asumirse como regla universal.
-- Al 2026-05-17 no hay casos TUE reales cargados. Antes de expandir dashboard, alertas o histórico, validar el primer caso operativo con el CT para no sobrediseñar el flujo.
+- Antes de expandir dashboard, alertas o histórico, validar el primer caso operativo con el CT para no sobrediseñar el flujo.
 
 ## Consistencia de estilo
 
-Mantener coherencia con los módulos existentes. Las CSS custom properties definidas en `:root` son idénticas en todos los módulos internos (base-datos, penales, analisis):
+Mantener coherencia con los módulos existentes. Las CSS custom properties definidas en `:root` son idénticas en todos los módulos internos:
 
 - **Paleta:** `--azul-950` / `--azul-800` / `--azul-700` / `--celeste` / `--celeste-100`
 - **UI base:** `--fondo` / `--card` / `--borde` / `--texto` / `--muted`
