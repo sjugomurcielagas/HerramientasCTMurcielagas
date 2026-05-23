@@ -1,11 +1,8 @@
 (function () {
-  var originalShowView = window.showView;
-  var originalLoadFrecuentes = window.loadFrecuentes;
-  var originalBuscar = window.buscar;
-  var originalBuscarConAliases = window.buscarConAliases;
-  var originalRenderResultados = window.renderResultados;
-  var originalResultCard = window.resultCard;
-  var originalSearchVariants = window.searchVariants;
+  var originalShowView = showView;
+  var originalLoadFrecuentes = loadFrecuentes;
+  var originalBuscarConAliases = buscarConAliases;
+  var originalSearchVariants = searchVariants;
 
   window.__frecuentesCanLoad = false;
 
@@ -45,7 +42,7 @@
     return !!(principal || fuentes || /PROHIBIDO|ADVERTENCIA|CONDICIONADO|PERMITIDO|NO FIGURA|VIGENTE/.test(estado));
   }
 
-  window.searchVariants = function (query) {
+  searchVariants = function (query) {
     var normalized = norm(query);
     var extras = [];
     if (normalized === 'anaflex') extras = ['anaflex', 'paracetamol', 'diclofenac', 'paracetamol diclofenac'];
@@ -58,8 +55,8 @@
     return Array.from(new Set(base.concat(extras).filter(Boolean)));
   };
 
-  window.buscarConAliases = async function (query) {
-    var variantes = window.searchVariants(query);
+  buscarConAliases = async function (query) {
+    var variantes = searchVariants(query);
     var collected = [];
     var seen = new Set();
     var usedVariant = '';
@@ -67,7 +64,7 @@
     for (var i = 0; i < variantes.length; i++) {
       var variante = variantes[i];
       try {
-        var data = await window.apiPost({ action: 'antidoping_buscarMedicamento', consulta: variante });
+        var data = await apiPost({ action: 'antidoping_buscarMedicamento', consulta: variante });
         var items = Array.isArray(data)
           ? data
           : (Array.isArray(data && data.resultados) ? data.resultados : [data]);
@@ -91,7 +88,7 @@
 
     if (!collected.length) {
       return {
-        items: [window.fallbackResultado(query)],
+        items: [fallbackResultado(query)],
         usedAlias: ''
       };
     }
@@ -107,34 +104,34 @@
     };
   };
 
-  window.resultCard = function (r, index) {
-    var estado = window.estadoNormalizado(r.estado || r.resultado || 'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
-    var fuentes = window.fuentesHtml(r);
-    var presentacion = r.presentacion ? '<div class="meta">Presentación: ' + window.esc(r.presentacion) + '</div>' : '';
-    var laboratorio = r.laboratorio ? '<div class="meta">Laboratorio: ' + window.esc(r.laboratorio) + '</div>' : '';
+  resultCard = function (r, index) {
+    var estado = estadoNormalizado(r.estado || r.resultado || 'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
+    var fuentes = fuentesHtml(r);
+    var presentacion = r.presentacion ? '<div class="meta">Presentación: ' + esc(r.presentacion) + '</div>' : '';
+    var laboratorio = r.laboratorio ? '<div class="meta">Laboratorio: ' + esc(r.laboratorio) + '</div>' : '';
     var contexto = (r.en_competencia || r.fuera_competencia)
-      ? '<div class="meta">En competencia: ' + window.esc(r.en_competencia || 'N/D') + ' · Fuera de competencia: ' + window.esc(r.fuera_competencia || 'N/D') + '</div>'
+      ? '<div class="meta">En competencia: ' + esc(r.en_competencia || 'N/D') + ' · Fuera de competencia: ' + esc(r.fuera_competencia || 'N/D') + '</div>'
       : '';
-    var decision = window.decisionBlock(r, estado, index);
-    var criterio = r.criterio_wada ? '<p><strong>Criterio:</strong> ' + window.esc(r.criterio_wada) + '</p>' : '';
+    var decision = decisionBlock(r, estado, index);
+    var criterio = r.criterio_wada ? '<p><strong>Criterio:</strong> ' + esc(r.criterio_wada) + '</p>' : '';
     var criterioPlano = String(r.criterio_wada || '').trim().toLowerCase();
     var observacionesPlano = String(r.observaciones || '').trim().toLowerCase();
-    var observaciones = r.observaciones && observacionesPlano !== criterioPlano ? '<p>' + window.esc(r.observaciones) + '</p>' : '';
-    var consulta = r.__consulta ? '<div class="meta"><strong>Consulta usada:</strong> ' + window.esc(r.__consulta) + '</div>' : '';
-    return '<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">' + window.esc(r.medicamento || r.nombre_comercial || r.consulta || 'Consulta') + '</div><div class="meta">' + window.esc(r.principio_activo || r.principioActivo || 'Principio activo no identificado') + '</div>' + consulta + presentacion + laboratorio + contexto + '</div>' + window.estadoBadge(estado) + '</div>' + decision + criterio + observaciones + fuentes + '</article>';
+    var observaciones = r.observaciones && observacionesPlano !== criterioPlano ? '<p>' + esc(r.observaciones) + '</p>' : '';
+    var consulta = r.__consulta ? '<div class="meta"><strong>Consulta usada:</strong> ' + esc(r.__consulta) + '</div>' : '';
+    return '<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">' + esc(r.medicamento || r.nombre_comercial || r.consulta || 'Consulta') + '</div><div class="meta">' + esc(r.principio_activo || r.principioActivo || 'Principio activo no identificado') + '</div>' + consulta + presentacion + laboratorio + contexto + '</div>' + estadoBadge(estado) + '</div>' + decision + criterio + observaciones + fuentes + '</article>';
   };
 
-  window.renderResultados = function (items) {
-    window.state.lastResults = Array.isArray(items) ? items : [];
+  renderResultados = function (items) {
+    state.lastResults = Array.isArray(items) ? items : [];
     var cont = document.getElementById('resultados');
-    if (!window.state.lastResults.length) {
+    if (!state.lastResults.length) {
       cont.innerHTML = '<div class="empty">No encontrado / requiere verificación.</div>';
       return;
     }
-    cont.innerHTML = window.state.lastResults.map(function (item, index) { return window.resultCard(item, index); }).join('');
+    cont.innerHTML = state.lastResults.map(function (item, index) { return resultCard(item, index); }).join('');
   };
 
-  window.buscar = async function () {
+  buscar = async function () {
     var q = document.getElementById('queryInput').value.trim();
     var status = document.getElementById('buscarStatus');
     if (!q) {
@@ -146,22 +143,22 @@
     status.className = 'status-line';
     document.getElementById('resultados').innerHTML = '<div class="empty">Buscando coincidencias...</div>';
     try {
-      var resolved = await window.buscarConAliases(q);
-      window.renderResultados(resolved.items.filter(Boolean));
-      var count = window.state.lastResults.length;
+      var resolved = await buscarConAliases(q);
+      renderResultados(resolved.items.filter(Boolean));
+      var count = state.lastResults.length;
       status.textContent = resolved.usedAlias
         ? 'Consulta completada usando alias: ' + resolved.usedAlias + '.'
         : (count > 1 ? 'Consulta completada. Se encontraron ' + count + ' versiones.' : 'Consulta completada.');
       status.className = 'status-line ok';
-      if (typeof window.loadHistorial === 'function') window.loadHistorial();
+      if (typeof loadHistorial === 'function') loadHistorial();
     } catch (err) {
       status.textContent = 'No se pudo consultar la API interna: ' + err.message;
       status.className = 'status-line error';
-      window.renderResultados([]);
+      renderResultados([]);
     }
   };
 
-  window.loadFrecuentes = async function (force) {
+  loadFrecuentes = async function (force) {
     if (!window.__frecuentesCanLoad && !force) {
       var cont = document.getElementById('frecuentesList');
       if (cont) cont.innerHTML = '<div class="empty">Abrí esta pestaña para cargar los medicamentos frecuentes.</div>';
@@ -170,13 +167,11 @@
     if (typeof originalLoadFrecuentes === 'function') return originalLoadFrecuentes();
   };
 
-  window.showView = function (id) {
+  showView = function (id) {
     if (typeof originalShowView === 'function') originalShowView(id);
     if (id === 'frecuentesView') {
       window.__frecuentesCanLoad = true;
-      if (!window.state.loaded.frecuentes) window.loadFrecuentes(true);
+      if (!state.loaded.frecuentes) loadFrecuentes(true);
     }
   };
-
-  if (typeof window.originalBuscar === 'undefined') window.originalBuscar = originalBuscar;
 })();
