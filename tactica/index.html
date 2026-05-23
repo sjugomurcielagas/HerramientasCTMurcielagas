@@ -1061,7 +1061,7 @@ function setRosterTeam(t){
 function renderRoster(){
   const body=document.getElementById('roster-body');body.innerHTML='';
   const sec=document.createElement('div');sec.className='rsection';
-  sec.innerHTML='<span>⚡ Las Murciélagas</span><span style="font-size:9px;opacity:.55">★★ Bicampeonas</span>';
+  sec.innerHTML='<span>⚡ Nómina base</span>';
   body.appendChild(sec);
   const sorted=[...MURCIELAGAS].sort((a,b)=>{
     if(a.gk!==b.gk)return a.gk?-1:1;
