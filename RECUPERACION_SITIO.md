@@ -49,7 +49,7 @@ Si alguno falla, no asumir que el resto del sitio está bien.
 4. Validar desde el navegador que la pantalla carga y que los datos vuelven.
 5. Actualizar esta guía si apareció un nuevo punto de falla.
 
-## Pendiente para mañana
+## Pendiente operativo
 
-- Terminar de mover `reportes/index.html` al cliente compartido `Murci` y retirar su `callBackend` local.
-- Revisar si queda alguna pantalla usando helpers propios para fetch/parseo en vez de `assets/config.js`.
+- Continuar revisión transversal para detectar helpers de red locales remanentes y reemplazarlos por `Murci`.
+- Mantener el chequeo rápido (`scripts/qa-fast.ps1`) antes de cada push.

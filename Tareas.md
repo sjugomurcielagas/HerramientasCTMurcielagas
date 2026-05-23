@@ -14,8 +14,8 @@
 
 | Tarea en curso | Estado | Nota operativa |
 |---|---|---|
-| Limpieza de textos técnicos visibles en frontend (todos los módulos) | En proceso | Revisar y ajustar copy en `antidoping`, `base-datos`, `reportes`, `analisis`, `concentraciones`, `tactica`. |
-| Unificación transversal de patrones compartidos (`Murci` + mensajes UX) | En proceso | Aplicar por tandas chicas para evitar cambios masivos frágiles. |
+| Limpieza de textos técnicos visibles en frontend (todos los módulos) | En proceso | Queda barrido fino final en copys secundarios; portada y módulos críticos ya ajustados. |
+| Unificación transversal de patrones compartidos (`Murci` + mensajes UX) | En proceso | `reportes/index.html` ya usa `Murci` para su capa de backend; seguir con módulos restantes por tandas. |
 | Auditoría de duplicaciones visuales y simplificación de vistas/botones | En proceso | Prioridad en pantallas con más carga inicial o bloques redundantes. |
 
 ## 3) Nuevos pendientes agregados
