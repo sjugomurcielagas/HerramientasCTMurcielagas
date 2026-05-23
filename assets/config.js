@@ -527,7 +527,10 @@ const UI_VERSION = '2026.05.22 · c759857';
       if (global.__murciAntidopingPatched) return;
       global.__murciAntidopingPatched = true;
 
-      if (global.SEARCH_ALIASES) {
+      if (typeof SEARCH_ALIASES !== 'undefined' && SEARCH_ALIASES) {
+        const current = Array.isArray(SEARCH_ALIASES.anaflex) ? SEARCH_ALIASES.anaflex : [];
+        SEARCH_ALIASES.anaflex = Array.from(new Set([...current, 'anaflex', 'paracetamol', 'diclofenac']));
+      } else if (global.SEARCH_ALIASES) {
         const current = Array.isArray(global.SEARCH_ALIASES.anaflex) ? global.SEARCH_ALIASES.anaflex : [];
         global.SEARCH_ALIASES.anaflex = Array.from(new Set([...current, 'anaflex', 'paracetamol', 'diclofenac']));
       }
@@ -583,7 +586,7 @@ const UI_VERSION = '2026.05.22 · c759857';
       global.searchVariants = function searchVariantsPatched(query) {
         const normalized = normalizeKey(query);
         const direct = String(query || '').trim();
-        const extras = Array.isArray(global.SEARCH_ALIASES?.[normalized]) ? global.SEARCH_ALIASES[normalized] : [];
+        const extras = Array.isArray(SEARCH_ALIASES?.[normalized]) ? SEARCH_ALIASES[normalized] : [];
         const singular = normalized.length > 3 && normalized.endsWith('s') ? normalized.slice(0, -1) : '';
         const hints = normalized === 'anaflex' ? ['paracetamol', 'diclofenac'] : [];
         return Array.from(new Set([direct, normalized, singular, ...extras, ...hints].filter(Boolean)));
@@ -655,8 +658,7 @@ const UI_VERSION = '2026.05.22 · c759857';
 
       global.renderResultados = function renderResultadosPatched(items) {
         const list = Array.isArray(items) ? items.filter(Boolean) : [];
-        global.state = global.state || {};
-        global.state.lastResults = list;
+        try { state.lastResults = list; } catch { global.state = global.state || {}; global.state.lastResults = list; }
         const cont = doc.getElementById('resultados');
         if (!cont) return;
         if (!list.length) {
