@@ -1,26 +1,32 @@
 # Pendientes
 
-## Bugs
+## Hecho
 
 ### Base de datos — Error al abrir ficha desde alertas
-`Error al cargar ficha: toInputDate is not defined`
-Al navegar desde el panel de alertas a la ficha individual de una jugadora, la función `toInputDate` no está definida en ese contexto. Revisar si la función existe en el scope correcto o si falta incluirla antes de llamarla desde la vista de alertas.
+Resuelto: `toInputDate` ya quedó disponible en el contexto compartido y la ficha abre sin romper desde alertas.
 
-### Antidoping — Acepta medicamentos inventados
-Nombres sin existencia real (ej: "yutifurinol") pasan el flujo y reciben una clasificación. El módulo necesita una validación que descarte términos que no aparecen en ninguna fuente conocida (catálogo interno, WADA, prvademecum) antes de emitir resultado.
+### Base de datos — Duplicación en la ficha
+Resuelto: se limpiaron los bloques repetidos y quedaron solo las tarjetas finales de archivos / estados.
 
-### Generación de documentos — Entidad convocante dice "FADEC" en lugar del nombre completo
-En los documentos generados desde Concentraciones, la entidad convocante aparece como "FADEC" en lugar del nombre completo ("Federación Argentina de Deportes para Ciegos" o el que corresponda). Revisar el placeholder o el valor hardcodeado en el GAS o en el template de Drive.
+### Antidoping — Medicamentos inventados y variantes comerciales
+Ya quedó endurecida la búsqueda: ahora se muestran variantes separadas, se evita elegir una sola respuesta a ciegas y la carga de frecuentes quedó diferida hasta abrir esa pestaña.
 
-## Mejoras
+### Generación de documentos — Entidad convocante con nombre completo
+Resuelto: la convocatoria y los placeholders ahora priorizan el nombre completo de la Federación Argentina de Deportes para Ciegos.
 
-### Reportes — Distribución y modelo de IA
-- Revisar la distribución visual del módulo; hay margen para mejorar el uso del espacio.
-- El prompt enviado a la IA quedó más específico y operativo para producir reportes más claros.
-- El backend usa `gpt-4.1-mini` por defecto y el modelo sigue siendo configurable desde Script Properties si conviene subir calidad.
+### Reportes — Prompt y modelo de IA
+Ya quedó el prompt más guiado y el backend sigue con `gpt-4.1-mini` por defecto, configurable desde Script Properties.
 
-### Rendimiento — Precarga lenta en algunos módulos
-Algunos módulos navegan y precargan lento. Identificar cuáles (probablemente los que hacen llamadas al Worker al montar) y evaluar:
-- Mostrar estado de carga visible en lugar de pantalla en blanco.
-- Cachear respuestas frecuentes donde tenga sentido.
-- Revisar si hay llamadas redundantes al arranque.
+### Rendimiento — Precargas iniciales
+Se achicó la carga inicial: Antidoping ahora difiere frecuentes y Reportes difiere el contexto analítico pesado hasta que realmente hace falta.
+
+## Por validar
+
+### Antidoping — Revisión con casos reales
+Probar con ejemplos concretos de nombres comerciales y ver que cada versión aparezca con su propio veredicto.
+
+### Reportes — Ajuste visual final
+Hacer una pasada visual en navegador para confirmar que el panel de referencias quedó más liviano y que no se rompió la composición.
+
+### Rendimiento — Otros módulos
+Seguir mirando si hay otro módulo que siga precargando de más o mostrando pantallas vacías al inicio.
