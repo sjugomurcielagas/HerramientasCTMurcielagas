@@ -181,7 +181,7 @@ const UI_VERSION = '2026.05.22 · c759857';
         plantelCache = rawList.map(normalizarPlantelItem_);
       } catch (error) {
         console.error('[Murci] No se pudo obtener el plantel can\u00f3nico desde site_getPlantel.', error);
-        plantelCache = [];
+        plantelCache = []; 
       } finally {
         plantelPromise = null;
       }
@@ -512,6 +512,184 @@ const UI_VERSION = '2026.05.22 · c759857';
       global.document.addEventListener('DOMContentLoaded', syncUiVersionTags, { once: true });
     } else {
       syncUiVersionTags();
+    }
+  }
+
+  function initAntidopingEnhancements_() {
+    const doc = global.document;
+    if (!doc) return;
+
+    const applyPatch = () => {
+      if (typeof global.searchVariants !== 'function' || typeof global.buscarConAliases !== 'function' || typeof global.renderResultados !== 'function') {
+        global.setTimeout(applyPatch, 50);
+        return;
+      }
+      if (global.__murciAntidopingPatched) return;
+      global.__murciAntidopingPatched = true;
+
+      if (global.SEARCH_ALIASES) {
+        const current = Array.isArray(global.SEARCH_ALIASES.anaflex) ? global.SEARCH_ALIASES.anaflex : [];
+        global.SEARCH_ALIASES.anaflex = Array.from(new Set([...current, 'anaflex', 'paracetamol', 'diclofenac']));
+      }
+
+      if (!doc.getElementById('murci-antidoping-patch-style')) {
+        const style = doc.createElement('style');
+        style.id = 'murci-antidoping-patch-style';
+        style.textContent = '.result-nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.result-card.focused{border-color:var(--celeste);box-shadow:0 0 0 4px rgba(34,168,232,.15)}.result-source-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.result-source-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:var(--celeste-100);color:var(--azul-800);font-size:.76rem;font-weight:800}.result-variant{margin-top:6px;color:var(--muted);font-size:.88rem}.result-variant strong{color:var(--texto)}';
+        doc.head.appendChild(style);
+      }
+
+      const normalizeKey = value => String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const firstText = (...values) => {
+        for (const value of values) {
+          if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+        }
+        return '';
+      };
+
+      const resultKey = item => normalizeKey([
+        firstText(item?.medicamento, item?.nombre_comercial, item?.nombre, item?.consulta),
+        firstText(item?.principio_activo, item?.principioActivo),
+        firstText(item?.estado, item?.resultado),
+        firstText(item?.presentacion, item?.laboratorio)
+      ].join('|'));
+
+      const severityScore = item => {
+        const estado = estadoNormalizado(firstText(item?.estado, item?.resultado));
+        if (!estado) return 0;
+        if (estado.includes('PROHIBIDO')) return 100;
+        if (estado.includes('ADVERTENCIA') || estado.includes('CONDICIONADO') || estado.includes('UMBRAL')) return 70;
+        if (estado.includes('NO FIGURA') || estado.includes('PERMITIDO')) return 50;
+        if (estado.includes('REQUIERE') || estado.includes('VERIFICACI')) return 20;
+        return 10;
+      };
+
+      const titleFor = (item, index) => firstText(item?.medicamento, item?.nombre_comercial, item?.consulta, `Versión ${index + 1}`);
+      const sourcesFor = item => Array.from(new Set([
+        ...(Array.isArray(item?.consultas) ? item.consultas : []),
+        item?.consulta_usada,
+        item?.consulta,
+        item?._consulta
+      ].filter(Boolean).map(value => String(value).trim())));
+
+      global.searchVariants = function searchVariantsPatched(query) {
+        const normalized = normalizeKey(query);
+        const direct = String(query || '').trim();
+        const extras = Array.isArray(global.SEARCH_ALIASES?.[normalized]) ? global.SEARCH_ALIASES[normalized] : [];
+        const singular = normalized.length > 3 && normalized.endsWith('s') ? normalized.slice(0, -1) : '';
+        const hints = normalized === 'anaflex' ? ['paracetamol', 'diclofenac'] : [];
+        return Array.from(new Set([direct, normalized, singular, ...extras, ...hints].filter(Boolean)));
+      };
+
+      global.buscarConAliases = async function buscarConAliasesPatched(query) {
+        const variantes = global.searchVariants(query);
+        const seen = new Map();
+        const collected = [];
+
+        for (const variante of variantes) {
+          try {
+            const data = await apiPost({ action: 'antidoping_buscarMedicamento', consulta: variante });
+            const items = (Array.isArray(data) ? data : (Array.isArray(data?.resultados) ? data.resultados : [data])).filter(Boolean);
+            for (const raw of items) {
+              const item = {
+                ...raw,
+                medicamento: firstText(raw?.medicamento, raw?.nombre_comercial, raw?.nombre, raw?.consulta, variante, query),
+                principio_activo: firstText(raw?.principio_activo, raw?.principioActivo, raw?.sustancia, raw?.principio, ''),
+                estado: firstText(raw?.estado, raw?.resultado, 'NO ENCONTRADO / REQUIERE VERIFICACIÓN'),
+                consultas: Array.from(new Set([...(Array.isArray(raw?.consultas) ? raw.consultas : []), variante].filter(Boolean).map(v => String(v).trim())))
+              };
+              const key = resultKey(item);
+              if (!key) continue;
+              if (seen.has(key)) {
+                const existing = seen.get(key);
+                existing.consultas = Array.from(new Set([...(existing.consultas || []), ...item.consultas]));
+                existing._score = Math.max(existing._score || 0, severityScore(item));
+                continue;
+              }
+              item._score = severityScore(item);
+              seen.set(key, item);
+              collected.push(item);
+            }
+          } catch (err) {
+            // seguimos con las demás variantes
+          }
+        }
+
+        if (!collected.length) {
+          return { items: [fallbackResultado(query)], usedAlias: '' };
+        }
+
+        collected.sort((a, b) => (b._score || 0) - (a._score || 0) || titleFor(a, 0).localeCompare(titleFor(b, 0)));
+        const used = variantes.filter(v => normalizeKey(v) !== normalizeKey(query));
+        return {
+          items: collected,
+          usedAlias: used.length ? used.join(' · ') : ''
+        };
+      };
+
+      global.resultCard = function resultCardPatched(r, index) {
+        const estado = estadoNormalizado(r.estado || r.resultado || 'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
+        const fuentes = fuentesHtml(r);
+        const title = titleFor(r, index);
+        const subtitle = firstText(r.principio_activo, r.principioActivo, 'Principio activo no identificado');
+        const consultas = sourcesFor(r);
+        const consultadas = consultas.length ? `<div class="result-variant"><strong>Consultas:</strong> ${esc(consultas.join(' · '))}</div>` : '';
+        const presentacion = r.presentacion ? `<div class="meta">Presentación: ${esc(r.presentacion)}</div>` : '';
+        const laboratorio = r.laboratorio ? `<div class="meta">Laboratorio: ${esc(r.laboratorio)}</div>` : '';
+        const contexto = (r.en_competencia || r.fuera_competencia) ? `<div class="meta">En competencia: ${esc(r.en_competencia || 'N/D')} · Fuera de competencia: ${esc(r.fuera_competencia || 'N/D')}</div>` : '';
+        const decision = decisionBlock(r, estado, index);
+        const criterio = r.criterio_wada ? `<p><strong>Criterio:</strong> ${esc(r.criterio_wada)}</p>` : '';
+        const criterioPlano = (r.criterio_wada || '').trim().toLowerCase();
+        const observacionesPlano = (r.observaciones || '').trim().toLowerCase();
+        const observaciones = r.observaciones && observacionesPlano !== criterioPlano ? `<p>${esc(r.observaciones)}</p>` : '';
+        return `<article id="resultado-${index}" class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(title)}</div><div class="meta">${esc(subtitle)}</div>${presentacion}${laboratorio}${contexto}${consultadas}</div>${estadoBadge(estado)}</div>${decision}${criterio}${observaciones}${fuentes}</article>`;
+      };
+
+      global.renderResultados = function renderResultadosPatched(items) {
+        const list = Array.isArray(items) ? items.filter(Boolean) : [];
+        global.state = global.state || {};
+        global.state.lastResults = list;
+        const cont = doc.getElementById('resultados');
+        if (!cont) return;
+        if (!list.length) {
+          cont.innerHTML = '<div class="empty">No encontrado / requiere verificación.</div>';
+          return;
+        }
+        const nav = list.length > 1 ? `<div class="notice">Se encontraron ${list.length} versiones. Revisalas una por una: cada tarjeta muestra el estado de esa fórmula.</div><div class="actions result-nav">${list.map((item, index) => `<button class="btn secondary tiny" type="button" data-result-jump="${index}">${esc(titleFor(item, index))}</button>`).join('')}</div>` : '';
+        cont.innerHTML = nav + list.map((item, index) => resultCardPatched(item, index)).join('');
+      };
+
+      const resultados = doc.getElementById('resultados');
+      if (resultados && !resultados.dataset.murciPatchBound) {
+        resultados.addEventListener('click', event => {
+          const jump = event.target.closest('[data-result-jump]');
+          if (!jump) return;
+          const idx = Number(jump.dataset.resultJump);
+          const card = doc.getElementById(`resultado-${idx}`);
+          if (!card) return;
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          card.classList.add('focused');
+          global.setTimeout(() => card.classList.remove('focused'), 1400);
+        });
+        resultados.dataset.murciPatchBound = '1';
+      }
+    };
+
+    global.setTimeout(applyPatch, 0);
+  }
+
+  if (global.document) {
+    const path = String(global.location?.pathname || '');
+    if (/\/antidoping\/?(?:index\.html)?$/i.test(path) || /\/antidoping\/$/i.test(path)) {
+      initAntidopingEnhancements_();
     }
   }
 })(globalThis);
