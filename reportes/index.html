@@ -73,7 +73,7 @@ body {
 
 .top-nav {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   margin-bottom: 14px;
@@ -979,18 +979,16 @@ footer {
   <div class="app">
 
     <nav class="top-nav" aria-label="Navegación principal">
-      <a class="back-home" href="../" aria-label="Volver al inicio">
-        ← Volver al inicio
-      </a>
-
-      <div class="module-title" aria-label="Módulo actual">
-        <span>Las Murciélagas</span>
-        <strong>Reportes de entrenamiento</strong>
-      </div>
+      <a class="back-home" href="../" aria-label="Volver al inicio">← Inicio</a>
 
       <div class="report-brand" aria-label="Identidad institucional">
         <img class="logo-fadec" src="../assets/fadec-logo.webp" alt="FADEC">
         <img class="logo-murcielagas" src="../assets/logo-murcielagas.webp" alt="Las Murciélagas">
+      </div>
+
+      <div class="module-title" aria-label="Módulo actual">
+        <span>Las Murciélagas</span>
+        <strong>Reportes de entrenamiento</strong>
       </div>
     </nav>
 
