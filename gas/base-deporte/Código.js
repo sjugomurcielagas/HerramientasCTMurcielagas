@@ -1779,7 +1779,7 @@ function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
   try {
     base_ensureDocumentColumns_();
     var row = getRowByPersona_(dni, 'auto');
-    if (!row) return { ok: false, msg: 'Persona no encontrada' };
+    if (!row) return { ok: false, error: 'Persona no encontrada' };
 
     var apellido    = (row.Apellido || 'SIN_APELLIDO').replace(/\s+/g, '_');
     var nombreCorto = (row.Nombre   || 'SIN_NOMBRE').split(' ')[0];
@@ -1829,7 +1829,7 @@ function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
     return { ok: true, link: link };
 
   } catch (e) {
-    return { ok: false, msg: e.toString() };
+    return { ok: false, error: e.toString() };
   }
 }
 
