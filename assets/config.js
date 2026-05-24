@@ -551,6 +551,14 @@ const UI_VERSION = '2026.05.22 · c759857';
         .replace(/\s+/g, ' ')
         .trim();
 
+      const commercialFallbackMap = {
+        anaflex: ['paracetamol', 'paracetamol + diclofenac'],
+        novalgina: ['metamizol'],
+        tafirol: ['paracetamol'],
+        ibupirac: ['ibuprofeno'],
+        actron: ['ibuprofeno']
+      };
+
       const firstText = (...values) => {
         for (const value of values) {
           if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
@@ -627,6 +635,21 @@ const UI_VERSION = '2026.05.22 · c759857';
         }
 
         if (!collected.length) {
+          const normalizedQuery = normalizeKey(query);
+          const fallbackActives = commercialFallbackMap[normalizedQuery] || [];
+          if (fallbackActives.length) {
+            const fallbackItems = fallbackActives.map(active => ({
+              medicamento: query,
+              principio_activo: active,
+              estado: 'REQUIERE REVISIÓN',
+              observaciones: 'Sin respuesta del servicio en este momento. Confirmar presentación exacta antes de habilitar uso.',
+              fuente_argentina: 'Marca comercial normalizada (fallback local)',
+              fuente_wada: 'Pendiente de validación',
+              fuente_secundaria: '',
+              consultas: [query]
+            }));
+            return { items: fallbackItems, usedAlias: '' };
+          }
           return { items: [fallbackResultado(query)], usedAlias: '' };
         }
 
