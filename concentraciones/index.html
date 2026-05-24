@@ -310,7 +310,7 @@
         return;
       }
       cont.innerHTML=convocables.map(p=>{
-        const dni=String(p.DNI||p.dni||'').trim(),personaId=String(p.persona_id||p.Persona_ID||'').trim(),key=personaId||dni,nombre=nombrePersona(p),tipo=tipoIntegrante(p),rol=rolIntegrante(p),etiqueta=tipo||rol||'Integrante';
+        const dni=String(p.DNI||p.dni||'').trim(),key=Murci.personaRef(p),nombre=nombrePersona(p),tipo=tipoIntegrante(p),rol=rolIntegrante(p),etiqueta=tipo||rol||'Integrante';
         const fijo=isCuerpoTecnico(p);
         return `<label class="check-item"><input type="checkbox" value="${esc(key)}" ${selected.has(key)?'checked':''} ${fijo?'disabled':''}><span class="check-main"><strong>${esc(nombre)}</strong><span class="check-meta">${rol&&rol!==tipo?esc(rol)+' · ':''}DNI ${esc(dni||'sin cargar')}</span></span><span class="badge info" style="font-size:.66rem">${esc(fijo?'Siempre':etiqueta)}</span></label>`;
       }).join('');
@@ -323,13 +323,13 @@
       return saved.length>0&&!state.convocatoriaEditById[id];
     }
     function asistenciaKeyForPerson(p){
-      return String(p.persona_id||p.Persona_ID||p.DNI||p.dni||'').trim();
+      return Murci.personaRef(p);
     }
     function normalizeAsistenciaEntry(entry){
       const raw=entry||{};
       const estado=String(raw.estado||raw.status||'presente').toLowerCase()==='ausente'?'ausente':'presente';
       return {
-        key:String(raw.key||raw.id||raw.dni||raw.personaId||raw.persona_id||'').trim(),
+        key:canonicalPersonaRef(raw.key||raw.id||raw.dni||raw.personaId||raw.persona_id||''),
         estado,
         motivo:String(raw.motivo||raw.ausencia||'').trim()
       };
@@ -524,7 +524,7 @@
       const linked=Array.isArray(reportes.linkedRows)?reportes.linkedRows:[];
       const rows=linked.filter(r=>{
         const persona=r?.persona||{};
-        const key=String(persona.persona_id||persona.Persona_ID||persona.DNI||persona.dni||'').trim();
+        const key=Murci.personaRef(persona);
         return selected.has(key);
       });
       rows.sort((a,b)=>Number(b.rowNumber||0)-Number(a.rowNumber||0));
@@ -672,8 +672,9 @@
     function currentConc(){return state.concentraciones.find(c=>String(concId(c))===String(state.actualId))}
     function concId(c){return c?.id??c?.ID??c?.concentracion_id??c?.concentracionId??''}
     function mergeConc(values){const c=currentConc();if(c)Object.assign(c,values)}
-    function parseConvocadas(c){const raw=c?.convocadas_json??c?.convocadasJson??c?.convocadas??'[]';if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
-    function defaultConvocadosDnis(){return state.plantel.filter(isCuerpoTecnico).map(p=>String(p.persona_id||p.Persona_ID||p.DNI||p.dni||'').trim()).filter(Boolean)}
+    function canonicalPersonaRef(value){const raw=String(value||'').trim();if(!raw)return'';const dni=Murci.normalizeDni(raw);const match=(state.plantel||[]).find(p=>Murci.personaRef(p)===raw||(dni&&Murci.normalizeDni(p.DNI||p.dni)===dni));return match?Murci.personaRef(match):raw}
+    function parseConvocadas(c){const raw=c?.convocadas_json??c?.convocadasJson??c?.convocadas??'[]';const list=Array.isArray(raw)?raw:(()=>{try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}})();return list.map(canonicalPersonaRef).filter(Boolean)}
+    function defaultConvocadosDnis(){return state.plantel.filter(isCuerpoTecnico).map(p=>Murci.personaRef(p)).filter(Boolean)}
     function convocatoriaDnisEfectivos(c){return Array.from(new Set([...parseConvocadas(c).map(String),...defaultConvocadosDnis()]))}
     function convocatoriaDnisDesdeChecks(){return Array.from(new Set([...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean).concat(defaultConvocadosDnis())))}
     function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
@@ -705,7 +706,7 @@
     function rolIntegrante(p){return String(p.Rol||p.rol||'').trim()}
     function normalizarTipo(v){return norm(v).trim().replace(/\s+/g,' ').replace(/\s*\/\s*/g,' / ')}
     function isCuerpoTecnico(p){const tipo=normalizarTipo(tipoIntegrante(p));if(tipo)return tipo==='cuerpo tecnico'||tipo==='ct'||tipo==='cuerpo tecnico / ct';const rol=normalizarTipo(rolIntegrante(p));return rol==='cuerpo tecnico'||rol==='ct'||rol==='cuerpo tecnico / ct'||(rol.includes('cuerpo')&&rol.includes('tecnico'))}
-    function isCuerpoTecnicoDni(dni){const key=String(dni||'').trim();return state.plantel.some(p=>String(p.persona_id||p.Persona_ID||p.DNI||p.dni||'').trim()===key&&isCuerpoTecnico(p))}
+    function isCuerpoTecnicoDni(dni){const key=String(dni||'').trim();return state.plantel.some(p=>Murci.personaRef(p)===key&&isCuerpoTecnico(p))}
     function isConvocable(p){const permitidos=['jugadora','arquera','cuerpo tecnico','ct','cuerpo tecnico / ct'];return permitidos.includes(normalizarTipo(tipoIntegrante(p)))||permitidos.includes(normalizarTipo(rolIntegrante(p)))}
     function nombrePersona(p){return Murci.personName(p)||p.DNI||p.dni||'Sin nombre'}
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}

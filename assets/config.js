@@ -491,6 +491,34 @@ const UI_VERSION = '2026.05.22 · c759857';
     return String(value || '').replace(/\D+/g, '').trim();
   };
 
+  Murci.personaId = function personaId(personaOrValue) {
+    if (personaOrValue && typeof personaOrValue === 'object') {
+      return String(
+        personaOrValue.persona_id ||
+        personaOrValue.Persona_ID ||
+        personaOrValue.personaId ||
+        ''
+      ).trim();
+    }
+    return String(personaOrValue || '').trim();
+  };
+
+  Murci.personaRef = function personaRef(personaOrValue) {
+    if (personaOrValue && typeof personaOrValue === 'object') {
+      return Murci.personaId(personaOrValue) || Murci.normalizeDni(personaOrValue.DNI || personaOrValue.dni || '');
+    }
+    return String(personaOrValue || '').trim();
+  };
+
+  Murci.samePersona = function samePersona(a, b) {
+    const aId = Murci.personaId(a);
+    const bId = Murci.personaId(b);
+    if (aId && bId) return aId === bId;
+    const aRef = Murci.personaRef(a);
+    const bRef = Murci.personaRef(b);
+    return !!aRef && !!bRef && aRef === bRef;
+  };
+
   Murci.personName = function personName(persona) {
     if (!persona) return '';
     if (persona.nombre) return String(persona.nombre).trim();

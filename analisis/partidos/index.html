@@ -482,7 +482,7 @@
       const r=calcRes(p);
       const momentos=Array.isArray(det.momentos)?det.momentos.slice().sort((a,b)=>Number(a.tiempo||0)-Number(b.tiempo||0)):[];
       const ratings=Array.isArray(det.ratings)?det.ratings:[];
-      const conv=Array.isArray(det.convocatoria)?det.convocatoria:[];
+      const conv=Array.isArray(det.convocatoria)?det.convocatoria.map(personaKey).filter(Boolean):[];
       const jugadoras=state.plantel.filter(x=>['Jugadora','Arquera'].includes(String(x.Tipo_Integrante||'').trim()));
       state.editScore={goles_propios:p.goles_propios,goles_rival:p.goles_rival,ht_propios:p.ht_propios??'',ht_rival:p.ht_rival??'',tiros_propios:p.tiros_propios||0,tiros_rival:p.tiros_rival||0,corners_propios:p.corners_propios||0,corners_rival:p.corners_rival||0,faltas_propias:p.faltas_propias||0,faltas_rival:p.faltas_rival||0};
       state.editGoleadoras=normalizarGoleadoras(det.goleadoras_json||det.goleadoras||[]);
@@ -980,7 +980,14 @@
     function mLabel(t){return{'gol-propio':'Gol propio','gol-rival':'Gol rival','pelota-parada':'Pelota parada',jugada:'Jugada puntual',cambio:'Cambio',tarjeta:'Tarjeta',nota:'Nota'}[t]||t}
     function mColor(t){return{'gol-propio':'#15803d','gol-rival':'var(--danger)','pelota-parada':'var(--azul-800)',jugada:'var(--celeste)',cambio:'var(--celeste)',tarjeta:'#92400e',nota:'var(--muted)'}[t]||'var(--muted)'}
     function nombrar(item){return Murci.personName(item)}
-    function personaKey(v){return String(v||'').trim()}
+    function personaKey(v){
+      if(v&&typeof v==='object')return Murci.personaRef(v);
+      const raw=String(v||'').trim();
+      if(!raw)return'';
+      const dni=Murci.normalizeDni(raw);
+      const match=(state.plantel||[]).find(p=>Murci.personaRef(p)===raw||(dni&&Murci.normalizeDni(p.DNI||p.dni)===dni));
+      return match?Murci.personaRef(match):raw;
+    }
     function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>

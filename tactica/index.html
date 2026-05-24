@@ -737,14 +737,14 @@ const MURCIELAGAS=[
   {apellido:'Aguilar',nombre:'Micaela',num:9,gk:false},
   {apellido:'Aguilar',nombre:'Yohana Gabriela',num:10,gk:false},
   {apellido:'Quinteros',nombre:'Elena',num:11,gk:false},
-  {apellido:'Segovia',nombre:'Micaela',num:12,gk:false},
+  {apellido:'Segovia',nombre:'Micaela',num:12,gk:true},
   {apellido:'Corrales',nombre:'Guillermina',num:14,gk:false},
   {apellido:'Massenzana',nombre:'Florencia',num:15,gk:false},
   {apellido:'Ortiz',nombre:'Anahí Micaela',num:null,gk:false},
-  {apellido:'Ligioi',nombre:'Yanina',num:null,gk:false},
+  {apellido:'Ligioi',nombre:'Yanina',num:null,gk:true},
   {apellido:'Oviedo',nombre:'Ana María Luz',num:null,gk:false},
   {apellido:'San Millán',nombre:'Martina',num:null,gk:false},
-  {apellido:'Bianchi',nombre:'Ludmila',num:null,gk:false},
+  {apellido:'Bianchi',nombre:'Ludmila',num:null,gk:true},
   {apellido:'Rodas',nombre:'Florencia Belén',num:null,gk:false},
   {apellido:'Roldán',nombre:'Brisa',num:null,gk:false},
   {apellido:'Camus',nombre:'Gianella',num:null,gk:false},
@@ -882,33 +882,72 @@ function tacticaNameDisplay(p){
 }
 
 function tacticaNumberFromLocal(p){
-  const key=tacticaNameKey(p);
-  const local=MURCIELAGAS.find(item=>tacticaNameKey(item)===key);
+  const local=tacticaFindLocalMatch(p);
   if(local&&local.num!=null)return local.num;
   const raw=String(p?.DNI||p?.dni||'').replace(/\D+/g,'');
   if(raw)return Number(raw.slice(-2))||Number(raw.slice(-1))||null;
   return null;
 }
 
+function tacticaFindLocalMatch(p){
+  const key=tacticaNameKey(p);
+  if(key){
+    const exact=MURCIELAGAS.find(item=>tacticaNameKey(item)===key);
+    if(exact)return exact;
+  }
+  const apellido=normalizeTacticaText(p?.Apellido||p?.apellido||'');
+  if(apellido){
+    const bySurname=MURCIELAGAS.find(item=>normalizeTacticaText(item?.apellido||'')===apellido);
+    if(bySurname)return bySurname;
+  }
+  const rawText=normalizeTacticaText(Object.values(p||{}).map(v=>String(v??'')).join(' '));
+  if(rawText){
+    const containsSurname=MURCIELAGAS.find(item=>{
+      const surname=normalizeTacticaText(item?.apellido||'');
+      return surname && rawText.includes(surname);
+    });
+    if(containsSurname)return containsSurname;
+  }
+  return null;
+}
+
+function tacticaValuesTipoIntegrante(p){
+  return [p?.Tipo_Integrante,p?.tipo_integrante,p?.tipoIntegrante,p?.tipo,p?.['Tipo Integrante'],p?.['tipo integrante']]
+    .map(normalizeTacticaText)
+    .filter(Boolean);
+}
+
+function tacticaValuesRol(p){
+  return [p?.Rol,p?.rol,p?.Puesto,p?.puesto,p?.Posicion,p?.posicion,p?.Posición,p?.['Posición'],p?.Funcion,p?.Función,p?.funcion,p?.['Función']]
+    .map(normalizeTacticaText)
+    .filter(Boolean);
+}
+
+function tacticaIsKeeperToken(v){
+  const t=normalizeTacticaText(v||'');
+  if(!t)return false;
+  if(t==='gk'||t==='arq'||t==='1')return true;
+  return t.includes('arquera')||
+    t.includes('arquero')||
+    t.includes('arquer')||
+    t.includes('portera')||
+    t.includes('portero')||
+    t.includes('guardameta')||
+    t.includes('goalkeeper')||
+    t.includes('goalie')||
+    t.includes('keeper')||
+    t.includes('arco');
+}
+
 function tacticaNormalizePlayer(p, idx){
   if(!p)return null;
   const nombre=tacticaNameDisplay(p);
   const num=tacticaNumberFromLocal(p);
-  const localMatch=MURCIELAGAS.find(item=>tacticaNameKey(item)===tacticaNameKey(p));
-  const rawAll=Object.values(p||{}).map(v=>String(v??'')).join(' ');
-  const keeperSignals=[
-    p?.gk,
-    localMatch?.gk,
-    p?.Posicion,
-    p?.posicion,
-    p?.Rol,
-    p?.rol,
-    p?.Tipo_Integrante,
-    p?.tipoIntegrante,
-    p?.tipo_integrante
-  ].map(v=>normalizeTacticaText(v)).join(' ');
-  const allSignals=normalizeTacticaText(rawAll)+' '+keeperSignals;
-  const gk=allSignals.includes('arquera')||allSignals.includes('arquero')||allSignals.includes('arq')||allSignals.includes('portera')||allSignals.includes('portero')||!!localMatch?.gk||!!p?.gk;
+  const localMatch=tacticaFindLocalMatch(p);
+  const tipo=tacticaValuesTipoIntegrante(p)[0]||'';
+  const gkByTipo=tipo ? tacticaIsKeeperToken(tipo) : false;
+  const gkByRol=tacticaValuesRol(p).some(tacticaIsKeeperToken);
+  const gk=!!(gkByTipo||gkByRol||localMatch?.gk||p?.gk);
   const apellido=String(p?.Apellido||p?.apellido||'').trim();
   const nombreSolo=String(p?.Nombre||p?.nombre||'').trim();
   return {
@@ -2991,24 +3030,6 @@ updatePhaseBadge();
 </script>
 <script>
 // El service worker global se registra desde la landing.
-
-// ── Banner de instalación ──
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt', e=>{
-  e.preventDefault();
-  deferredPrompt=e;
-  // Mostrar botón de instalación discreto
-  const btn=document.createElement('button');
-  btn.textContent='📲 Instalar app';
-  btn.style.cssText='position:fixed;bottom:80px;right:10px;z-index:500;background:#1a3a5c;color:#fff;border:none;border-radius:12px;padding:10px 16px;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)';
-  btn.onclick=()=>{
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(()=>{btn.remove();deferredPrompt=null;});
-  };
-  document.body.appendChild(btn);
-  // Auto-ocultar después de 10 segundos
-  setTimeout(()=>btn.remove(), 10000);
-});
 </script>
   <div class="page-version-tag">Versión UI</div>
 </body>
