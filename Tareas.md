@@ -1,32 +1,34 @@
 # Tareas
 
-> Tablero vivo de continuidad. No es historial permanente.
-> En cada commit/push grande se elimina lo resuelto.
+> Tablero vivo de continuidad.
+> No es historial permanente: al cerrar un commit/push grande, borrar lo resuelto y dejar solo lo que sigue vivo.
 
-## 1) Pendiente heredado y estado actual
+## 1) Pendientes heredados y cierre de sesión
 
-| Pendiente heredado | Que se hizo en esta sesion | Estado |
+| Pendiente heredado | Lo que se hizo | Estado |
 |---|---|---|
-| Limpieza de textos tecnicos visibles en frontend | Se limpio portada y modulos principales, y se hizo barrido transversal con QA automatizado. | En proceso |
-| Unificacion transversal de patrones compartidos (`Murci` + UX) | `reportes/index.html` migro su capa de backend a `Murci` y se consolido el flujo de chequeo previo a push. | En proceso |
-| Auditoria de duplicaciones visuales y simplificacion de vistas/botones | Se redujo ruido en varias vistas; queda pasada fina en superficies secundarias. | En proceso |
+| Antidoping rompía la búsqueda con medicamentos conocidos y marcas con variantes | Se corrigió el render, se agregó fallback local por marca comercial y se devolvieron variantes candidatas cuando corresponde. | Resuelto |
+| Falta de una referencia interna única para una misma jugadora en todos los módulos | Se agregó `persona_id` como referencia canónica visible solo para el sistema, con helpers compartidos para cruzar plantel entre módulos. | Parcial: queda barrido fino de módulos secundarios |
+| Tablero no reconocía bien a las arqueras y seguía mostrando un botón PWA viejo | Se corrigió la detección de arqueras y se eliminó el banner legacy de instalación. | Resuelto |
+| Base de datos mostraba duplicaciones en ficha y cargaba más de lo necesario | Se redujeron duplicaciones visibles, se corrigió el cruce de TUE en ficha y se alivianó la carga inicial. | Resuelto |
+| Portada y módulos abrían con demasiadas precargas | Se achicó el service worker, se diferieron cargas pesadas y se bajó el costo de arranque. | Resuelto |
 
 ## 2) En proceso
 
 | Tarea en curso | Estado | Nota operativa |
 |---|---|---|
-| Revision visual final completa del sitio | En proceso | Validacion tecnica completa OK; queda chequeo manual final en navegacion real desktop/mobile. |
-| Barrido final de copys secundarios | En proceso | Se ajustaron portada y antidoping; quedan detalles menores a revisar por uso diario del CT. |
-| Cierre operativo de tanda transversal | En proceso | Commit/push final usando `scripts/ship-safe.ps1` cuando cierre la pasada completa. |
+| Barrido final de referencias viejas por DNI en módulos secundarios | En proceso | Revisar `reportes`, `analisis` y `concentraciones` para que toda cruce real pase por `persona_id` cuando corresponda. |
+| Verificación visual final en navegador y celular | En proceso | Confirmar que la última ronda de velocidad, caché y unificación no rompió navegación ni cargas diferidas. |
 
 ## 3) Nuevos pendientes agregados
 
 | Nuevo pendiente | Estado | Nota |
 |---|---|---|
-| Mantener QA automatizado como paso obligatorio pre-push | Pendiente | Ejecutar `scripts/qa-fast.ps1` o `scripts/ship-safe.ps1` en cada corte grande. |
+| Mantener `scripts/qa-fast.ps1` como paso obligatorio antes de cada push grande | Pendiente | Usarlo siempre que se cierre una tanda transversal. |
+| Antes de cerrar una tanda, borrar de este archivo todo lo ya resuelto | Pendiente | Dejar solo lo que siga vivo y no repetir tareas cerradas. |
 
-## 4) Regla de mantenimiento (obligatoria)
+## 4) Regla de mantenimiento
 
-- Este archivo se usa como tablero vivo.
-- Al finalizar cada commit/push grande, eliminar lo ya resuelto.
-- Mantener solo: pendiente heredado, estado actual, en proceso y nuevos pendientes.
+- Este archivo solo debe reflejar trabajo vivo.
+- Si una tarea ya quedó resuelta y el cambio fue incluido en un push grande, se elimina del tablero.
+- Si una tarea quedó a medias, se deja en `En proceso` con una nota corta y concreta.
