@@ -666,7 +666,7 @@ const UI_VERSION = '2026.05.22 · c759857';
           return;
         }
         const nav = list.length > 1 ? `<div class="notice">Se encontraron ${list.length} versiones. Revisalas una por una: cada tarjeta muestra el estado de esa fórmula.</div><div class="actions result-nav">${list.map((item, index) => `<button class="btn secondary tiny" type="button" data-result-jump="${index}">${esc(titleFor(item, index))}</button>`).join('')}</div>` : '';
-        cont.innerHTML = nav + list.map((item, index) => resultCardPatched(item, index)).join('');
+        cont.innerHTML = nav + list.map((item, index) => global.resultCard(item, index)).join('');
       };
 
       const resultados = doc.getElementById('resultados');

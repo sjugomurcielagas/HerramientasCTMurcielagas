@@ -629,16 +629,23 @@ function antidoping_ruleWarnings_(rule) {
 }
 
 function antidoping_knownCommercialActive_(nombre) {
+  var cands = antidoping_knownCommercialCandidates_(nombre);
+  return cands.length ? cands[0] : '';
+}
+
+function antidoping_knownCommercialCandidates_(nombre) {
   var n = normalizeText(nombre);
   var map = {
-    'tafirol': 'paracetamol',
-    'anaflex': 'paracetamol',
-    'ibupirac': 'ibuprofeno',
-    'actron': 'ibuprofeno',
-    'buscapina': 'butilhioscina',
-    'refrianex': 'pseudoefedrina'
+    'tafirol': ['paracetamol'],
+    'anaflex': ['paracetamol', 'paracetamol + diclofenac'],
+    'ibupirac': ['ibuprofeno'],
+    'actron': ['ibuprofeno'],
+    'buscapina': ['butilhioscina'],
+    'refrianex': ['pseudoefedrina'],
+    'novalgina': ['metamizol']
   };
-  return map[n] || '';
+  var out = map[n] || [];
+  return out.filter(Boolean);
 }
 
 function antidoping_scrapePrVademecum_(queryRaw) {
@@ -833,6 +840,27 @@ function antidoping_buscarMedicamento(payload) {
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
     }];
     source = knownActiveFromQuery ? 'known_commercial_active' : 'direct_unresolved';
+  }
+
+  if (!matches.length || source === 'known_commercial_active' || source === 'direct_unresolved') {
+    var knownCandidates = antidoping_knownCommercialCandidates_(consulta);
+    if (knownCandidates.length > 1) {
+      var nowDate = Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd');
+      matches = knownCandidates.map(function(activeName) {
+        return {
+          medicamento: consulta,
+          principio_activo: activeName,
+          presentacion: '',
+          laboratorio: '',
+          observaciones: 'Marca comercial con variantes. Confirmar presentación exacta antes de habilitar.',
+          fuente_argentina: 'Marca comercial normalizada',
+          fuente_secundaria: '',
+          fuente_url: '',
+          fecha_revision: nowDate
+        };
+      });
+      source = 'known_commercial_variants';
+    }
   }
 
   var enriquecidos = matches.map(function(item) {
