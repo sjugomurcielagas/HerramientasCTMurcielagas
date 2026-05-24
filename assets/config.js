@@ -448,16 +448,21 @@ const UI_VERSION = '2026.05.22 · c759857';
     };
   }
 
-  Murci.loadHomeAlerts = async function loadHomeAlerts(apiUrl = API_BASE_URL) {
-    const [plantelResult, alertasResult, reportesResult] = await Promise.allSettled([
+  Murci.loadHomeAlerts = async function loadHomeAlerts(apiUrl = API_BASE_URL, options = {}) {
+    const includeReportes = !!options.includeReportes;
+    const requests = [
       Murci.loadPlantel(),
-      Murci.apiGetCached('base_getAlertas', {}, { ttlMs: 2 * 60 * 1000 }, apiUrl),
-      Murci.apiGetCached('getClientData', {}, { ttlMs: 2 * 60 * 1000 }, apiUrl)
-    ]);
+      Murci.apiGetCached('base_getAlertas', {}, { ttlMs: 2 * 60 * 1000 }, apiUrl)
+    ];
+    if (includeReportes) {
+      requests.push(Murci.apiGetCached('getClientData', {}, { ttlMs: 2 * 60 * 1000 }, apiUrl));
+    }
+
+    const [plantelResult, alertasResult, reportesResult] = await Promise.allSettled(requests);
 
     const plantel = plantelResult.status === 'fulfilled' && Array.isArray(plantelResult.value) ? plantelResult.value : [];
     const alertas = alertasResult.status === 'fulfilled' ? alertasResult.value : null;
-    const reportes = reportesResult.status === 'fulfilled' ? reportesResult.value : null;
+    const reportes = reportesResult && reportesResult.status === 'fulfilled' ? reportesResult.value : null;
 
     return buildHomeAlertsSummary_(plantel, alertas, reportes);
   };

@@ -151,7 +151,7 @@
       document.getElementById('wadaAnnualBtn').href=WADA_LISTA_VIGENTE_URL;
       document.getElementById('tueFormBtn').href=TUE_FORM_URL;
       document.getElementById('tueGuideBtn').href=TUE_GUIDE_URL;
-      Promise.all([loadFrecuentes(),loadPlantel()]);
+      loadFrecuentes();
     });
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -161,6 +161,7 @@
       document.getElementById(id).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
       if(id==='historialView'&&!state.loaded.historial)loadHistorial();
+      if(id==='tueView'&&!state.loaded.plantel)loadPlantel();
       if(id==='tueView'&&!state.loaded.tues)loadTUEs();
       window.scrollTo({top:0,behavior:'smooth'});
     }

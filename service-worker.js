@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ct-murcielagas-pwa-v3';
+const CACHE_NAME = 'ct-murcielagas-pwa-v4';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [
@@ -9,15 +9,7 @@ const APP_SHELL = [
   './assets/logo-murcielagas.webp',
   './assets/fadec-logo.webp',
   './assets/pwa-icon-192.png',
-  './assets/pwa-icon-512.png',
-  './analisis/index.html',
-  './analisis/partidos/index.html',
-  './analisis/penales/index.html',
-  './antidoping/index.html',
-  './base-datos/index.html',
-  './concentraciones/index.html',
-  './reportes/index.html',
-  './tactica/index.html'
+  './assets/pwa-icon-512.png'
 ];
 
 self.addEventListener('install', event => {
