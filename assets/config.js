@@ -2,6 +2,66 @@ const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.
 const UI_VERSION = '2026.05.25';
 const UI_DEPLOYED_AT = '2026-05-25 02:13:25 UTC';
 
+(function ensureFreshUiVersion(global) {
+  if (!global.document || !global.location || !global.fetch) return;
+  const docEl = global.document.documentElement;
+  const storageKey = 'murci_ui_version_checked';
+  const currentSignature = `${UI_VERSION}|${UI_DEPLOYED_AT}`;
+
+  if (docEl) {
+    docEl.style.visibility = 'hidden';
+  }
+
+  const reveal = () => {
+    if (docEl) docEl.style.visibility = '';
+  };
+
+  const reloadWithBust = () => {
+    try {
+      global.sessionStorage.setItem(storageKey, currentSignature);
+    } catch {
+      // noop
+    }
+    const url = new URL(global.location.href);
+    url.searchParams.set('v', `${Date.now()}`);
+    global.location.replace(url.toString());
+  };
+
+  const run = async () => {
+    try {
+      const cached = global.sessionStorage.getItem(storageKey);
+      if (cached === currentSignature) {
+        reveal();
+        return;
+      }
+
+      const url = new URL('./assets/config.js', global.location.href);
+      url.searchParams.set('t', `${Date.now()}`);
+      const response = await fetch(url.toString(), { cache: 'no-store' });
+      const text = await response.text();
+      const matchVersion = text.match(/const UI_VERSION = '([^']+)'/);
+      const matchDeployedAt = text.match(/const UI_DEPLOYED_AT = '([^']+)'/);
+      const freshSignature = `${matchVersion ? matchVersion[1] : UI_VERSION}|${matchDeployedAt ? matchDeployedAt[1] : UI_DEPLOYED_AT}`;
+
+      try {
+        global.sessionStorage.setItem(storageKey, freshSignature);
+      } catch {
+        // noop
+      }
+
+      if (freshSignature !== currentSignature) {
+        reloadWithBust();
+        return;
+      }
+    } catch {
+      // Si falla la verificacion, no bloqueamos la app.
+    }
+    reveal();
+  };
+
+  run();
+})(window);
+
 (function initMurciSharedApi(global) {
   const Murci = global.Murci || (global.Murci = {});
   const pendingGets = {};
