@@ -1452,7 +1452,6 @@ function renderSavedList(){
         <div class="saved-name">${escapeHtml(ex.name)}</div>
         <div class="saved-meta">
           <span class="saved-cat">${escapeHtml(catLabel)}</span>
-          <span class="saved-date">${escapeHtml(ex.date||'')}</span>
         </div>
         ${desc?`<div class="saved-desc">${escapeHtml(desc)}</div>`:''}
       </div>
@@ -1511,8 +1510,7 @@ function updateAnimMeta(){
   }
   const cat=getExerciseCategoryLabel(currentExerciseMeta);
   const desc=getExerciseDescription(currentExerciseMeta);
-  meta.innerHTML=`<div class="anim-meta-name">${escapeHtml(currentExerciseMeta.name||'Ejercicio')}</div>
-    <div class="anim-meta-desc">${escapeHtml(cat)}${desc?' · '+escapeHtml(desc):''}</div>`;
+  meta.innerHTML=`<div class="anim-meta-name">${escapeHtml(currentExerciseMeta.name||'Ejercicio')}</div>`;
   meta.classList.add('show');
 }
 function loadExercise(i){
@@ -1586,7 +1584,7 @@ function importJSON(event){
       // Mostrar metadata si existe
       const meta=data.meta;
       if(meta){
-        const info=meta.ejercicio+(meta.fecha?' · '+meta.fecha:'')+(meta.equipo?' · '+meta.equipo:'');
+        const info=meta.ejercicio;
         toast('✓ '+info);
         // Prellenar el nombre en el input de guardado
         const inp=document.getElementById('save-name-input');
