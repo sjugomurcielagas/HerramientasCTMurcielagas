@@ -1,6 +1,6 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
 const UI_VERSION = '2026.05.25';
-const UI_DEPLOYED_AT = '2026-05-25 02:13:25 UTC';
+const UI_DEPLOYED_AT = '2026-05-25 14:24:01 UTC';
 
 (function ensureFreshUiVersion(global) {
   if (!global.document || !global.location || !global.fetch) return;
