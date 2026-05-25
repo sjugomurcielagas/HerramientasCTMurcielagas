@@ -102,7 +102,10 @@
         <div class="panel hidden" id="asistenciaLegacyPanel">
           <div class="panel-head"><div><h2>Asistencia real</h2><p>Registro explícito de participación efectiva para esta concentración.</p></div><button id="guardarAsistenciaBtn" class="btn small" type="button">Guardar asistencia</button></div>
           <div id="asistenciaRealContainer"></div>
-          <div id="asistenciaStatus" class="status-line"></div>
+          <div class="actions" style="margin-top:10px;align-items:center">
+            <div id="asistenciaStatus" class="status-line" style="margin:0"></div>
+            <div id="asistenciaSavedMeta" class="badge info hidden"></div>
+          </div>
         </div>
 
         <div class="panel">
@@ -144,6 +147,13 @@
     </div>
   </div>
 
+  <div id="docPreviewModal" class="doc-modal" aria-hidden="true">
+    <div class="doc-card">
+      <div class="panel-head"><div><h2>Documento</h2><p>Revisá, abrí o imprimí el archivo.</p></div><button id="cerrarDocPreviewBtn" class="btn ghost small" type="button">Cerrar</button></div>
+      <div id="docPreviewBody" class="grid"></div>
+    </div>
+  </div>
+
   <script src="../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
@@ -169,6 +179,8 @@
       document.getElementById('cerrarDocsModalBtn').addEventListener('click',closeDocsModal);
       document.getElementById('confirmarDocsBtn').addEventListener('click',generarDocumentosSeleccionados);
       document.getElementById('docsModal').addEventListener('click',e=>{if(e.target.id==='docsModal')closeDocsModal()});
+      document.getElementById('cerrarDocPreviewBtn').addEventListener('click',closeDocPreviewModal);
+      document.getElementById('docPreviewModal').addEventListener('click',e=>{if(e.target.id==='docPreviewModal')closeDocPreviewModal()});
       document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
@@ -374,8 +386,9 @@
     }
     function renderAsistenciaReal(){
       const c=currentConc(),cont=document.getElementById('asistenciaInlineContainer')||document.getElementById('asistenciaRealContainer'),st=document.getElementById('asistenciaStatus');
+      const savedMeta=document.getElementById('asistenciaSavedMeta');
       if(!c||!cont)return;
-      if(!isConvocatoriaLocked(c)){cont.innerHTML='';if(st)st.textContent='';return}
+      if(!isConvocatoriaLocked(c)){cont.innerHTML='';if(st)st.textContent='';if(savedMeta)savedMeta.classList.add('hidden');return}
       const convocadas=convocatoriaDnisEfectivos(c);
       const personMap=new Map((state.plantel||[]).map(p=>[asistenciaKeyForPerson(p),p]).filter(([k])=>k));
       if(!convocadas.length){
@@ -394,6 +407,12 @@
       const presentes=filas.filter(r=>r.current.estado!=='ausente').length;
       const ausentes=total-presentes;
       cont.innerHTML=`<div class="attendance-card"><div class="attendance-list">${filas.map(r=>r.html).join('')}</div><div class="attendance-summary"><span class="summary-pill">Total: ${total}</span><span class="summary-pill ok">✓ ${presentes}</span><span class="summary-pill danger">✕ ${ausentes}</span></div></div>`;
+      if(savedMeta){
+        const raw=state.asistenciaDrafts[concId(c)]||parseAsistencia({asistencia_json:c.asistencia_json||c.asistenciaJson||c.asistencia||'[]'});
+        const savedCount=Array.isArray(raw)?raw.length:0;
+        savedMeta.textContent=savedCount?`Asistencia guardada · ${savedCount} registros`:'';
+        savedMeta.classList.toggle('hidden',!savedCount);
+      }
       cont.querySelectorAll('[data-att-state]').forEach(btn=>btn.addEventListener('click',()=>{
         const key=btn.dataset.attKey;
         syncAsistenciaDraft(c,key,{estado:btn.dataset.attState});
@@ -415,6 +434,8 @@
         mergeConc({asistencia_json});
         state.asistenciaDrafts[concId(c)]=parseAsistencia({asistencia_json});
         st.textContent='Asistencia guardada.';st.className='status-line ok';
+        const savedMeta=document.getElementById('asistenciaSavedMeta');
+        if(savedMeta){savedMeta.textContent=`Asistencia guardada · ${asistencia.length} registros`;savedMeta.classList.remove('hidden')}
         renderLista();
         renderAsistenciaReal();
       }catch(err){
@@ -481,14 +502,37 @@
       return Array.isArray(result.documentos)&&result.documentos.length?result.documentos:[result];
     }
     function buildDocumentResultHtml(docs){
-      const links=(docs||[]).map(d=>{
+      const safeDocs=Array.isArray(docs)?docs:[];
+      const links=safeDocs.map((d,idx)=>{
         const url=documentUrl(d);
         const name=d.nombre||d.tipoDocumento||d.tipo_documento||'Documento';
         const error=d.error||d.mensaje||'';
         if(error)return `<li>${esc(name)} <span class="badge danger" style="font-size:.68rem">${esc(error)}</span></li>`;
-        return url?`<li><a href="${esc(url)}" target="_blank" rel="noopener">${esc(name)}</a></li>`:`<li>${esc(name)}</li>`;
+        return url?`<li>${esc(name)} <button class="btn ghost small" type="button" data-preview-doc="${idx}">Ver</button></li>`:`<li>${esc(name)}</li>`;
       }).join('');
+      setTimeout(()=>bindDocPreviewButtons(safeDocs),0);
       return links?`Documentos generados:<ul style="margin:8px 0 0 18px">${links}</ul>`:'Documentos generados.';
+    }
+    function bindDocPreviewButtons(docs){
+      document.querySelectorAll('[data-preview-doc]').forEach(btn=>{
+        btn.onclick=()=>openDocPreviewModal(docs[Number(btn.dataset.previewDoc)]||null);
+      });
+    }
+    function openDocPreviewModal(doc){
+      const modal=document.getElementById('docPreviewModal');
+      const body=document.getElementById('docPreviewBody');
+      if(!modal||!body||!doc)return;
+      const url=documentUrl(doc);
+      const name=doc.nombre||doc.tipoDocumento||doc.tipo_documento||'Documento';
+      body.innerHTML=`<div class="section-card"><h3 style="margin-bottom:8px">${esc(name)}</h3><div class="actions"><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Abrir</a><a class="btn secondary" href="${esc(url)}" target="_blank" rel="noopener">Abrir en nueva pestaña</a></div></div>`;
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden','false');
+    }
+    function closeDocPreviewModal(){
+      const modal=document.getElementById('docPreviewModal');
+      if(!modal)return;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden','true');
     }
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
