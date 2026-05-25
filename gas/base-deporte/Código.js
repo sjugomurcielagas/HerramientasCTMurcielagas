@@ -5006,8 +5006,48 @@ function _insertarTablaPresentes_(body, plantel, presentesRefs) {
   var index = parent.getChildIndex(paragraph);
   text.deleteText(found.getStartOffset(), found.getEndOffsetInclusive());
   var table = parent.insertTable(index + 1, rows);
-  _estilizarTablaConvocatoria_(table);
+  _estilizarTablaPresentes_(table);
   if (!paragraph.getText().trim()) parent.removeChild(paragraph);
+}
+
+function _estilizarTablaPresentes_(table) {
+  if (!table) return;
+  var headerBg = '#EAF4FB';
+  var textAttrs = {};
+  textAttrs[DocumentApp.Attribute.FONT_FAMILY] = 'Arial';
+  textAttrs[DocumentApp.Attribute.FONT_SIZE] = 9;
+  var padAttrs = {};
+  padAttrs[DocumentApp.Attribute.PADDING_TOP]    = 2;
+  padAttrs[DocumentApp.Attribute.PADDING_BOTTOM] = 2;
+  padAttrs[DocumentApp.Attribute.PADDING_LEFT]   = 4;
+  padAttrs[DocumentApp.Attribute.PADDING_RIGHT]  = 4;
+  for (var r = 0; r < table.getNumRows(); r++) {
+    var row = table.getRow(r);
+    row.setMinimumHeight(1);
+    for (var c = 0; c < row.getNumCells(); c++) {
+      var cell = row.getCell(c);
+      cell.setAttributes(padAttrs);
+      if (r === 0) cell.setBackgroundColor(headerBg);
+      var cellText = cell.editAsText();
+      var attrs = Object.assign({}, textAttrs);
+      attrs[DocumentApp.Attribute.BOLD] = r === 0;
+      cellText.setAttributes(attrs);
+      var len = cellText.getText().length;
+      if (len > 0) {
+        cellText.setFontFamily(0, len - 1, 'Arial');
+        cellText.setFontSize(0, len - 1, 9);
+        cellText.setBold(0, len - 1, r === 0);
+      }
+      for (var p = 0; p < cell.getNumChildren(); p++) {
+        var el = cell.getChild(p);
+        if (el.getType() !== DocumentApp.ElementType.PARAGRAPH) continue;
+        el.asParagraph().setHeading(DocumentApp.ParagraphHeading.NORMAL);
+        el.asParagraph().setAlignment(c === 2
+          ? DocumentApp.HorizontalAlignment.CENTER
+          : DocumentApp.HorizontalAlignment.LEFT);
+      }
+    }
+  }
 }
 
 function _estilizarTablaConvocatoria_(table) {
