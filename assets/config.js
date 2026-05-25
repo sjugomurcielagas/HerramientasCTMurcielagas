@@ -1,5 +1,6 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
 const UI_VERSION = '2026.05.24';
+const UI_DEPLOYED_AT = '2026-05-25 01:43:59 UTC';
 
 (function initMurciSharedApi(global) {
   const Murci = global.Murci || (global.Murci = {});
@@ -537,7 +538,7 @@ const UI_VERSION = '2026.05.24';
   function syncUiVersionTags() {
     const tags = global.document ? global.document.querySelectorAll('.page-version-tag') : [];
     tags.forEach(tag => {
-      tag.textContent = `Versi\u00f3n UI ${UI_VERSION}`;
+      tag.textContent = `Versi\u00f3n UI ${UI_VERSION} · deploy ${UI_DEPLOYED_AT}`;
     });
   }
 
