@@ -1,11 +1,11 @@
-const CACHE_NAME = 'ct-murcielagas-pwa-v6';
+const CACHE_NAME = 'ct-murcielagas-pwa-v7';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
-  './assets/config.js?v=202605250156',
+  './assets/config.js?v=20260525021325',
   './assets/logo-murcielagas.webp',
   './assets/fadec-logo.webp',
   './assets/pwa-icon-192.png',

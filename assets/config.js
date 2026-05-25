@@ -1,6 +1,6 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
-const UI_VERSION = '2026.05.24';
-const UI_DEPLOYED_AT = '2026-05-25 01:43:59 UTC';
+const UI_VERSION = '2026.05.25';
+const UI_DEPLOYED_AT = '2026-05-25 02:13:25 UTC';
 
 (function initMurciSharedApi(global) {
   const Murci = global.Murci || (global.Murci = {});
@@ -28,10 +28,10 @@ const UI_DEPLOYED_AT = '2026-05-25 01:43:59 UTC';
       data = JSON.parse(text);
     } catch {
       const preview = text ? text.slice(0, 220).replace(/\s+/g, ' ').trim() : '';
-      throw new Error(preview ? `Respuesta inesperada del servidor: ${preview}` : 'Respuesta inesperada del servidor');
+      throw new Error(preview ? `Error del servidor: ${preview}` : 'Error del servidor: respuesta no JSON');
     }
     if (!data || !data.ok) {
-      throw new Error(data?.error || 'Error de API');
+      throw new Error(data?.error || 'Error del servidor');
     }
     return Object.prototype.hasOwnProperty.call(data, 'data') ? data.data : data;
   };

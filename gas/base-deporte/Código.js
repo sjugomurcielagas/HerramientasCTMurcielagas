@@ -1104,19 +1104,16 @@ function antidoping_buscarMedicamento(payload) {
         principio = mappedActive;
       }
     }
-    var resolvedActive = !!normalizeText(principio) && (
-      !!directActiveQuery ||
-      !!knownActiveFromQuery ||
-      source === 'catalogo_local' ||
-      normalizeText(principio) !== normalizeText(item.medicamento || consulta)
-    );
+    var activeNorm = normalizeText(principio);
+    var medicineNorm = normalizeText(item.medicamento || consulta);
+    var resolvedActive = !!activeNorm && activeNorm !== medicineNorm;
     if (!resolvedActive) {
       return {
         medicamento: item.medicamento || consulta,
         principio_activo: '',
         presentacion: item.presentacion || '',
         laboratorio: item.laboratorio || '',
-        estado: 'NO RECONOCE PRINCIPIO ACTIVO',
+        estado: 'REQUIERE REVISIÓN',
         observaciones: 'No se pudo identificar un principio activo confiable para evaluar en WADA.',
         advertencia_detalle: 'No se pudo identificar un principio activo confiable para evaluar en WADA.',
         criterio_wada: 'No se reconoce un principio activo válido para hacer una búsqueda automática en la base WADA.',
@@ -1154,7 +1151,7 @@ function antidoping_buscarMedicamento(payload) {
       medicamento: consulta,
       principio_activo: '',
       presentacion: '',
-      estado: 'NO RECONOCE PRINCIPIO ACTIVO',
+      estado: 'REQUIERE REVISIÓN',
       observaciones: 'No se encontró coincidencia confiable para identificar un principio activo.',
       advertencia_detalle: 'No se encontró coincidencia confiable para identificar un principio activo.',
       criterio_wada: 'No se puede habilitar el uso hasta identificar un principio activo confiable.',
@@ -2056,13 +2053,13 @@ function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
 
     var resultadoGuardado = guardarCambios(dni, cambios, 'Sistema — Upload');
     if (!resultadoGuardado || resultadoGuardado.ok === false) {
-      return { ok: false, msg: (resultadoGuardado && resultadoGuardado.error) ? resultadoGuardado.error : 'No se pudieron guardar los cambios del archivo.' };
+      return ok(false, null, (resultadoGuardado && resultadoGuardado.error) ? resultadoGuardado.error : 'No se pudieron guardar los cambios del archivo.');
     }
 
-    return { ok: true, link: link };
+    return ok(true, { link: link });
 
   } catch (e) {
-    return { ok: false, error: e.toString() };
+    return ok(false, null, e && e.message ? e.message : String(e));
   }
 }
 
