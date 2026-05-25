@@ -510,6 +510,10 @@ function antidoping_scoreVnmMatch_(consultaNorm, item) {
   return 0;
 }
 
+function antidoping_vnmStrongMatch_(consultaNorm, item) {
+  return antidoping_scoreVnmMatch_(consultaNorm, item) >= 80;
+}
+
 function antidoping_lookupVnmCandidates_(consulta) {
   var consultaNorm = normalizeText(consulta);
   var rows = antidoping_readVnmCatalogo_();
@@ -537,6 +541,57 @@ function antidoping_lookupVnmCandidates_(consulta) {
         fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
       };
     });
+}
+
+function antidoping_buildSecondaryUrls_(query) {
+  return {
+    globaldro: 'https://www.globaldro.com/US/search/input?pls=true',
+    nadamed: 'https://www.nada.de/en/medicine/nadamed',
+    globaldro_query: 'https://www.globaldro.com/US/search/input?pls=true',
+    nadamed_query: 'https://www.nada.de/nc/medizin/nadamed/suche/'
+  };
+}
+
+function antidoping_secondaryEvidenceLookup_(consulta) {
+  var consultaNorm = normalizeText(consulta);
+  if (!consultaNorm) return null;
+
+  var candidates = [];
+  var vnm = antidoping_readVnmCatalogo_();
+  vnm.forEach(function(item) {
+    var score = antidoping_scoreVnmMatch_(consultaNorm, item);
+    if (score >= 40) {
+      candidates.push({
+        medicamento: item.nombre_comercial || consulta,
+        principio_activo: item.generico || '',
+        laboratorio: item.laboratorio_titular || '',
+        observaciones: 'Coincidencia secundaria por VNM/ANMAT. Confirmar manualmente si la presentación exacta difiere.',
+        fuente_argentina: 'VNM ANMAT',
+        fuente_secundaria: item.fuente_dataset || 'Datos.gob.ar / VNM',
+        fuente_url: item.fuente_url || ANTIDOPING_VNM_SOURCE_URLS[0],
+        fuente_secundaria_url: '',
+        fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd'),
+        __score: score
+      });
+    }
+  });
+
+  if (candidates.length) {
+    candidates.sort(function(a, b) { return b.__score - a.__score; });
+    return candidates[0];
+  }
+
+  return {
+    medicamento: consulta,
+    principio_activo: '',
+    laboratorio: '',
+    observaciones: 'No se pudo confirmar el principio activo en las fuentes primarias; verificar en Global DRO o NADAmed con el nombre exacto.',
+    fuente_argentina: 'Sin confirmación primaria',
+    fuente_secundaria: 'Global DRO / NADAmed',
+    fuente_url: '',
+    fuente_secundaria_url: antidoping_buildSecondaryUrls_(consulta).globaldro_query + ' / ' + antidoping_buildSecondaryUrls_(consulta).nadamed_query,
+    fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+  };
 }
 
 function antidoping_readCatalogo_() {
@@ -608,7 +663,14 @@ function antidoping_readCache_(queryNorm) {
   for (var i = 0; i < rows.length; i++) {
     if (normalizeText(rows[i].query_norm) === cacheKey) {
       var result = parseJson(rows[i].result_json);
-      if (!result || antidoping_hasExpired_(rows[i].fetched_at)) return null;
+      if (!result) return null;
+      var expiresAt = String(rows[i].expires_at || '').trim();
+      if (expiresAt) {
+        var exp = antidoping_parseDate_(expiresAt);
+        if (exp && new Date().getTime() > exp.getTime()) return null;
+      } else if (antidoping_hasExpired_(rows[i].fetched_at)) {
+        return null;
+      }
       var rowNum = i + 2;
       var hits = Number(rows[i].hit_count || 0) + 1;
       setCell(sh, rowNum, 'hit_count', hits);
@@ -659,7 +721,15 @@ function antidoping_writeCache_(queryNorm, queryRaw, source, resultObj) {
     }
   }
   var fetched = antidoping_nowIso_();
-  var expires = Utilities.formatDate(new Date(new Date().getTime() + (ANTIDOPING_CACHE_TTL_DAYS * 24 * 60 * 60 * 1000)), 'GMT-3', 'yyyy-MM-dd HH:mm:ss');
+  var ttlDays = 0.5;
+  var estado = String(resultObj && resultObj[0] && (resultObj[0].estado || '')).toUpperCase();
+  var observaciones = String(resultObj && resultObj[0] && (resultObj[0].observaciones || '')).toUpperCase();
+  if (estado.indexOf('PERMITIDO') !== -1 || estado.indexOf('PROHIBIDO') !== -1 || estado.indexOf('ADVERTENCIA') !== -1 || estado.indexOf('CONDICIONADO') !== -1 || estado.indexOf('NO FIGURA') !== -1) {
+    ttlDays = ANTIDOPING_CACHE_TTL_DAYS;
+  } else if (observaciones.indexOf('NO SE PUDO IDENTIFICAR') !== -1 || estado.indexOf('REQUIERE REVISIÓN') !== -1) {
+    ttlDays = 1 / 24;
+  }
+  var expires = Utilities.formatDate(new Date(new Date().getTime() + (ttlDays * 24 * 60 * 60 * 1000)), 'GMT-3', 'yyyy-MM-dd HH:mm:ss');
   var data = [
     cacheKey,
     queryRaw,
@@ -726,11 +796,11 @@ function antidoping_evalWada_(principioActivo) {
   var hits = exactHits.length ? exactHits : boundaryHits;
   if (!hits.length) {
     return {
-      estado: 'REQUIERE REVISIÓN',
+      estado: 'PERMITIDO',
       fuente_wada: 'WADA_Sustancias',
-      observaciones_wada: 'Sin coincidencia exacta en reglas cargadas.',
-      criterio_wada: 'No se encontró coincidencia exacta en la base WADA cargada. No se habilita automáticamente hasta verificar la sustancia o el principio activo.',
-      advertencia_detalle: 'Sin coincidencia exacta en la base WADA cargada.',
+      observaciones_wada: 'El principio activo fue identificado, pero no figura en la base WADA cargada.',
+      criterio_wada: 'Se identificó un principio activo válido y no aparece en la base WADA cargada; bajo este criterio operativo el uso se considera habilitado.',
+      advertencia_detalle: '',
       en_competencia: 'N/D',
       fuera_competencia: 'N/D'
     };
@@ -1023,8 +1093,29 @@ function antidoping_buscarMedicamento(payload) {
 
   if (!matches.length) {
     try {
-      matches = antidoping_scrapePrVademecum_(consulta).slice(0, 6).map(antidoping_enrichPrItem_);
-      source = 'prvademecum_live';
+      var vnmRows = antidoping_readVnmCatalogo_();
+      var vnmStrong = vnmRows.filter(function(item) {
+        return antidoping_vnmStrongMatch_(consultaNorm, item);
+      });
+      if (vnmStrong.length) {
+        matches = vnmStrong.slice(0, 4).map(function(item) {
+          return {
+            medicamento: item.nombre_comercial || consulta,
+            principio_activo: item.generico || '',
+            presentacion: '',
+            laboratorio: item.laboratorio_titular || '',
+            observaciones: 'Coincidencia fuerte en VNM/ANMAT.',
+            fuente_argentina: 'VNM ANMAT',
+            fuente_secundaria: item.fuente_dataset || 'Datos.gob.ar / VNM',
+            fuente_url: item.fuente_url || ANTIDOPING_VNM_SOURCE_URLS[0],
+            fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+          };
+        });
+        source = 'vnm_strong';
+      } else {
+        matches = antidoping_lookupVnmCandidates_(consulta);
+        if (matches.length) source = 'vnm_catalogo';
+      }
     } catch (e) {
       matches = [];
     }
@@ -1032,8 +1123,10 @@ function antidoping_buscarMedicamento(payload) {
 
   if (!matches.length) {
     try {
-      matches = antidoping_lookupVnmCandidates_(consulta);
-      if (matches.length) source = 'vnm_catalogo';
+      if (source !== 'vnm_strong') {
+        matches = antidoping_scrapePrVademecum_(consulta).slice(0, 6).map(antidoping_enrichPrItem_);
+        source = 'prvademecum_live';
+      }
     } catch (e) {
       matches = [];
     }
@@ -1108,6 +1201,28 @@ function antidoping_buscarMedicamento(payload) {
     var medicineNorm = normalizeText(item.medicamento || consulta);
     var resolvedActive = !!activeNorm && activeNorm !== medicineNorm;
     if (!resolvedActive) {
+      var secondary = antidoping_secondaryEvidenceLookup_(item.medicamento || consulta);
+      if (secondary && secondary.principio_activo) {
+        var secondaryEval = antidoping_evalWada_(secondary.principio_activo);
+        return {
+          medicamento: item.medicamento || consulta,
+          principio_activo: secondary.principio_activo,
+          presentacion: item.presentacion || '',
+          laboratorio: item.laboratorio || secondary.laboratorio || '',
+          estado: secondaryEval.estado || 'REQUIERE REVISIÓN',
+          observaciones: secondary.observaciones || secondaryEval.advertencia_detalle || secondaryEval.criterio_wada || '',
+          advertencia_detalle: secondaryEval.advertencia_detalle || '',
+          criterio_wada: secondaryEval.criterio_wada || 'Se apoyó en una fuente secundaria para identificar el principio activo.',
+          fuente_argentina: item.fuente_argentina || secondary.fuente_argentina || 'PR Vademecum',
+          fuente_wada: secondaryEval.fuente_wada || 'WADA_Sustancias',
+          fuente_secundaria: secondary.fuente_secundaria || '',
+          fuente_secundaria_url: secondary.fuente_secundaria_url || '',
+          en_competencia: secondaryEval.en_competencia || 'N/D',
+          fuera_competencia: secondaryEval.fuera_competencia || 'N/D',
+          fuente_url: item.fuente_url || secondary.fuente_url || '',
+          fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+        };
+      }
       return {
         medicamento: item.medicamento || consulta,
         principio_activo: '',
@@ -1120,6 +1235,7 @@ function antidoping_buscarMedicamento(payload) {
         fuente_argentina: item.fuente_argentina || 'PR Vademecum',
         fuente_wada: 'Sin evaluación WADA',
         fuente_secundaria: item.fuente_secundaria || '',
+        fuente_secundaria_url: item.fuente_secundaria_url || '',
         en_competencia: 'N/D',
         fuera_competencia: 'N/D',
         fuente_url: item.fuente_url || '',
@@ -1139,6 +1255,7 @@ function antidoping_buscarMedicamento(payload) {
       fuente_argentina: item.fuente_argentina || 'PR Vademecum',
       fuente_wada: item.fuente_wada || evalWada.fuente_wada || 'Pendiente de revisión',
       fuente_secundaria: item.fuente_secundaria || '',
+      fuente_secundaria_url: item.fuente_secundaria_url || '',
       en_competencia: evalWada.en_competencia || '',
       fuera_competencia: evalWada.fuera_competencia || '',
       fuente_url: item.fuente_url || '',
@@ -1158,14 +1275,27 @@ function antidoping_buscarMedicamento(payload) {
       fuente_argentina: 'PR Vademecum / Catálogo local',
       fuente_wada: 'Sin evaluación WADA',
       fuente_secundaria: '',
+      fuente_secundaria_url: '',
       fuente_url: '',
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
     }];
   }
 
-  antidoping_writeCache_(consultaNorm, consulta, source, enriquecidos);
-  antidoping_appendHistorial_(consulta, enriquecidos[0]);
-  return ok(true, enriquecidos);
+  var cacheResult = enrichedCacheResult_(enriquecidos, source);
+  antidoping_writeCache_(consultaNorm, consulta, source, cacheResult);
+  antidoping_appendHistorial_(consulta, cacheResult[0]);
+  return ok(true, cacheResult);
+}
+
+function enrichedCacheResult_(items, source) {
+  var out = (items || []).map(function(item) {
+    var copy = Object.assign({}, item);
+    if (source === 'vnm_strong' && copy.observaciones) {
+      copy.observaciones = copy.observaciones + ' Resuelto con coincidencia fuerte en VNM/ANMAT.';
+    }
+    return copy;
+  });
+  return out;
 }
 
 function antidoping_getFrecuentes() {

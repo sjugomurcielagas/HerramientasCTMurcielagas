@@ -69,14 +69,16 @@
   searchVariants = function (query) {
     var normalized = norm(query);
     var extras = [];
-    if (normalized === 'anaflex') extras = ['anaflex', 'paracetamol', 'diclofenac', 'paracetamol diclofenac'];
+    if (normalized === 'anaflex') extras = ['anaflex', 'paracetamol'];
     else if (normalized === 'paracetamol') extras = ['paracetamol', 'anaflex'];
     else if (normalized === 'diclofenac') extras = ['diclofenac', 'anaflex'];
-    else if (normalized === 'novalgina') extras = ['novalgina', 'dipirona', 'metamizol'];
+    else if (normalized === 'novalgina') extras = ['novalgina', 'dipirona'];
     else if (normalized === 'dipirona' || normalized === 'metamizol') extras = [normalized, 'novalgina'];
 
     var base = typeof originalSearchVariants === 'function' ? originalSearchVariants(query) : [String(query || '').trim()];
-    return Array.from(new Set(base.concat(extras).filter(Boolean)));
+    var compact = Array.from(new Set(base.concat(extras).filter(Boolean)));
+    if (compact.length > 3) compact = compact.slice(0, 3);
+    return compact;
   };
 
   buscarConAliases = async function (query) {
@@ -105,6 +107,18 @@
         });
 
         if (!usedVariant && items.some(isReliableResult)) usedVariant = variante;
+        if (items.some(function (item) {
+          var estado = String(item.estado || item.resultado || '').toUpperCase();
+          return isReliableResult(item) && (
+            estado.indexOf('PERMITIDO') !== -1 ||
+            estado.indexOf('PROHIBIDO') !== -1 ||
+            estado.indexOf('NO FIGURA') !== -1 ||
+            estado.indexOf('CONDICIONADO') !== -1 ||
+            estado.indexOf('ADVERTENCIA') !== -1
+          );
+        })) {
+          break;
+        }
       } catch (err) {
         // Se sigue con la siguiente variante.
       }
