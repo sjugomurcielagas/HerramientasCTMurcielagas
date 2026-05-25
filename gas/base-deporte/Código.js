@@ -4279,9 +4279,11 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
       return 'Participaron ' + String((presentesInfo || []).length) + ' de ' + String(convocadas.length) + ' personas convocadas.';
     case 'cuerpo_certificacion':
       if (!convocadas.length) return 'No hay convocatoria cargada para esta concentración.';
-      var texto = 'Por la presente, la Federación Argentina de Deportes para Ciegos, FADeC, certifica que, durante la concentración "' + _nombreConcentracionHumana_(conc) + '", desarrollada en ' + (conc.lugar || conc.sede || 'el lugar informado') + ' entre el ' + formatFechaTextoGas_(fechaInicioRaw) + ' y el ' + formatFechaTextoGas_(fechaFinRaw) + ', participaron las personas detalladas en el presente documento.';
+      var tipoActividadTexto = baseCtx.tipoActividad || _nombreConcentracionHumana_(conc);
+      var texto = 'Por la presente, la Federación Argentina de Deportes para Ciegos, FADeC, certifica que, durante ' + tipoActividadTexto + ' "' + _nombreConcentracionHumana_(conc) + '", desarrollada en ' + (conc.lugar || conc.sede || 'el lugar informado') + ' entre el ' + formatFechaTextoGas_(fechaInicioRaw) + ' y el ' + formatFechaTextoGas_(fechaFinRaw) + ', participaron las personas detalladas en el presente documento.';
       if ((presentesInfo || []).length) texto += ' Se registraron como presentes: ' + (presentesInfo || []).map(function(p) { return p.nombre; }).join(', ') + '.';
-      texto += ' Esta certificación se emite a solicitud del cuerpo técnico para los fines que correspondan.';
+      texto += ' En función de lo establecido por la Ley N° 20.596, se solicita a todas las instituciones públicas o privadas, educativas, laborales o de cualquier otra índole, donde los atletas convocados intervengan, a prestar su mayor colaboración mediante el otorgamiento de la correspondiente licencia deportiva y por cualquier otro medio de apoyo que pudiera corresponder.';
+      texto += ' Solicitamos tengan a bien considerar esta certificación para los fines que correspondan. La comisión directiva de FADEC queda a disposición ante cualquier consulta o aclaración que pudiera corresponder.';
       return texto;
     case 'federacion_convocante':
       return 'Federación Argentina de Deportes para Ciegos (FAdeC)';
