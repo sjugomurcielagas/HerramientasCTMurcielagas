@@ -5015,7 +5015,7 @@ function _estilizarTablaPresentes_(table) {
   var headerBg = '#EAF4FB';
   var textAttrs = {};
   textAttrs[DocumentApp.Attribute.FONT_FAMILY] = 'Arial';
-  textAttrs[DocumentApp.Attribute.FONT_SIZE] = 9;
+  textAttrs[DocumentApp.Attribute.FONT_SIZE] = 8;
   var padAttrs = {};
   padAttrs[DocumentApp.Attribute.PADDING_TOP]    = 2;
   padAttrs[DocumentApp.Attribute.PADDING_BOTTOM] = 2;
@@ -5068,7 +5068,7 @@ function _estilizarTablaConvocatoria_(table) {
       if (len > 0) {
         cellText.setAttributes(0, len - 1, attrs);
         cellText.setFontFamily(0, len - 1, 'Arial');
-        cellText.setFontSize(0, len - 1, 9);
+        cellText.setFontSize(0, len - 1, 8);
         cellText.setBold(0, len - 1, r === 0);
       }
       if (r === 0) cell.setBackgroundColor(headerBg);
