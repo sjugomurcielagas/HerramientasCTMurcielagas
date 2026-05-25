@@ -1,6 +1,6 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
 const UI_VERSION = '2026.05.25';
-const UI_DEPLOYED_AT = '2026-05-25 14:24:01 UTC';
+const UI_DEPLOYED_AT = 'internal';
 
 (function ensureFreshUiVersion(global) {
   if (!global.document || !global.location || !global.fetch) return;
@@ -598,7 +598,7 @@ const UI_DEPLOYED_AT = '2026-05-25 14:24:01 UTC';
   function syncUiVersionTags() {
     const tags = global.document ? global.document.querySelectorAll('.page-version-tag') : [];
     tags.forEach(tag => {
-      tag.textContent = `Versi\u00f3n UI ${UI_VERSION} · deploy ${UI_DEPLOYED_AT}`;
+      tag.textContent = `Versi\u00f3n UI ${UI_VERSION}`;
     });
   }
 

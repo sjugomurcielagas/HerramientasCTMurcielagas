@@ -5,7 +5,7 @@
 
 const REPORTES_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIdqciZ_o_YVS_EYV2xYCMyrRLhEXCyd9s0gxeuiGX9YwvwHtiPYPO3hUUKc7Y-kBe/exec';
 
-const BASE_DEPORTE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2u0VjFDSi8dQMUpmkSOu4Kleg7rVobVM9Cgko3uQ8qx02UwLdWW2BxIRNnu9xWj9U/exec';
+const BASE_DEPORTE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdtCTgi0AOt8-jxzKW176kkPBO1lxOegZTXW_8RVZhmfq19e8N62gApyS_XUk3Gy9q/exec';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://sjugomurcielagas.github.io',
