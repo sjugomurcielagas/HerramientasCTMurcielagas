@@ -88,7 +88,7 @@
               <div class="actions" style="margin-top:10px"><button id="guardarConvBtn" class="btn small">Guardar convocatoria</button><button id="editarConvBtn" class="btn ghost small hidden" type="button">Editar convocatoria</button><span id="convCount" class="badge info"></span></div>
               <div id="convStatus" class="status-line"></div>
               <div id="asistenciaInlineContainer" style="margin-top:12px"></div>
-              <div class="actions" style="margin-top:10px"><button id="guardarAsistenciaInlineBtn" class="btn small hidden" type="button">Guardar asistencia</button></div>
+              <div class="actions" style="margin-top:10px"><button id="guardarAsistenciaInlineBtn" class="btn small hidden" type="button">Guardar asistencia</button><span id="asistenciaInlineStatus" class="status-line" style="margin:0"></span></div>
               <div class="docs-block">
                 <div class="card-title" style="margin-bottom:12px">Documentos oficiales</div>
                 <div class="actions"><button id="generarOficialesBtn" class="btn secondary small" type="button">Generar documentos oficiales (Santiago y Gonzalo)</button></div>
@@ -425,23 +425,27 @@
     }
     async function guardarAsistenciaReal(){
       const c=currentConc();if(!c)return;
-      const st=document.getElementById('asistenciaStatus'),btn=document.getElementById('guardarAsistenciaBtn');
+      const st=document.getElementById('asistenciaStatus');
+      const stInline=document.getElementById('asistenciaInlineStatus');
+      const btn=document.getElementById('guardarAsistenciaBtn');
+      const btnInline=document.getElementById('guardarAsistenciaInlineBtn');
       const asistencia=buildAsistenciaCurrent(c);
-      st.textContent='Guardando asistencia...';st.className='status-line';btn.disabled=true;
+      const setStatus=(text,cls)=>{if(st){st.textContent=text;st.className=cls||'status-line'} if(stInline){stInline.textContent=text;stInline.className=cls||'status-line'}};
+      setStatus('Guardando asistencia...','status-line');
+      if(btn)btn.disabled=true;if(btnInline)btnInline.disabled=true;
       try{
         const asistencia_json=JSON.stringify(asistencia.map(normalizeAsistenciaEntry));
         await apiPost({action:'concentraciones_guardarAsistencia',id:concId(c),asistencia_json});
         mergeConc({asistencia_json});
         state.asistenciaDrafts[concId(c)]=parseAsistencia({asistencia_json});
-        st.textContent='Asistencia guardada.';st.className='status-line ok';
+        setStatus(`Asistencia guardada · ${asistencia.length} registros`,'status-line ok');
         const savedMeta=document.getElementById('asistenciaSavedMeta');
         if(savedMeta){savedMeta.textContent=`Asistencia guardada · ${asistencia.length} registros`;savedMeta.classList.remove('hidden')}
         renderLista();
         renderAsistenciaReal();
       }catch(err){
-        st.textContent='Error al guardar asistencia: '+err.message;
-        st.className='status-line error';
-      }finally{btn.disabled=false}
+        setStatus('Error al guardar asistencia: '+err.message,'status-line error');
+      }finally{if(btn)btn.disabled=false;if(btnInline)btnInline.disabled=false}
     }
     async function guardarConvocatoria(){
       const c=currentConc();if(!c)return;
