@@ -53,6 +53,10 @@
         node.remove();
       });
     }
+
+    root.querySelectorAll('.step-kicker, .notice.warn').forEach(function (node) {
+      node.remove();
+    });
   }
 
   function sanitizeReportOutput() {
@@ -64,6 +68,8 @@
       ['Sección pendiente de diseño. Por ahora, los pesos y referencias máximas se trabajan por fuera del sistema hasta definir una carga más intuitiva y específica.', ''],
       ['No hay cargas informadas en la semana seleccionada, así que no conviene leer tendencias de volumen hasta completar registros.', 'No hay cargas informadas en la semana seleccionada.'],
       ['No está pensada para una semana puntual.', ''],
+      ['Escribí como una persona del CT que leyó la información y la ordenó, no como una IA que comenta un JSON.', 'Escribí como una persona del CT que ordenó la información.'],
+      ['RESPONDÉ ÚNICAMENTE con JSON válido. Sin texto, sin markdown, sin explicaciones.', ''],
       ['La semana muestra', 'La semana muestra']
     ];
 
