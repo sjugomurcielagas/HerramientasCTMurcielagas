@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ct-murcielagas-pwa-v7';
+const CACHE_NAME = 'ct-murcielagas-pwa-v8';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [
@@ -69,7 +69,7 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        return await fetch(request);
+        return await fetch(request, { cache: 'no-store' });
       } catch (error) {
         const cached = await caches.match('./index.html');
         return cached || caches.match('./');
