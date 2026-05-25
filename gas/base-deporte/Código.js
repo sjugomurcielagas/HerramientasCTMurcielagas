@@ -3897,7 +3897,7 @@ function _patchDocConfigPlaceholders_(sheet) {
 }
 
 function _ensureHojaConfigDocPlaceholders_() {
-  var DOC_CONFIG_PH_VERSION = 'v2-2026-05-25';
+  var DOC_CONFIG_PH_VERSION = 'v3-2026-05-25';
   var sheet = tryGetSheet(SHEETS.configDocPlaceholders);
   if (!sheet) {
     sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).insertSheet(SHEETS.configDocPlaceholders);
@@ -4257,7 +4257,11 @@ function _resolverValorPlaceholderDocumento_(ph, data) {
       valor = _resolverCampoDocumentoSistema_(ph.campo, data);
       break;
     case 'fijo':
-      valor = ph.valor_fijo || '';
+      if (ph.campo === 'federacion_convocante') {
+        valor = typeof FADEC_NOMBRE_COMPLETO_ !== 'undefined' ? FADEC_NOMBRE_COMPLETO_ : 'Federación Argentina de Deportes para Ciegos (FADeC)';
+      } else {
+        valor = ph.valor_fijo || '';
+      }
       break;
     default:
       valor = ph.valor_fijo || '';

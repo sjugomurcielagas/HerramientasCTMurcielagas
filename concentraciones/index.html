@@ -469,7 +469,7 @@
       const tipos=getSelectedDocTypes();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('confirmarDocsBtn');
       if(!tipos.length){st.textContent='Seleccioná al menos un documento.';st.className='status-line error';return}
-      const convocadasGenerales=convocatoriaDnisDesdeChecks();
+      const convocadasGenerales=isConvocatoriaLocked(c)?convocatoriaDnisEfectivos(c):convocatoriaDnisDesdeChecks();
       const tiposGenerales=tipos.filter(t=>DOC_TYPES_GENERAL.includes(t));
       const tiposPersonales=tipos.filter(t=>DOC_TYPES_PERSONAL.includes(t));
       if(tiposGenerales.length&&!convocadasGenerales.length){st.textContent='Seleccioná al menos una persona en la convocatoria para generar documentos generales.';st.className='status-line error';return}
