@@ -39,6 +39,7 @@ var SHEETS = {
   testeosMediciones: 'TesteosMediciones',
   columnasDinamicas: 'ColumnasDinamicas',
   antidopingCatalogo: 'Antidoping_Catalogo',
+  antidopingVnmCatalogo: 'Antidoping_VNM_Catalogo',
   antidopingHistorial: 'Antidoping_Historial',
   antidopingCache: 'Antidoping_Cache',
   wadaSustancias: 'WADA_Sustancias',
@@ -51,6 +52,13 @@ var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
 var ANTIDOPING_CACHE_VERSION = 'v2';
 var ANTIDOPING_BACKEND_VERSION = '2026-05-17.3';
+var ANTIDOPING_VNM_SHEET = 'Antidoping_VNM_Catalogo';
+var ANTIDOPING_VNM_SYNC_KEY = 'antidoping_vnm_last_sync';
+var ANTIDOPING_VNM_SYNC_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+var ANTIDOPING_VNM_SOURCE_URLS = [
+  'https://datos.salud.gob.ar/dataset/3e28c31c-2bcf-4a74-81cf-f992152f9e6a/resource/9d5a5ee0-5942-428e-84ad-67f0a10091a3/download/vnm-2018.csv',
+  'https://datos.salud.gob.ar/dataset/3e28c31c-2bcf-4a74-81cf-f992152f9e6a/resource/7c95c566-e1fa-4ebc-a5b6-7a9f236a2f38/download/vnm-jun-2018-.csv'
+];
 var TUE_DEFAULT_DURATION_DAYS = 365;
 var TUE_FIELDS_ = [
   'TUE_Estado',
@@ -321,6 +329,206 @@ function antidoping_seedCatalogo_(sheet) {
   sheet.getRange(2, 1, base.length, base[0].length).setValues(base);
 }
 
+function antidoping_getVnmSheet_() {
+  var headers = [
+    'nombre_comercial',
+    'generico',
+    'laboratorio_titular',
+    'certificado',
+    'fuente_url',
+    'fecha_revision',
+    'fuente_dataset'
+  ];
+  return antidoping_getOrCreateSheet_(SHEETS.antidopingVnmCatalogo || ANTIDOPING_VNM_SHEET, headers);
+}
+
+function antidoping_vnmSyncNeeded_() {
+  var props = PropertiesService.getScriptProperties();
+  var last = props.getProperty(ANTIDOPING_VNM_SYNC_KEY);
+  if (!last) return true;
+  var parsed = new Date(last);
+  if (isNaN(parsed.getTime())) return true;
+  return (new Date().getTime() - parsed.getTime()) > ANTIDOPING_VNM_SYNC_TTL_MS;
+}
+
+function antidoping_parseDelimitedTable_(text) {
+  var raw = String(text || '').replace(/^\uFEFF/, '').trim();
+  if (!raw) return [];
+  var delimiters = [';', ',', '\t'];
+  var best = null;
+  delimiters.forEach(function(delim) {
+    try {
+      var rows = Utilities.parseCsv(raw, delim);
+      if (!rows || rows.length < 2 || !rows[0] || rows[0].length < 2) return;
+      var score = rows.length * rows[0].length;
+      if (!best || score > best.score) {
+        best = { rows: rows, score: score };
+      }
+    } catch (e) {}
+  });
+  if (!best) return [];
+  var rows = best.rows;
+  var headers = rows.shift().map(function(h) { return String(h || '').trim(); });
+  return rows
+    .filter(function(row) { return row && row.some(function(cell) { return String(cell || '').trim() !== ''; }); })
+    .map(function(row) {
+      var obj = {};
+      headers.forEach(function(h, idx) {
+        obj[h] = String(row[idx] || '').trim();
+      });
+      return obj;
+    });
+}
+
+function antidoping_vnmField_(row, candidates) {
+  var headers = Object.keys(row || {});
+  var normalizedIndex = {};
+  headers.forEach(function(h) { normalizedIndex[normalizeText(h)] = h; });
+  for (var i = 0; i < candidates.length; i++) {
+    var key = normalizedIndex[normalizeText(candidates[i])];
+    if (key && String(row[key] || '').trim()) return String(row[key]).trim();
+  }
+  return '';
+}
+
+function antidoping_fetchVnmRows_() {
+  for (var i = 0; i < ANTIDOPING_VNM_SOURCE_URLS.length; i++) {
+    try {
+      var res = UrlFetchApp.fetch(ANTIDOPING_VNM_SOURCE_URLS[i], { muteHttpExceptions: true, followRedirects: true });
+      var code = res.getResponseCode();
+      if (code < 200 || code >= 300) continue;
+      var rows = antidoping_parseDelimitedTable_(res.getContentText());
+      if (rows.length) return { rows: rows, sourceUrl: ANTIDOPING_VNM_SOURCE_URLS[i] };
+    } catch (e) {}
+  }
+  return { rows: [], sourceUrl: '' };
+}
+
+function antidoping_syncVnmCatalogo_() {
+  var sheet = antidoping_getVnmSheet_();
+  var fetched = antidoping_fetchVnmRows_();
+  var rows = fetched.rows || [];
+  if (!rows.length) return sheet;
+
+  var values = rows.map(function(row) {
+    var nombre = antidoping_vnmField_(row, [
+      'nombre comercial',
+      'nombre_comercial',
+      'comercial',
+      'marca',
+      'producto',
+      'nombre'
+    ]);
+    var generico = antidoping_vnmField_(row, [
+      'generico',
+      'genérico',
+      'principio activo',
+      'principio_activo',
+      'sustancia',
+      'formula'
+    ]);
+    var laboratorio = antidoping_vnmField_(row, [
+      'laboratorio titular',
+      'laboratorio',
+      'titular'
+    ]);
+    var certificado = antidoping_vnmField_(row, [
+      'numero certificado',
+      'nro certificado',
+      'certificado',
+      'nro. certificado'
+    ]);
+    return [
+      nombre,
+      generico,
+      laboratorio,
+      certificado,
+      fetched.sourceUrl || ANTIDOPING_VNM_SOURCE_URLS[0],
+      Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd'),
+      'Datos.gob.ar / VNM'
+    ];
+  }).filter(function(row) {
+    return String(row[0] || '').trim() || String(row[1] || '').trim();
+  });
+
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, 7).setValues([[
+    'nombre_comercial',
+    'generico',
+    'laboratorio_titular',
+    'certificado',
+    'fuente_url',
+    'fecha_revision',
+    'fuente_dataset'
+  ]]);
+  if (values.length) {
+    sheet.getRange(2, 1, values.length, 7).setValues(values);
+  }
+  PropertiesService.getScriptProperties().setProperty(ANTIDOPING_VNM_SYNC_KEY, new Date().toISOString());
+  return sheet;
+}
+
+function antidoping_readVnmCatalogo_() {
+  var sheet = antidoping_getVnmSheet_();
+  var rows = sheetToObjects(sheet);
+  if (!rows.length || antidoping_vnmSyncNeeded_()) {
+    try {
+      antidoping_syncVnmCatalogo_();
+      rows = sheetToObjects(sheet);
+    } catch (e) {}
+  }
+  return rows.map(function(row) {
+    return {
+      nombre_comercial: String(row.nombre_comercial || row.nombreComercial || row.comercial || '').trim(),
+      generico: String(row.generico || row.genérico || row.principio_activo || row.principioActivo || row.sustancia || '').trim(),
+      laboratorio_titular: String(row.laboratorio_titular || row.laboratorioTitular || row.laboratorio || '').trim(),
+      certificado: String(row.certificado || row.numero_certificado || row.nro_certificado || '').trim(),
+      fuente_url: String(row.fuente_url || '').trim(),
+      fecha_revision: String(row.fecha_revision || '').trim(),
+      fuente_dataset: String(row.fuente_dataset || 'Datos.gob.ar / VNM').trim()
+    };
+  });
+}
+
+function antidoping_scoreVnmMatch_(consultaNorm, item) {
+  var nombre = normalizeText(item.nombre_comercial || '');
+  var generico = normalizeText(item.generico || '');
+  if (!consultaNorm) return 0;
+  if (consultaNorm === nombre || consultaNorm === generico) return 100;
+  if (nombre.indexOf(consultaNorm) !== -1 || generico.indexOf(consultaNorm) !== -1) return 80;
+  if (consultaNorm.indexOf(nombre) !== -1 || consultaNorm.indexOf(generico) !== -1) return 60;
+  return 0;
+}
+
+function antidoping_lookupVnmCandidates_(consulta) {
+  var consultaNorm = normalizeText(consulta);
+  var rows = antidoping_readVnmCatalogo_();
+  if (!rows.length) return [];
+  return rows
+    .map(function(item) {
+      return {
+        item: item,
+        score: antidoping_scoreVnmMatch_(consultaNorm, item)
+      };
+    })
+    .filter(function(x) { return x.score > 0; })
+    .sort(function(a, b) { return b.score - a.score; })
+    .slice(0, 6)
+    .map(function(x) {
+      return {
+        medicamento: x.item.nombre_comercial || consulta,
+        principio_activo: x.item.generico || '',
+        presentacion: '',
+        laboratorio: x.item.laboratorio_titular || '',
+        observaciones: 'Fuente secundaria VNM/ANMAT. Dataset eventual; conviene confirmar manualmente si hay variantes.',
+        fuente_argentina: 'VNM ANMAT',
+        fuente_secundaria: x.item.fuente_dataset || 'Datos.gob.ar / VNM',
+        fuente_url: x.item.fuente_url || ANTIDOPING_VNM_SOURCE_URLS[0],
+        fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+      };
+    });
+}
+
 function antidoping_readCatalogo_() {
   var headers = [
     'medicamento',
@@ -508,12 +716,13 @@ function antidoping_evalWada_(principioActivo) {
   var hits = exactHits.length ? exactHits : boundaryHits;
   if (!hits.length) {
     return {
-      estado: 'PERMITIDO',
+      estado: 'REQUIERE REVISIÓN',
       fuente_wada: 'WADA_Sustancias',
       observaciones_wada: 'Sin coincidencia exacta en reglas cargadas.',
-      criterio_wada: 'No figura como prohibido ni advertido en la base WADA cargada; bajo este criterio operativo se trata como permitido.',
-      en_competencia: 'NO',
-      fuera_competencia: 'NO'
+      criterio_wada: 'No se encontró coincidencia exacta en la base WADA cargada. No se habilita automáticamente hasta verificar la sustancia o el principio activo.',
+      advertencia_detalle: 'Sin coincidencia exacta en la base WADA cargada.',
+      en_competencia: 'N/D',
+      fuera_competencia: 'N/D'
     };
   }
   var h = hits[0];
@@ -806,6 +1015,15 @@ function antidoping_buscarMedicamento(payload) {
     try {
       matches = antidoping_scrapePrVademecum_(consulta).slice(0, 6).map(antidoping_enrichPrItem_);
       source = 'prvademecum_live';
+    } catch (e) {
+      matches = [];
+    }
+  }
+
+  if (!matches.length) {
+    try {
+      matches = antidoping_lookupVnmCandidates_(consulta);
+      if (matches.length) source = 'vnm_catalogo';
     } catch (e) {
       matches = [];
     }
