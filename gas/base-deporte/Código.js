@@ -3652,6 +3652,12 @@ function _validarDatosDocumentosConcentracion(p) {
   var faltantes = [];
   if (!conc) faltantes.push('concentracion');
   if (tipos.indexOf('convocatoria_fadec') > -1 && !convocadas.length) faltantes.push('convocadas');
+  if (tipos.indexOf('certificacion_participacion') > -1) {
+    var asistenciaConc = _asistenciaConcentracion(conc);
+    var presentesConc = _presentesDesdeAsistencia_(asistenciaConc, convocadas);
+    if (!asistenciaConc.length) faltantes.push('asistencia');
+    if (!presentesConc.length) faltantes.push('asistencia_presentes');
+  }
 
   tipos.forEach(function(tipo) {
     var cfg = _tiposDocumentoConcentraciones().find(function(t) { return t.clave === tipo; });
@@ -3920,7 +3926,7 @@ function _defaultDocumentDefinitions_() {
       requiere_fecha: true,
       requiere_convocadas: true,
       requiere_tabla_convocadas: true,
-      descripcion: 'Documento colectivo para toda la convocatoria'
+      descripcion: 'Documento colectivo para la convocatoria con asistencia final'
     },
     {
       tipo_documento: 'certificacion_participacion',
@@ -4001,6 +4007,10 @@ function _defaultDocumentPlaceholders_() {
     ['certificacion_participacion','{{CONVOCADAS_TEXTO}}','concentracion','tabla_convocadas','texto',true,'',''],
     ['certificacion_participacion','{{CONVOCADAS_CANTIDAD}}','concentracion','convocadas_cantidad','numero',true,'',''],
     ['certificacion_participacion','{{CONVOCADAS_NOMBRES}}','concentracion','convocadas_nombres','texto',true,'',''],
+    ['certificacion_participacion','{{RESUMEN_ASISTENCIA}}','concentracion','resumen_asistencia','texto',true,'',''],
+    ['certificacion_participacion','{{CUERPO_CERTIFICACION}}','concentracion','cuerpo_certificacion','texto',true,'',''],
+    ['certificacion_participacion','{{PARTICIPANTES_PRESENTES}}','concentracion','participantes_presentes','texto',true,'',''],
+    ['certificacion_participacion','{{PARTICIPANTES_AUSENTES}}','concentracion','participantes_ausentes','texto',false,'',''],
     ['licencia_agencia_cordoba','{{AUTORIDAD_INSTITUCION}}','persona','autoridad_institucion','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
@@ -4226,8 +4236,16 @@ function _resolverValorPlaceholderDocumento_(ph, data) {
 function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto) {
   var conc = data.conc || {};
   var baseCtx = data.baseCtx || {};
+  var asistencia = Array.isArray(data.asistencia) ? data.asistencia : [];
+  var convocadas = Array.isArray(data.convocadas) ? data.convocadas : [];
   var fechaInicioRaw = conc.fechaInicio || conc.fecha_inicio || '';
   var fechaFinRaw = conc.fechaFin || conc.fecha_fin || fechaInicioRaw;
+  var presentes = _presentesDesdeAsistencia_(asistencia, convocadas);
+  var presentesInfo = _armarConvocatoriaParticipantes_(data.plantel || [], presentes);
+  var ausentes = convocadas.filter(function(id) {
+    return presentes.map(function(item) { return String(item || '').trim(); }).indexOf(String(id || '').trim()) === -1;
+  });
+  var ausentesInfo = _armarConvocatoriaParticipantes_(data.plantel || [], ausentes);
   switch (String(campo || '').trim()) {
     case 'nombre':
     case 'nombre_evento':
@@ -4259,6 +4277,20 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
       return String((nombres || []).length);
     case 'convocadas_nombres':
       return (nombres || []).map(function(p) { return p.nombre; }).join(', ');
+    case 'participantes_presentes':
+      return (presentesInfo || []).map(function(p) { return p.nombre; }).join(', ');
+    case 'participantes_ausentes':
+      return (ausentesInfo || []).map(function(p) { return p.nombre; }).join(', ');
+    case 'resumen_asistencia':
+      if (!convocadas.length) return 'Sin convocatoria cargada.';
+      return 'Participaron ' + String((presentesInfo || []).length) + ' de ' + String(convocadas.length) + ' personas convocadas.';
+    case 'cuerpo_certificacion':
+      if (!convocadas.length) return 'No hay convocatoria cargada para esta concentración.';
+      var texto = 'Por la presente, la Federación Argentina de Deportes para Ciegos, FADeC, certifica que, durante la concentración "' + _nombreConcentracionHumana_(conc) + '", desarrollada en ' + (conc.lugar || conc.sede || 'el lugar informado') + ' entre el ' + formatFechaTextoGas_(fechaInicioRaw) + ' y el ' + formatFechaTextoGas_(fechaFinRaw) + ', participaron las personas detalladas en el presente documento.';
+      if ((presentesInfo || []).length) texto += ' Se registraron como presentes: ' + (presentesInfo || []).map(function(p) { return p.nombre; }).join(', ') + '.';
+      if ((ausentesInfo || []).length) texto += ' Se registraron como ausentes: ' + (ausentesInfo || []).map(function(p) { return p.nombre; }).join(', ') + '.';
+      texto += ' Esta certificación se emite a solicitud del cuerpo técnico para los fines que correspondan.';
+      return texto;
     case 'federacion_convocante':
       return 'Federación Argentina de Deportes para Ciegos (FAdeC)';
     default:

@@ -10,7 +10,7 @@ function _nombreDocumentoConcentraciones(tipo, conc, persona) {
     convocatoria_fadec: FADEC_DOCUMENTO_CONVOCATORIA_,
     licencia_agencia_cordoba: 'Licencia Agencia Cordoba',
     licencia_municipalidad_cordoba: 'Licencia Municipalidad Cordoba',
-    certificacion_participacion: 'Certificacion de participacion'
+    certificacion_participacion: 'Certificacion de participacion efectiva'
   };
   var nombre = (mapa[tipo] || tipo) + ' - ' + base;
   if (persona && persona.nombreCompleto) nombre += ' - ' + persona.nombreCompleto;
@@ -104,7 +104,7 @@ function _defaultDocumentDefinitions_() {
     },
     {
       tipo_documento: 'certificacion_participacion',
-      nombre_visible: 'Certificacion de participacion',
+      nombre_visible: 'Certificacion de participacion efectiva',
       template_id: '',
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'colectivo',
@@ -181,6 +181,10 @@ function _defaultDocumentPlaceholders_() {
     ['certificacion_participacion','{{CONVOCADAS_TEXTO}}','concentracion','tabla_convocadas','texto',true,'',''],
     ['certificacion_participacion','{{CONVOCADAS_CANTIDAD}}','concentracion','convocadas_cantidad','numero',true,'',''],
     ['certificacion_participacion','{{CONVOCADAS_NOMBRES}}','concentracion','convocadas_nombres','texto',true,'',''],
+    ['certificacion_participacion','{{RESUMEN_ASISTENCIA}}','concentracion','resumen_asistencia','texto',true,'',''],
+    ['certificacion_participacion','{{CUERPO_CERTIFICACION}}','concentracion','cuerpo_certificacion','texto',true,'',''],
+    ['certificacion_participacion','{{PARTICIPANTES_PRESENTES}}','concentracion','participantes_presentes','texto',true,'',''],
+    ['certificacion_participacion','{{PARTICIPANTES_AUSENTES}}','concentracion','participantes_ausentes','texto',false,'',''],
     ['licencia_agencia_cordoba','{{AUTORIDAD_INSTITUCION}}','persona','autoridad_institucion','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
