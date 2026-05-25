@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ct-murcielagas-pwa-v4';
+const CACHE_NAME = 'ct-murcielagas-pwa-v5';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [

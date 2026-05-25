@@ -1,5 +1,5 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
-const UI_VERSION = '2026.05.22 · c759857';
+const UI_VERSION = '2026.05.24';
 
 (function initMurciSharedApi(global) {
   const Murci = global.Murci || (global.Murci = {});
