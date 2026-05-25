@@ -3769,6 +3769,7 @@ function _reemplazosDocumentoConcentracion_(data) {
 
 function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convocadas, plantel) {
   Object.keys(reemplazos).forEach(function(clave) {
+    if (clave === '{{TABLA_CONVOCADAS}}') return; // se maneja abajo de forma explícita
     body.replaceText(_escapeRegexDocumento_(clave), reemplazos[clave]);
   });
   if (tipo === 'convocatoria_fadec') {
@@ -4966,7 +4967,7 @@ function _estilizarTablaConvocatoria_(table) {
   var headerBg = '#EAF4FB';
   var baseAttrs = {};
   baseAttrs[DocumentApp.Attribute.FONT_FAMILY] = 'Arial';
-  baseAttrs[DocumentApp.Attribute.FONT_SIZE] = 8;
+  baseAttrs[DocumentApp.Attribute.FONT_SIZE] = 10;
   for (var r = 0; r < table.getNumRows(); r++) {
     var row = table.getRow(r);
     for (var c = 0; c < row.getNumCells(); c++) {
@@ -4979,7 +4980,7 @@ function _estilizarTablaConvocatoria_(table) {
       if (len > 0) {
         cellText.setAttributes(0, len - 1, attrs);
         cellText.setFontFamily(0, len - 1, 'Arial');
-        cellText.setFontSize(0, len - 1, 8);
+        cellText.setFontSize(0, len - 1, 10);
         cellText.setBold(0, len - 1, r === 0);
       }
       if (r === 0) cell.setBackgroundColor(headerBg);
