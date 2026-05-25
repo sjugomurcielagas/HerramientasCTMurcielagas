@@ -4898,15 +4898,7 @@ function _normalizarTextoSinAcentos_(valor) {
 function _insertarTablaConvocatoria_(body, participantes) {
   var pattern = '\\{\\{\\s*TABLA_CONVOCADAS\\s*\\}\\}';
   var found = body.findText(pattern);
-  if (!found) throw new Error('No se encontró el placeholder {{TABLA_CONVOCADAS}} en la plantilla');
-
-  var text = found.getElement().asText();
-  var paragraph = text.getParent().asParagraph();
-  var parent = paragraph.getParent();
-  var index = parent.getChildIndex(paragraph);
   var rows = [['Nombre y apellido', 'DNI', 'Provincia de procedencia']];
-  var start = found.getStartOffset();
-  var end = found.getEndOffsetInclusive();
 
   if (participantes.length) {
     participantes.forEach(function(p) {
@@ -4915,6 +4907,19 @@ function _insertarTablaConvocatoria_(body, participantes) {
   } else {
     rows.push(['(Sin convocadas)', '', '']);
   }
+
+  if (!found) {
+    var tableFallback = body.appendTable(rows);
+    _estilizarTablaConvocatoria_(tableFallback);
+    return;
+  }
+
+  var text = found.getElement().asText();
+  var paragraph = text.getParent().asParagraph();
+  var parent = paragraph.getParent();
+  var index = parent.getChildIndex(paragraph);
+  var start = found.getStartOffset();
+  var end = found.getEndOffsetInclusive();
 
   text.deleteText(start, end);
   var table = parent.insertTable(index + 1, rows);
