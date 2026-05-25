@@ -125,6 +125,16 @@ export default {
       }
 
       const text = await targetResponse.text();
+      const contentType = String(targetResponse.headers.get('content-type') || '').toLowerCase();
+      const looksJson = contentType.includes('application/json') || /^\s*[\{\[]/.test(text);
+
+      if (!looksJson) {
+        return jsonResponse({
+          ok: false,
+          error: 'El backend devolvió una respuesta no JSON.',
+          raw: text.slice(0, 1000)
+        }, targetResponse.status || 502);
+      }
 
       return new Response(text, {
         status: targetResponse.status,
