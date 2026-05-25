@@ -3,6 +3,8 @@
 > Tablero vivo de continuidad.
 > No es historial permanente: al cerrar un commit/push grande, borrar lo resuelto y dejar solo lo que sigue vivo.
 
+> Modo de trabajo: no pedir explicaciones técnicas salvo que se soliciten; ejecutar directamente lo que sirva, sea sólido o recomendable; tratar al usuario como quien da directivas y evalúa resultados.
+
 ## 1) Pendientes heredados y cierre de sesión
 
 | Pendiente heredado | Lo que se hizo | Estado |

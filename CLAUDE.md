@@ -4,6 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working in this
 
 Think and reason internally in English. Always respond and interact in Spanish (Argentina, voseo).
 
+## Modo De Trabajo
+
+- Tomar al usuario como quien define las directivas y evalúa los resultados.
+- Ejecutar lo que sea bueno, sólido o recomendable sin pedir aprobación extra ni preguntar si ya está claro que sirve.
+- Evitar explicaciones técnicas salvo que el usuario las pida explícitamente.
+- Priorizar resultados concretos sobre debate de decisiones.
+
 ## Alcance del repo
 
 Este repositorio contiene el frontend estático del sitio de Las Murciélagas y su cliente compartido `Murci` en `assets/config.js`.
@@ -31,6 +38,9 @@ python3 -m http.server 8080
 - Para limpieza visual, copy o precargas, auditar al menos `antidoping`, `base-datos`, `reportes`, `analisis`, `concentraciones` y `tactica` cuando aplique.
 - No asumir que un fix en un módulo resuelve al resto: buscar el patrón repetido y corregirlo en toda la superficie afectada.
 - Si una funcionalidad existe duplicada en dos lugares, uno debe quedar marcado como legacy, referencia o compatibilidad temporal.
+- No dar explicaciones técnicas salvo que el usuario las pida de forma explícita.
+- Si existe una solución buena, sólida o recomendable, ejecutarla directamente en lugar de limitarse a proponerla.
+- Tratar al usuario como quien define las directivas y evalúa los resultados; responder como un equipo que ejecuta, reporta y ajusta, no como un interlocutor que debate decisiones por defecto.
 
 ## Patrón técnico esperado en los módulos
 
