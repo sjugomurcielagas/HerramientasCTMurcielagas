@@ -8,9 +8,9 @@ function _nombreDocumentoConcentraciones(tipo, conc, persona) {
   var base = _nombreConcentracionHumana_(conc);
   var mapa = {
     convocatoria_fadec: FADEC_DOCUMENTO_CONVOCATORIA_,
+    certificacion_participacion: 'Certificacion de participacion efectiva',
     licencia_agencia_cordoba: 'Licencia Agencia Cordoba',
     licencia_municipalidad_cordoba: 'Licencia Municipalidad Cordoba',
-    certificacion_participacion: 'Certificacion de participacion efectiva'
   };
   var nombre = (mapa[tipo] || tipo) + ' - ' + base;
   if (persona && persona.nombreCompleto) nombre += ' - ' + persona.nombreCompleto;
@@ -105,7 +105,7 @@ function _defaultDocumentDefinitions_() {
     {
       tipo_documento: 'certificacion_participacion',
       nombre_visible: 'Certificacion de participacion efectiva',
-      template_id: '',
+      template_id: CONFIG_DOC.PLANTILLA_CERTIFICACION_PARTICIPACION,
       carpeta_id: CONFIG_DOC.CARPETA_GENERADOS,
       tipo_salida: 'colectivo',
       activo: true,

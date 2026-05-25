@@ -16,6 +16,7 @@ var SPREADSHEET_ID = CONFIG.SPREADSHEET_ID;
 
 var CONFIG_DOC = {
   PLANTILLA_CONVOCATORIA: '1foA1M0ftQz7KAOWRgBHCRcewgdCJFdUPynpMYdyEmZM',
+  PLANTILLA_CERTIFICACION_PARTICIPACION: '1BuF_EDgyOvlA3lze7CToZkrly5AEzOS4q_ItBQJtu3I',
   PLANTILLA_LICENCIA_AGENCIA_CORDOBA: '1HofHxU_DNq-yL0EjTuPrIuHqm5y2iiy24XR42IFpEiE',
   PLANTILLA_LICENCIA_MUNICIPALIDAD_CORDOBA: '1Pf8JYykIncSPiZQW1lSM_EK_aPdWaqCgyDXiO35NsW4',
   CARPETA_PLANTILLAS:     '14LB7lSbuRq8cr1Zwbz6DilwE9EIllLNn',
@@ -4502,6 +4503,10 @@ function _plantillaFijaDocumento_(clave, cfg) {
       plantillaId: CONFIG_DOC.PLANTILLA_CONVOCATORIA,
       nombreArchivo: 'Plantilla - Convocatoria oficial FAdeC'
     },
+    certificacion_participacion: {
+      plantillaId: CONFIG_DOC.PLANTILLA_CERTIFICACION_PARTICIPACION,
+      nombreArchivo: 'Plantilla - Certificación de participación'
+    },
     licencia_agencia_cordoba: {
       plantillaId: CONFIG_DOC.PLANTILLA_LICENCIA_AGENCIA_CORDOBA,
       nombreArchivo: 'Plantilla - Licencia deportiva Agencia Córdoba Deportes'
@@ -4522,7 +4527,7 @@ function _plantillaFijaDocumento_(clave, cfg) {
 }
 
 function _requierePlantillaManualDocumento_(clave) {
-  return String(clave || '').trim() === 'certificacion_participacion';
+  return false;
 }
 
 function _guardarPlantillaDoc_(clave, cfg) {
