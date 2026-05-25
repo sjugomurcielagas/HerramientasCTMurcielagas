@@ -55,23 +55,23 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
     case 'convocadas_nombres':
       return (nombres || []).map(function(p) { return p.nombre; }).join(', ');
     case 'participantes_presentes': {
-      var asistencia = Array.isArray(data.asistencia) ? data.asistencia : [];
-      var convocadas = Array.isArray(data.convocadas) ? data.convocadas : [];
+      var asistencia = Array.isArray(data.baseCtx && data.baseCtx.asistencia) ? data.baseCtx.asistencia : (Array.isArray(data.asistencia) ? data.asistencia : []);
+      var convocadas = Array.isArray(data.baseCtx && data.baseCtx.convocadas) ? data.baseCtx.convocadas : (Array.isArray(data.convocadas) ? data.convocadas : []);
       var presentes = _presentesDesdeAsistencia_(asistencia, convocadas);
       var presentesInfo = _armarConvocatoriaParticipantes_(data.plantel || [], presentes);
       return (presentesInfo || []).map(function(p) { return p.nombre; }).join(', ');
     }
     case 'resumen_asistencia': {
-      var asistenciaR = Array.isArray(data.asistencia) ? data.asistencia : [];
-      var convocadasR = Array.isArray(data.convocadas) ? data.convocadas : [];
+      var asistenciaR = Array.isArray(data.baseCtx && data.baseCtx.asistencia) ? data.baseCtx.asistencia : (Array.isArray(data.asistencia) ? data.asistencia : []);
+      var convocadasR = Array.isArray(data.baseCtx && data.baseCtx.convocadas) ? data.baseCtx.convocadas : (Array.isArray(data.convocadas) ? data.convocadas : []);
       if (!convocadasR.length) return 'Sin convocatoria cargada.';
       var presentesR = _presentesDesdeAsistencia_(asistenciaR, convocadasR);
       var presentesInfoR = _armarConvocatoriaParticipantes_(data.plantel || [], presentesR);
       return 'Participaron ' + String((presentesInfoR || []).length) + ' de ' + String(convocadasR.length) + ' personas convocadas.';
     }
     case 'cuerpo_certificacion': {
-      var asistenciaC = Array.isArray(data.asistencia) ? data.asistencia : [];
-      var convocadasC = Array.isArray(data.convocadas) ? data.convocadas : [];
+      var asistenciaC = Array.isArray(data.baseCtx && data.baseCtx.asistencia) ? data.baseCtx.asistencia : (Array.isArray(data.asistencia) ? data.asistencia : []);
+      var convocadasC = Array.isArray(data.baseCtx && data.baseCtx.convocadas) ? data.baseCtx.convocadas : (Array.isArray(data.convocadas) ? data.convocadas : []);
       if (!convocadasC.length) return 'No hay convocatoria cargada para esta concentración.';
       var presentesC = _presentesDesdeAsistencia_(asistenciaC, convocadasC);
       var presentesInfoC = _armarConvocatoriaParticipantes_(data.plantel || [], presentesC);

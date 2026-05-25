@@ -4980,7 +4980,7 @@ function _estilizarTablaConvocatoria_(table) {
   var headerBg = '#EAF4FB';
   var baseAttrs = {};
   baseAttrs[DocumentApp.Attribute.FONT_FAMILY] = 'Arial';
-  baseAttrs[DocumentApp.Attribute.FONT_SIZE] = 10;
+  baseAttrs[DocumentApp.Attribute.FONT_SIZE] = 9;
   for (var r = 0; r < table.getNumRows(); r++) {
     var row = table.getRow(r);
     for (var c = 0; c < row.getNumCells(); c++) {
@@ -4993,7 +4993,7 @@ function _estilizarTablaConvocatoria_(table) {
       if (len > 0) {
         cellText.setAttributes(0, len - 1, attrs);
         cellText.setFontFamily(0, len - 1, 'Arial');
-        cellText.setFontSize(0, len - 1, 10);
+        cellText.setFontSize(0, len - 1, 9);
         cellText.setBold(0, len - 1, r === 0);
       }
       if (r === 0) cell.setBackgroundColor(headerBg);
