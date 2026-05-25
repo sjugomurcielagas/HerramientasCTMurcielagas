@@ -158,7 +158,7 @@
   <script>
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false};
-    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',siteContext:{plantel:[],reportes:{rows:[],linkedRows:[],linkStats:{}}},siteContextPromise:null,siteContextReady:false,asistenciaDrafts:{},convocatoriaEditById:{}};
+    const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',asistenciaDrafts:{},convocatoriaEditById:{}};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
 
@@ -204,8 +204,6 @@
           Murci.apiGetCached('concentraciones_getConcentraciones', {}, { ttlMs: 60 * 1000 }, API_URL)
         ]);
         state.plantel=Array.isArray(plantel)?plantel:[];
-      state.siteContext={plantel:state.plantel,reportes:{rows:[],linkedRows:[],linkStats:{}}};
-      state.siteContextReady=false;
       state.concentraciones=(Array.isArray(concentraciones)?concentraciones:[]).sort((a,b)=>String(dateValue(b,'fecha_inicio','fechaInicio','inicio')).localeCompare(String(dateValue(a,'fecha_inicio','fechaInicio','inicio'))));
       state.asistenciaDrafts={};
       renderLista();
@@ -557,42 +555,6 @@
     }
     function setAllConvocadas(value){document.querySelectorAll('#convocatoriaList input[type="checkbox"]').forEach(i=>{i.checked=isCuerpoTecnicoDni(i.value)||value});updateConvCount()}
     function updateConvCount(){const n=document.querySelectorAll('#convocatoriaList input:checked').length;document.getElementById('convCount').textContent=`${n} seleccionada${n===1?'':'s'}`}
-    function renderTrainingContext(){
-      const cont=document.getElementById('reporteContextoList');
-      if(!cont)return;
-      const c=currentConc();
-      if(!c){cont.innerHTML='<div class="empty">Seleccioná una concentración.</div>';return}
-      const reportes=normalizeReportes(state.siteContext&&state.siteContext.reportes);
-      if(!state.siteContextReady && !reportes.linkedRows.length){
-        cont.innerHTML='<div class="empty">Cargando contexto compartido...</div>';
-        loadSiteContextBackground();
-        return;
-      }
-      const selected=new Set(convocatoriaDnisEfectivos(c).map(String));
-      const linked=Array.isArray(reportes.linkedRows)?reportes.linkedRows:[];
-      const rows=linked.filter(r=>{
-        const persona=r?.persona||{};
-        const key=Murci.personaRef(persona);
-        return selected.has(key);
-      });
-      rows.sort((a,b)=>Number(b.rowNumber||0)-Number(a.rowNumber||0));
-      const items=rows.slice(0,6);
-      if(!items.length){cont.innerHTML='<div class="empty">No hay cargas de entrenamiento vinculadas con la convocatoria actual.</div>';return}
-      cont.innerHTML=items.map(r=>{
-        const p=r.persona||{};
-        const nombre=nombrePersona(p);
-        const meta=[
-          r.fecha?`Fecha ${esc(r.fecha)}`:'',
-          r.rowNumber?`Fila ${esc(r.rowNumber)}`:'',
-          `Total ${esc(r.total||'0')}`,
-          `Físico ${esc(r.fisico||'0')}`,
-          `Técnico ${esc(r.tecnico||'0')}`
-        ].filter(Boolean).join(' · ');
-        const extra=Array.isArray(r.issues)&&r.issues.length?`<p class="muted" style="margin-top:6px">${esc(r.issues[0])}</p>`:(r.comentario?`<p class="muted" style="margin-top:6px">${esc(r.comentario)}</p>`:'');
-        return `<article class="activity-card"><div class="activity-title">${esc(nombre)}</div><div class="activity-meta">${meta}</div>${extra}</article>`;
-      }).join('');
-    }
-
     async function loadDias(){
       const c=currentConc();if(!c)return;
       const cont=document.getElementById('diasList');cont.innerHTML='<div class="empty">Cargando días...</div>';
@@ -730,24 +692,6 @@
     function convocatoriaDnisEfectivos(c){return Array.from(new Set([...parseConvocadas(c).map(String),...defaultConvocadosDnis()]))}
     function convocatoriaDnisDesdeChecks(){return Array.from(new Set([...document.querySelectorAll('#convocatoriaList input:checked')].map(i=>i.value).filter(Boolean).concat(defaultConvocadosDnis())))}
     function normalizeActivities(d){const raw=d.actividades??d.activities??[];if(Array.isArray(raw))return raw;try{const parsed=JSON.parse(raw||'[]');return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
-    function normalizeSiteContext(ctx){return{generatedAt:ctx?.generatedAt||'',plantel:Array.isArray(ctx?.plantel)?ctx.plantel:[],reportes:normalizeReportes(ctx?.reportes)}}
-    function normalizeReportes(reportes){return{rows:Array.isArray(reportes?.rows)?reportes.rows:[],linkedRows:Array.isArray(reportes?.linkedRows)?reportes.linkedRows:[],linkStats:reportes?.linkStats||{}}}
-    function loadSiteContextBackground(){
-      if(state.siteContextPromise)return state.siteContextPromise;
-      state.siteContextPromise=Murci.apiGetCached('site_getContext', {}, { ttlMs: 2 * 60 * 1000 }, API_URL)
-        .then(data=>{
-          if(data&&data.ok){
-            state.siteContext=normalizeSiteContext(data);
-            state.plantel=Array.isArray(state.siteContext.plantel)?state.siteContext.plantel:state.plantel;
-            state.siteContextReady=true;
-            if(state.actualId)renderTrainingContext();
-          }
-          return data;
-        })
-        .catch(()=>null)
-        .finally(()=>{state.siteContextPromise=null;});
-      return state.siteContextPromise;
-    }
     function documentUrl(result){if(!result)return'';return result.url||result.documentUrl||result.document_url||result.pdfUrl||result.pdf_url||result.link||''}
     function activityTipo(a){return a.tipo||a.Tipo||a.categoria||a.Categoria||a.tipoActividad||a.tipo_actividad||''}
     function tipoLabel(tipo){return ({entrenamiento:'Entrenamiento',charla_tactica:'Charla táctica',partido:'Partido',recuperacion:'Recuperación',medica:'Médica',comida:'Comida',libre:'Libre',otro:'Otro'})[tipo]||tipo}
