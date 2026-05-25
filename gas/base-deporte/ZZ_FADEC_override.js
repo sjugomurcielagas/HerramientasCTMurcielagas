@@ -1,7 +1,7 @@
 // Override pequeno para mantener el nombre completo de la entidad convocante
 // sin reescribir el archivo principal del modulo Base de Deporte.
 
-var FADEC_NOMBRE_COMPLETO_ = 'Federacion Argentina de Deportes para Ciegos';
+var FADEC_NOMBRE_COMPLETO_ = 'Federación Argentina de Deportes para Ciegos (FADeC)';
 var FADEC_DOCUMENTO_CONVOCATORIA_ = 'Convocatoria oficial ' + FADEC_NOMBRE_COMPLETO_;
 
 function _nombreDocumentoConcentraciones(tipo, conc, persona) {
@@ -184,7 +184,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
     ['licencia_agencia_cordoba','{{FECHA_NACIMIENTO}}','persona','fecha_nacimiento','fecha_corta_anio',true,'',''],
-    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
+    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,FADEC_NOMBRE_COMPLETO_,'Editable si cambia la entidad convocante'],
     ['licencia_agencia_cordoba','{{NOMBRE_EVENTO}}','concentracion','nombre','texto',true,'',''],
     ['licencia_agencia_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
@@ -199,7 +199,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_municipalidad_cordoba','{{FECHA_FIN_CORTA}}','concentracion','fecha_fin','fecha_corta',true,'',''],
     ['licencia_municipalidad_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{CIUDAD_EVENTO}}','concentracion','ciudad','texto',false,'',''],
-    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
+    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,FADEC_NOMBRE_COMPLETO_,'Editable si cambia la entidad convocante'],
     ['licencia_municipalidad_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_municipalidad_cordoba','{{AGENTE_APELLIDO_NOMBRE_MAYUS}}','persona','apellido_nombre_mayus','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{DNI}}','persona','dni','texto',true,'',''],

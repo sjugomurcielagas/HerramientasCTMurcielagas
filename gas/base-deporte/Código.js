@@ -4286,7 +4286,7 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
       texto += ' Solicitamos tengan a bien considerar esta certificación para los fines que correspondan. La comisión directiva de la Federación Argentina de Deportes para Ciegos, FADeC, queda a disposición ante cualquier consulta o aclaración que pudiera corresponder.';
       return texto;
     case 'federacion_convocante':
-      return 'Federación Argentina de Deportes para Ciegos (FAdeC)';
+      return 'Federación Argentina de Deportes para Ciegos (FADeC)';
     default:
       return conc[campo] || '';
   }
