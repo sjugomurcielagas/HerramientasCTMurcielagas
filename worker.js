@@ -29,6 +29,7 @@ const BASE_ACTION_MAP = {
   base_guardarCambios: 'guardarCambios',
   base_darDeBaja: 'darDeBaja',
   base_subirArchivo: 'subirArchivo',
+  base_agregarIntegrante: 'base_agregarIntegrante',
   base_actualizarProvinciasFaltantes: 'base_actualizarProvinciasFaltantes',
 
   // En tu Apps Script la función se llama base_agregarColumna
