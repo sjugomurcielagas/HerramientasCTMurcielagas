@@ -1,36 +1,17 @@
 # Tareas
 
-> Tablero vivo de continuidad.
-> No es historial permanente: al cerrar un commit/push grande, borrar lo resuelto y dejar solo lo que sigue vivo.
+> Tablero vivo. Solo trabajo abierto. Lo resuelto se borra.
 
-> Modo de trabajo: no pedir explicaciones técnicas salvo que se soliciten; ejecutar directamente lo que sirva, sea sólido o recomendable; tratar al usuario como quien da directivas y evalúa resultados.
+## En proceso
 
-## 1) Pendientes heredados y cierre de sesión
+| Tarea | Nota |
+|---|---|
+| `renderTrainingContext()` en `concentraciones/index.html` (línea 560) busca `#reporteContextoList` que no existe en el HTML | Feature a medio construir. No rompe nada (tiene `if(!cont)return`), pero el contexto de reportes vinculados nunca se muestra. Terminar o eliminar. |
+| `--celeste: #118ac0` en `reportes/index.html` vs `#22a8e8` estándar | Inconsistencia visual menor. Botones y barras de acento tienen un azul más oscuro solo en ese módulo. |
+| Barrido fino de cruce por `persona_id` en módulos secundarios | `reportes` y `analisis` podrían seguir cruzando plantel por DNI en algunos flujos. Verificar antes del próximo push transversal. |
 
-| Pendiente heredado | Lo que se hizo | Estado |
-|---|---|---|
-| Antidoping rompía la búsqueda con medicamentos conocidos y marcas con variantes | Se corrigió el render, se agregó fallback local por marca comercial y se devolvieron variantes candidatas cuando corresponde. | Resuelto |
-| Falta de una referencia interna única para una misma jugadora en todos los módulos | Se agregó `persona_id` como referencia canónica visible solo para el sistema, con helpers compartidos para cruzar plantel entre módulos. | Parcial: queda barrido fino de módulos secundarios |
-| Tablero no reconocía bien a las arqueras y seguía mostrando un botón PWA viejo | Se corrigió la detección de arqueras y se eliminó el banner legacy de instalación. | Resuelto |
-| Base de datos mostraba duplicaciones en ficha y cargaba más de lo necesario | Se redujeron duplicaciones visibles, se corrigió el cruce de TUE en ficha y se alivianó la carga inicial. | Resuelto |
-| Portada y módulos abrían con demasiadas precargas | Se achicó el service worker, se diferieron cargas pesadas y se bajó el costo de arranque. | Resuelto |
+## Regla de mantenimiento
 
-## 2) En proceso
-
-| Tarea en curso | Estado | Nota operativa |
-|---|---|---|
-| Barrido final de referencias viejas por DNI en módulos secundarios | En proceso | Revisar `reportes`, `analisis` y `concentraciones` para que toda cruce real pase por `persona_id` cuando corresponda. |
-| Verificación visual final en navegador y celular | En proceso | Confirmar que la última ronda de velocidad, caché y unificación no rompió navegación ni cargas diferidas. |
-
-## 3) Nuevos pendientes agregados
-
-| Nuevo pendiente | Estado | Nota |
-|---|---|---|
-| Mantener `scripts/qa-fast.ps1` como paso obligatorio antes de cada push grande | Pendiente | Usarlo siempre que se cierre una tanda transversal. |
-| Antes de cerrar una tanda, borrar de este archivo todo lo ya resuelto | Pendiente | Dejar solo lo que siga vivo y no repetir tareas cerradas. |
-
-## 4) Regla de mantenimiento
-
-- Este archivo solo debe reflejar trabajo vivo.
-- Si una tarea ya quedó resuelta y el cambio fue incluido en un push grande, se elimina del tablero.
-- Si una tarea quedó a medias, se deja en `En proceso` con una nota corta y concreta.
+- Este archivo solo refleja trabajo vivo.
+- Cuando una tarea se cierra en un push, se elimina de acá.
+- Si aparece un punto de falla nuevo, se agrega con una nota corta.
