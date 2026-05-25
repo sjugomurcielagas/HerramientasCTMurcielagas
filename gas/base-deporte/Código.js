@@ -4347,11 +4347,14 @@ function _textoLugarEventoConcentracion_(conc) {
   var sede = String(conc.lugar || conc.sede || conc.lugar_evento || '').trim();
   var ciudad = String(conc.ciudad || conc.localidad || '').trim();
   var provincia = String(conc.provincia || conc.Provincia || '').trim() || _provinciaDesdeCiudadConcentracion_(ciudad);
+  var sedeLow = _normalizarTextoSinAcentos_(sede);
+  var ciudadLow = _normalizarTextoSinAcentos_(ciudad);
+  var provinciaLow = _normalizarTextoSinAcentos_(provincia);
   var partes = [];
   if (sede) partes.push(sede);
-  if (ciudad) partes.push(ciudad);
-  if (provincia) partes.push(provincia);
-  return partes.join(', ');
+  if (ciudad && !sedeLow.includes(ciudadLow)) partes.push(ciudad);
+  if (provincia && provinciaLow !== ciudadLow && !sedeLow.includes(provinciaLow)) partes.push(provincia);
+  return partes.filter(Boolean).join(', ');
 }
 
 function _provinciaDesdeCiudadConcentracion_(ciudad) {
