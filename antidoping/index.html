@@ -21,7 +21,7 @@
     .decision-btn.block{background:#fee2e2;color:#7f1d1d;border:1px solid #fca5a5}
     .tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 0 13px;position:sticky;top:70px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.94) 100%)}.tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:800}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
     .panel{padding:16px;margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.panel-head p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;gap:11px}.split{display:grid;gap:13px}.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.78rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}.badge.dark{background:#e2e8f0;color:#0f172a}
-    .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.notice{border:1px solid #fde68a;background:#fffbeb;color:#7c2d12;border-radius:14px;padding:12px;font-weight:700}.result-card,.med-card{padding:12px;box-shadow:none}.result-title,.med-title{font-weight:800;color:var(--azul-950);font-size:1.05rem}.meta{color:var(--muted);font-size:.88rem;margin-top:3px}.source-grid{display:grid;gap:6px;margin-top:10px}.source-row{border:1px solid var(--borde);border-radius:11px;background:#f8fbfd;padding:8px 9px}.source-k{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.source-v{font-weight:700;margin-top:2px;font-size:.9rem}.tue-stats{display:grid;gap:10px}.tue-stat{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.tue-stat .value{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:700;line-height:1;color:var(--azul-950)}.tue-stat .label{font-weight:800;color:var(--muted);font-size:.84rem;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}.tue-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.tue-helper{font-size:.92rem;color:var(--muted)}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
+    .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}.notice{border:1px solid #fde68a;background:#fffbeb;color:#7c2d12;border-radius:14px;padding:12px;font-weight:700}.result-card,.med-card{padding:12px;box-shadow:none}.result-title,.med-title{font-weight:800;color:var(--azul-950);font-size:1.05rem}.meta{color:var(--muted);font-size:.88rem;margin-top:3px}.detail-toggle{margin-top:10px}.detail-box{margin-top:8px;padding:10px 12px;border:1px solid var(--borde);border-radius:12px;background:#f8fbfd;color:var(--muted);font-size:.9rem}.tue-stats{display:grid;gap:10px}.tue-stat{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.tue-stat .value{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:700;line-height:1;color:var(--azul-950)}.tue-stat .label{font-weight:800;color:var(--muted);font-size:.84rem;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}.tue-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px}.tue-helper{font-size:.92rem;color:var(--muted)}.footer-note{margin-top:20px;text-align:center;color:var(--muted);font-size:.9rem}
     @media(min-width:760px){.split{grid-template-columns:1fr 1fr}.source-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tue-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){main{padding:12px 11px 70px}.topbar-inner{align-items:flex-start}.home-link{font-size:.81rem;padding:8px 9px}.brand img:first-child{height:32px;max-width:42px}.brand img:nth-child(2){height:36px;max-width:42px}.brand-subtitle{display:none}.panel,.login-card{padding:14px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
@@ -192,23 +192,29 @@
     }
     function resultCard(r,index){
       const estado=estadoNormalizado(r.estado||r.resultado||'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
-      const fuentes=fuentesHtml(r);
       const contextoBits=[r.presentacion?`Presentación: ${esc(r.presentacion)}`:'',r.laboratorio?`Laboratorio: ${esc(r.laboratorio)}`:'',(r.en_competencia||r.fuera_competencia)?`Competencia: ${esc(r.en_competencia||'N/D')} / ${esc(r.fuera_competencia||'N/D')}`:''].filter(Boolean);
       const contexto=contextoBits.length?`<div class="meta">${contextoBits.join(' · ')}</div>`:'';
       const decision=decisionBlock(r,estado,index);
-      const criterio=r.criterio_wada?`<div class="meta"><strong>Criterio:</strong> ${esc(r.criterio_wada)}</div>`:'';
-      const criterioPlano=(r.criterio_wada||'').trim().toLowerCase();
-      const observacionesPlano=(r.observaciones||'').trim().toLowerCase();
-      const observaciones=r.observaciones&&observacionesPlano!==criterioPlano?`<div class="meta">${esc(r.observaciones)}</div>`:'';
+      const summary=(r.advertencia_detalle||r.criterio_wada||r.observaciones||'').trim();
       const consulta=r.__consulta&&r.__consulta!==r.medicamento?`<div class="meta">Consulta: ${esc(r.__consulta)}</div>`:'';
-      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${consulta}${contexto}</div>${estadoBadge(estado)}</div>${decision}${criterio}${observaciones}${fuentes}</article>`;
+      const detailBits=[
+        r.criterio_wada ? `<div><strong>Criterio:</strong> ${esc(r.criterio_wada)}</div>` : '',
+        r.observaciones ? `<div><strong>Observación:</strong> ${esc(r.observaciones)}</div>` : '',
+        r.fuente_argentina ? `<div><strong>Fuente argentina:</strong> ${esc(r.fuente_argentina)}</div>` : '',
+        r.fuente_wada ? `<div><strong>WADA:</strong> ${esc(r.fuente_wada)}</div>` : '',
+        r.fuente_secundaria ? `<div><strong>Secundaria:</strong> ${esc(r.fuente_secundaria)}</div>` : '',
+        r.fecha_revision ? `<div><strong>Fecha:</strong> ${esc(r.fecha_revision)}</div>` : ''
+      ].filter(Boolean).join('');
+      const detailToggle=detailBits?`<div class="detail-toggle"><button class="btn ghost small" type="button" data-action="toggle-detail" data-index="${index}">Ver detalle</button><div class="detail-box hidden" data-detail-for="${index}">${detailBits}</div></div>`:'';
+      const summaryHtml=summary?`<div class="meta">${esc(summary)}</div>`:'';
+      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${consulta}${contexto}</div>${estadoBadge(estado)}</div>${decision}${summaryHtml}${detailToggle}</article>`;
     }
     function decisionBlock(r,estado,index){
       const s=estadoNormalizado(estado||'');
       const detail=r.advertencia_detalle||'';
       const tueBtn=shouldOfferTUE(r,estado)?`<div class="actions" style="margin-top:10px"><button class="btn small" data-action="open-tue" data-index="${index}">Requiere TUE</button></div>`:'';
       if(s.includes('NO RECONOCE')||s.includes('NO HABILITAR')||s.includes('REQUIERE REVISIÓN')||s.includes('NO ENCONTRADO')){
-        return `<div class="decision-btn block">🔴 No habilitar uso</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:'<p><strong>Motivo:</strong> no se pudo identificar un principio activo confiable para validar en WADA.</p>'}${tueBtn}`;
+        return `<div class="decision-btn block">🔴 No habilitar uso</div><p><strong>Motivo:</strong> ${esc(detail||'No se pudo identificar un principio activo confiable para validar en WADA.')}</p>${tueBtn}`;
       }
       if(s.includes('PROHIBIDO')){
         return `<div class="decision-btn block">🔴 No habilitar uso</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:''}${tueBtn}`;
@@ -227,14 +233,7 @@
       return s.includes('PROHIBIDO')||s.includes('ADVERTENCIA')||s.includes('CONDICIONADO')||detail.includes('TUE');
     }
     function fuentesHtml(r){
-      const rows=[
-        ['Fuente argentina',r.fuente_argentina||r.fuenteMedicamento||r.fuente_medicamento],
-        ['WADA',r.fuente_wada||r.fuenteAntidopajePrincipal||r.categoria_wada],
-        ['Fuente secundaria',r.fuente_secundaria||r.fuenteAntidopajeSecundaria],
-        ['Fecha de revisión',r.fecha_revision||r.fechaRevision]
-      ].filter(x=>x[1]);
-      if(!rows.length)return'<div class="meta">Trazabilidad: sin fuente registrada.</div>';
-      return `<div class="source-grid">${rows.map(([k,v])=>`<div class="source-row"><div class="source-k">${esc(k)}</div><div class="source-v">${esc(v)}</div></div>`).join('')}</div>`;
+      return '';
     }
 
     async function loadFrecuentes(){
@@ -359,6 +358,13 @@
     }
 
     function handleResultadosClick(e){
+      const detailBtn=e.target.closest('[data-action="toggle-detail"]');
+      if(detailBtn){
+        const idx=detailBtn.dataset.index;
+        const box=document.querySelector(`[data-detail-for="${idx}"]`);
+        if(box)box.classList.toggle('hidden');
+        return;
+      }
       const btn=e.target.closest('[data-action="open-tue"]');
       if(!btn)return;
       const index=Number(btn.dataset.index);
