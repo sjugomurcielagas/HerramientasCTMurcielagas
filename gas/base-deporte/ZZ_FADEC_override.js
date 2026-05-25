@@ -54,6 +54,34 @@ function _resolverCampoDocumentoConcentracion_(campo, data, nombres, tablaTexto)
       return String((nombres || []).length);
     case 'convocadas_nombres':
       return (nombres || []).map(function(p) { return p.nombre; }).join(', ');
+    case 'participantes_presentes': {
+      var asistencia = Array.isArray(data.asistencia) ? data.asistencia : [];
+      var convocadas = Array.isArray(data.convocadas) ? data.convocadas : [];
+      var presentes = _presentesDesdeAsistencia_(asistencia, convocadas);
+      var presentesInfo = _armarConvocatoriaParticipantes_(data.plantel || [], presentes);
+      return (presentesInfo || []).map(function(p) { return p.nombre; }).join(', ');
+    }
+    case 'resumen_asistencia': {
+      var asistenciaR = Array.isArray(data.asistencia) ? data.asistencia : [];
+      var convocadasR = Array.isArray(data.convocadas) ? data.convocadas : [];
+      if (!convocadasR.length) return 'Sin convocatoria cargada.';
+      var presentesR = _presentesDesdeAsistencia_(asistenciaR, convocadasR);
+      var presentesInfoR = _armarConvocatoriaParticipantes_(data.plantel || [], presentesR);
+      return 'Participaron ' + String((presentesInfoR || []).length) + ' de ' + String(convocadasR.length) + ' personas convocadas.';
+    }
+    case 'cuerpo_certificacion': {
+      var asistenciaC = Array.isArray(data.asistencia) ? data.asistencia : [];
+      var convocadasC = Array.isArray(data.convocadas) ? data.convocadas : [];
+      if (!convocadasC.length) return 'No hay convocatoria cargada para esta concentración.';
+      var presentesC = _presentesDesdeAsistencia_(asistenciaC, convocadasC);
+      var presentesInfoC = _armarConvocatoriaParticipantes_(data.plantel || [], presentesC);
+      var tipoActividadTexto = baseCtx.tipoActividad || _nombreConcentracionHumana_(conc);
+      var textoC = FADEC_NOMBRE_COMPLETO_ + ' certifica que, durante ' + tipoActividadTexto + ', desarrollada en ' + (conc.lugar || conc.sede || 'el lugar informado') + ' entre el ' + formatFechaTextoGas_(fechaInicioRaw) + ' y el ' + formatFechaTextoGas_(fechaFinRaw) + ', participaron las personas detalladas en el presente documento.';
+      if ((presentesInfoC || []).length) textoC += ' Se registraron como presentes: ' + (presentesInfoC || []).map(function(p) { return p.nombre; }).join(', ') + '.';
+      textoC += ' En función de lo establecido por la Ley N° 20.596, se solicita a todas las instituciones públicas o privadas, educativas, laborales o de cualquier otra índole, donde los atletas convocados intervengan, a prestar su mayor colaboración mediante el otorgamiento de la correspondiente licencia deportiva y por cualquier otro medio de apoyo que pudiera corresponder.';
+      textoC += ' Solicitamos tengan a bien considerar esta certificación para los fines que correspondan. La comisión directiva de ' + FADEC_NOMBRE_COMPLETO_ + ' queda a disposición ante cualquier consulta o aclaración que pudiera corresponder.';
+      return textoC;
+    }
     case 'federacion_convocante':
       return FADEC_NOMBRE_COMPLETO_;
     default:

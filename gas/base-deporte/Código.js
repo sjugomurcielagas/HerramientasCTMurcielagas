@@ -3878,7 +3878,26 @@ function _ensureHojaConfigDocumentos_() {
   return sheet;
 }
 
+function _patchDocConfigPlaceholders_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var campoIdx = headers.indexOf('campo');
+  var valorFijoIdx = headers.indexOf('valor_fijo');
+  if (campoIdx === -1 || valorFijoIdx === -1) return;
+  var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  var nombre = typeof FADEC_NOMBRE_COMPLETO_ !== 'undefined'
+    ? FADEC_NOMBRE_COMPLETO_
+    : 'Federación Argentina de Deportes para Ciegos (FADeC)';
+  data.forEach(function(row, i) {
+    if (String(row[campoIdx] || '').trim() === 'federacion_convocante') {
+      sheet.getRange(i + 2, valorFijoIdx + 1).setValue(nombre);
+    }
+  });
+}
+
 function _ensureHojaConfigDocPlaceholders_() {
+  var DOC_CONFIG_PH_VERSION = 'v2-2026-05-25';
   var sheet = tryGetSheet(SHEETS.configDocPlaceholders);
   if (!sheet) {
     sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).insertSheet(SHEETS.configDocPlaceholders);
@@ -3889,6 +3908,11 @@ function _ensureHojaConfigDocPlaceholders_() {
       sheet.appendRow([row.tipo_documento, row.placeholder, row.fuente, row.campo, row.formato, row.obligatorio, row.valor_fijo, row.notas]);
     });
     sheet.setFrozenRows(1);
+  }
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('doc_ph_version') !== DOC_CONFIG_PH_VERSION) {
+    _patchDocConfigPlaceholders_(sheet);
+    props.setProperty('doc_ph_version', DOC_CONFIG_PH_VERSION);
   }
   return sheet;
 }
@@ -4025,7 +4049,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
     ['licencia_agencia_cordoba','{{FECHA_NACIMIENTO}}','persona','fecha_nacimiento','fecha_corta_anio',true,'',''],
-    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FAdeC)','Editable si cambia la entidad convocante'],
+    ['licencia_agencia_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
     ['licencia_agencia_cordoba','{{NOMBRE_EVENTO}}','concentracion','nombre','texto',true,'',''],
     ['licencia_agencia_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
@@ -4040,7 +4064,7 @@ function _defaultDocumentPlaceholders_() {
     ['licencia_municipalidad_cordoba','{{FECHA_FIN_CORTA}}','concentracion','fecha_fin','fecha_corta',true,'',''],
     ['licencia_municipalidad_cordoba','{{LUGAR_EVENTO}}','concentracion','lugar_evento','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{CIUDAD_EVENTO}}','concentracion','ciudad','texto',false,'',''],
-    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FAdeC)','Editable si cambia la entidad convocante'],
+    ['licencia_municipalidad_cordoba','{{FEDERACION_CONVOCANTE}}','fijo','federacion_convocante','texto',true,'Federación Argentina de Deportes para Ciegos (FADeC)','Editable si cambia la entidad convocante'],
     ['licencia_municipalidad_cordoba','{{ROL_EVENTO}}','persona','rol_evento','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_municipalidad_cordoba','{{AGENTE_APELLIDO_NOMBRE_MAYUS}}','persona','apellido_nombre_mayus','texto',true,'',''],
     ['licencia_municipalidad_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
