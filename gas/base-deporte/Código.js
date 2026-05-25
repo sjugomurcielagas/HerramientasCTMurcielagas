@@ -3732,8 +3732,7 @@ function _generarDocumentoConcentracion_(ctx) {
     var _asistP = Array.isArray(ctx.baseCtx && ctx.baseCtx.asistencia) ? ctx.baseCtx.asistencia : (Array.isArray(ctx.asistencia) ? ctx.asistencia : []);
     var _convP  = Array.isArray(ctx.baseCtx && ctx.baseCtx.convocadas)  ? ctx.baseCtx.convocadas  : (Array.isArray(ctx.convocadas)  ? ctx.convocadas  : []);
     var _presentesP = _presentesDesdeAsistencia_(_asistP, _convP);
-    var _infoP = _armarConvocatoriaParticipantes_(ctx.plantel || [], _presentesP);
-    reemplazos['{{PARTICIPANTES_PRESENTES}}'] = _infoP.map(function(p) { return p.nombre; }).join(', ');
+    _insertarTablaPresentes_(body, ctx.plantel || [], _presentesP);
   }
 
   _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, ctx.tipo, ctx.convocadas, ctx.plantel);
@@ -4978,6 +4977,34 @@ function _insertarTablaConvocatoria_(body, participantes) {
   var end = found.getEndOffsetInclusive();
 
   text.deleteText(start, end);
+  var table = parent.insertTable(index + 1, rows);
+  _estilizarTablaConvocatoria_(table);
+  if (!paragraph.getText().trim()) parent.removeChild(paragraph);
+}
+
+function _insertarTablaPresentes_(body, plantel, presentesRefs) {
+  var pattern = '\\{\\{\\s*PARTICIPANTES_PRESENTES\\s*\\}\\}';
+  var found = body.findText(pattern);
+  if (!found) return;
+  var rows = [['Apellido', 'Nombre', 'DNI']];
+  (presentesRefs || []).forEach(function(ref) {
+    var id = String(ref || '').trim();
+    var persona = (plantel || []).find(function(r) {
+      var pid = String(r.Persona_ID || r.persona_id || r.personaId || '').trim();
+      var dni = normalizarDNI_(r.DNI || r.dni || r.Dni || '');
+      return (pid && pid === id) || (dni && dni === normalizarDNI_(id));
+    });
+    var apellido = persona ? String(persona.Apellido || '').trim() : '';
+    var nombre   = persona ? String(persona.Nombre   || '').trim() : '';
+    var dni      = persona ? normalizarDNI_(persona.DNI || persona.dni || '') : normalizarDNI_(id);
+    rows.push([apellido, nombre, dni]);
+  });
+  if (rows.length === 1) rows.push(['(Sin presentes)', '', '']);
+  var text = found.getElement().asText();
+  var paragraph = text.getParent().asParagraph();
+  var parent = paragraph.getParent();
+  var index = parent.getChildIndex(paragraph);
+  text.deleteText(found.getStartOffset(), found.getEndOffsetInclusive());
   var table = parent.insertTable(index + 1, rows);
   _estilizarTablaConvocatoria_(table);
   if (!paragraph.getText().trim()) parent.removeChild(paragraph);
