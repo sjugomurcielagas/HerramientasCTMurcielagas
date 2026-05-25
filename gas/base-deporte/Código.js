@@ -3728,6 +3728,14 @@ function _generarDocumentoConcentracion_(ctx) {
     baseCtx: ctx.baseCtx || {}
   });
 
+  if (ctx.tipo === 'certificacion_participacion') {
+    var _asistP = Array.isArray(ctx.baseCtx && ctx.baseCtx.asistencia) ? ctx.baseCtx.asistencia : (Array.isArray(ctx.asistencia) ? ctx.asistencia : []);
+    var _convP  = Array.isArray(ctx.baseCtx && ctx.baseCtx.convocadas)  ? ctx.baseCtx.convocadas  : (Array.isArray(ctx.convocadas)  ? ctx.convocadas  : []);
+    var _presentesP = _presentesDesdeAsistencia_(_asistP, _convP);
+    var _infoP = _armarConvocatoriaParticipantes_(ctx.plantel || [], _presentesP);
+    reemplazos['{{PARTICIPANTES_PRESENTES}}'] = _infoP.map(function(p) { return p.nombre; }).join(', ');
+  }
+
   _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, ctx.tipo, ctx.convocadas, ctx.plantel);
   if (ctx.tipo === 'certificacion_participacion' && Array.isArray(ctx.asistencia) && ctx.asistencia.length) {
     _marcarCertificacionParticipacionEfectiva_(body);
