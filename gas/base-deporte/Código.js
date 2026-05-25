@@ -76,6 +76,7 @@ var TUE_FIELDS_ = [
 ];
 var DOCUMENT_LINK_FIELDS_ = [
   'Foto_Link',
+  'DNI_Completo_Link',
   'DNI_Scan_Link',
   'Pasaporte_Scan_Link',
   'CUD_Link',
@@ -202,15 +203,24 @@ function getRowByPersona_(selector, kind) {
   var filas = getAllRows_();
   var personaId = normalizarPersonaId_(selector);
   var dni = normalizarDNI_(selector);
-  var nombre = kind === 'nombre' ? normalizeText(selector) : '';
+  var nombre = normalizeText(selector);
+  var nombreInvertido = '';
+  if (nombre && nombre.indexOf(',') !== -1) {
+    var partes = nombre.split(',');
+    nombreInvertido = normalizeText((partes.slice(1).join(',') + ' ' + partes[0]).trim());
+  }
+  var buscarNombre = kind === 'nombre' || kind === 'auto' || kind === 'dni';
 
   for (var i = 0; i < filas.length; i++) {
     var fila = filas[i];
     if (personaId && normalizarPersonaId_(fila[PERSONA_ID_COLUMN]) === personaId) return fila;
     if (dni && fila.DNI === dni) return fila;
-    if (nombre) {
+    if (buscarNombre && nombre) {
       var filaNombre = normalizeText([fila.Apellido || '', fila.Nombre || ''].filter(Boolean).join(', '));
-      if (filaNombre === nombre) return fila;
+      var filaNombreInvertido = normalizeText([fila.Nombre || '', fila.Apellido || ''].filter(Boolean).join(' '));
+      if (filaNombre === nombre || filaNombreInvertido === nombre || filaNombre === nombreInvertido || filaNombreInvertido === nombreInvertido) {
+        return fila;
+      }
     }
   }
 
@@ -1973,6 +1983,7 @@ function agruparAlertas_(alertas) {
 // ── GESTIÓN DE ARCHIVOS EN DRIVE ──────────────────────────────────────────────
 var CATEGORIAS_DRIVE_ = {
   'foto':        '01_Fotos',
+  'dni_completo':'01b_DNI',
   'dni':         '01b_DNI',
   'apto_medico': '02_Aptos_Medicos',
   'pasaporte':   '03_Pasaportes',
@@ -1984,6 +1995,7 @@ var CATEGORIAS_DRIVE_ = {
 
 var CAMPOS_LINK_ = {
   'foto':        'Foto_Link',
+  'dni_completo':'DNI_Completo_Link',
   'dni':         'DNI_Scan_Link',
   'pasaporte':   'Pasaporte_Scan_Link',
   'cud':         'CUD_Link',
@@ -1997,7 +2009,7 @@ function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
   try {
     base_ensureDocumentColumns_();
     var row = getRowByPersona_(dni, 'auto');
-    if (!row) return { ok: false, error: 'Persona no encontrada' };
+    if (!row) return { ok: false, error: 'Persona no encontrada', msg: 'Persona no encontrada para el selector: ' + String(dni || '').trim() };
 
     var apellido    = (row.Apellido || 'SIN_APELLIDO').replace(/\s+/g, '_');
     var nombreCorto = (row.Nombre   || 'SIN_NOMBRE').split(' ')[0];
@@ -2042,7 +2054,10 @@ function subirArchivo(dni, tipo, base64Data, mimeType, extension) {
       if (!String(row.TUE_IBSA_Enviado || '').trim()) cambios['TUE_IBSA_Enviado'] = 'NO';
     }
 
-    guardarCambios(dni, cambios, 'Sistema — Upload');
+    var resultadoGuardado = guardarCambios(dni, cambios, 'Sistema — Upload');
+    if (!resultadoGuardado || resultadoGuardado.ok === false) {
+      return { ok: false, msg: (resultadoGuardado && resultadoGuardado.error) ? resultadoGuardado.error : 'No se pudieron guardar los cambios del archivo.' };
+    }
 
     return { ok: true, link: link };
 

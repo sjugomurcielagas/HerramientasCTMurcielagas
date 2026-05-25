@@ -469,9 +469,20 @@ function handleUpload(input, tipo) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var base64 = e.target.result.split(',')[1];
-    google.script.run.withSuccessHandler(function(res){
-      if(res.ok) { toast('ARCHIVO CARGADO'); var n = document.getElementById('selector-texto').innerText; seleccionarPersona(PERSONA_ACTUAL, DNI_ACTUAL, n); }
-    }).subirArchivo(PERSONA_ACTUAL || DNI_ACTUAL, tipo, base64, file.type, file.name.split('.').pop());
+    google.script.run
+      .withSuccessHandler(function(res){
+        if(res && res.ok) {
+          toast('ARCHIVO CARGADO');
+          var n = document.getElementById('selector-texto').innerText;
+          seleccionarPersona(PERSONA_ACTUAL, DNI_ACTUAL, n);
+          return;
+        }
+        toast((res && (res.msg || res.error)) ? res.msg || res.error : 'No se pudo cargar el archivo.');
+      })
+      .withFailureHandler(function(err){
+        toast('Error al subir archivo: ' + (err && err.message ? err.message : err));
+      })
+      .subirArchivo(PERSONA_ACTUAL || DNI_ACTUAL, tipo, base64, file.type, file.name.split('.').pop());
   };
   reader.readAsDataURL(file);
 }
