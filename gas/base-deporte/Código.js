@@ -3769,10 +3769,9 @@ function _reemplazosDocumentoConcentracion_(data) {
 
 function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convocadas, plantel) {
   Object.keys(reemplazos).forEach(function(clave) {
-    if ((tipo === 'convocatoria_fadec' || tipo === 'certificacion_participacion') && clave === '{{TABLA_CONVOCADAS}}') return;
     body.replaceText(_escapeRegexDocumento_(clave), reemplazos[clave]);
   });
-  if (tipo === 'convocatoria_fadec' || tipo === 'certificacion_participacion') {
+  if (tipo === 'convocatoria_fadec') {
     _insertarTablaConvocatoria_(body, _armarConvocatoriaParticipantes_(plantel || [], convocadas || []));
   } else {
     body.replaceText(_escapeRegexDocumento_('{{TABLA_CONVOCADAS}}'), '');
@@ -4908,11 +4907,7 @@ function _insertarTablaConvocatoria_(body, participantes) {
     rows.push(['(Sin convocadas)', '', '']);
   }
 
-  if (!found) {
-    var tableFallback = body.appendTable(rows);
-    _estilizarTablaConvocatoria_(tableFallback);
-    return;
-  }
+  if (!found) return;
 
   var text = found.getElement().asText();
   var paragraph = text.getParent().asParagraph();
