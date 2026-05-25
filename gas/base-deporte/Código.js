@@ -3764,12 +3764,18 @@ function _reemplazosDocumentoConcentracion_(data) {
   placeholders.forEach(function(ph) {
     reemplazos[ph.placeholder] = _resolverValorPlaceholderDocumento_(ph, data);
   });
+  if (data.tipo === 'licencia_agencia_cordoba' || data.tipo === 'licencia_municipalidad_cordoba') {
+    reemplazos['{{FEDERACION_CONVOCANTE}}'] = typeof FADEC_NOMBRE_COMPLETO_ !== 'undefined'
+      ? FADEC_NOMBRE_COMPLETO_
+      : 'Federación Argentina de Deportes para Ciegos (FADeC)';
+  }
   return reemplazos;
 }
 
 function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convocadas, plantel) {
   Object.keys(reemplazos).forEach(function(clave) {
-    if (clave === '{{TABLA_CONVOCADAS}}') return; // se maneja abajo de forma explícita
+    if (clave === '{{TABLA_CONVOCADAS}}') return;
+    if (clave === '{{PARTICIPANTES_PRESENTES}}') return;
     body.replaceText(_escapeRegexDocumento_(clave), reemplazos[clave]);
   });
   if (tipo === 'convocatoria_fadec') {
@@ -3777,7 +3783,8 @@ function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convo
   } else {
     body.replaceText(_escapeRegexDocumento_('{{TABLA_CONVOCADAS}}'), '');
     if (tipo === 'certificacion_participacion') {
-      _asegurarTextoDocumento_(body, '{{PARTICIPANTES_PRESENTES}}', 'Se registraron como presentes: ' + (reemplazos['{{PARTICIPANTES_PRESENTES}}'] || '(sin presentes)') + '.');
+      var presentesTxt = reemplazos['{{PARTICIPANTES_PRESENTES}}'] || '(sin presentes)';
+      body.replaceText(_escapeRegexDocumento_('{{PARTICIPANTES_PRESENTES}}'), presentesTxt);
     }
   }
 }
@@ -3785,7 +3792,10 @@ function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convo
 function _asegurarTextoDocumento_(body, placeholder, fallbackText) {
   var pattern = _escapeRegexDocumento_(placeholder);
   var found = body.findText(pattern);
-  if (found) return true;
+  if (found) {
+    body.replaceText(pattern, String(fallbackText || '').trim());
+    return true;
+  }
   body.appendParagraph(String(fallbackText || '').trim()).editAsText().setBold(false);
   return false;
 }
