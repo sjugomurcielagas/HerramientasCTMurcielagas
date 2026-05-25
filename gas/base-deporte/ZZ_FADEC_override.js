@@ -184,7 +184,6 @@ function _defaultDocumentPlaceholders_() {
     ['certificacion_participacion','{{RESUMEN_ASISTENCIA}}','concentracion','resumen_asistencia','texto',true,'',''],
     ['certificacion_participacion','{{CUERPO_CERTIFICACION}}','concentracion','cuerpo_certificacion','texto',true,'',''],
     ['certificacion_participacion','{{PARTICIPANTES_PRESENTES}}','concentracion','participantes_presentes','texto',true,'',''],
-    ['certificacion_participacion','{{PARTICIPANTES_AUSENTES}}','concentracion','participantes_ausentes','texto',false,'',''],
     ['licencia_agencia_cordoba','{{AUTORIDAD_INSTITUCION}}','persona','autoridad_institucion','texto',true,'','Completar en Config_Doc_Personas'],
     ['licencia_agencia_cordoba','{{NOMBRE_COMPLETO}}','persona','nombre_completo','texto',true,'',''],
     ['licencia_agencia_cordoba','{{DNI}}','persona','dni','texto',true,'',''],
