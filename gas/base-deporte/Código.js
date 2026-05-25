@@ -3775,7 +3775,18 @@ function _aplicarReemplazosDocumentoConcentracion_(body, reemplazos, tipo, convo
     _insertarTablaConvocatoria_(body, _armarConvocatoriaParticipantes_(plantel || [], convocadas || []));
   } else {
     body.replaceText(_escapeRegexDocumento_('{{TABLA_CONVOCADAS}}'), '');
+    if (tipo === 'certificacion_participacion') {
+      _asegurarTextoDocumento_(body, '{{PARTICIPANTES_PRESENTES}}', 'Se registraron como presentes: ' + (reemplazos['{{PARTICIPANTES_PRESENTES}}'] || '(sin presentes)') + '.');
+    }
   }
+}
+
+function _asegurarTextoDocumento_(body, placeholder, fallbackText) {
+  var pattern = _escapeRegexDocumento_(placeholder);
+  var found = body.findText(pattern);
+  if (found) return true;
+  body.appendParagraph(String(fallbackText || '').trim()).editAsText().setBold(false);
+  return false;
 }
 
 function _marcarCertificacionParticipacionEfectiva_(body) {
