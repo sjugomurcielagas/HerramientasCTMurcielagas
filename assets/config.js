@@ -26,7 +26,8 @@ const UI_VERSION = '2026.05.24';
     try {
       data = JSON.parse(text);
     } catch {
-      throw new Error('Respuesta inesperada del servidor');
+      const preview = text ? text.slice(0, 220).replace(/\s+/g, ' ').trim() : '';
+      throw new Error(preview ? `Respuesta inesperada del servidor: ${preview}` : 'Respuesta inesperada del servidor');
     }
     if (!data || !data.ok) {
       throw new Error(data?.error || 'Error de API');
