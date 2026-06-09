@@ -577,8 +577,8 @@
     function renderDias(){
       const cont=document.getElementById('diasList');
       const c=currentConc();
-      const inicio=dateValue(c,'fecha_inicio','fechaInicio','inicio');
-      const fin=dateValue(c,'fecha_fin','fechaFin','fin')||inicio;
+      const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
+      const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
       if(!state.dias.length&&!inicio&&!fin){cont.innerHTML='<div class="empty">No hay días o actividades cargadas.</div>';return}
       const buckets=buildCalendarDayBuckets(state.dias);
       const days=buildConcentrationDays(inicio,fin,buckets);
@@ -591,7 +591,7 @@
     function buildCalendarDayBuckets(dias){
       const byDate={};
       (dias||[]).forEach(d=>{
-        const date=String(d.fecha||d.dia||d.date||'').slice(0,10);
+        const date=normalizeDateKey(d.fecha||d.dia||d.date||'');
         if(!date)return;
         if(!byDate[date])byDate[date]={date,notas:[],actividades:[]};
         if(d.notas)byDate[date].notas.push(String(d.notas));
@@ -603,18 +603,35 @@
       if(inicio||fin){
         const start=parseCalendarDate(inicio||fin);
         const end=parseCalendarDate(fin||inicio);
+        if(!start||!end)return Object.values(buckets).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
         const days=[];
         for(let cursor=new Date(start.getTime());cursor<=end;cursor=addDays(cursor,1)){
           const date=formatISODate(cursor);
           days.push(buckets[date]||{date,notas:[],actividades:[]});
         }
-        return days;
+        const shown=new Set(days.map(d=>d.date));
+        const orphanDays=Object.values(buckets)
+          .filter(day=>!shown.has(day.date)&&Array.isArray(day.actividades)&&day.actividades.length)
+          .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+        return [...days,...orphanDays];
       }
       return Object.values(buckets).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     }
+    function normalizeDateKey(value){
+      const raw=String(value||'').trim();
+      if(!raw)return'';
+      const iso=raw.match(/\d{4}-\d{2}-\d{2}/);
+      if(iso)return iso[0];
+      const slash=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if(slash)return`${slash[3]}-${String(slash[2]).padStart(2,'0')}-${String(slash[1]).padStart(2,'0')}`;
+      const parsed=new Date(raw);
+      if(Number.isNaN(parsed.getTime()))return raw.slice(0,10);
+      return formatISODate(parsed);
+    }
     function parseCalendarDate(date){
-      const d=new Date(`${String(date||'').slice(0,10)}T12:00:00`);
-      return Number.isNaN(d.getTime())?new Date():d;
+      const key=normalizeDateKey(date);
+      const d=new Date(`${key}T12:00:00`);
+      return Number.isNaN(d.getTime())?null:d;
     }
     function addDays(date,days){
       const d=new Date(date.getTime());
