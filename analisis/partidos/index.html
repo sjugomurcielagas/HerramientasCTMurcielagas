@@ -460,7 +460,10 @@
             <div class="partido-meta">${formatDate(p.fecha)}<span class="badge" style="font-size:.7rem">${esc(p.tipo)}</span>${p.modo==='detalle'?'<span class="badge info" style="font-size:.7rem">Detalle</span>':''}</div>
             ${p.nombre&&p.nombre!=='vs '+p.rival+' · '+formatDate(p.fecha)?`<div style="font-size:.8rem;color:var(--muted);margin-top:2px">${esc(p.nombre)}</div>`:''}
           </div>
-          <button class="btn small secondary" onclick="openPartido(${p.id})">Ver</button>
+          <div class="btn-row" style="margin:0;justify-content:flex-end">
+            <button class="btn small secondary" onclick="openPartido(${jsArg(p.id)})">Ver</button>
+            <a class="btn small" href="registro/index.html?partido_id=${encodeURIComponent(String(p.id))}" style="text-decoration:none">Registrar acciones</a>
+          </div>
         </div>`;
       }).join('');
     }
@@ -516,7 +519,7 @@
         <div class="btn-row">
           <a class="btn small" href="registro/index.html?partido_id=${p.id}" style="text-decoration:none">⚡ Registrar acciones</a>
           <button class="btn secondary small" onclick="toggleSection('editRes')">Editar resultado</button>
-          <button class="btn danger small" onclick="eliminarPartido(${p.id})">Eliminar partido</button>
+          <button class="btn danger small" onclick="eliminarPartido(${jsArg(p.id)})">Eliminar partido</button>
         </div>
         <div id="editRes" class="hidden" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--borde)">
           <label style="display:block;margin-bottom:8px">Resultado</label>
@@ -567,7 +570,7 @@
             </div>
           </div>
           <div class="form-row" style="margin-top:10px"><label>Observaciones</label><textarea id="eNotas" style="min-height:52px">${esc(p.notas||'')}</textarea></div>
-          <div class="btn-row"><button class="btn small" onclick="guardarResultado(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editRes')">Cancelar</button></div>
+          <div class="btn-row"><button class="btn small" onclick="guardarResultado(${jsArg(p.id)})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editRes')">Cancelar</button></div>
           <div id="stEditRes" class="status-line"></div>
         </div>
       </div></div>`;
@@ -591,7 +594,7 @@
               <div class="form-row"><label>Sistema propio</label><input id="tSistP" type="text" value="${esc(det.sistema_propio||'')}" placeholder="Presión alta"></div>
               <div class="form-row"><label>Sistema rival</label><input id="tSistR" type="text" value="${esc(det.sistema_rival||'')}" placeholder="Contraataque"></div>
             </div>
-            <div class="btn-row"><button class="btn small" onclick="guardarTactica(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editTac');toggleSection('dispTac')">Cancelar</button></div>
+            <div class="btn-row"><button class="btn small" onclick="guardarTactica(${jsArg(p.id)})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editTac');toggleSection('dispTac')">Cancelar</button></div>
             <div id="stTac" class="status-line"></div>
           </div>
         </div>
@@ -608,7 +611,7 @@
             <div class="conv-grid" id="convGrid">
               ${jugadoras.map(j=>{const key=personaKey(j);return`<button class="conv-btn${conv.map(String).includes(key)?' sel':''}" data-key="${esc(key)}" onclick="this.classList.toggle('sel')">${esc(nombrar(j))}</button>`}).join('')}
             </div>
-            <div class="btn-row" style="margin-top:10px"><button class="btn small" onclick="guardarConvocatoria(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editConv');toggleSection('dispConv')">Cancelar</button></div>
+            <div class="btn-row" style="margin-top:10px"><button class="btn small" onclick="guardarConvocatoria(${jsArg(p.id)})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editConv');toggleSection('dispConv')">Cancelar</button></div>
             <div id="stConv" class="status-line"></div>
           </div>
         </div>
@@ -644,7 +647,7 @@
           </div>
           <div id="editRat" class="hidden">
             ${convActual.length?`<div id="ratGrid">${convActual.map(id=>{const j=jugadoras.find(x=>personaKey(x)===String(id));const ex=ratings.find(rt=>String(rt.jugadora_dni||'')===String(id));return`<div class="rating-row"><span class="rating-nombre">${esc(j?nombrar(j):id)}</span><select data-rdni="${esc(id)}" style="width:72px;padding:6px 8px">${[...Array(10)].map((_,i)=>`<option value="${i+1}"${(ex&&ex.rating===i+1)||(!ex&&i===4)?' selected':''}>${i+1}</option>`).join('')}</select></div>`}).join('')}</div>`:'<div style="color:var(--muted);font-size:.9rem">Primero cargá la convocatoria.</div>'}
-            <div class="btn-row" style="margin-top:10px"><button class="btn small" onclick="guardarRatings(${p.id})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editRat');toggleSection('dispRat')">Cancelar</button></div>
+            <div class="btn-row" style="margin-top:10px"><button class="btn small" onclick="guardarRatings(${jsArg(p.id)})">Guardar</button><button class="btn ghost small" onclick="toggleSection('editRat');toggleSection('dispRat')">Cancelar</button></div>
             <div id="stRat" class="status-line"></div>
           </div>
         </div>
@@ -660,7 +663,7 @@
               <div class="momento-tipo-label" style="color:${mColor(m.tipo)}">${esc(mLabel(m.tipo))}</div>
               ${m.descripcion?`<div class="momento-desc">${esc(m.descripcion)}</div>`:''}
             </div>
-            <button class="btn small danger" onclick="eliminarMomento(${m.id},${p.id})" style="flex-shrink:0;padding:5px 9px">×</button>
+            <button class="btn small danger" onclick="eliminarMomento(${jsArg(m.id)},${jsArg(p.id)})" style="flex-shrink:0;padding:5px 9px">×</button>
           </div>`).join('')}</div>`:`<div class="empty" style="margin-bottom:10px">Sin eventos registrados todavía.</div>`}
           <div class="form-separator" style="padding-top:12px;margin-top:6px">
             <div style="font-weight:800;color:var(--azul-950);font-size:.9rem;margin-bottom:8px">Agregar evento</div>
@@ -671,7 +674,7 @@
               <div class="form-row" style="margin:0"><label>Minuto</label><input id="mMin" type="number" min="0" max="120" placeholder="45" style="padding:8px 10px"></div>
               <div class="form-row" style="margin:0"><label>Descripción</label><textarea id="mDesc" style="min-height:52px" placeholder="Detallá el evento..."></textarea></div>
             </div>
-            <div class="btn-row"><button class="btn small" onclick="agregarMomento(${p.id})">Agregar evento</button></div>
+            <div class="btn-row"><button class="btn small" onclick="agregarMomento(${jsArg(p.id)})">Agregar evento</button></div>
             <div id="stMomento" class="status-line"></div>
           </div>
         </div>
@@ -989,8 +992,14 @@
       const match=(state.plantel||[]).find(p=>Murci.personaRef(p)===raw||(dni&&Murci.normalizeDni(p.DNI||p.dni)===dni));
       return match?Murci.personaRef(match):raw;
     }
-    function formatDate(d){if(!d)return'';const p=(d+'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+    function formatDate(d){
+      if(!d)return'';
+      const s=String(d);
+      const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m?`${m[3]}/${m[2]}/${m[1]}`:s;
+    }
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+    function jsArg(v){return esc(JSON.stringify(String(v??'')))}
   </script>
   <div class="page-version-tag">Versión UI</div>
 </body>
