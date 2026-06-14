@@ -633,6 +633,7 @@
       partidoId: null,
       partido: null,
       plantel: [],
+      rivalPlantel: [],
       acciones: [],
       modoLento: false,
       // Selección actual
@@ -683,6 +684,7 @@
         state.plantel = plantelRes.status === 'fulfilled' && Array.isArray(plantelRes.value) ? plantelRes.value : [];
         if (partidoRes.status === 'fulfilled') {
           state.partido = partidoRes.value;
+          state.rivalPlantel = Array.isArray(state.partido.rival_plantel) ? state.partido.rival_plantel : [];
           renderMatchBar();
         }
         if (accionesRes.status === 'fulfilled' && Array.isArray(accionesRes.value)) {
@@ -853,7 +855,7 @@
       const accion = state.accion;
       if (accion === 'Saque') {
         // Auto-asignar arquera
-        const arquera = state.plantel.find(p => esArquera(p));
+        const arquera = getJugadorasEquipoActual().find(p => esArquera(p));
         state.jugadoraId = arquera ? personaKey(arquera) : null;
         document.getElementById('jugadoraBody').innerHTML = `<div class="auto-assign-msg">🧤 Asignada automáticamente: ${arquera ? nombrePersona(arquera) : 'Sin arquera en el plantel'}</div>`;
         completarPaso('jugadora', arquera ? nombrePersona(arquera) : '—');
@@ -1064,10 +1066,7 @@
     function renderJugadoras(scrollId, excluirId) {
       const scroll = document.getElementById(scrollId);
       if (!scroll) return;
-      let jugadoras = state.plantel.filter(p => esJugadoraVisible(p));
-      if (state.equipo === 'rival') {
-        jugadoras = jugadoras.filter(p => String(p.Equipo || p.equipo || '').toLowerCase().includes('rival'));
-      }
+      let jugadoras = getJugadorasEquipoActual();
       if (!jugadoras.length) {
         scroll.innerHTML = '<div style="color:var(--muted);font-size:.86rem;font-weight:700;padding:4px 0">Sin jugadoras en el plantel</div>';
         return;
@@ -1104,7 +1103,12 @@
       return tipo === 'arquera' || tipo.includes('arquera') || tipo.includes('porter') || tipo.includes('gk');
     }
 
-    function hayJugadorasRival() { return false; }
+    function getJugadorasEquipoActual() {
+      const base = state.equipo === 'rival' ? state.rivalPlantel : state.plantel;
+      return (base || []).filter(p => esJugadoraVisible(p));
+    }
+
+    function hayJugadorasRival() { return getJugadorasEquipoActual().length > 0; }
 
     function personaKey(p) {
       if (p && typeof p === 'object') return Murci.personaRef(p) || String(p.DNI || p.dni || '');
@@ -1371,7 +1375,7 @@
     // ═══ HELPERS ═══
     function resolveNombre(id) {
       if (!id) return '';
-      const p = state.plantel.find(x => personaKey(x) === String(id));
+      const p = (state.plantel || []).concat(state.rivalPlantel || []).find(x => personaKey(x) === String(id));
       return p ? nombrePersona(p) : '';
     }
 

@@ -41,6 +41,7 @@ const BASE_ACTION_MAP = {
 };
 
 const DEPORTES_PREFIXES = [
+  'equipos_',
   'penales_',
   'partidos_',
   'concentraciones_',

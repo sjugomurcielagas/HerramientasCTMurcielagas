@@ -29,6 +29,7 @@ var SHEETS = {
   penales:           'Penales',
   partidos:          'Partidos',
   acciones:          'PartidoAcciones',
+  equipos:           'Equipos',
   concentraciones:   'Concentraciones',
   concentracionDias: 'ConcentracionDias',
   configDocumentos:  'Config_Documentos',
@@ -2295,6 +2296,10 @@ function doPost(e) {
       case 'partidos_eliminarAccion':    result = partidos_eliminarAccion(payload); break;
       case 'partidos_actualizarAccion':  result = partidos_actualizarAccion(payload); break;
 
+      // ── EQUIPOS / RIVALES ──
+      case 'equipos_getEquipos':         result = equipos_getEquipos(); break;
+      case 'equipos_guardarEquipo':      result = equipos_guardarEquipo(payload); break;
+
       // ── CONCENTRACIONES ──
       case 'concentraciones_getConcentraciones':    result = concentraciones_getConcentraciones(); break;
       case 'concentraciones_crearConcentracion':    result = concentraciones_crearConcentracion(payload); break;
@@ -2532,6 +2537,30 @@ function getSheet(name) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name);
   if (!sheet) throw new Error('Hoja no encontrada: ' + name);
   return sheet;
+}
+
+function getOrCreateSheetByName_(name, headers) {
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+  }
+  var currentHeaders = [];
+  if (sh.getLastRow() >= 1 && sh.getLastColumn() > 0) {
+    currentHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  }
+  if (!currentHeaders.length) {
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  headers.forEach(function(h) {
+    if (currentHeaders.indexOf(h) === -1) {
+      sh.getRange(1, sh.getLastColumn() + 1).setValue(h);
+      currentHeaders.push(h);
+    }
+  });
+  return sh;
 }
 
 // Genera un UUID v4
@@ -2819,6 +2848,137 @@ function safeJsonParse(val, fallback) {
 }
 
 // ================================================================
+// EQUIPOS / RIVALES COMPARTIDOS
+// ================================================================
+
+var EQUIPOS_HEADERS_ = [
+  'id', 'nombre', 'nombre_normalizado', 'tipo', 'pais', 'plantel_json',
+  'notas', 'activo', 'created_at', 'updated_at'
+];
+
+function equipos_getSheet_() {
+  return getOrCreateSheetByName_(SHEETS.equipos, EQUIPOS_HEADERS_);
+}
+
+function equipos_parsePlantel_(value) {
+  var list = Array.isArray(value) ? value : safeJsonParse(value, []);
+  if (!Array.isArray(list)) return [];
+  return list.map(function(j, idx) {
+    if (typeof j === 'string') {
+      return { id: 'rival-' + (idx + 1), nombre: j, numero: '', Tipo_Integrante: 'Jugadora', Equipo: 'rival' };
+    }
+    var nombre = String(j.nombre || j.Nombre || j.name || '').trim();
+    var numero = String(j.numero || j.Numero || j.Numero_Camiseta || j.Nro_Camiseta || '').trim();
+    var id = String(j.id || j.persona_id || j.Persona_ID || '').trim() || ('rival-' + normalizeText(nombre || numero || String(idx + 1)).replace(/\s+/g, '-') + '-' + (idx + 1));
+    return {
+      id: id,
+      persona_id: id,
+      Persona_ID: id,
+      nombre: nombre || ('Jugadora ' + (idx + 1)),
+      Numero_Camiseta: numero,
+      Nro_Camiseta: numero,
+      Tipo_Integrante: String(j.Tipo_Integrante || j.tipo || 'Jugadora').trim() || 'Jugadora',
+      Equipo: 'rival'
+    };
+  });
+}
+
+function equipos_parseEquipo_(r) {
+  return {
+    id: String(r.id || '').trim(),
+    nombre: String(r.nombre || '').trim(),
+    nombre_normalizado: String(r.nombre_normalizado || normalizeText(r.nombre || '')).trim(),
+    tipo: String(r.tipo || 'rival').trim(),
+    pais: String(r.pais || '').trim(),
+    plantel: equipos_parsePlantel_(r.plantel_json),
+    notas: String(r.notas || '').trim(),
+    activo: String(r.activo || 'SI').trim() || 'SI',
+    created_at: r.created_at || '',
+    updated_at: r.updated_at || ''
+  };
+}
+
+function equipos_getEquipos() {
+  var rows = sheetToObjects(equipos_getSheet_())
+    .map(equipos_parseEquipo_)
+    .filter(function(e) { return String(e.activo || 'SI').toUpperCase() !== 'NO'; })
+    .sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+  return ok(true, rows);
+}
+
+function equipos_findByName_(nombre) {
+  var key = normalizeText(nombre);
+  if (!key) return null;
+  var rows = sheetToObjects(equipos_getSheet_());
+  for (var i = 0; i < rows.length; i++) {
+    var rowKey = String(rows[i].nombre_normalizado || normalizeText(rows[i].nombre || '')).trim();
+    if (rowKey === key) return { row: rows[i], index: i + 2 };
+  }
+  return null;
+}
+
+function equipos_guardarEquipo(p) {
+  var nombre = String(p.nombre || p.rival || '').trim();
+  if (!nombre) throw new Error('nombre es requerido');
+  var sheet = equipos_getSheet_();
+  var now = new Date().toISOString();
+  var existing = null;
+  if (p.id) {
+    var rowIndex = findRowIndex(sheet, 'id', p.id);
+    if (rowIndex > 1) {
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+      var valuesRow = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+      var rowObj = {};
+      headers.forEach(function(h, i) { rowObj[h] = valuesRow[i]; });
+      existing = { row: rowObj, index: rowIndex };
+    }
+  }
+  if (!existing) existing = equipos_findByName_(nombre);
+  var plantel = Array.isArray(p.plantel) ? p.plantel : equipos_parsePlantel_(p.plantel_json || []);
+  var values = {
+    id: existing && existing.row ? existing.row.id : (p.id || newId()),
+    nombre: nombre,
+    nombre_normalizado: normalizeText(nombre),
+    tipo: p.tipo || 'rival',
+    pais: p.pais || '',
+    plantel_json: JSON.stringify(equipos_parsePlantel_(plantel)),
+    notas: p.notas || '',
+    activo: p.activo || 'SI',
+    created_at: existing && existing.row ? (existing.row.created_at || now) : now,
+    updated_at: now
+  };
+  if (existing && existing.index > 1) {
+    EQUIPOS_HEADERS_.forEach(function(h) { setCell(sheet, existing.index, h, values[h]); });
+  } else {
+    appendObjectRow_(sheet, values, EQUIPOS_HEADERS_);
+  }
+  return ok(true, equipos_parseEquipo_(values));
+}
+
+function equipos_resolverEquipo_(p) {
+  var nombre = String(p.rival || p.nombre || '').trim();
+  var equipoId = String(p.rival_id || p.equipo_id || '').trim();
+  var sheet = equipos_getSheet_();
+  var found = null;
+  if (equipoId) {
+    var rows = sheetToObjects(sheet);
+    found = rows.find(function(r) { return String(r.id) === equipoId; });
+    if (found) return equipos_parseEquipo_(found);
+  }
+  if (nombre) {
+    var byName = equipos_findByName_(nombre);
+    if (byName && byName.row) return equipos_parseEquipo_(byName.row);
+  }
+  var saved = equipos_guardarEquipo({
+    nombre: nombre,
+    tipo: 'rival',
+    pais: p.rival_pais || '',
+    plantel: Array.isArray(p.rival_plantel) ? p.rival_plantel : []
+  });
+  return JSON.parse(saved.getContent()).data;
+}
+
+// ================================================================
 // PARTIDOS
 // ================================================================
 
@@ -2855,6 +3015,9 @@ function _parsePartido(r) {
     ratings: safeJsonParse(r.ratings, {}),
     momentos: safeJsonParse(r.momentos, []),
     goleadoras_json: safeJsonParse(r.goleadoras_json, safeJsonParse(r.goleadoras, [])),
+    rival_id: String(r.rival_id || '').trim(),
+    contexto_partido: String(r.contexto_partido || r.contexto || '').trim(),
+    rival_plantel: equipos_parsePlantel_(r.rival_plantel_json || r.plantel_rival_json || '[]'),
     tipo_competencia: String(r.tipo_competencia || '').trim(),
     tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim()
   };
@@ -2866,32 +3029,46 @@ function partidos_crearPartido(p) {
   }
 
   const id = newId();
+  const equipo = equipos_resolverEquipo_(p);
+  const sheet = getSheet(SHEETS.partidos);
+  const headers = [
+    'id', 'rival', 'fecha', 'tipo', 'nombre',
+    'goles_propios', 'goles_rival',
+    'tiros_propios', 'tiros_rival',
+    'corners_propios', 'corners_rival',
+    'faltas_propias', 'faltas_rival',
+    'goles_primer_tiempo', 'formacion', 'sistema', 'notas',
+    'convocadas', 'ratings', 'momentos', 'timestamp',
+    'rival_id', 'contexto_partido', 'rival_plantel_json'
+  ];
+  appendObjectRow_(sheet, {
+    id: id,
+    rival: equipo.nombre || p.rival,
+    fecha: p.fecha,
+    tipo: p.tipo || 'amistoso',
+    nombre: p.nombre || '',
+    goles_propios: toNumber(p.goles_propios),
+    goles_rival: toNumber(p.goles_rival),
+    tiros_propios: toNumber(p.tiros_propios),
+    tiros_rival: toNumber(p.tiros_rival),
+    corners_propios: toNumber(p.corners_propios),
+    corners_rival: toNumber(p.corners_rival),
+    faltas_propias: toNumber(p.faltas_propias),
+    faltas_rival: toNumber(p.faltas_rival),
+    goles_primer_tiempo: p.goles_primer_tiempo !== undefined ? toNumber(p.goles_primer_tiempo) : '',
+    formacion: p.formacion || '',
+    sistema: p.sistema || '',
+    notas: p.notas || '',
+    convocadas: JSON.stringify([]),
+    ratings: JSON.stringify({}),
+    momentos: JSON.stringify([]),
+    timestamp: new Date().toISOString(),
+    rival_id: equipo.id || '',
+    contexto_partido: p.contexto_partido || p.contexto || p.nombre || '',
+    rival_plantel_json: JSON.stringify(equipo.plantel || [])
+  }, headers);
 
-  getSheet(SHEETS.partidos).appendRow([
-    id,
-    p.rival,
-    p.fecha,
-    p.tipo || 'amistoso',
-    p.nombre || '',
-    toNumber(p.goles_propios),
-    toNumber(p.goles_rival),
-    toNumber(p.tiros_propios),
-    toNumber(p.tiros_rival),
-    toNumber(p.corners_propios),
-    toNumber(p.corners_rival),
-    toNumber(p.faltas_propias),
-    toNumber(p.faltas_rival),
-    p.goles_primer_tiempo !== undefined ? toNumber(p.goles_primer_tiempo) : '',
-    p.formacion || '',
-    p.sistema || '',
-    p.notas || '',
-    JSON.stringify([]),
-    JSON.stringify({}),
-    JSON.stringify([]),
-    new Date().toISOString()
-  ]);
-
-  return ok(true, { id });
+  return ok(true, { id: id, rival_id: equipo.id || '', rival: equipo.nombre || p.rival });
 }
 
 function partidos_actualizarPartido(p) {

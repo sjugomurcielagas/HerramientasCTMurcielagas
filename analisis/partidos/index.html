@@ -105,6 +105,11 @@
     .goleadoras-note{font-size:.8rem;color:var(--muted);margin-top:6px;line-height:1.35}
     .goleadoras-note.warn{color:var(--warn);font-weight:700}
     .tipo-comp-wrap{margin-top:10px;padding:10px 11px;border:1px solid var(--borde);border-radius:14px;background:#f8fbfd}
+    .context-card{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:12px;margin-bottom:12px}
+    .context-grid{display:grid;grid-template-columns:1fr;gap:10px}
+    .rival-editor{display:grid;gap:8px}
+    .plantel-lines{min-height:96px;font-family:inherit;line-height:1.4}
+    .hint{font-size:.8rem;color:var(--muted);line-height:1.35;margin-top:4px}
 
     /* Modo toggle */
     .modo-toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--borde);border-radius:12px;overflow:hidden;margin-bottom:14px}
@@ -150,7 +155,7 @@
     /* Toolbar lista */
     .lista-toolbar{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:12px}
 
-    @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.stat-card-grid{grid-template-columns:repeat(4,1fr)}.conv-grid{grid-template-columns:repeat(3,1fr)}.lista-toolbar{grid-template-columns:1fr 160px 160px}}
+    @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.stat-card-grid{grid-template-columns:repeat(4,1fr)}.conv-grid{grid-template-columns:repeat(3,1fr)}.lista-toolbar{grid-template-columns:1fr 160px 160px}.context-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:540px){main{padding:12px 11px 64px}.panel-head h2{font-size:1.08rem}.lista-toolbar{grid-template-columns:1fr 1fr}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
@@ -213,17 +218,48 @@
         <div class="panel">
           <div class="panel-head"><h2>Nuevo partido</h2></div>
           <div class="panel-body">
+            <div class="context-card">
+              <div class="context-grid">
+                <div class="form-row">
+                  <label for="nContexto">Contexto *</label>
+                  <input id="nContexto" type="text" placeholder="Ej: Mundial 2026 · fase de grupos" autocomplete="off">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div class="form-row"><label for="nFecha">Fecha *</label><input id="nFecha" type="date"></div>
+                  <div class="form-row"><label for="nTipo">Tipo</label><select id="nTipo"><option value="oficial">Oficial</option><option value="amistoso">Amistoso</option></select></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="context-card rival-editor">
+              <div class="context-grid">
+                <div class="form-row">
+                  <label for="nEquipoSelect">Equipo / rival *</label>
+                  <select id="nEquipoSelect"></select>
+                </div>
+                <div class="form-row">
+                  <label for="nRival">Nuevo rival</label>
+                  <input id="nRival" type="text" placeholder="Ej: Japón" autocomplete="off">
+                  <div class="hint">Si no está en la lista, escribilo acá. Al crear o guardar queda disponible para todos los módulos.</div>
+                </div>
+              </div>
+              <div class="form-row">
+                <label for="nRivalPlantel">Plantel rival</label>
+                <textarea id="nRivalPlantel" class="plantel-lines" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea>
+                <div class="hint">Al elegir un rival existente se carga su plantel. Si lo editás y guardás, queda asociado al rival para próximos partidos.</div>
+              </div>
+              <div class="btn-row" style="margin-top:0">
+                <button id="guardarRivalBtn" class="btn secondary small" type="button">Guardar rival</button>
+              </div>
+              <div id="rivalStatus" class="status-line"></div>
+            </div>
+
             <div class="modo-toggle">
               <button class="modo-btn active" id="modoRapidoBtn">Modo rápido</button>
               <button class="modo-btn" id="modoDetalleBtn">Modo completo</button>
             </div>
 
-            <div class="form-row"><label for="nRival">Rival *</label><input id="nRival" type="text" placeholder="Nombre del rival" autocomplete="off"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div class="form-row"><label for="nFecha">Fecha *</label><input id="nFecha" type="date"></div>
-              <div class="form-row"><label for="nTipo">Tipo</label><select id="nTipo"><option value="oficial">Oficial</option><option value="amistoso">Amistoso</option></select></div>
-            </div>
-            <div class="form-row"><label for="nNombre">Nombre / contexto (opcional)</label><input id="nNombre" type="text" placeholder="Ej: Semifinal Panamericano 2026"></div>
+            <div class="form-row"><label for="nNombre">Nombre del partido</label><input id="nNombre" type="text" placeholder="Se completa con contexto + rival si lo dejás vacío"></div>
 
             <div class="form-separator">
               <label style="display:block;margin-bottom:8px">Resultado final</label>
@@ -309,7 +345,7 @@
             </div>
 
             <div class="form-row"><label for="nNotas">Observaciones</label><textarea id="nNotas" placeholder="Contexto del partido, condiciones, notas generales..."></textarea></div>
-            <div class="btn-row"><button id="crearBtn" class="btn">Crear partido</button></div>
+            <div class="btn-row"><button id="crearBtn" class="btn">Crear e ir a registrar acciones</button></div>
             <div id="crearStatus" class="status-line"></div>
           </div>
         </div>
@@ -325,7 +361,7 @@
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:''};
+    const state={plantel:[],equipos:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:''};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -336,6 +372,8 @@
       document.getElementById('modoRapidoBtn').addEventListener('click',()=>setModo('rapido'));
       document.getElementById('modoDetalleBtn').addEventListener('click',()=>setModo('detalle'));
       document.getElementById('crearBtn').addEventListener('click',crearPartido);
+      document.getElementById('guardarRivalBtn').addEventListener('click',guardarRivalActual);
+      document.getElementById('nEquipoSelect').addEventListener('change',onEquipoChange);
       document.getElementById('searchInput').addEventListener('input',renderLista);
       document.getElementById('tipoFilter').addEventListener('change',renderLista);
       document.getElementById('resFilter').addEventListener('change',renderLista);
@@ -346,10 +384,12 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantelRes,partidosRes,sesionesRes]=await Promise.allSettled([obtenerPlantel(),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones')]);
+        const [plantelRes,equiposRes,partidosRes,sesionesRes]=await Promise.allSettled([obtenerPlantel(),apiGet('equipos_getEquipos'),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones')]);
         state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
+        state.equipos=equiposRes.status==='fulfilled'&&Array.isArray(equiposRes.value)?equiposRes.value:[];
         state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
         state.sesionesPenales=sesionesRes.status==='fulfilled'&&Array.isArray(sesionesRes.value)?sesionesRes.value:[];
+        renderEquiposSelect();
         renderLista();
       }catch(e){alert('Error al cargar datos: '+e.message)}
       finally{app.classList.remove('loading')}
@@ -389,19 +429,78 @@
       document.getElementById('e_'+key).textContent=state.editScore[key];
     }
 
+    function renderEquiposSelect(){
+      const sel=document.getElementById('nEquipoSelect');
+      if(!sel)return;
+      sel.innerHTML='<option value="">Crear nuevo rival...</option>'+state.equipos.map(e=>`<option value="${esc(e.id)}">${esc(e.nombre)}</option>`).join('');
+    }
+
+    function onEquipoChange(){
+      const id=document.getElementById('nEquipoSelect').value;
+      const equipo=state.equipos.find(e=>String(e.id)===String(id));
+      document.getElementById('nRival').value=equipo?equipo.nombre:'';
+      document.getElementById('nRivalPlantel').value=equipo?plantelToLines(equipo.plantel||[]):'';
+      document.getElementById('rivalStatus').textContent=equipo?'Rival cargado del catálogo.':'';
+      document.getElementById('rivalStatus').className='status-line';
+    }
+
+    function plantelToLines(plantel){
+      return (Array.isArray(plantel)?plantel:[]).map(j=>{
+        const n=String(j.Numero_Camiseta||j.Nro_Camiseta||j.numero||'').trim();
+        const nombre=String(j.nombre||j.Nombre||'').trim();
+        return [n,nombre].filter(Boolean).join(' - ');
+      }).filter(Boolean).join('\n');
+    }
+
+    function parsePlantelLines(text){
+      return String(text||'').split(/\n+/).map((line,idx)=>{
+        const raw=line.trim();
+        if(!raw)return null;
+        const m=raw.match(/^(\d{1,2})\s*[-–.]\s*(.+)$/);
+        const numero=m?m[1]:'';
+        const nombre=m?m[2].trim():raw;
+        const id='rival-'+Murci.normalizeText(nombre||String(idx+1)).replace(/\s+/g,'-')+'-'+(idx+1);
+        return {id,persona_id:id,Persona_ID:id,nombre,Numero_Camiseta:numero,Nro_Camiseta:numero,Tipo_Integrante:'Jugadora',Equipo:'rival'};
+      }).filter(Boolean);
+    }
+
+    async function guardarRivalActual(){
+      const st=document.getElementById('rivalStatus');
+      const btn=document.getElementById('guardarRivalBtn');
+      const nombre=document.getElementById('nRival').value.trim();
+      if(!nombre){st.textContent='Escribí el nombre del rival.';st.className='status-line error';return null}
+      st.textContent='Guardando rival...';st.className='status-line';btn.disabled=true;
+      try{
+        const currentId=document.getElementById('nEquipoSelect').value;
+        const equipo=await apiPost({action:'equipos_guardarEquipo',id:currentId||undefined,nombre,tipo:'rival',plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value)});
+        const idx=state.equipos.findIndex(e=>String(e.id)===String(equipo.id));
+        if(idx>=0)state.equipos[idx]=equipo;else state.equipos.push(equipo);
+        state.equipos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+        renderEquiposSelect();
+        document.getElementById('nEquipoSelect').value=equipo.id;
+        st.textContent='Rival guardado en el catálogo.';st.className='status-line ok';
+        return equipo;
+      }catch(e){st.textContent='Error: '+e.message;st.className='status-line error';return null}
+      finally{btn.disabled=false}
+    }
+
     async function crearPartido(){
-      const rival=document.getElementById('nRival').value.trim();
+      const contexto=document.getElementById('nContexto').value.trim();
+      const selectedEquipoId=document.getElementById('nEquipoSelect').value;
+      const selectedEquipo=state.equipos.find(e=>String(e.id)===String(selectedEquipoId));
+      const rival=(document.getElementById('nRival').value.trim()||(selectedEquipo&&selectedEquipo.nombre)||'').trim();
       const fecha=document.getElementById('nFecha').value;
       const tipo=document.getElementById('nTipo').value;
       const notas=document.getElementById('nNotas').value.trim();
-      const nombre=document.getElementById('nNombre').value.trim()||('vs '+rival+' · '+formatDate(fecha));
+      const nombre=document.getElementById('nNombre').value.trim()||([contexto,'vs '+rival].filter(Boolean).join(' · ')||('vs '+rival+' · '+formatDate(fecha)));
       const st=document.getElementById('crearStatus');
       const btn=document.getElementById('crearBtn');
+      if(!contexto){st.textContent='Ingresá el contexto del partido.';st.className='status-line error';return}
       if(!rival){st.textContent='Ingresá el nombre del rival.';st.className='status-line error';return}
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
       const htP=document.getElementById('nHtPropio').value;
       const htR=document.getElementById('nHtRival').value;
-      const payload={action:'partidos_crearPartido',nombre,fecha,rival,tipo,modo:state.modo,notas,...state.nuevoScore};
+      const payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,contexto_partido:contexto,tipo,modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),...state.nuevoScore};
       if(htP!=='')payload.ht_propios=parseInt(htP);
       if(htR!=='')payload.ht_rival=parseInt(htR);
       if(state.modo==='detalle'){
@@ -419,12 +518,14 @@
         renderLista();
         resetNuevoForm();
         st.textContent='';st.className='status-line';
-        openPartido(res.id);
+        location.href='registro/index.html?partido_id='+encodeURIComponent(String(res.id));
       }catch(e){st.textContent='Error: '+e.message;st.className='status-line error';btn.disabled=false}
     }
 
     function resetNuevoForm(){
-      ['nRival','nNombre','nNotas','nFormPropia','nFormRival','nSistemaPropio','nSistemaRival','nHtPropio','nHtRival'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+      ['nContexto','nRival','nRivalPlantel','nNombre','nNotas','nFormPropia','nFormRival','nSistemaPropio','nSistemaRival','nHtPropio','nHtRival'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+      document.getElementById('nEquipoSelect').value='';
+      document.getElementById('rivalStatus').textContent='';
       document.getElementById('nFecha').valueAsDate=new Date();
       state.nuevoScore={goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0};
       document.getElementById('scorePropio').textContent='0';
