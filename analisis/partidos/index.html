@@ -514,6 +514,7 @@
         </div>`:''}
         ${p.notas?`<div style="margin-top:10px;padding:10px;background:#f8fbfd;border-radius:10px;font-size:.9rem;color:var(--texto);border:1px solid var(--borde);line-height:1.4">${esc(p.notas)}</div>`:''}
         <div class="btn-row">
+          <a class="btn small" href="registro/index.html?partido_id=${p.id}" style="text-decoration:none">⚡ Registrar acciones</a>
           <button class="btn secondary small" onclick="toggleSection('editRes')">Editar resultado</button>
           <button class="btn danger small" onclick="eliminarPartido(${p.id})">Eliminar partido</button>
         </div>

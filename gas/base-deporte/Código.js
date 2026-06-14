@@ -28,6 +28,7 @@ var SHEETS = {
   sesionesPenales:   'SesionesPenales',
   penales:           'Penales',
   partidos:          'Partidos',
+  acciones:          'PartidoAcciones',
   concentraciones:   'Concentraciones',
   concentracionDias: 'ConcentracionDias',
   configDocumentos:  'Config_Documentos',
@@ -2289,6 +2290,11 @@ function doPost(e) {
   result = partidos_getMetricas(payload);
   break;
 
+      case 'partidos_registrarAccion':   result = partidos_registrarAccion(payload); break;
+      case 'partidos_getAcciones':       result = partidos_getAcciones(payload); break;
+      case 'partidos_eliminarAccion':    result = partidos_eliminarAccion(payload); break;
+      case 'partidos_actualizarAccion':  result = partidos_actualizarAccion(payload); break;
+
       // ── CONCENTRACIONES ──
       case 'concentraciones_getConcentraciones':    result = concentraciones_getConcentraciones(); break;
       case 'concentraciones_crearConcentracion':    result = concentraciones_crearConcentracion(payload); break;
@@ -3148,6 +3154,131 @@ function calcularImpactoJugadoras_(p) {
   });
 
   return impacto;
+}
+
+// ────────────────────────────────────────────────────────────────
+// ACCIONES DE PARTIDO (registro acción por acción)
+// ────────────────────────────────────────────────────────────────
+//
+// Hoja PartidoAcciones:
+//   id | partido_id | timestamp_registro | equipo | tipo_partido
+//   contexto | accion | zona | jugadora_id | valoracion
+//   resultado | arquera_valoracion | es_pase_relevante | tiempo_neto
+//   jugadora_anterior_id | narracion
+
+var ACCIONES_HEADERS_ = [
+  'id', 'partido_id', 'timestamp_registro', 'equipo', 'tipo_partido',
+  'contexto', 'accion', 'zona', 'jugadora_id', 'valoracion',
+  'resultado', 'arquera_valoracion', 'es_pase_relevante', 'tiempo_neto',
+  'jugadora_anterior_id', 'narracion'
+];
+
+function partidos_getOrCreateAccionesSheet_() {
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sh = ss.getSheetByName(SHEETS.acciones);
+  if (!sh) {
+    sh = ss.insertSheet(SHEETS.acciones);
+  }
+  var currentHeaders = [];
+  if (sh.getLastRow() >= 1 && sh.getLastColumn() > 0) {
+    currentHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  }
+  if (!currentHeaders.length) {
+    sh.getRange(1, 1, 1, ACCIONES_HEADERS_.length).setValues([ACCIONES_HEADERS_]);
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  ACCIONES_HEADERS_.forEach(function(h) {
+    if (currentHeaders.indexOf(h) === -1) {
+      sh.getRange(1, sh.getLastColumn() + 1).setValue(h);
+      currentHeaders.push(h);
+    }
+  });
+  return sh;
+}
+
+function partidos_registrarAccion(p) {
+  if (!p.partido_id) throw new Error('partido_id es requerido');
+  if (!p.accion) throw new Error('accion es requerido');
+
+  const sheet = partidos_getOrCreateAccionesSheet_();
+  const id = newId();
+
+  sheet.appendRow([
+    id,
+    p.partido_id,
+    new Date().toISOString(),
+    p.equipo || 'propio',
+    p.tipo_partido || '',
+    p.contexto || 'juego_libre',
+    p.accion,
+    p.zona || '',
+    p.jugadora_id || '',
+    (p.valoracion !== undefined && p.valoracion !== null && p.valoracion !== '') ? Number(p.valoracion) : '',
+    p.resultado || '',
+    (p.arquera_valoracion !== undefined && p.arquera_valoracion !== null && p.arquera_valoracion !== '') ? Number(p.arquera_valoracion) : '',
+    (p.es_pase_relevante !== undefined && p.es_pase_relevante !== null && p.es_pase_relevante !== '') ? String(p.es_pase_relevante) : '',
+    (p.tiempo_neto !== undefined && p.tiempo_neto !== null && p.tiempo_neto !== '') ? Number(p.tiempo_neto) : '',
+    p.jugadora_anterior_id || '',
+    p.narracion || ''
+  ]);
+
+  return ok(true, { id });
+}
+
+function partidos_getAcciones(p) {
+  if (!p.partido_id) throw new Error('partido_id es requerido');
+
+  const sheet = partidos_getOrCreateAccionesSheet_();
+  const rows = sheetToObjects(sheet)
+    .filter(r => String(r.partido_id) === String(p.partido_id))
+    .map(r => ({
+      ...r,
+      valoracion: (r.valoracion !== '' && r.valoracion !== undefined) ? Number(r.valoracion) : null,
+      arquera_valoracion: (r.arquera_valoracion !== '' && r.arquera_valoracion !== undefined) ? Number(r.arquera_valoracion) : null,
+      es_pase_relevante: r.es_pase_relevante === 'true' ? true : r.es_pase_relevante === 'false' ? false : null,
+      tiempo_neto: (r.tiempo_neto !== '' && r.tiempo_neto !== undefined) ? Number(r.tiempo_neto) : null
+    }));
+
+  return ok(true, rows);
+}
+
+function partidos_eliminarAccion(p) {
+  if (!p.id) throw new Error('id es requerido');
+
+  const sheet = partidos_getOrCreateAccionesSheet_();
+  const row = findRowIndex(sheet, 'id', p.id);
+  if (row === -1) throw new Error('Acción no encontrada');
+  sheet.deleteRow(row);
+  return ok(true, { id: p.id });
+}
+
+function partidos_actualizarAccion(p) {
+  if (!p.id) throw new Error('id es requerido');
+
+  const sheet = partidos_getOrCreateAccionesSheet_();
+  const row = findRowIndex(sheet, 'id', p.id);
+  if (row === -1) throw new Error('Acción no encontrada');
+
+  const campos = ['equipo', 'contexto', 'accion', 'zona', 'jugadora_id',
+                  'valoracion', 'resultado', 'arquera_valoracion',
+                  'es_pase_relevante', 'tiempo_neto', 'jugadora_anterior_id', 'narracion'];
+
+  campos.forEach(f => {
+    if (p[f] !== undefined) {
+      let val = p[f];
+      if (f === 'valoracion' || f === 'arquera_valoracion') {
+        val = (val !== null && val !== '') ? Number(val) : '';
+      } else if (f === 'tiempo_neto') {
+        val = (val !== null && val !== '') ? Number(val) : '';
+      } else if (f === 'es_pase_relevante') {
+        val = (val !== null && val !== '') ? String(val) : '';
+      }
+      setCell(sheet, row, f, val);
+    }
+  });
+
+  return ok(true, { id: p.id });
 }
 
 // ────────────────────────────────────────────────────────────────
