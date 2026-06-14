@@ -30,6 +30,7 @@ var SHEETS = {
   partidos:          'Partidos',
   acciones:          'PartidoAcciones',
   equipos:           'Equipos',
+  equipoStats:        'EquipoStats',
   concentraciones:   'Concentraciones',
   concentracionDias: 'ConcentracionDias',
   configDocumentos:  'Config_Documentos',
@@ -1047,7 +1048,7 @@ function antidoping_appendHistorial_(query, result) {
   ];
   var sheet = antidoping_getOrCreateSheet_(SHEETS.antidopingHistorial, headers);
   var fecha = Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd HH:mm');
-  sheet.appendRow([
+	  sheet.appendRow([
     fecha,
     query,
     result.medicamento || '',
@@ -2299,6 +2300,8 @@ function doPost(e) {
       // ── EQUIPOS / RIVALES ──
       case 'equipos_getEquipos':         result = equipos_getEquipos(); break;
       case 'equipos_guardarEquipo':      result = equipos_guardarEquipo(payload); break;
+      case 'equipos_getEstadisticas':    result = equipos_getEstadisticas(payload); break;
+      case 'equipos_recalcularEstadisticas': result = equipos_recalcularEstadisticas(payload); break;
 
       // ── CONCENTRACIONES ──
       case 'concentraciones_getConcentraciones':    result = concentraciones_getConcentraciones(); break;
@@ -2852,8 +2855,13 @@ function safeJsonParse(val, fallback) {
 // ================================================================
 
 var EQUIPOS_HEADERS_ = [
-  'id', 'nombre', 'nombre_normalizado', 'tipo', 'pais', 'plantel_json',
-  'notas', 'activo', 'created_at', 'updated_at'
+  'id', 'nombre', 'nombre_normalizado', 'tipo', 'categoria', 'pais',
+  'plantel_json', 'notas', 'activo', 'created_at', 'updated_at'
+];
+
+var EQUIPO_STATS_HEADERS_ = [
+  'equipo_id', 'equipo_nombre', 'updated_at', 'partidos', 'acciones_total',
+  'goles', 'tiros', 'valoracion_promedio', 'por_accion_json', 'por_contexto_json'
 ];
 
 function equipos_getSheet_() {
@@ -2889,6 +2897,7 @@ function equipos_parseEquipo_(r) {
     nombre: String(r.nombre || '').trim(),
     nombre_normalizado: String(r.nombre_normalizado || normalizeText(r.nombre || '')).trim(),
     tipo: String(r.tipo || 'rival').trim(),
+    categoria: String(r.categoria || 'seleccion_nacional').trim(),
     pais: String(r.pais || '').trim(),
     plantel: equipos_parsePlantel_(r.plantel_json),
     notas: String(r.notas || '').trim(),
@@ -2940,6 +2949,7 @@ function equipos_guardarEquipo(p) {
     nombre: nombre,
     nombre_normalizado: normalizeText(nombre),
     tipo: p.tipo || 'rival',
+    categoria: p.categoria || 'seleccion_nacional',
     pais: p.pais || '',
     plantel_json: JSON.stringify(equipos_parsePlantel_(plantel)),
     notas: p.notas || '',
@@ -2972,10 +2982,113 @@ function equipos_resolverEquipo_(p) {
   var saved = equipos_guardarEquipo({
     nombre: nombre,
     tipo: 'rival',
+    categoria: p.categoria || 'seleccion_nacional',
     pais: p.rival_pais || '',
     plantel: Array.isArray(p.rival_plantel) ? p.rival_plantel : []
   });
   return JSON.parse(saved.getContent()).data;
+}
+
+function equipos_getStatsSheet_() {
+  return getOrCreateSheetByName_(SHEETS.equipoStats, EQUIPO_STATS_HEADERS_);
+}
+
+function equipos_getEstadisticas(p) {
+  var rows = sheetToObjects(equipos_getStatsSheet_());
+  var equipoId = String((p && (p.equipo_id || p.id)) || '').trim();
+  if (equipoId) {
+    rows = rows.filter(function(r) { return String(r.equipo_id) === equipoId; });
+  }
+  return ok(true, rows.map(function(r) {
+    return {
+      equipo_id: String(r.equipo_id || ''),
+      equipo_nombre: String(r.equipo_nombre || ''),
+      updated_at: r.updated_at || '',
+      partidos: toNumber(r.partidos),
+      acciones_total: toNumber(r.acciones_total),
+      goles: toNumber(r.goles),
+      tiros: toNumber(r.tiros),
+      valoracion_promedio: r.valoracion_promedio === '' ? null : Number(r.valoracion_promedio),
+      por_accion: safeJsonParse(r.por_accion_json, {}),
+      por_contexto: safeJsonParse(r.por_contexto_json, {})
+    };
+  }));
+}
+
+function equipos_recalcularEstadisticas(p) {
+  var equipos = sheetToObjects(equipos_getSheet_()).map(equipos_parseEquipo_);
+  var equipoId = String((p && (p.equipo_id || p.id)) || '').trim();
+  if (equipoId) equipos = equipos.filter(function(e) { return String(e.id) === equipoId; });
+  var resultados = equipos.map(function(e) { return equipos_calcularYGuardarStats_(e); });
+  return ok(true, resultados);
+}
+
+function equipos_calcularYGuardarStats_(equipo) {
+  if (!equipo || !equipo.id) return null;
+  var partidos = sheetToObjects(getSheet(SHEETS.partidos)).map(_parsePartido);
+  var acciones = sheetToObjects(partidos_getOrCreateAccionesSheet_());
+  var equipoKey = String(equipo.id);
+  var equipoNombreKey = normalizeText(equipo.nombre || '');
+  var partidosEquipo = partidos.filter(function(p) {
+    return String(p.rival_id || '') === equipoKey ||
+      String(p.equipo_local_id || '') === equipoKey ||
+      String(p.equipo_visitante_id || '') === equipoKey ||
+      (!!equipoNombreKey && normalizeText(p.rival || '') === equipoNombreKey);
+  });
+  var partidoIds = {};
+  partidosEquipo.forEach(function(p) { partidoIds[String(p.id)] = true; });
+  var accionesEquipo = acciones.filter(function(a) {
+    if (String(a.equipo_id || '') === equipoKey) return true;
+    return partidoIds[String(a.partido_id || '')] && String(a.equipo || '') === 'rival';
+  });
+  var porAccion = {};
+  var porContexto = {};
+  var vals = [];
+  accionesEquipo.forEach(function(a) {
+    var accion = String(a.accion || '—');
+    var contexto = String(a.contexto || '—');
+    porAccion[accion] = (porAccion[accion] || 0) + 1;
+    porContexto[contexto] = (porContexto[contexto] || 0) + 1;
+    if (a.valoracion !== '' && a.valoracion !== null && a.valoracion !== undefined && !isNaN(Number(a.valoracion))) {
+      vals.push(Number(a.valoracion));
+    }
+  });
+  var stats = {
+    equipo_id: equipo.id,
+    equipo_nombre: equipo.nombre,
+    updated_at: new Date().toISOString(),
+    partidos: partidosEquipo.length,
+    acciones_total: accionesEquipo.length,
+    goles: accionesEquipo.filter(function(a) { return String(a.resultado || '') === 'gol'; }).length,
+    tiros: accionesEquipo.filter(function(a) { return String(a.accion || '') === 'Tiro'; }).length,
+    valoracion_promedio: vals.length ? Number((vals.reduce(function(s, v) { return s + v; }, 0) / vals.length).toFixed(2)) : '',
+    por_accion_json: JSON.stringify(porAccion),
+    por_contexto_json: JSON.stringify(porContexto)
+  };
+  var sheet = equipos_getStatsSheet_();
+  var row = findRowIndex(sheet, 'equipo_id', equipo.id);
+  if (row > 1) {
+    EQUIPO_STATS_HEADERS_.forEach(function(h) { setCell(sheet, row, h, stats[h]); });
+  } else {
+    appendObjectRow_(sheet, stats, EQUIPO_STATS_HEADERS_);
+  }
+  return stats;
+}
+
+function equipos_recalcularStatsPorPartido_(partidoId) {
+  if (!partidoId) return;
+  try {
+    var partido = sheetToObjects(getSheet(SHEETS.partidos)).map(_parsePartido)
+      .find(function(p) { return String(p.id) === String(partidoId); });
+    if (!partido) return;
+    var equipoId = String(partido.rival_id || '').trim();
+    if (!equipoId) return;
+    var equipo = sheetToObjects(equipos_getSheet_()).map(equipos_parseEquipo_)
+      .find(function(e) { return String(e.id) === equipoId; });
+    if (equipo) equipos_calcularYGuardarStats_(equipo);
+  } catch (err) {
+    try { Logger.log('No se pudieron recalcular stats de equipo: %s', err && err.message ? err.message : err); } catch (_) {}
+  }
 }
 
 // ================================================================
@@ -3018,6 +3131,13 @@ function _parsePartido(r) {
     rival_id: String(r.rival_id || '').trim(),
     contexto_partido: String(r.contexto_partido || r.contexto || '').trim(),
     rival_plantel: equipos_parsePlantel_(r.rival_plantel_json || r.plantel_rival_json || '[]'),
+    incluye_murcielagas: String(r.incluye_murcielagas || 'SI').toUpperCase() !== 'NO',
+    equipo_local_id: String(r.equipo_local_id || '').trim(),
+    equipo_visitante_id: String(r.equipo_visitante_id || '').trim(),
+    equipo_local_nombre: String(r.equipo_local_nombre || '').trim(),
+    equipo_visitante_nombre: String(r.equipo_visitante_nombre || '').trim(),
+    equipo_local_plantel: equipos_parsePlantel_(r.equipo_local_plantel_json || '[]'),
+    equipo_visitante_plantel: equipos_parsePlantel_(r.equipo_visitante_plantel_json || '[]'),
     tipo_competencia: String(r.tipo_competencia || '').trim(),
     tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim()
   };
@@ -3029,7 +3149,14 @@ function partidos_crearPartido(p) {
   }
 
   const id = newId();
+  const incluyeMurcielagas = String(p.incluye_murcielagas || 'SI').toUpperCase() !== 'NO';
   const equipo = equipos_resolverEquipo_(p);
+  var equipoLocal = null;
+  var equipoVisitante = null;
+  if (!incluyeMurcielagas) {
+    equipoLocal = equipos_resolverEquipo_({ rival_id: p.equipo_local_id, rival: p.equipo_local_nombre || p.local || p.rival, rival_plantel: p.equipo_local_plantel || [] });
+    equipoVisitante = equipos_resolverEquipo_({ rival_id: p.equipo_visitante_id, rival: p.equipo_visitante_nombre || p.visitante || p.rival, rival_plantel: p.equipo_visitante_plantel || [] });
+  }
   const sheet = getSheet(SHEETS.partidos);
   const headers = [
     'id', 'rival', 'fecha', 'tipo', 'nombre',
@@ -3039,11 +3166,14 @@ function partidos_crearPartido(p) {
     'faltas_propias', 'faltas_rival',
     'goles_primer_tiempo', 'formacion', 'sistema', 'notas',
     'convocadas', 'ratings', 'momentos', 'timestamp',
-    'rival_id', 'contexto_partido', 'rival_plantel_json'
+    'rival_id', 'contexto_partido', 'rival_plantel_json',
+    'incluye_murcielagas', 'equipo_local_id', 'equipo_visitante_id',
+    'equipo_local_nombre', 'equipo_visitante_nombre',
+    'equipo_local_plantel_json', 'equipo_visitante_plantel_json'
   ];
   appendObjectRow_(sheet, {
     id: id,
-    rival: equipo.nombre || p.rival,
+    rival: incluyeMurcielagas ? (equipo.nombre || p.rival) : [equipoLocal && equipoLocal.nombre, equipoVisitante && equipoVisitante.nombre].filter(Boolean).join(' vs '),
     fecha: p.fecha,
     tipo: p.tipo || 'amistoso',
     nombre: p.nombre || '',
@@ -3065,7 +3195,14 @@ function partidos_crearPartido(p) {
     timestamp: new Date().toISOString(),
     rival_id: equipo.id || '',
     contexto_partido: p.contexto_partido || p.contexto || p.nombre || '',
-    rival_plantel_json: JSON.stringify(equipo.plantel || [])
+    rival_plantel_json: JSON.stringify(equipo.plantel || []),
+    incluye_murcielagas: incluyeMurcielagas ? 'SI' : 'NO',
+    equipo_local_id: equipoLocal ? equipoLocal.id : '',
+    equipo_visitante_id: equipoVisitante ? equipoVisitante.id : '',
+    equipo_local_nombre: equipoLocal ? equipoLocal.nombre : 'Las Murciélagas',
+    equipo_visitante_nombre: equipoVisitante ? equipoVisitante.nombre : (equipo.nombre || p.rival),
+    equipo_local_plantel_json: JSON.stringify(equipoLocal ? equipoLocal.plantel : []),
+    equipo_visitante_plantel_json: JSON.stringify(equipoVisitante ? equipoVisitante.plantel : [])
   }, headers);
 
   return ok(true, { id: id, rival_id: equipo.id || '', rival: equipo.nombre || p.rival });
@@ -3347,7 +3484,7 @@ var ACCIONES_HEADERS_ = [
   'id', 'partido_id', 'timestamp_registro', 'equipo', 'tipo_partido',
   'contexto', 'accion', 'zona', 'jugadora_id', 'valoracion',
   'resultado', 'arquera_valoracion', 'es_pase_relevante', 'tiempo_neto',
-  'jugadora_anterior_id', 'narracion'
+  'jugadora_anterior_id', 'narracion', 'equipo_id'
 ];
 
 function partidos_getOrCreateAccionesSheet_() {
@@ -3381,27 +3518,30 @@ function partidos_registrarAccion(p) {
   const sheet = partidos_getOrCreateAccionesSheet_();
   const id = newId();
 
-  sheet.appendRow([
-    id,
-    p.partido_id,
-    new Date().toISOString(),
-    p.equipo || 'propio',
-    p.tipo_partido || '',
-    p.contexto || 'juego_libre',
-    p.accion,
-    p.zona || '',
-    p.jugadora_id || '',
-    (p.valoracion !== undefined && p.valoracion !== null && p.valoracion !== '') ? Number(p.valoracion) : '',
-    p.resultado || '',
-    (p.arquera_valoracion !== undefined && p.arquera_valoracion !== null && p.arquera_valoracion !== '') ? Number(p.arquera_valoracion) : '',
-    (p.es_pase_relevante !== undefined && p.es_pase_relevante !== null && p.es_pase_relevante !== '') ? String(p.es_pase_relevante) : '',
-    (p.tiempo_neto !== undefined && p.tiempo_neto !== null && p.tiempo_neto !== '') ? Number(p.tiempo_neto) : '',
-    p.jugadora_anterior_id || '',
-    p.narracion || ''
-  ]);
+	  appendObjectRow_(sheet, {
+	    id: id,
+	    partido_id: p.partido_id,
+	    timestamp_registro: new Date().toISOString(),
+	    equipo: p.equipo || 'propio',
+	    tipo_partido: p.tipo_partido || '',
+	    contexto: p.contexto || 'juego_libre',
+	    accion: p.accion,
+	    zona: p.zona || '',
+	    jugadora_id: p.jugadora_id || '',
+	    valoracion: (p.valoracion !== undefined && p.valoracion !== null && p.valoracion !== '') ? Number(p.valoracion) : '',
+	    resultado: p.resultado || '',
+	    arquera_valoracion: (p.arquera_valoracion !== undefined && p.arquera_valoracion !== null && p.arquera_valoracion !== '') ? Number(p.arquera_valoracion) : '',
+	    es_pase_relevante: (p.es_pase_relevante !== undefined && p.es_pase_relevante !== null && p.es_pase_relevante !== '') ? String(p.es_pase_relevante) : '',
+	    tiempo_neto: (p.tiempo_neto !== undefined && p.tiempo_neto !== null && p.tiempo_neto !== '') ? Number(p.tiempo_neto) : '',
+	    jugadora_anterior_id: p.jugadora_anterior_id || '',
+	    narracion: p.narracion || '',
+	    equipo_id: p.equipo_id || ''
+	  }, ACCIONES_HEADERS_);
 
-  return ok(true, { id });
-}
+	  equipos_recalcularStatsPorPartido_(p.partido_id);
+
+	  return ok(true, { id });
+	}
 
 function partidos_getAcciones(p) {
   if (!p.partido_id) throw new Error('partido_id es requerido');
@@ -3423,12 +3563,14 @@ function partidos_getAcciones(p) {
 function partidos_eliminarAccion(p) {
   if (!p.id) throw new Error('id es requerido');
 
-  const sheet = partidos_getOrCreateAccionesSheet_();
-  const row = findRowIndex(sheet, 'id', p.id);
-  if (row === -1) throw new Error('Acción no encontrada');
-  sheet.deleteRow(row);
-  return ok(true, { id: p.id });
-}
+	  const sheet = partidos_getOrCreateAccionesSheet_();
+	  const row = findRowIndex(sheet, 'id', p.id);
+	  if (row === -1) throw new Error('Acción no encontrada');
+	  const partidoId = sheet.getRange(row, getColIndex(sheet, 'partido_id')).getValue();
+	  sheet.deleteRow(row);
+	  equipos_recalcularStatsPorPartido_(partidoId);
+	  return ok(true, { id: p.id });
+	}
 
 function partidos_actualizarAccion(p) {
   if (!p.id) throw new Error('id es requerido');
@@ -3437,11 +3579,11 @@ function partidos_actualizarAccion(p) {
   const row = findRowIndex(sheet, 'id', p.id);
   if (row === -1) throw new Error('Acción no encontrada');
 
-  const campos = ['equipo', 'contexto', 'accion', 'zona', 'jugadora_id',
-                  'valoracion', 'resultado', 'arquera_valoracion',
-                  'es_pase_relevante', 'tiempo_neto', 'jugadora_anterior_id', 'narracion'];
+	  const campos = ['equipo', 'contexto', 'accion', 'zona', 'jugadora_id',
+	                  'valoracion', 'resultado', 'arquera_valoracion',
+	                  'es_pase_relevante', 'tiempo_neto', 'jugadora_anterior_id', 'narracion', 'equipo_id'];
 
-  campos.forEach(f => {
+	  campos.forEach(f => {
     if (p[f] !== undefined) {
       let val = p[f];
       if (f === 'valoracion' || f === 'arquera_valoracion') {
@@ -3451,12 +3593,14 @@ function partidos_actualizarAccion(p) {
       } else if (f === 'es_pase_relevante') {
         val = (val !== null && val !== '') ? String(val) : '';
       }
-      setCell(sheet, row, f, val);
-    }
-  });
+	      setCell(sheet, row, f, val);
+	    }
+	  });
 
-  return ok(true, { id: p.id });
-}
+	  equipos_recalcularStatsPorPartido_(sheet.getRange(row, getColIndex(sheet, 'partido_id')).getValue());
+
+	  return ok(true, { id: p.id });
+	}
 
 // ────────────────────────────────────────────────────────────────
 // CONCENTRACIONES

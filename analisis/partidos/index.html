@@ -254,6 +254,23 @@
               <div id="rivalStatus" class="status-line"></div>
             </div>
 
+            <div class="context-card">
+              <label style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                <input id="nNeutral" type="checkbox" style="width:auto"> Partido entre equipos de terceros
+              </label>
+              <div id="neutralWrap" class="context-grid hidden">
+                <div class="form-row">
+                  <label for="nLocalSelect">Equipo local</label>
+                  <select id="nLocalSelect"></select>
+                </div>
+                <div class="form-row">
+                  <label for="nVisitanteSelect">Equipo visitante</label>
+                  <select id="nVisitanteSelect"></select>
+                </div>
+              </div>
+              <div class="hint">Usalo para analizar partidos donde no juegan Las Murciélagas. El registro de acciones toma los planteles de esos equipos.</div>
+            </div>
+
             <div class="modo-toggle">
               <button class="modo-btn active" id="modoRapidoBtn">Modo rápido</button>
               <button class="modo-btn" id="modoDetalleBtn">Modo completo</button>
@@ -374,6 +391,7 @@
       document.getElementById('crearBtn').addEventListener('click',crearPartido);
       document.getElementById('guardarRivalBtn').addEventListener('click',guardarRivalActual);
       document.getElementById('nEquipoSelect').addEventListener('change',onEquipoChange);
+      document.getElementById('nNeutral').addEventListener('change',onNeutralChange);
       document.getElementById('searchInput').addEventListener('input',renderLista);
       document.getElementById('tipoFilter').addEventListener('change',renderLista);
       document.getElementById('resFilter').addEventListener('change',renderLista);
@@ -432,7 +450,18 @@
     function renderEquiposSelect(){
       const sel=document.getElementById('nEquipoSelect');
       if(!sel)return;
-      sel.innerHTML='<option value="">Crear nuevo rival...</option>'+state.equipos.map(e=>`<option value="${esc(e.id)}">${esc(e.nombre)}</option>`).join('');
+      const options=state.equipos.map(e=>`<option value="${esc(e.id)}">${esc(e.nombre)}</option>`).join('');
+      sel.innerHTML='<option value="">Crear nuevo rival...</option>'+options;
+      ['nLocalSelect','nVisitanteSelect'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el)el.innerHTML='<option value="">Seleccionar...</option>'+options;
+      });
+    }
+
+    function onNeutralChange(){
+      const active=document.getElementById('nNeutral').checked;
+      document.getElementById('neutralWrap').classList.toggle('hidden',!active);
+      document.querySelector('.rival-editor').classList.toggle('hidden',active);
     }
 
     function onEquipoChange(){
@@ -486,21 +515,25 @@
 
     async function crearPartido(){
       const contexto=document.getElementById('nContexto').value.trim();
+      const neutral=document.getElementById('nNeutral').checked;
       const selectedEquipoId=document.getElementById('nEquipoSelect').value;
       const selectedEquipo=state.equipos.find(e=>String(e.id)===String(selectedEquipoId));
-      const rival=(document.getElementById('nRival').value.trim()||(selectedEquipo&&selectedEquipo.nombre)||'').trim();
+      const localEquipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nLocalSelect').value));
+      const visitanteEquipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nVisitanteSelect').value));
+      const rival=neutral?[localEquipo?.nombre,visitanteEquipo?.nombre].filter(Boolean).join(' vs '):(document.getElementById('nRival').value.trim()||(selectedEquipo&&selectedEquipo.nombre)||'').trim();
       const fecha=document.getElementById('nFecha').value;
       const tipo=document.getElementById('nTipo').value;
       const notas=document.getElementById('nNotas').value.trim();
-      const nombre=document.getElementById('nNombre').value.trim()||([contexto,'vs '+rival].filter(Boolean).join(' · ')||('vs '+rival+' · '+formatDate(fecha)));
+      const nombre=document.getElementById('nNombre').value.trim()||([contexto,neutral?rival:'vs '+rival].filter(Boolean).join(' · ')||((neutral?'':'vs ')+rival+' · '+formatDate(fecha)));
       const st=document.getElementById('crearStatus');
       const btn=document.getElementById('crearBtn');
       if(!contexto){st.textContent='Ingresá el contexto del partido.';st.className='status-line error';return}
+      if(neutral&&(!localEquipo||!visitanteEquipo)){st.textContent='Seleccioná equipo local y visitante.';st.className='status-line error';return}
       if(!rival){st.textContent='Ingresá el nombre del rival.';st.className='status-line error';return}
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
       const htP=document.getElementById('nHtPropio').value;
       const htR=document.getElementById('nHtRival').value;
-      const payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,contexto_partido:contexto,tipo,modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),...state.nuevoScore};
+      const payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,contexto_partido:contexto,tipo,modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:neutral?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel:localEquipo?.plantel||[],equipo_visitante_plantel:visitanteEquipo?.plantel||[],...state.nuevoScore};
       if(htP!=='')payload.ht_propios=parseInt(htP);
       if(htR!=='')payload.ht_rival=parseInt(htR);
       if(state.modo==='detalle'){
@@ -525,6 +558,11 @@
     function resetNuevoForm(){
       ['nContexto','nRival','nRivalPlantel','nNombre','nNotas','nFormPropia','nFormRival','nSistemaPropio','nSistemaRival','nHtPropio','nHtRival'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
       document.getElementById('nEquipoSelect').value='';
+      document.getElementById('nNeutral').checked=false;
+      document.getElementById('neutralWrap').classList.add('hidden');
+      document.querySelector('.rival-editor').classList.remove('hidden');
+      document.getElementById('nLocalSelect').value='';
+      document.getElementById('nVisitanteSelect').value='';
       document.getElementById('rivalStatus').textContent='';
       document.getElementById('nFecha').valueAsDate=new Date();
       state.nuevoScore={goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0};

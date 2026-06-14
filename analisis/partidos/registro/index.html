@@ -634,6 +634,8 @@
       partido: null,
       plantel: [],
       rivalPlantel: [],
+      localPlantel: [],
+      visitantePlantel: [],
       acciones: [],
       modoLento: false,
       // Selección actual
@@ -685,6 +687,8 @@
         if (partidoRes.status === 'fulfilled') {
           state.partido = partidoRes.value;
           state.rivalPlantel = Array.isArray(state.partido.rival_plantel) ? state.partido.rival_plantel : [];
+          state.localPlantel = Array.isArray(state.partido.equipo_local_plantel) ? state.partido.equipo_local_plantel : [];
+          state.visitantePlantel = Array.isArray(state.partido.equipo_visitante_plantel) ? state.partido.equipo_visitante_plantel : [];
           renderMatchBar();
         }
         if (accionesRes.status === 'fulfilled' && Array.isArray(accionesRes.value)) {
@@ -706,11 +710,14 @@
     function renderMatchBar() {
       const p = state.partido;
       if (!p) return;
-      const rival = p.rival || 'Rival';
-      document.getElementById('matchRival').textContent = 'vs ' + esc(rival);
+      const neutral = p.incluye_murcielagas === false;
+      const local = neutral ? (p.equipo_local_nombre || 'Local') : 'Las Murciélagas';
+      const rival = neutral ? (p.equipo_visitante_nombre || 'Visitante') : (p.rival || 'Rival');
+      document.getElementById('matchRival').textContent = neutral ? `${esc(local)} vs ${esc(rival)}` : 'vs ' + esc(rival);
       document.getElementById('matchMeta').textContent = [p.fecha ? formatDate(p.fecha) : '', p.tipo || ''].filter(Boolean).join(' · ');
+      document.querySelector('.equipo-btn[data-eq="propio"]').textContent = esc(local);
       document.getElementById('equipoRivalBtn').textContent = esc(rival);
-      document.getElementById('brandTitle').textContent = esc('vs ' + rival);
+      document.getElementById('brandTitle').textContent = neutral ? esc(local + ' vs ' + rival) : esc('vs ' + rival);
       renderScore();
     }
 
@@ -806,7 +813,7 @@
       state.equipo = eq;
       state.asistenciaHabilitada = false;
       document.querySelectorAll('.equipo-btn').forEach(b => b.classList.toggle('sel', b.dataset.eq === eq));
-      completarPaso('equipo', eq === 'propio' ? 'Las Murciélagas' : (state.partido?.rival || 'Rival'));
+      completarPaso('equipo', equipoLabel(eq));
       bloquearPasosDesde('contexto');
       activarPaso('contexto');
     }
@@ -1104,11 +1111,26 @@
     }
 
     function getJugadorasEquipoActual() {
-      const base = state.equipo === 'rival' ? state.rivalPlantel : state.plantel;
+      const neutral = state.partido && state.partido.incluye_murcielagas === false;
+      const base = neutral
+        ? (state.equipo === 'rival' ? state.visitantePlantel : state.localPlantel)
+        : (state.equipo === 'rival' ? state.rivalPlantel : state.plantel);
       return (base || []).filter(p => esJugadoraVisible(p));
     }
 
     function hayJugadorasRival() { return getJugadorasEquipoActual().length > 0; }
+
+    function equipoLabel(eq) {
+      const neutral = state.partido && state.partido.incluye_murcielagas === false;
+      if (neutral) return eq === 'rival' ? (state.partido.equipo_visitante_nombre || 'Visitante') : (state.partido.equipo_local_nombre || 'Local');
+      return eq === 'rival' ? (state.partido?.rival || 'Rival') : 'Las Murciélagas';
+    }
+
+    function equipoIdActual() {
+      const neutral = state.partido && state.partido.incluye_murcielagas === false;
+      if (neutral) return state.equipo === 'rival' ? (state.partido.equipo_visitante_id || '') : (state.partido.equipo_local_id || '');
+      return state.equipo === 'rival' ? (state.partido?.rival_id || '') : '';
+    }
 
     function personaKey(p) {
       if (p && typeof p === 'object') return Murci.personaRef(p) || String(p.DNI || p.dni || '');
@@ -1129,6 +1151,7 @@
         action: 'partidos_registrarAccion',
         partido_id: state.partidoId,
         equipo: state.equipo,
+        equipo_id: equipoIdActual(),
         tipo_partido: state.partido?.tipo || '',
         contexto: state.contexto || 'juego_libre',
         accion: state.accion,
@@ -1375,7 +1398,7 @@
     // ═══ HELPERS ═══
     function resolveNombre(id) {
       if (!id) return '';
-      const p = (state.plantel || []).concat(state.rivalPlantel || []).find(x => personaKey(x) === String(id));
+      const p = (state.plantel || []).concat(state.rivalPlantel || [], state.localPlantel || [], state.visitantePlantel || []).find(x => personaKey(x) === String(id));
       return p ? nombrePersona(p) : '';
     }
 

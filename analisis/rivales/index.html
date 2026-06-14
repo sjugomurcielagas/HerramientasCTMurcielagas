@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rivales · Las Murciélagas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../../index.html');}})();</script>
+  <style>
+    :root{--azul-950:#06172f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
+    *{box-sizing:border-box}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}button,input,select,textarea{font-family:inherit}button{font-weight:700}.hidden{display:none!important}.loading{opacity:.7;pointer-events:none}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}
+    .home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}
+    .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{height:40px;width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:nth-child(2){height:44px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1}
+    main{max-width:1180px;margin:0 auto;padding:14px 14px 72px}.grid{display:grid;gap:13px}.split{display:grid;gap:13px}
+    .panel{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 15px;border-bottom:1px solid var(--borde);flex-wrap:wrap}.panel-head h2{font-family:"Barlow Condensed",sans-serif;font-size:1.22rem;color:var(--azul-950);margin:0;line-height:1}.panel-body{padding:14px 15px}
+    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}.btn:hover{background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.small{font-size:.83rem;padding:7px 10px;border-radius:10px}.btn:disabled{opacity:.48;cursor:not-allowed}
+    .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}label{font-size:.86rem;font-weight:800;color:#334155}
+    input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:11px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.97rem}textarea{min-height:110px;resize:vertical;line-height:1.4}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(34,168,232,.13)}
+    .toolbar{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px}.empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:14px;padding:16px;text-align:center;font-weight:700;font-size:.92rem}
+    .rival-card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--borde)}.rival-card:last-child{border-bottom:none}.rival-title{font-weight:800;color:var(--azul-950);font-size:1rem}.rival-meta{color:var(--muted);font-size:.84rem;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .badge{display:inline-flex;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:800;color:#334155;background:#eef3f7}.badge.ok{background:#dcfce7;color:#166534}.badge.info{background:var(--celeste-100);color:var(--azul-800)}.badge.warn{background:#fef3c7;color:#92400e}
+    .stat-card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:13px}.stat-card{background:linear-gradient(135deg,#fff 0%,#eaf7ff 100%);border:1px solid var(--borde);border-radius:14px;padding:14px;text-align:center}.sc-val{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:700;color:var(--azul-950);line-height:1}.sc-label{font-size:.72rem;color:var(--muted);font-weight:800;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+    .stat-row{padding:10px 0;border-bottom:1px solid var(--borde)}.stat-row:last-child{border-bottom:none}.stat-nombre{font-weight:800;color:var(--azul-950);margin-bottom:4px;font-size:.92rem}.stat-nums{font-size:.84rem;color:var(--texto)}.status-line{margin-top:8px;font-weight:700;font-size:.88rem;color:var(--muted)}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
+    .hint{font-size:.8rem;color:var(--muted);line-height:1.35;margin-top:4px}
+    @media(min-width:820px){.split{grid-template-columns:1fr 1.15fr}.stat-card-grid{grid-template-columns:repeat(4,1fr)}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .form-row{margin-bottom:11px}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="home-link" href="../index.html">← Análisis</a>
+      <div class="brand">
+        <img src="../../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'">
+        <img src="../../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'">
+        <div class="brand-title">Rivales</div>
+      </div>
+    </div>
+  </header>
+  <main id="appView">
+    <div class="split">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Catálogo</h2>
+          <button class="btn small secondary" id="nuevoBtn" type="button">Nuevo rival</button>
+        </div>
+        <div class="panel-body">
+          <div class="toolbar">
+            <input id="searchInput" type="search" placeholder="Buscar equipo...">
+            <button class="btn ghost small" id="recalcBtn" type="button">Recalcular stats</button>
+          </div>
+          <div id="rivalesList"><div class="empty">Cargando rivales...</div></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <section class="panel">
+          <div class="panel-head"><h2 id="editorTitle">Rival</h2></div>
+          <div class="panel-body">
+            <input id="eId" type="hidden">
+            <div class="form-grid">
+              <div class="form-row"><label for="eNombre">Nombre *</label><input id="eNombre" placeholder="Ej: Japón"></div>
+              <div class="form-row"><label for="eCategoria">Categoría</label><select id="eCategoria"><option value="seleccion_nacional">Selección nacional</option><option value="club">Club</option><option value="regional">Regional / combinado</option><option value="otro">Otro</option></select></div>
+              <div class="form-row"><label for="ePais">País</label><input id="ePais" placeholder="Ej: Japón"></div>
+              <div class="form-row"><label for="eActivo">Estado</label><select id="eActivo"><option value="SI">Activo</option><option value="NO">Inactivo</option></select></div>
+            </div>
+            <div class="form-row"><label for="ePlantel">Plantel</label><textarea id="ePlantel" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea><div class="hint">Este plantel se usa al registrar acciones del rival.</div></div>
+            <div class="form-row"><label for="eNotas">Aclaración / notas</label><textarea id="eNotas" style="min-height:70px" placeholder="Si no es selección nacional, dejá la aclaración acá."></textarea></div>
+            <div class="btn-row"><button class="btn" id="guardarBtn" type="button">Guardar rival</button></div>
+            <div id="editorStatus" class="status-line"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Estadísticas guardadas</h2><span id="statsUpdated" class="badge info"></span></div>
+          <div class="panel-body" id="statsContent"><div class="empty">Seleccioná un rival.</div></div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script src="../../assets/config.js?v=20260525021325"></script>
+  <script>
+    const API_URL=API_BASE_URL;
+    const state={equipos:[],stats:[],selectedId:''};
+    const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
+    const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.getElementById('searchInput').addEventListener('input',renderList);
+      document.getElementById('nuevoBtn').addEventListener('click',()=>openEditor(null));
+      document.getElementById('guardarBtn').addEventListener('click',guardarEquipo);
+      document.getElementById('recalcBtn').addEventListener('click',recalcularStats);
+      loadAll();
+    });
+
+    async function loadAll(){
+      document.getElementById('appView').classList.add('loading');
+      try{
+        const [equipos,stats]=await Promise.all([apiGet('equipos_getEquipos'),apiGet('equipos_getEstadisticas')]);
+        state.equipos=Array.isArray(equipos)?equipos:[];
+        state.stats=Array.isArray(stats)?stats:[];
+        renderList();
+        openEditor(state.equipos[0]||null);
+      }catch(e){document.getElementById('rivalesList').innerHTML=`<div class="empty">No se pudo cargar: ${esc(e.message)}</div>`}
+      finally{document.getElementById('appView').classList.remove('loading')}
+    }
+
+    function renderList(){
+      const q=Murci.normalizeText(document.getElementById('searchInput').value||'');
+      const items=state.equipos.filter(e=>!q||Murci.normalizeText([e.nombre,e.pais,e.categoria].join(' ')).includes(q));
+      const cont=document.getElementById('rivalesList');
+      if(!items.length){cont.innerHTML='<div class="empty">Sin rivales cargados.</div>';return}
+      cont.innerHTML=items.map(e=>{
+        const st=getStats(e.id);
+        return `<article class="rival-card">
+          <div>
+            <div class="rival-title">${esc(e.nombre)}</div>
+            <div class="rival-meta">
+              <span class="badge ${e.categoria==='seleccion_nacional'?'ok':'warn'}">${categoriaLabel(e.categoria)}</span>
+              ${e.pais?`<span class="badge info">${esc(e.pais)}</span>`:''}
+              <span>${(e.plantel||[]).length} jugadora${(e.plantel||[]).length!==1?'s':''}</span>
+              ${st?`<span>${st.partidos} partido${st.partidos!==1?'s':''}</span>`:''}
+            </div>
+          </div>
+          <button class="btn small secondary" type="button" onclick="openEditorById('${esc(e.id)}')">Editar</button>
+        </article>`;
+      }).join('');
+    }
+
+    function openEditorById(id){openEditor(state.equipos.find(e=>String(e.id)===String(id))||null)}
+    function openEditor(e){
+      state.selectedId=e?String(e.id):'';
+      document.getElementById('editorTitle').textContent=e?'Editar rival':'Nuevo rival';
+      document.getElementById('eId').value=e?.id||'';
+      document.getElementById('eNombre').value=e?.nombre||'';
+      document.getElementById('eCategoria').value=e?.categoria||'seleccion_nacional';
+      document.getElementById('ePais').value=e?.pais||'';
+      document.getElementById('eActivo').value=e?.activo||'SI';
+      document.getElementById('ePlantel').value=plantelToLines(e?.plantel||[]);
+      document.getElementById('eNotas').value=e?.notas||'';
+      document.getElementById('editorStatus').textContent='';
+      renderStats(e);
+    }
+
+    async function guardarEquipo(){
+      const st=document.getElementById('editorStatus');
+      const btn=document.getElementById('guardarBtn');
+      const nombre=document.getElementById('eNombre').value.trim();
+      if(!nombre){st.textContent='Ingresá el nombre del rival.';st.className='status-line error';return}
+      btn.disabled=true;st.textContent='Guardando...';st.className='status-line';
+      try{
+        const equipo=await apiPost({action:'equipos_guardarEquipo',id:document.getElementById('eId').value||undefined,nombre,categoria:document.getElementById('eCategoria').value,pais:document.getElementById('ePais').value.trim(),activo:document.getElementById('eActivo').value,plantel:parsePlantelLines(document.getElementById('ePlantel').value),notas:document.getElementById('eNotas').value.trim()});
+        const idx=state.equipos.findIndex(e=>String(e.id)===String(equipo.id));
+        if(idx>=0)state.equipos[idx]=equipo;else state.equipos.push(equipo);
+        state.equipos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+        renderList();openEditor(equipo);
+        st.textContent='Rival guardado.';st.className='status-line ok';
+      }catch(e){st.textContent='Error: '+e.message;st.className='status-line error'}
+      finally{btn.disabled=false}
+    }
+
+    async function recalcularStats(){
+      const btn=document.getElementById('recalcBtn');btn.disabled=true;
+      try{
+        const data=await apiPost({action:'equipos_recalcularEstadisticas'});
+        state.stats=(Array.isArray(data)?data:[]).filter(Boolean).map(row=>({equipo_id:row.equipo_id,equipo_nombre:row.equipo_nombre,updated_at:row.updated_at,partidos:Number(row.partidos||0),acciones_total:Number(row.acciones_total||0),goles:Number(row.goles||0),tiros:Number(row.tiros||0),valoracion_promedio:row.valoracion_promedio===''?null:Number(row.valoracion_promedio),por_accion:parseObj(row.por_accion_json),por_contexto:parseObj(row.por_contexto_json)}));
+        renderList();renderStats(state.equipos.find(e=>String(e.id)===state.selectedId)||null);
+      }catch(e){alert('Error al recalcular: '+e.message)}
+      finally{btn.disabled=false}
+    }
+
+    function renderStats(e){
+      const cont=document.getElementById('statsContent');
+      const tag=document.getElementById('statsUpdated');
+      if(!e){cont.innerHTML='<div class="empty">Seleccioná un rival.</div>';tag.textContent='';return}
+      const st=getStats(e.id);
+      if(!st){cont.innerHTML='<div class="empty">Sin estadísticas guardadas todavía.</div>';tag.textContent='Sin datos';return}
+      tag.textContent=st.updated_at?formatDate(st.updated_at):'Actualizado';
+      cont.innerHTML=`<div class="stat-card-grid">
+        <div class="stat-card"><div class="sc-val">${st.partidos}</div><div class="sc-label">Partidos</div></div>
+        <div class="stat-card"><div class="sc-val">${st.acciones_total}</div><div class="sc-label">Acciones</div></div>
+        <div class="stat-card"><div class="sc-val">${st.goles}</div><div class="sc-label">Goles</div></div>
+        <div class="stat-card"><div class="sc-val">${st.valoracion_promedio??'—'}</div><div class="sc-label">Valoración</div></div>
+      </div>
+      <div class="split">
+        <div>${renderBreakdown('Por acción',st.por_accion)}</div>
+        <div>${renderBreakdown('Por contexto',st.por_contexto)}</div>
+      </div>`;
+    }
+
+    function renderBreakdown(title,obj){
+      const rows=Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]);
+      return `<div class="stat-row"><div class="stat-nombre">${esc(title)}</div></div>`+(rows.length?rows.map(([k,v])=>`<div class="stat-row"><div class="stat-nombre">${esc(k)}</div><div class="stat-nums">${v}</div></div>`).join(''):'<div class="empty">Sin datos.</div>');
+    }
+
+    function getStats(id){return state.stats.find(s=>String(s.equipo_id)===String(id))}
+    function plantelToLines(plantel){return (Array.isArray(plantel)?plantel:[]).map(j=>[j.Numero_Camiseta||j.Nro_Camiseta||'',j.nombre||j.Nombre||''].filter(Boolean).join(' - ')).filter(Boolean).join('\n')}
+    function parsePlantelLines(text){return String(text||'').split(/\n+/).map((line,idx)=>{const raw=line.trim();if(!raw)return null;const m=raw.match(/^(\d{1,2})\s*[-–.]\s*(.+)$/);const numero=m?m[1]:'';const nombre=m?m[2].trim():raw;const id='rival-'+Murci.normalizeText(nombre||String(idx+1)).replace(/\s+/g,'-')+'-'+(idx+1);return{id,persona_id:id,Persona_ID:id,nombre,Numero_Camiseta:numero,Nro_Camiseta:numero,Tipo_Integrante:'Jugadora',Equipo:'rival'}}).filter(Boolean)}
+    function parseObj(v){if(!v)return{};if(typeof v==='object')return v;try{return JSON.parse(v)}catch(_){return{}}}
+    function categoriaLabel(v){return{seleccion_nacional:'Selección nacional',club:'Club',regional:'Regional',otro:'Otro'}[v]||'Selección nacional'}
+    function formatDate(d){const m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(d||'')}
+    function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+  </script>
+</body>
+</html>
