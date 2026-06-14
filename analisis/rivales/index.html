@@ -66,7 +66,16 @@
               <div class="form-row"><label for="ePais">País</label><input id="ePais" placeholder="Ej: Japón"></div>
               <div class="form-row"><label for="eActivo">Estado</label><select id="eActivo"><option value="SI">Activo</option><option value="NO">Inactivo</option></select></div>
             </div>
-            <div class="form-row"><label for="ePlantel">Plantel</label><textarea id="ePlantel" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea><div class="hint">Este plantel se usa al registrar acciones del rival.</div></div>
+            <div class="form-grid">
+              <div class="form-row"><label for="plantelSelect">Planteles guardados</label><select id="plantelSelect"></select></div>
+              <div class="form-row"><label for="plantelNombre">Nombre del plantel</label><input id="plantelNombre" placeholder="Ej: Copa América 2026"></div>
+            </div>
+            <div class="form-grid">
+              <div class="form-row"><label for="plantelContexto">Contexto</label><input id="plantelContexto" placeholder="Ej: Mundial 2023"></div>
+              <div class="form-row"><label for="plantelFecha">Fecha / referencia</label><input id="plantelFecha" placeholder="Ej: 2023"></div>
+            </div>
+            <div class="form-row"><label for="ePlantel">Jugadoras del plantel</label><textarea id="ePlantel" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea><div class="hint">Podés cargar planteles históricos, convocatorias por torneo o equipos que ya no están vigentes.</div></div>
+            <div class="btn-row" style="margin-top:0"><button class="btn secondary small" id="nuevoPlantelBtn" type="button">Nuevo plantel</button><button class="btn ghost small" id="eliminarPlantelBtn" type="button">Eliminar plantel</button></div>
             <div class="form-row"><label for="eNotas">Aclaración / notas</label><textarea id="eNotas" style="min-height:70px" placeholder="Si no es selección nacional, dejá la aclaración acá."></textarea></div>
             <div class="btn-row"><button class="btn" id="guardarBtn" type="button">Guardar rival</button></div>
             <div id="editorStatus" class="status-line"></div>
@@ -84,7 +93,7 @@
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={equipos:[],stats:[],selectedId:''};
+    const state={equipos:[],stats:[],selectedId:'',plantelesDraft:[],selectedPlantelId:''};
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
     const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
 
@@ -93,6 +102,10 @@
       document.getElementById('nuevoBtn').addEventListener('click',()=>openEditor(null));
       document.getElementById('guardarBtn').addEventListener('click',guardarEquipo);
       document.getElementById('recalcBtn').addEventListener('click',recalcularStats);
+      document.getElementById('plantelSelect').addEventListener('change',onPlantelChange);
+      document.getElementById('nuevoPlantelBtn').addEventListener('click',nuevoPlantel);
+      document.getElementById('eliminarPlantelBtn').addEventListener('click',eliminarPlantel);
+      ['plantelNombre','plantelContexto','plantelFecha','ePlantel'].forEach(id=>document.getElementById(id).addEventListener('input',syncPlantelDraft));
       loadAll();
     });
 
@@ -139,7 +152,10 @@
       document.getElementById('eCategoria').value=e?.categoria||'seleccion_nacional';
       document.getElementById('ePais').value=e?.pais||'';
       document.getElementById('eActivo').value=e?.activo||'SI';
-      document.getElementById('ePlantel').value=plantelToLines(e?.plantel||[]);
+      state.plantelesDraft=normalizarPlanteles(e);
+      state.selectedPlantelId=state.plantelesDraft[0]?.id||'';
+      renderPlantelSelect();
+      fillPlantelEditor();
       document.getElementById('eNotas').value=e?.notas||'';
       document.getElementById('editorStatus').textContent='';
       renderStats(e);
@@ -152,7 +168,9 @@
       if(!nombre){st.textContent='Ingresá el nombre del rival.';st.className='status-line error';return}
       btn.disabled=true;st.textContent='Guardando...';st.className='status-line';
       try{
-        const equipo=await apiPost({action:'equipos_guardarEquipo',id:document.getElementById('eId').value||undefined,nombre,categoria:document.getElementById('eCategoria').value,pais:document.getElementById('ePais').value.trim(),activo:document.getElementById('eActivo').value,plantel:parsePlantelLines(document.getElementById('ePlantel').value),notas:document.getElementById('eNotas').value.trim()});
+        syncPlantelDraft();
+        const basePlantel=state.plantelesDraft[0]?.plantel||[];
+        const equipo=await apiPost({action:'equipos_guardarEquipo',id:document.getElementById('eId').value||undefined,nombre,categoria:document.getElementById('eCategoria').value,pais:document.getElementById('ePais').value.trim(),activo:document.getElementById('eActivo').value,plantel:basePlantel,planteles:state.plantelesDraft,notas:document.getElementById('eNotas').value.trim()});
         const idx=state.equipos.findIndex(e=>String(e.id)===String(equipo.id));
         if(idx>=0)state.equipos[idx]=equipo;else state.equipos.push(equipo);
         state.equipos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
@@ -197,6 +215,39 @@
     }
 
     function getStats(id){return state.stats.find(s=>String(s.equipo_id)===String(id))}
+    function normalizarPlanteles(e){
+      const list=Array.isArray(e?.planteles)?e.planteles:[];
+      if(list.length)return list.map((pl,idx)=>({id:String(pl.id||'plantel-'+(idx+1)),nombre:pl.nombre||pl.contexto||`Plantel ${idx+1}`,contexto:pl.contexto||'',fecha:pl.fecha||'',plantel:Array.isArray(pl.plantel)?pl.plantel:[]}));
+      const plantel=Array.isArray(e?.plantel)?e.plantel:[];
+      return [{id:'base',nombre:'Plantel base',contexto:'',fecha:'',plantel}];
+    }
+    function renderPlantelSelect(){
+      const sel=document.getElementById('plantelSelect');
+      sel.innerHTML=state.plantelesDraft.map(pl=>`<option value="${esc(pl.id)}">${esc(pl.nombre)}</option>`).join('');
+      sel.value=state.selectedPlantelId;
+    }
+    function fillPlantelEditor(){
+      const pl=state.plantelesDraft.find(x=>String(x.id)===String(state.selectedPlantelId))||state.plantelesDraft[0]||{id:'base',nombre:'Plantel base',contexto:'',fecha:'',plantel:[]};
+      state.selectedPlantelId=pl.id;
+      document.getElementById('plantelNombre').value=pl.nombre||'';
+      document.getElementById('plantelContexto').value=pl.contexto||'';
+      document.getElementById('plantelFecha').value=pl.fecha||'';
+      document.getElementById('ePlantel').value=plantelToLines(pl.plantel||[]);
+      renderPlantelSelect();
+    }
+    function syncPlantelDraft(){
+      const id=state.selectedPlantelId||'base';
+      let pl=state.plantelesDraft.find(x=>String(x.id)===String(id));
+      if(!pl){pl={id,nombre:'Plantel base',contexto:'',fecha:'',plantel:[]};state.plantelesDraft.push(pl)}
+      pl.nombre=document.getElementById('plantelNombre').value.trim()||'Plantel sin nombre';
+      pl.contexto=document.getElementById('plantelContexto').value.trim();
+      pl.fecha=document.getElementById('plantelFecha').value.trim();
+      pl.plantel=parsePlantelLines(document.getElementById('ePlantel').value);
+      renderPlantelSelect();
+    }
+    function onPlantelChange(){syncPlantelDraft();state.selectedPlantelId=document.getElementById('plantelSelect').value;fillPlantelEditor()}
+    function nuevoPlantel(){syncPlantelDraft();const id='plantel-'+Date.now();state.plantelesDraft.push({id,nombre:'Nuevo plantel',contexto:'',fecha:'',plantel:[]});state.selectedPlantelId=id;fillPlantelEditor()}
+    function eliminarPlantel(){if(state.plantelesDraft.length<=1){alert('El equipo debe tener al menos un plantel.');return}state.plantelesDraft=state.plantelesDraft.filter(pl=>String(pl.id)!==String(state.selectedPlantelId));state.selectedPlantelId=state.plantelesDraft[0]?.id||'';fillPlantelEditor()}
     function plantelToLines(plantel){return (Array.isArray(plantel)?plantel:[]).map(j=>[j.Numero_Camiseta||j.Nro_Camiseta||'',j.nombre||j.Nombre||''].filter(Boolean).join(' - ')).filter(Boolean).join('\n')}
     function parsePlantelLines(text){return String(text||'').split(/\n+/).map((line,idx)=>{const raw=line.trim();if(!raw)return null;const m=raw.match(/^(\d{1,2})\s*[-–.]\s*(.+)$/);const numero=m?m[1]:'';const nombre=m?m[2].trim():raw;const id='rival-'+Murci.normalizeText(nombre||String(idx+1)).replace(/\s+/g,'-')+'-'+(idx+1);return{id,persona_id:id,Persona_ID:id,nombre,Numero_Camiseta:numero,Nro_Camiseta:numero,Tipo_Integrante:'Jugadora',Equipo:'rival'}}).filter(Boolean)}
     function parseObj(v){if(!v)return{};if(typeof v==='object')return v;try{return JSON.parse(v)}catch(_){return{}}}

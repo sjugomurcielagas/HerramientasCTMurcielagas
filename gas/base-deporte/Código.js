@@ -2856,7 +2856,7 @@ function safeJsonParse(val, fallback) {
 
 var EQUIPOS_HEADERS_ = [
   'id', 'nombre', 'nombre_normalizado', 'tipo', 'categoria', 'pais',
-  'plantel_json', 'notas', 'activo', 'created_at', 'updated_at'
+  'plantel_json', 'planteles_json', 'notas', 'activo', 'created_at', 'updated_at'
 ];
 
 var EQUIPO_STATS_HEADERS_ = [
@@ -2892,6 +2892,8 @@ function equipos_parsePlantel_(value) {
 }
 
 function equipos_parseEquipo_(r) {
+  var plantelBase = equipos_parsePlantel_(r.plantel_json);
+  var planteles = equipos_parsePlanteles_(r.planteles_json, plantelBase);
   return {
     id: String(r.id || '').trim(),
     nombre: String(r.nombre || '').trim(),
@@ -2899,12 +2901,44 @@ function equipos_parseEquipo_(r) {
     tipo: String(r.tipo || 'rival').trim(),
     categoria: String(r.categoria || 'seleccion_nacional').trim(),
     pais: String(r.pais || '').trim(),
-    plantel: equipos_parsePlantel_(r.plantel_json),
+    plantel: plantelBase,
+    planteles: planteles,
     notas: String(r.notas || '').trim(),
     activo: String(r.activo || 'SI').trim() || 'SI',
     created_at: r.created_at || '',
     updated_at: r.updated_at || ''
   };
+}
+
+function equipos_parsePlanteles_(value, plantelBase) {
+  var list = Array.isArray(value) ? value : safeJsonParse(value, []);
+  if (!Array.isArray(list)) list = [];
+  var parsed = list.map(function(pl, idx) {
+    if (!pl || typeof pl !== 'object') return null;
+    var id = String(pl.id || '').trim() || ('plantel-' + (idx + 1));
+    var nombre = String(pl.nombre || pl.contexto || '').trim() || ('Plantel ' + (idx + 1));
+    return {
+      id: id,
+      nombre: nombre,
+      contexto: String(pl.contexto || '').trim(),
+      fecha: String(pl.fecha || '').trim(),
+      plantel: equipos_parsePlantel_(pl.plantel || pl.plantel_json || [])
+    };
+  }).filter(Boolean);
+  if (!parsed.length && Array.isArray(plantelBase) && plantelBase.length) {
+    parsed.push({ id: 'base', nombre: 'Plantel base', contexto: '', fecha: '', plantel: plantelBase });
+  }
+  return parsed;
+}
+
+function equipos_getPlantelById_(equipo, plantelId) {
+  if (!equipo) return [];
+  var id = String(plantelId || '').trim();
+  if (id && Array.isArray(equipo.planteles)) {
+    var found = equipo.planteles.find(function(pl) { return String(pl.id) === id; });
+    if (found) return found.plantel || [];
+  }
+  return equipo.plantel || [];
 }
 
 function equipos_getEquipos() {
@@ -2944,6 +2978,7 @@ function equipos_guardarEquipo(p) {
   }
   if (!existing) existing = equipos_findByName_(nombre);
   var plantel = Array.isArray(p.plantel) ? p.plantel : equipos_parsePlantel_(p.plantel_json || []);
+  var planteles = Array.isArray(p.planteles) ? p.planteles : equipos_parsePlanteles_(p.planteles_json || [], plantel);
   var values = {
     id: existing && existing.row ? existing.row.id : (p.id || newId()),
     nombre: nombre,
@@ -2952,6 +2987,15 @@ function equipos_guardarEquipo(p) {
     categoria: p.categoria || 'seleccion_nacional',
     pais: p.pais || '',
     plantel_json: JSON.stringify(equipos_parsePlantel_(plantel)),
+    planteles_json: JSON.stringify(planteles.map(function(pl, idx) {
+      return {
+        id: String(pl.id || '').trim() || ('plantel-' + (idx + 1)),
+        nombre: String(pl.nombre || pl.contexto || '').trim() || ('Plantel ' + (idx + 1)),
+        contexto: String(pl.contexto || '').trim(),
+        fecha: String(pl.fecha || '').trim(),
+        plantel: equipos_parsePlantel_(pl.plantel || [])
+      };
+    })),
     notas: p.notas || '',
     activo: p.activo || 'SI',
     created_at: existing && existing.row ? (existing.row.created_at || now) : now,
@@ -3081,11 +3125,15 @@ function equipos_recalcularStatsPorPartido_(partidoId) {
     var partido = sheetToObjects(getSheet(SHEETS.partidos)).map(_parsePartido)
       .find(function(p) { return String(p.id) === String(partidoId); });
     if (!partido) return;
-    var equipoId = String(partido.rival_id || '').trim();
-    if (!equipoId) return;
-    var equipo = sheetToObjects(equipos_getSheet_()).map(equipos_parseEquipo_)
-      .find(function(e) { return String(e.id) === equipoId; });
-    if (equipo) equipos_calcularYGuardarStats_(equipo);
+    var ids = [partido.rival_id, partido.equipo_local_id, partido.equipo_visitante_id]
+      .map(function(id) { return String(id || '').trim(); })
+      .filter(function(id, idx, arr) { return id && arr.indexOf(id) === idx; });
+    if (!ids.length) return;
+    var equipos = sheetToObjects(equipos_getSheet_()).map(equipos_parseEquipo_);
+    ids.forEach(function(equipoId) {
+      var equipo = equipos.find(function(e) { return String(e.id) === equipoId; });
+      if (equipo) equipos_calcularYGuardarStats_(equipo);
+    });
   } catch (err) {
     try { Logger.log('No se pudieron recalcular stats de equipo: %s', err && err.message ? err.message : err); } catch (_) {}
   }
@@ -3131,6 +3179,8 @@ function _parsePartido(r) {
     rival_id: String(r.rival_id || '').trim(),
     contexto_partido: String(r.contexto_partido || r.contexto || '').trim(),
     rival_plantel: equipos_parsePlantel_(r.rival_plantel_json || r.plantel_rival_json || '[]'),
+    rival_plantel_id: String(r.rival_plantel_id || '').trim(),
+    rival_plantel_nombre: String(r.rival_plantel_nombre || '').trim(),
     incluye_murcielagas: String(r.incluye_murcielagas || 'SI').toUpperCase() !== 'NO',
     equipo_local_id: String(r.equipo_local_id || '').trim(),
     equipo_visitante_id: String(r.equipo_visitante_id || '').trim(),
@@ -3138,6 +3188,8 @@ function _parsePartido(r) {
     equipo_visitante_nombre: String(r.equipo_visitante_nombre || '').trim(),
     equipo_local_plantel: equipos_parsePlantel_(r.equipo_local_plantel_json || '[]'),
     equipo_visitante_plantel: equipos_parsePlantel_(r.equipo_visitante_plantel_json || '[]'),
+    equipo_local_plantel_id: String(r.equipo_local_plantel_id || '').trim(),
+    equipo_visitante_plantel_id: String(r.equipo_visitante_plantel_id || '').trim(),
     tipo_competencia: String(r.tipo_competencia || '').trim(),
     tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim()
   };
@@ -3151,11 +3203,18 @@ function partidos_crearPartido(p) {
   const id = newId();
   const incluyeMurcielagas = String(p.incluye_murcielagas || 'SI').toUpperCase() !== 'NO';
   const equipo = equipos_resolverEquipo_(p);
+  const rivalPlantelId = String(p.rival_plantel_id || '').trim();
+  const rivalPlantel = equipos_getPlantelById_(equipo, rivalPlantelId).length ? equipos_getPlantelById_(equipo, rivalPlantelId) : (Array.isArray(p.rival_plantel) ? p.rival_plantel : []);
+  const rivalPlantelObj = (equipo.planteles || []).find(function(pl) { return String(pl.id) === rivalPlantelId; });
   var equipoLocal = null;
   var equipoVisitante = null;
+  var localPlantel = [];
+  var visitantePlantel = [];
   if (!incluyeMurcielagas) {
     equipoLocal = equipos_resolverEquipo_({ rival_id: p.equipo_local_id, rival: p.equipo_local_nombre || p.local || p.rival, rival_plantel: p.equipo_local_plantel || [] });
     equipoVisitante = equipos_resolverEquipo_({ rival_id: p.equipo_visitante_id, rival: p.equipo_visitante_nombre || p.visitante || p.rival, rival_plantel: p.equipo_visitante_plantel || [] });
+    localPlantel = equipos_getPlantelById_(equipoLocal, p.equipo_local_plantel_id).length ? equipos_getPlantelById_(equipoLocal, p.equipo_local_plantel_id) : (equipoLocal.plantel || []);
+    visitantePlantel = equipos_getPlantelById_(equipoVisitante, p.equipo_visitante_plantel_id).length ? equipos_getPlantelById_(equipoVisitante, p.equipo_visitante_plantel_id) : (equipoVisitante.plantel || []);
   }
   const sheet = getSheet(SHEETS.partidos);
   const headers = [
@@ -3167,9 +3226,11 @@ function partidos_crearPartido(p) {
     'goles_primer_tiempo', 'formacion', 'sistema', 'notas',
     'convocadas', 'ratings', 'momentos', 'timestamp',
     'rival_id', 'contexto_partido', 'rival_plantel_json',
+    'rival_plantel_id', 'rival_plantel_nombre',
     'incluye_murcielagas', 'equipo_local_id', 'equipo_visitante_id',
     'equipo_local_nombre', 'equipo_visitante_nombre',
-    'equipo_local_plantel_json', 'equipo_visitante_plantel_json'
+    'equipo_local_plantel_json', 'equipo_visitante_plantel_json',
+    'equipo_local_plantel_id', 'equipo_visitante_plantel_id'
   ];
   appendObjectRow_(sheet, {
     id: id,
@@ -3195,14 +3256,18 @@ function partidos_crearPartido(p) {
     timestamp: new Date().toISOString(),
     rival_id: equipo.id || '',
     contexto_partido: p.contexto_partido || p.contexto || p.nombre || '',
-    rival_plantel_json: JSON.stringify(equipo.plantel || []),
+    rival_plantel_json: JSON.stringify(rivalPlantel),
+    rival_plantel_id: rivalPlantelId,
+    rival_plantel_nombre: rivalPlantelObj ? rivalPlantelObj.nombre : '',
     incluye_murcielagas: incluyeMurcielagas ? 'SI' : 'NO',
     equipo_local_id: equipoLocal ? equipoLocal.id : '',
     equipo_visitante_id: equipoVisitante ? equipoVisitante.id : '',
     equipo_local_nombre: equipoLocal ? equipoLocal.nombre : 'Las Murciélagas',
     equipo_visitante_nombre: equipoVisitante ? equipoVisitante.nombre : (equipo.nombre || p.rival),
-    equipo_local_plantel_json: JSON.stringify(equipoLocal ? equipoLocal.plantel : []),
-    equipo_visitante_plantel_json: JSON.stringify(equipoVisitante ? equipoVisitante.plantel : [])
+    equipo_local_plantel_json: JSON.stringify(equipoLocal ? localPlantel : []),
+    equipo_visitante_plantel_json: JSON.stringify(equipoVisitante ? visitantePlantel : []),
+    equipo_local_plantel_id: p.equipo_local_plantel_id || '',
+    equipo_visitante_plantel_id: p.equipo_visitante_plantel_id || ''
   }, headers);
 
   return ok(true, { id: id, rival_id: equipo.id || '', rival: equipo.nombre || p.rival });
@@ -3254,10 +3319,38 @@ function partidos_eliminarPartido(p) {
   const row = findRowIndex(sheet, 'id', p.id);
 
   if (row === -1) throw new Error('Partido no encontrado');
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  var rowValues = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var partido = {};
+  headers.forEach(function(h, i) { partido[h] = rowValues[i]; });
+  var parsed = _parsePartido(partido);
 
   sheet.deleteRow(row);
+  partidos_eliminarAccionesPorPartido_(p.id);
+  var ids = [parsed.rival_id, parsed.equipo_local_id, parsed.equipo_visitante_id]
+    .map(function(id) { return String(id || '').trim(); })
+    .filter(function(id, idx, arr) { return id && arr.indexOf(id) === idx; });
+  var equipos = sheetToObjects(equipos_getSheet_()).map(equipos_parseEquipo_);
+  ids.forEach(function(equipoId) {
+    var equipo = equipos.find(function(e) { return String(e.id) === equipoId; });
+    if (equipo) equipos_calcularYGuardarStats_(equipo);
+  });
 
   return ok(true, { id: p.id });
+}
+
+function partidos_eliminarAccionesPorPartido_(partidoId) {
+  var sheet = partidos_getOrCreateAccionesSheet_();
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return;
+  var headers = data[0].map(String);
+  var col = headers.indexOf('partido_id');
+  if (col === -1) return;
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][col]) === String(partidoId)) {
+      sheet.deleteRow(i + 1);
+    }
+  }
 }
 
 // ─────────────────────────────────────────

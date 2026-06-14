@@ -238,6 +238,10 @@
                   <select id="nEquipoSelect"></select>
                 </div>
                 <div class="form-row">
+                  <label for="nRivalPlantelSelect">Plantel a usar</label>
+                  <select id="nRivalPlantelSelect"></select>
+                </div>
+                <div class="form-row">
                   <label for="nRival">Nuevo rival</label>
                   <input id="nRival" type="text" placeholder="Ej: Japón" autocomplete="off">
                   <div class="hint">Si no está en la lista, escribilo acá. Al crear o guardar queda disponible para todos los módulos.</div>
@@ -266,6 +270,14 @@
                 <div class="form-row">
                   <label for="nVisitanteSelect">Equipo visitante</label>
                   <select id="nVisitanteSelect"></select>
+                </div>
+                <div class="form-row">
+                  <label for="nLocalPlantelSelect">Plantel local</label>
+                  <select id="nLocalPlantelSelect"></select>
+                </div>
+                <div class="form-row">
+                  <label for="nVisitantePlantelSelect">Plantel visitante</label>
+                  <select id="nVisitantePlantelSelect"></select>
                 </div>
               </div>
               <div class="hint">Usalo para analizar partidos donde no juegan Las Murciélagas. El registro de acciones toma los planteles de esos equipos.</div>
@@ -391,7 +403,10 @@
       document.getElementById('crearBtn').addEventListener('click',crearPartido);
       document.getElementById('guardarRivalBtn').addEventListener('click',guardarRivalActual);
       document.getElementById('nEquipoSelect').addEventListener('change',onEquipoChange);
+      document.getElementById('nRivalPlantelSelect').addEventListener('change',onRivalPlantelChange);
       document.getElementById('nNeutral').addEventListener('change',onNeutralChange);
+      document.getElementById('nLocalSelect').addEventListener('change',()=>renderPlantelesEquipo('nLocalSelect','nLocalPlantelSelect'));
+      document.getElementById('nVisitanteSelect').addEventListener('change',()=>renderPlantelesEquipo('nVisitanteSelect','nVisitantePlantelSelect'));
       document.getElementById('searchInput').addEventListener('input',renderLista);
       document.getElementById('tipoFilter').addEventListener('change',renderLista);
       document.getElementById('resFilter').addEventListener('change',renderLista);
@@ -456,6 +471,9 @@
         const el=document.getElementById(id);
         if(el)el.innerHTML='<option value="">Seleccionar...</option>'+options;
       });
+      renderPlantelesEquipo('nEquipoSelect','nRivalPlantelSelect');
+      renderPlantelesEquipo('nLocalSelect','nLocalPlantelSelect');
+      renderPlantelesEquipo('nVisitanteSelect','nVisitantePlantelSelect');
     }
 
     function onNeutralChange(){
@@ -468,9 +486,29 @@
       const id=document.getElementById('nEquipoSelect').value;
       const equipo=state.equipos.find(e=>String(e.id)===String(id));
       document.getElementById('nRival').value=equipo?equipo.nombre:'';
-      document.getElementById('nRivalPlantel').value=equipo?plantelToLines(equipo.plantel||[]):'';
+      renderPlantelesEquipo('nEquipoSelect','nRivalPlantelSelect');
+      document.getElementById('nRivalPlantel').value=equipo?plantelToLines(getPlantelSeleccionado(equipo,'nRivalPlantelSelect')):'';
       document.getElementById('rivalStatus').textContent=equipo?'Rival cargado del catálogo.':'';
       document.getElementById('rivalStatus').className='status-line';
+    }
+
+    function onRivalPlantelChange(){
+      const equipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nEquipoSelect').value));
+      if(equipo)document.getElementById('nRivalPlantel').value=plantelToLines(getPlantelSeleccionado(equipo,'nRivalPlantelSelect'));
+    }
+
+    function renderPlantelesEquipo(equipoSelectId,plantelSelectId){
+      const equipo=state.equipos.find(e=>String(e.id)===String(document.getElementById(equipoSelectId)?.value));
+      const sel=document.getElementById(plantelSelectId);
+      if(!sel)return;
+      const planteles=Array.isArray(equipo?.planteles)&&equipo.planteles.length?equipo.planteles:[{id:'',nombre:'Plantel base',plantel:equipo?.plantel||[]}];
+      sel.innerHTML=planteles.map(pl=>`<option value="${esc(pl.id||'')}">${esc(pl.nombre||'Plantel base')}</option>`).join('');
+    }
+
+    function getPlantelSeleccionado(equipo,plantelSelectId){
+      const id=document.getElementById(plantelSelectId)?.value||'';
+      const found=(equipo?.planteles||[]).find(pl=>String(pl.id)===String(id));
+      return found?.plantel||equipo?.plantel||[];
     }
 
     function plantelToLines(plantel){
@@ -501,7 +539,8 @@
       st.textContent='Guardando rival...';st.className='status-line';btn.disabled=true;
       try{
         const currentId=document.getElementById('nEquipoSelect').value;
-        const equipo=await apiPost({action:'equipos_guardarEquipo',id:currentId||undefined,nombre,tipo:'rival',plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value)});
+        const plantel=parsePlantelLines(document.getElementById('nRivalPlantel').value);
+        const equipo=await apiPost({action:'equipos_guardarEquipo',id:currentId||undefined,nombre,tipo:'rival',plantel,planteles:[{id:'base',nombre:'Plantel base',contexto:'',fecha:'',plantel}]});
         const idx=state.equipos.findIndex(e=>String(e.id)===String(equipo.id));
         if(idx>=0)state.equipos[idx]=equipo;else state.equipos.push(equipo);
         state.equipos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
@@ -533,7 +572,7 @@
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
       const htP=document.getElementById('nHtPropio').value;
       const htR=document.getElementById('nHtRival').value;
-      const payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,contexto_partido:contexto,tipo,modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:neutral?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel:localEquipo?.plantel||[],equipo_visitante_plantel:visitanteEquipo?.plantel||[],...state.nuevoScore};
+      const payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,rival_plantel_id:document.getElementById('nRivalPlantelSelect').value,contexto_partido:contexto,tipo,modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:neutral?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel_id:document.getElementById('nLocalPlantelSelect').value,equipo_visitante_plantel_id:document.getElementById('nVisitantePlantelSelect').value,equipo_local_plantel:getPlantelSeleccionado(localEquipo,'nLocalPlantelSelect'),equipo_visitante_plantel:getPlantelSeleccionado(visitanteEquipo,'nVisitantePlantelSelect'),...state.nuevoScore};
       if(htP!=='')payload.ht_propios=parseInt(htP);
       if(htR!=='')payload.ht_rival=parseInt(htR);
       if(state.modo==='detalle'){
@@ -563,7 +602,11 @@
       document.querySelector('.rival-editor').classList.remove('hidden');
       document.getElementById('nLocalSelect').value='';
       document.getElementById('nVisitanteSelect').value='';
+      document.getElementById('nRivalPlantelSelect').innerHTML='';
+      document.getElementById('nLocalPlantelSelect').innerHTML='';
+      document.getElementById('nVisitantePlantelSelect').innerHTML='';
       document.getElementById('rivalStatus').textContent='';
+      renderEquiposSelect();
       document.getElementById('nFecha').valueAsDate=new Date();
       state.nuevoScore={goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0};
       document.getElementById('scorePropio').textContent='0';
@@ -602,6 +645,7 @@
           <div class="btn-row" style="margin:0;justify-content:flex-end">
             <button class="btn small secondary" onclick="openPartido(${jsArg(p.id)})">Ver</button>
             <a class="btn small" href="registro/index.html?partido_id=${encodeURIComponent(String(p.id))}" style="text-decoration:none">Registrar acciones</a>
+            <button class="btn small danger" onclick="eliminarPartido(${jsArg(p.id)})">Eliminar</button>
           </div>
         </div>`;
       }).join('');
