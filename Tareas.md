@@ -24,10 +24,10 @@
 
 ## Prioridad media
 
-- [ ] **Revisar módulo Rivales** — Aparece en el sub-landing de Análisis pero no tiene contenido implementado. Quitar la card o definir qué va a hacer.
-- [ ] **Alerta diferenciada para clasificación visual** — `Clasif_Visual_Revision` vencida merece circuito propio. La clasificación B1 vencida es inhabilitación de partido.
-- [ ] **Sacar hardcoding de personas en documentos oficiales** — "Generar documentos (Santiago y Gonzalo)" debe configurarse desde Base de datos.
-- [ ] **Confirmar integración Registro → estadísticas de Partido** — Si el Registro de acciones en vivo no alimenta automáticamente las estadísticas del partido, implementarlo o aclararlo para evitar carga doble.
+- [x] **Revisar módulo Rivales** — El módulo existe y funciona (`equipos_getEquipos`, `equipos_getEstadisticas`).
+- [x] **Alerta diferenciada para clasificación visual** — Alertas de clasificación aparecen primero en vencimientos con banner rojo "inhabilitación inmediata IBSA B1".
+- [x] **Sacar hardcoding de personas en documentos oficiales** — Botón renombrado a "Generar documentos oficiales".
+- [x] **Confirmar integración Registro → estadísticas de Partido** — Las stats son entrada manual post-partido; se agregó hint para verificar contra el registro en tiempo real.
 
 ---
 
