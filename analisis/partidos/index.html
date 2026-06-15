@@ -183,6 +183,9 @@
     @media(max-width:540px){main{padding:12px 11px 64px}.panel-head h2{font-size:1.08rem}.lista-toolbar{grid-template-columns:1fr 1fr}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
+    .propio-chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0}
+    .propio-chip{border:2px solid var(--borde);background:var(--card);color:var(--azul-800);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.84rem;font-weight:800;transition:.1s;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+    .propio-chip.excluido{background:#f1f5f9;border-color:#cbd5e1;color:var(--muted);text-decoration:line-through;opacity:.6}
   </style>
 </head>
 <body>
@@ -268,7 +271,7 @@
                 <div class="chip-group" id="nModoChips">
                   <button type="button" class="chip-btn sel" data-val="rival" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Murciélagas vs rival</button>
                   <button type="button" class="chip-btn" data-val="interno" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Partido interno</button>
-                  <button type="button" class="chip-btn" data-val="terceros" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Terceros vs terceros</button>
+                  <button type="button" class="chip-btn" data-val="terceros" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Entre Rivales</button>
                 </div>
                 <div class="hint" style="margin-top:7px">El modo interno usa el plantel activo y te deja repartirlo entre dos equipos guardables.</div>
               </div>
@@ -303,6 +306,17 @@
                       <button id="guardarRivalBtn" class="btn secondary small" type="button">Guardar rival</button>
                     </div>
                     <div id="rivalStatus" class="status-line"></div>
+                  </div>
+                </details>
+                <details class="form-block" id="propioEditor">
+                  <summary><span class="block-title">Plantel de Las Murciélagas</span><span class="block-arrow">▼</span></summary>
+                  <div class="block-body">
+                    <div class="hint" style="margin-bottom:8px">Todas las jugadoras activas están incluidas por defecto. Tocá una para excluirla del partido. Para jugadoras que no están en el plantel actual (partidos históricos o de otras épocas), anotálas abajo.</div>
+                    <div id="propioRoster"></div>
+                    <div class="form-row" style="margin-top:10px">
+                      <label for="nPropioPlantelExtra">Jugadoras adicionales</label>
+                      <textarea id="nPropioPlantelExtra" class="plantel-lines" placeholder="Una por línea. Opcional: 7 - Apellido Nombre"></textarea>
+                    </div>
                   </div>
                 </details>
               </div>
@@ -380,7 +394,7 @@
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null}};
+    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null},propioAsignacion:{}};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -424,6 +438,7 @@
         state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
         state.sesionesPenales=sesionesRes.status==='fulfilled'&&Array.isArray(sesionesRes.value)?sesionesRes.value:[];
         renderEquiposSelect();
+        renderPropioPlantelSelector();
         onModoPartidoChange();
         renderLista();
       }catch(e){alert('Error al cargar datos: '+e.message)}
@@ -728,7 +743,7 @@
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
       const htP=document.getElementById('nHtPropio')?.value??'';
       const htR=document.getElementById('nHtRival')?.value??'';
-      let payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,rival_plantel_id:document.getElementById('nRivalPlantelSelect').value,contexto_partido:contexto,tipo,tipo_partido:esInterno?'interno':(esTerceros?'terceros':'murci_vs_rival'),modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:(esTerceros||esInterno)?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel_id:document.getElementById('nLocalPlantelSelect').value,equipo_visitante_plantel_id:document.getElementById('nVisitantePlantelSelect').value,equipo_local_plantel:getPlantelSeleccionado(localEquipo,'nLocalPlantelSelect'),equipo_visitante_plantel:getPlantelSeleccionado(visitanteEquipo,'nVisitantePlantelSelect'),...state.nuevoScore};
+      let payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,rival_plantel_id:document.getElementById('nRivalPlantelSelect').value,contexto_partido:contexto,tipo,tipo_partido:esInterno?'interno':(esTerceros?'terceros':'murci_vs_rival'),modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),propio_plantel:esRival?getPropioPlantleFinal():[],incluye_murcielagas:(esTerceros||esInterno)?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel_id:document.getElementById('nLocalPlantelSelect').value,equipo_visitante_plantel_id:document.getElementById('nVisitantePlantelSelect').value,equipo_local_plantel:getPlantelSeleccionado(localEquipo,'nLocalPlantelSelect'),equipo_visitante_plantel:getPlantelSeleccionado(visitanteEquipo,'nVisitantePlantelSelect'),...state.nuevoScore};
       if(esInterno){
         const equiposInternos=await guardarEquiposInternosActuales();
         if(!equiposInternos)return;
@@ -767,6 +782,9 @@
       selectChip('nTipoChips',document.querySelector('#nTipoChips .chip-btn[data-val="oficial"]'));
       state.modoPartido='rival';
       state.internoAsignacion={};
+      state.propioAsignacion={};
+      renderPropioPlantelSelector();
+      const extraProp=document.getElementById('nPropioPlantelExtra');if(extraProp)extraProp.value='';
       const rivalEl=document.getElementById('rivalEditor');
       const internoEl=document.getElementById('internoEditor');
       const tercerosEl=document.getElementById('tercerosEditor');
@@ -1330,6 +1348,10 @@
         </div>
         <div class="footer-note">Estadísticas sobre ${total} partido${total!==1?'s':''} registrados.</div>`;
     }
+
+    function renderPropioPlantelSelector(){const cont=document.getElementById('propioRoster');if(!cont)return;const jugadoras=(state.plantelActivo||[]).filter(p=>['Jugadora','Arquera'].includes(String(p.Tipo_Integrante||'').trim())).sort((a,b)=>Number(a.Numero_Camiseta||a.Nro_Camiseta||99)-Number(b.Numero_Camiseta||b.Nro_Camiseta||99));if(!jugadoras.length){cont.innerHTML='<div class="empty">Sin jugadoras activas en el plantel.</div>';return;}cont.innerHTML='<div class="propio-chip-grid">'+jugadoras.map(p=>{const key=personaKey(p);const excluida=state.propioAsignacion[key]===false;const num=p.Numero_Camiseta||p.Nro_Camiseta||'';const nombre=nombrePersona(p)||key;const label=(num?num+' · ':'')+nombre;return`<button type="button" class="propio-chip${excluida?' excluido':''}" data-key="${esc(key)}" onclick="onPropioChipClick(this)">${esc(label)}</button>`;}).join('')+'</div>';}
+    function onPropioChipClick(btn){const key=btn.dataset.key;if(!key)return;if(state.propioAsignacion[key]===false){delete state.propioAsignacion[key];}else{state.propioAsignacion[key]=false;}btn.classList.toggle('excluido',state.propioAsignacion[key]===false);}
+    function getPropioPlantleFinal(){const delPlantel=(state.plantelActivo||[]).filter(p=>['Jugadora','Arquera'].includes(String(p.Tipo_Integrante||'').trim())).filter(p=>state.propioAsignacion[personaKey(p)]!==false).map(p=>{const num=p.Numero_Camiseta||p.Nro_Camiseta||'';const nombre=nombrePersona(p)||'';return{persona_id:personaKey(p),nombre,numero:String(num),tipo:p.Tipo_Integrante||''};});const extraText=document.getElementById('nPropioPlantelExtra')?.value||'';const extra=parsePlantelLines(extraText).map(l=>({nombre:l.nombre||'',numero:l.Numero_Camiseta||'',tipo:'Jugadora',extra:true}));return[...delPlantel,...extra];}
 
     /* ===== HELPERS ===== */
     function calcRes(p){if((p.goles_propios||0)>(p.goles_rival||0))return'victoria';if((p.goles_propios||0)<(p.goles_rival||0))return'derrota';return'empate'}
