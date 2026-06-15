@@ -1249,6 +1249,7 @@ let temporalMode = 'weekly';
 let blockOffset = 0;
 let customRange = null;
 let excludeConcentrations = Boolean(lsGet('murcielagasExcludeConcentrations', false));
+let concentrationRanges = [];
 let aiRequestCounter = 0;
 let activeAiRequestId = 0;
 
@@ -1767,12 +1768,45 @@ function buildSourceStatusLabel() {
 
 function shouldExcludeRowByContext(row, inferredWeeks = new Set()) {
   if (!excludeConcentrations) return false;
+
+  // Fuente primaria: fechas reales registradas en el módulo de Concentraciones
+  if (concentrationRanges.length && row?.fecha) {
+    if (concentrationRanges.some(r => row.fecha >= r.start && row.fecha <= r.end)) return true;
+  }
+
+  // Secundario: palabras clave en comentarios de la jugadora
   const text = normalizeKey(row?.comentario || '');
-  const byComment = text
-    ? /concentracion|concentración|hotel|cenard|convivencia|microciclo concentrado/.test(text)
-    : false;
-  const byWeek = inferredWeeks.has(row?.week);
-  return byComment || byWeek;
+  if (text && /concentracion|hotel|cenard|convivencia|microciclo concentrado/.test(text)) return true;
+
+  // Heurístico estadístico solo si no hay rangos reales disponibles
+  return !concentrationRanges.length && inferredWeeks.has(row?.week);
+}
+
+async function loadConcentraciones() {
+  try {
+    const data = await Murci.apiGetCached(
+      'concentraciones_getConcentraciones',
+      {},
+      { ttlMs: 5 * 60 * 1000 },
+      API_BASE_URL
+    );
+    const list = Array.isArray(data) ? data
+      : Array.isArray(data?.data) ? data.data
+      : Array.isArray(data?.concentraciones) ? data.concentraciones
+      : [];
+    concentrationRanges = list.map(c => {
+      const startStr = c.fecha_inicio || c.fechaInicio || c.inicio || '';
+      const endStr = c.fecha_fin || c.fechaFin || c.fin || startStr;
+      const start = parseDate(startStr);
+      if (!start) return null;
+      const end = parseDate(endStr) || start;
+      const endExtended = new Date(end);
+      endExtended.setHours(23, 59, 59, 999);
+      return { start, end: endExtended, nombre: c.nombre || '' };
+    }).filter(Boolean);
+  } catch {
+    concentrationRanges = [];
+  }
 }
 
 function inferConcentrationWeeksFromLoad(inputRows) {
@@ -2181,6 +2215,7 @@ function syncScopeControls() {
     }
 
     setRows(parsed, 'contexto compartido');
+    loadConcentraciones();
     loadAnalyticsInBackground();
 
   } catch (error) {
@@ -2689,7 +2724,7 @@ return {
         const lastWeek = (s.weekly || [])[s.weekly.length - 1];
         return [
           `Modo individual.`,
-          excludeConcentrations ? `Filtro activo: excluyendo concentraciones detectadas por comentario o por semanas de carga colectiva atípica.` : `Filtro activo: incluyendo todos los registros disponibles.`,
+          excludeConcentrations ? `Filtro activo: excluyendo semanas dentro de períodos de concentración registrados.` : `Filtro activo: incluyendo todos los registros disponibles.`,
           `Período analizado: ${s.periodLabel}.`,
           `${s.player} reportó ${s.reportedWeeks} de ${s.periodWeeks} semanas.`,
           `Promedio total: ${s.avgTotal}. Promedio físico: ${s.avgFisico}. Promedio técnico-táctico: ${s.avgTecnico}.`,
@@ -2706,7 +2741,7 @@ return {
         const lowContinuity = topBy(s.periodicByPlayer, 'semanasReportadas', 3, 'asc').map(p => `${p.jugadora} (${p.semanasReportadas}/${p.semanasTotales})`);
         return [
           `Modo plantel periódico.`,
-          excludeConcentrations ? `Filtro activo: excluyendo concentraciones detectadas por comentario o por semanas de carga colectiva atípica.` : `Filtro activo: incluyendo todos los registros disponibles.`,
+          excludeConcentrations ? `Filtro activo: excluyendo semanas dentro de períodos de concentración registrados.` : `Filtro activo: incluyendo todos los registros disponibles.`,
           `Período analizado: ${s.periodLabel}.`,
           `Jugadoras con al menos una carga: ${s.periodicActivePlayers.length} de ${s.periodicByPlayer.length}.`,
           `Promedio semanal del bloque: total ${s.periodicAvg.total}, físico ${s.periodicAvg.fisico}, técnico-táctico ${s.periodicAvg.tecnico}.`,
@@ -2721,7 +2756,7 @@ return {
       const topWeek = topBy((s.selectedWeekByPlayer || []).filter(r => r.estado === 'Cargó'), 'total', 3, 'desc').map(r => `${r.jugadora} (${r.total})`);
       return [
         `Modo plantel semanal.`,
-        excludeConcentrations ? `Filtro activo: excluyendo concentraciones detectadas por comentario o por semanas de carga colectiva atípica.` : `Filtro activo: incluyendo todos los registros disponibles.`,
+        excludeConcentrations ? `Filtro activo: excluyendo semanas dentro de períodos de concentración registrados.` : `Filtro activo: incluyendo todos los registros disponibles.`,
         `Semana analizada: ${s.selectedWeekLabel}.`,
         `Reportaron ${s.reportedNames.length} de ${s.selectedWeekByPlayer.length}; no reportaron ${s.notReportedNames.length}.`,
         `Promedio sobre quienes cargaron: total ${s.selectedWeekAvg.total}, físico ${s.selectedWeekAvg.fisico}, técnico-táctico ${s.selectedWeekAvg.tecnico}.`,
