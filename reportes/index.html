@@ -1778,8 +1778,8 @@ function shouldExcludeRowByContext(row, inferredWeeks = new Set()) {
   const text = normalizeKey(row?.comentario || '');
   if (text && /concentracion|hotel|cenard|convivencia|microciclo concentrado/.test(text)) return true;
 
-  // Heurístico estadístico solo si no hay rangos reales disponibles
-  return !concentrationRanges.length && inferredWeeks.has(row?.week);
+  // Heurístico estadístico como cobertura para períodos sin datos en Concentraciones
+  return inferredWeeks.has(row?.week);
 }
 
 async function loadConcentraciones() {
