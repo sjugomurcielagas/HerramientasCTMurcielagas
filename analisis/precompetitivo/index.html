@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pre-partido · Las Murciélagas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../../index.html');}})();</script>
+  <style>
+    :root{--azul-950:#06172f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 1px 1px rgba(6,23,47,.04),0 10px 24px -16px rgba(6,23,47,.28);--radius:16px}
+    *{box-sizing:border-box}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:radial-gradient(circle at 14% 0%,rgba(34,168,232,.14),transparent 24rem),linear-gradient(180deg,#fbfdff 0%,var(--fondo) 100%);color:var(--texto)}
+    button,input,select,textarea{font-family:inherit}button{font-weight:700}.hidden{display:none!important}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.98);backdrop-filter:blur(10px);border-bottom:1px solid var(--borde);box-shadow:0 1px 1px rgba(6,23,47,.03)}
+    .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:12px;align-items:center}
+    .home-link{text-decoration:none;color:var(--azul-800);background:#fff;border:1px solid var(--borde);box-shadow:var(--shadow);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}
+    .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{height:40px;object-fit:contain;background:#fff;border-radius:10px;box-shadow:0 1px 1px rgba(6,23,47,.04);padding:4px}.brand img:first-child{max-width:52px}.brand img:nth-child(2){height:44px;max-width:52px}
+    .brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1}
+    main{max-width:1180px;margin:0 auto;padding:14px 14px 72px}
+    .badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:.76rem;font-weight:800;color:#334155;background:#eef3f7;align-items:center}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
+    .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:var(--radius);padding:18px;text-align:center;font-weight:700}
+    .btn{border:0;border-radius:999px;padding:10px 15px;min-height:40px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}.btn:hover{background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.small{font-size:.83rem;padding:7px 11px;min-height:35px}
+    .last-match{background:linear-gradient(135deg,var(--azul-950) 0%,var(--azul-800) 100%);color:#fff;border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .last-match-label{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.6;margin-bottom:4px}
+    .last-match-score{font-family:"Barlow Condensed",sans-serif;font-size:2.4rem;font-weight:700;line-height:1}
+    .last-match-meta{font-size:.85rem;opacity:.75;margin-top:3px}
+    .section-label{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
+    .player-grid{display:grid;gap:10px}
+    @media(min-width:540px){.player-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:900px){.player-grid{grid-template-columns:repeat(3,1fr)}}
+    .player-card{background:var(--card);border:1px solid var(--borde);border-left:4px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px}
+    .player-card.ok{border-left-color:var(--ok)}.player-card.warn{border-left-color:var(--warn)}.player-card.danger{border-left-color:var(--danger)}
+    .player-name{font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;font-weight:700;color:var(--azul-950);line-height:1.1}
+    .player-sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+    .player-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+    .chip{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:800;color:#334155;background:#f1f5f9}
+    .chip.ok{background:#dcfce7;color:#166534}.chip.warn{background:#fef3c7;color:#92400e}.chip.danger{background:#fee2e2;color:#991b1b}.chip.muted{background:#f1f5f9;color:var(--muted)}
+    .player-alerts{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+    .alert-row{font-size:.75rem;font-weight:700;color:var(--danger)}.alert-row.warn{color:var(--warn)}
+    .loading-hint{color:var(--muted);font-size:.9rem;text-align:center;padding:36px}
+    .error-box{border:1px dashed #fecaca;background:#fef2f2;color:var(--danger);border-radius:var(--radius);padding:16px;font-weight:700;font-size:.9rem}
+    @media(max-width:540px){.last-match-score{font-size:1.9rem}}
+    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    @media(max-width:1024px){.page-version-tag{display:none}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="home-link" href="../index.html">← Análisis</a>
+      <div class="brand">
+        <img src="../../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'">
+        <img src="../../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'">
+        <div class="brand-title">Pre-partido</div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div id="loadingDiv" class="loading-hint">Cargando datos del plantel...</div>
+    <div id="appDiv" class="hidden">
+      <div id="lastMatchBanner"></div>
+      <div class="section-label" id="labelJugadoras">Plantel</div>
+      <div id="gridJugadoras" class="player-grid"></div>
+      <div class="section-label hidden" id="labelArqueras">Arqueras</div>
+      <div id="gridArqueras" class="player-grid"></div>
+    </div>
+    <div id="errorDiv" class="hidden error-box"></div>
+  </main>
+  <script src="../../assets/config.js?v=20260525021325"></script>
+  <script>
+    const API_URL = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '';
+
+    function esc(v) {
+      const d = document.createElement('div');
+      d.textContent = String(v ?? '');
+      return d.innerHTML;
+    }
+
+    function norm(v) {
+      return Murci.normalizeText(String(v ?? ''));
+    }
+
+    function personaRef(p) {
+      if (!p || typeof p !== 'object') return String(p ?? '').trim();
+      return Murci.personaRef ? Murci.personaRef(p) : String(p.persona_id || p.Persona_ID || p.dni || p.DNI || '').trim();
+    }
+
+    function matchesPlayer(player, idField) {
+      if (!idField) return false;
+      const pRef = personaRef(player);
+      const pDni = String(player.DNI || player.dni || '').trim();
+      const val = String(idField).trim();
+      return (pRef && pRef === val) || (pDni && pDni === val);
+    }
+
+    function playerAlerts(player, alertas) {
+      const check = (a) => {
+        const aRef = String(a?.persona_id || a?.Persona_ID || '').trim();
+        const aDni = String(a?.dni || a?.DNI || '').trim();
+        return matchesPlayer(player, aRef) || matchesPlayer(player, aDni);
+      };
+      return [
+        ...(alertas.faltantes || []).filter(check),
+        ...(alertas.vencimientos || []).filter(check),
+      ];
+    }
+
+    function isClasifAlert(a) {
+      return norm(a?.tipo || a?.detalle || '').includes('clasificaci') || String(a?.nivel || '').toUpperCase() === 'ROJA';
+    }
+
+    function habLevel(alerts) {
+      if (!alerts.length) return 'ok';
+      if (alerts.some(isClasifAlert)) return 'danger';
+      return 'warn';
+    }
+
+    function penalesStats(player, penales) {
+      const ref = personaRef(player);
+      const dni = String(player.DNI || player.dni || '').trim();
+      const mine = penales.filter(pen => {
+        const jDni = String(pen?.jugadora_dni || pen?.jugadora || '').trim();
+        return (ref && jDni && jDni === ref) || (dni && jDni && jDni === dni);
+      });
+      if (!mine.length) return null;
+      const recent = mine.slice(-20);
+      const goles = recent.filter(pen => String(pen?.resultado || '').toLowerCase() === 'gol').length;
+      const pct = Math.round((goles / recent.length) * 100);
+      return { goles, total: recent.length, pct };
+    }
+
+    function fmtDate(s) {
+      if (!s) return '';
+      const d = new Date(String(s).slice(0, 10) + 'T00:00:00');
+      if (isNaN(d)) return String(s).slice(0, 10);
+      return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function playerCardHtml(p, alertas, penales) {
+      const nombre = (Murci.personName ? Murci.personName(p) : '') || esc(p?.nombre || personaRef(p));
+      const num = p?.Numero_Camiseta || p?.Nro_Camiseta || '';
+      const alerts = playerAlerts(p, alertas);
+      const level = habLevel(alerts);
+      const stats = penalesStats(p, penales);
+      const disp = String(p?.Disponibilidad_Actual || p?.disponibilidad || '').trim();
+
+      const habChip = level === 'ok'
+        ? `<span class="chip ok">Habilitada</span>`
+        : level === 'danger'
+          ? `<span class="chip danger">No habilitada</span>`
+          : `<span class="chip warn">Revisar docs</span>`;
+
+      const dispChip = disp && disp !== 'Disponible'
+        ? `<span class="chip ${disp === 'No disponible' ? 'danger' : 'warn'}">${esc(disp)}</span>`
+        : '';
+
+      const penChip = stats
+        ? `<span class="chip ${stats.pct >= 70 ? 'ok' : stats.pct >= 40 ? 'warn' : 'danger'}" title="Últimos ${stats.total} penales">Pen ${stats.goles}/${stats.total} (${stats.pct}%)</span>`
+        : '';
+
+      const alertRows = alerts.slice(0, 3).map(a => {
+        const isRed = isClasifAlert(a);
+        const text = a.detalle || (Array.isArray(a.faltantes) ? a.faltantes.slice(0, 2).join(', ') : '');
+        return text ? `<div class="alert-row ${isRed ? '' : 'warn'}">${esc(text)}</div>` : '';
+      }).join('');
+
+      return `<div class="player-card ${level}">
+        <div class="player-name">${esc(nombre)}${num ? `<span style="font-size:.82rem;font-weight:400;color:var(--muted)"> · #${esc(num)}</span>` : ''}</div>
+        <div class="player-chips">${habChip}${dispChip}${penChip}</div>
+        ${alertRows ? `<div class="player-alerts">${alertRows}</div>` : ''}
+      </div>`;
+    }
+
+    function renderLastMatch(partido) {
+      const el = document.getElementById('lastMatchBanner');
+      if (!partido) { el.innerHTML = ''; return; }
+      const rival = esc(partido.rival || partido.nombre || 'Rival');
+      const gp = partido.goles_propios ?? '—';
+      const gr = partido.goles_rival ?? '—';
+      const fecha = fmtDate(partido.fecha);
+      const tipo = esc(partido.tipo_competencia || partido.tipo || '');
+      el.innerHTML = `<div class="last-match">
+        <div>
+          <div class="last-match-label">Último partido</div>
+          <div class="last-match-score">${gp} &minus; ${gr}</div>
+          <div class="last-match-meta">vs ${rival}${tipo ? ' · ' + tipo : ''}${fecha ? ' · ' + fecha : ''}</div>
+        </div>
+        <a class="btn secondary small" href="../partidos/" style="text-decoration:none">Ver partidos</a>
+      </div>`;
+    }
+
+    function renderGrid(players, alertas, penales, gridId, labelId) {
+      const grid = document.getElementById(gridId);
+      if (!players.length) {
+        document.getElementById(labelId).classList.add('hidden');
+        grid.innerHTML = '';
+        return;
+      }
+      document.getElementById(labelId).classList.remove('hidden');
+      const sorted = players.slice().sort((a, b) =>
+        Number(a.Numero_Camiseta || a.Nro_Camiseta || 99) - Number(b.Numero_Camiseta || b.Nro_Camiseta || 99)
+      );
+      grid.innerHTML = sorted.map(p => playerCardHtml(p, alertas, penales)).join('');
+    }
+
+    async function load() {
+      try {
+        const [plantelRes, alertasRes, penalesRes, partidosRes] = await Promise.allSettled([
+          Murci.loadPlantel(API_URL),
+          Murci.apiGetCached('base_getAlertas', {}, { ttlMs: 2 * 60 * 1000 }, API_URL),
+          Murci.apiGetCached('penales_getPenales', {}, { ttlMs: 5 * 60 * 1000 }, API_URL),
+          Murci.apiGetCached('partidos_getPartidos', {}, { ttlMs: 5 * 60 * 1000 }, API_URL),
+        ]);
+
+        const plantel = plantelRes.status === 'fulfilled' ? (plantelRes.value || []) : [];
+
+        const alertasRaw = alertasRes.status === 'fulfilled' ? alertasRes.value : {};
+        const alertas = {
+          faltantes: Array.isArray(alertasRaw?.faltantes) ? alertasRaw.faltantes : [],
+          vencimientos: Array.isArray(alertasRaw?.vencimientos) ? alertasRaw.vencimientos : [],
+        };
+
+        const penalesRaw = penalesRes.status === 'fulfilled' ? penalesRes.value : [];
+        const penales = Array.isArray(penalesRaw) ? penalesRaw
+          : Array.isArray(penalesRaw?.penales) ? penalesRaw.penales : [];
+
+        const partidosRaw = partidosRes.status === 'fulfilled' ? partidosRes.value : [];
+        const partidos = (Array.isArray(partidosRaw) ? partidosRaw
+          : Array.isArray(partidosRaw?.partidos) ? partidosRaw.partidos : [])
+          .filter(p => String(p?.incluye_murcielagas || '').toUpperCase() !== 'NO')
+          .sort((a, b) => String(b?.fecha || '').localeCompare(String(a?.fecha || '')));
+
+        const activos = plantel.filter(p => p && p.activo !== false && p.inactivo !== true);
+        const jugadoras = activos.filter(p => String(p?.Tipo_Integrante || '').trim() === 'Jugadora');
+        const arqueras = activos.filter(p => String(p?.Tipo_Integrante || '').trim() === 'Arquera');
+
+        renderLastMatch(partidos[0] || null);
+        renderGrid(jugadoras, alertas, penales, 'gridJugadoras', 'labelJugadoras');
+        renderGrid(arqueras, alertas, penales, 'gridArqueras', 'labelArqueras');
+
+        if (!jugadoras.length && !arqueras.length) {
+          document.getElementById('gridJugadoras').innerHTML = '<div class="empty">Sin jugadoras activas en el plantel.</div>';
+          document.getElementById('labelJugadoras').classList.remove('hidden');
+        }
+
+        document.getElementById('loadingDiv').classList.add('hidden');
+        document.getElementById('appDiv').classList.remove('hidden');
+      } catch (err) {
+        document.getElementById('loadingDiv').classList.add('hidden');
+        const errDiv = document.getElementById('errorDiv');
+        errDiv.textContent = 'Error al cargar datos: ' + err.message;
+        errDiv.classList.remove('hidden');
+      }
+    }
+
+    load();
+  </script>
+  <div class="page-version-tag">Versión UI</div>
+</body>
+</html>

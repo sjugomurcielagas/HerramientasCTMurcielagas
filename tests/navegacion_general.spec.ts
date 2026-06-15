@@ -16,6 +16,7 @@ const analysisSections = [
   { name: 'Penales', path: 'analisis/penales/', heading: /Penales/i },
   { name: 'Partidos', path: 'analisis/partidos/', heading: /Partidos/i },
   { name: 'Rivales', path: 'analisis/rivales/', heading: /Rivales/i },
+  { name: 'Pre-partido', path: 'analisis/precompetitivo/', heading: /Pre-partido|Precompetitivo/i },
 ];
 
 function route(path = '') {
