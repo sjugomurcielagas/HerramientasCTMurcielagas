@@ -1406,8 +1406,8 @@
 
     function formatDate(d) {
       if (!d) return '';
-      const p = String(d).split('-');
-      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+      const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : String(d);
     }
 
     function esc(v) {
