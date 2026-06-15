@@ -319,74 +319,6 @@
 
             <div class="form-row"><label for="nNombre">Nombre del partido</label><input id="nNombre" type="text" placeholder="Se completa con contexto + rival si lo dejás vacío"></div>
 
-            <div class="form-separator">
-              <label style="display:block;margin-bottom:8px">Resultado final</label>
-              <div class="score-widget">
-                <div class="score-side">
-                  <div class="score-side-label">Murciélagas</div>
-                  <div class="score-side-num" id="scorePropio">0</div>
-                  <div class="score-side-btns">
-                    <button class="sc-btn" onclick="adjScore('propio',1)">+</button>
-                    <button class="sc-btn minus" onclick="adjScore('propio',-1)">−</button>
-                  </div>
-                </div>
-                <div class="score-sep">−</div>
-                <div class="score-side">
-                  <div class="score-side-label">Rival</div>
-                  <div class="score-side-num" id="scoreRival">0</div>
-                  <div class="score-side-btns">
-                    <button class="sc-btn" onclick="adjScore('rival',1)">+</button>
-                    <button class="sc-btn minus" onclick="adjScore('rival',-1)">−</button>
-                  </div>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-                <div class="form-row" style="margin:0"><label>1er tiempo propio</label><input id="nHtPropio" type="number" min="0" placeholder="—"></div>
-                <div class="form-row" style="margin:0"><label>1er tiempo rival</label><input id="nHtRival" type="number" min="0" placeholder="—"></div>
-              </div>
-            </div>
-
-            <div class="form-separator">
-              <label style="display:block;margin-bottom:4px">Estadísticas del partido <span style="font-size:.78rem;color:var(--muted);font-weight:400">(Murciélagas · Rival)</span></label>
-              <div class="mini-stats-grid">
-                <div class="mini-stat">
-                  <div class="mini-stat-label">Tiros</div>
-                  <div class="mini-stat-row">
-                    <button class="m-btn" onclick="adjStat('tiros_propios',1)">+</button>
-                    <button class="m-btn minus" onclick="adjStat('tiros_propios',-1)">−</button>
-                    <span class="mini-val" id="vTirosP">0</span>
-                    <span class="mini-sep">·</span>
-                    <span class="mini-val" id="vTirosR">0</span>
-                    <button class="m-btn" onclick="adjStat('tiros_rival',1)">+</button>
-                    <button class="m-btn minus" onclick="adjStat('tiros_rival',-1)">−</button>
-                  </div>
-                </div>
-                <div class="mini-stat">
-                  <div class="mini-stat-label">Córners</div>
-                  <div class="mini-stat-row">
-                    <button class="m-btn" onclick="adjStat('corners_propios',1)">+</button>
-                    <button class="m-btn minus" onclick="adjStat('corners_propios',-1)">−</button>
-                    <span class="mini-val" id="vCornersP">0</span>
-                    <span class="mini-sep">·</span>
-                    <span class="mini-val" id="vCornersR">0</span>
-                    <button class="m-btn" onclick="adjStat('corners_rival',1)">+</button>
-                    <button class="m-btn minus" onclick="adjStat('corners_rival',-1)">−</button>
-                  </div>
-                </div>
-                <div class="mini-stat">
-                  <div class="mini-stat-label">Faltas</div>
-                  <div class="mini-stat-row">
-                    <button class="m-btn" onclick="adjStat('faltas_propias',1)">+</button>
-                    <button class="m-btn minus" onclick="adjStat('faltas_propias',-1)">−</button>
-                    <span class="mini-val" id="vFaltasP">0</span>
-                    <span class="mini-sep">·</span>
-                    <span class="mini-val" id="vFaltasR">0</span>
-                    <button class="m-btn" onclick="adjStat('faltas_rival',1)">+</button>
-                    <button class="m-btn minus" onclick="adjStat('faltas_rival',-1)">−</button>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <!-- Extras modo completo -->
             <div id="detalleExtras" class="hidden">
@@ -544,7 +476,7 @@
       const cont=document.getElementById('internoRoster');
       const resumen=document.getElementById('internoResumen');
       if(!cont||!resumen)return;
-      const jugadoras=state.plantelActivo||[];
+      const jugadoras=(state.plantelActivo||[]).filter(x=>['Jugadora','Arquera'].includes(String(x.Tipo_Integrante||'').trim()));
       if(!jugadoras.length){
         cont.innerHTML='<div class="empty">No hay jugadoras activas para repartir.</div>';
         resumen.textContent='';
@@ -745,8 +677,8 @@
         if(!localPlantel.length||!visitantePlantel.length){st.textContent='Asigná jugadoras a ambos equipos internos.';st.className='status-line error';return}
       }
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
-      const htP=document.getElementById('nHtPropio').value;
-      const htR=document.getElementById('nHtRival').value;
+      const htP=document.getElementById('nHtPropio')?.value??'';
+      const htR=document.getElementById('nHtRival')?.value??'';
       let payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,rival_plantel_id:document.getElementById('nRivalPlantelSelect').value,contexto_partido:contexto,tipo,tipo_partido:esInterno?'interno':(esTerceros?'terceros':'murci_vs_rival'),modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:(esTerceros||esInterno)?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel_id:document.getElementById('nLocalPlantelSelect').value,equipo_visitante_plantel_id:document.getElementById('nVisitantePlantelSelect').value,equipo_local_plantel:getPlantelSeleccionado(localEquipo,'nLocalPlantelSelect'),equipo_visitante_plantel:getPlantelSeleccionado(visitanteEquipo,'nVisitantePlantelSelect'),...state.nuevoScore};
       if(esInterno){
         const equiposInternos=await guardarEquiposInternosActuales();
