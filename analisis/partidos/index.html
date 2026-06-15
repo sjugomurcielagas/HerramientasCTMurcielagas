@@ -45,6 +45,30 @@
     .empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:14px;padding:16px;text-align:center;font-weight:700;font-size:.92rem}
     .split{display:grid;gap:13px;margin-bottom:0}
     .form-separator{border-top:1px solid var(--borde);margin:14px 0;padding-top:14px}
+
+    /* Chip selectors (reemplazan selects fijos) */
+    .chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+    .chip-btn{border:1.5px solid var(--borde);background:#fff;color:var(--azul-800);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:.88rem;font-weight:800;transition:.1s;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .chip-btn.sel{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .chip-btn:active{transform:scale(.96)}
+
+    /* Bloques colapsables */
+    details.form-block{border-top:1px solid var(--borde);margin:0;padding:0}
+    details.form-block+details.form-block,.panel-body>details.form-block:first-child{border-top:none}
+    .panel-body>details.form-block:not(:first-child){border-top:1px solid var(--borde)}
+    details.form-block summary{display:flex;justify-content:space-between;align-items:center;padding:11px 0 11px;cursor:pointer;list-style:none;user-select:none;-webkit-tap-highlight-color:transparent}
+    details.form-block summary::-webkit-details-marker{display:none}
+    details.form-block summary .block-title{font-family:"Barlow Condensed",sans-serif;font-size:1rem;font-weight:700;color:var(--azul-950);letter-spacing:.02em;text-transform:uppercase}
+    details.form-block summary .block-arrow{font-size:.82rem;color:var(--muted);transition:transform .18s}
+    details.form-block[open] summary .block-arrow{transform:rotate(180deg)}
+    details.form-block .block-body{padding-bottom:12px}
+
+    /* Asignación interna: chip tri-estado */
+    .asig-chip-group{display:flex;gap:5px}
+    .asig-chip{border:1.5px solid var(--borde);background:#fff;color:var(--muted);border-radius:999px;padding:5px 11px;cursor:pointer;font-size:.82rem;font-weight:800;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .asig-chip.sel-local{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .asig-chip.sel-visitante{background:#c2410c;color:#fff;border-color:#c2410c}
+    .asig-chip:active{transform:scale(.95)}
     .footer-note{margin-top:18px;text-align:center;color:var(--muted);font-size:.86rem}
 
     .stat-row{padding:10px 0;border-bottom:1px solid var(--borde)}.stat-row:last-child{border-bottom:none}
@@ -218,124 +242,129 @@
         <div class="panel">
           <div class="panel-head"><h2>Nuevo partido</h2></div>
           <div class="panel-body">
-            <div class="context-card">
-              <div class="context-grid">
-                <div class="form-row">
-                  <label for="nContexto">Contexto *</label>
-                  <input id="nContexto" type="text" placeholder="Ej: Mundial 2026 · fase de grupos" autocomplete="off">
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <details class="form-block" open>
+              <summary><span class="block-title">Contexto del partido</span><span class="block-arrow">▼</span></summary>
+              <div class="block-body">
+                <div class="context-grid">
+                  <div class="form-row">
+                    <label for="nContexto">Contexto *</label>
+                    <input id="nContexto" type="text" placeholder="Ej: Mundial 2026 · fase de grupos" autocomplete="off">
+                  </div>
                   <div class="form-row"><label for="nFecha">Fecha *</label><input id="nFecha" type="date"></div>
-                  <div class="form-row"><label for="nTipo">Tipo</label><select id="nTipo"><option value="oficial">Oficial</option><option value="amistoso">Amistoso</option></select></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="context-card">
-              <div class="form-row">
-                <label for="nModoPartido">Modo de partido</label>
-                <select id="nModoPartido">
-                  <option value="rival">Las Murciélagas vs rival</option>
-                  <option value="interno">Partido interno</option>
-                  <option value="terceros">Terceros vs terceros</option>
-                </select>
-              </div>
-              <div class="hint">El modo interno usa el plantel activo y te deja repartirlo entre dos equipos guardables.</div>
-            </div>
-
-            <div id="rivalEditor" class="context-card rival-editor">
-              <div class="context-grid">
-                <div class="form-row">
-                  <label for="nEquipoSelect">Equipo / rival *</label>
-                  <select id="nEquipoSelect"></select>
                 </div>
                 <div class="form-row">
-                  <label for="nRivalPlantelSelect">Plantel a usar</label>
-                  <select id="nRivalPlantelSelect"></select>
-                </div>
-                <div class="form-row">
-                  <label for="nRival">Nuevo rival</label>
-                  <input id="nRival" type="text" placeholder="Ej: Japón" autocomplete="off">
-                  <div class="hint">Si no está en la lista, escribilo acá. Al crear o guardar queda disponible para todos los módulos.</div>
+                  <label>Tipo</label>
+                  <div class="chip-group" id="nTipoChips">
+                    <button type="button" class="chip-btn sel" data-val="oficial" onclick="selectChip('nTipoChips',this)">Oficial</button>
+                    <button type="button" class="chip-btn" data-val="amistoso" onclick="selectChip('nTipoChips',this)">Amistoso</button>
+                  </div>
                 </div>
               </div>
-              <div class="form-row">
-                <label for="nRivalPlantel">Plantel rival</label>
-                <textarea id="nRivalPlantel" class="plantel-lines" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea>
-                <div class="hint">Al elegir un rival existente se carga su plantel. Si lo editás y guardás, queda asociado al rival para próximos partidos.</div>
+            </details>
+
+            <details class="form-block" open>
+              <summary><span class="block-title">Modo de partido</span><span class="block-arrow">▼</span></summary>
+              <div class="block-body">
+                <div class="chip-group" id="nModoChips">
+                  <button type="button" class="chip-btn sel" data-val="rival" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Murciélagas vs rival</button>
+                  <button type="button" class="chip-btn" data-val="interno" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Partido interno</button>
+                  <button type="button" class="chip-btn" data-val="terceros" onclick="selectChip('nModoChips',this);onModoPartidoChange()">Terceros vs terceros</button>
+                </div>
+                <div class="hint" style="margin-top:7px">El modo interno usa el plantel activo y te deja repartirlo entre dos equipos guardables.</div>
               </div>
-              <div class="btn-row" style="margin-top:0">
-                <button id="guardarRivalBtn" class="btn secondary small" type="button">Guardar rival</button>
+            </details>
+
+            <details id="rivalEditor" class="form-block rival-editor" open>
+              <summary><span class="block-title">Rival</span><span class="block-arrow">▼</span></summary>
+              <div class="block-body">
+                <div class="context-grid">
+                  <div class="form-row">
+                    <label for="nEquipoSelect">Equipo / rival *</label>
+                    <select id="nEquipoSelect"></select>
+                  </div>
+                  <div class="form-row">
+                    <label for="nRivalPlantelSelect">Plantel a usar</label>
+                    <select id="nRivalPlantelSelect"></select>
+                  </div>
+                  <div class="form-row">
+                    <label for="nRival">Nuevo rival</label>
+                    <input id="nRival" type="text" placeholder="Ej: Japón" autocomplete="off">
+                    <div class="hint">Si no está en la lista, escribilo acá. Al crear o guardar queda disponible para todos los módulos.</div>
+                  </div>
+                </div>
+                <details class="form-block">
+                  <summary><span class="block-title">Plantel rival</span><span class="block-arrow">▼</span></summary>
+                  <div class="block-body">
+                    <div class="form-row" style="margin-bottom:0">
+                      <textarea id="nRivalPlantel" class="plantel-lines" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea>
+                      <div class="hint">Al elegir un rival existente se carga su plantel. Si lo editás y guardás, queda asociado al rival para próximos partidos.</div>
+                    </div>
+                    <div class="btn-row" style="margin-top:8px">
+                      <button id="guardarRivalBtn" class="btn secondary small" type="button">Guardar rival</button>
+                    </div>
+                    <div id="rivalStatus" class="status-line"></div>
+                  </div>
+                </details>
               </div>
-              <div id="rivalStatus" class="status-line"></div>
-            </div>
+            </details>
 
-            <div id="internoEditor" class="context-card rival-editor hidden">
-              <div class="context-grid">
-                <div class="form-row">
-                  <label for="nInternoLocalNombre">Equipo local *</label>
-                  <input id="nInternoLocalNombre" type="text" value="Murciélagas Azul" autocomplete="off">
+            <details id="internoEditor" class="form-block rival-editor hidden" open>
+              <summary><span class="block-title">Equipos internos</span><span class="block-arrow">▼</span></summary>
+              <div class="block-body">
+                <div class="context-grid">
+                  <div class="form-row">
+                    <label for="nInternoLocalNombre">Equipo local *</label>
+                    <input id="nInternoLocalNombre" type="text" value="Murciélagas Azul" autocomplete="off">
+                  </div>
+                  <div class="form-row">
+                    <label for="nInternoVisitanteNombre">Equipo visitante *</label>
+                    <input id="nInternoVisitanteNombre" type="text" value="Murciélagas Naranja" autocomplete="off">
+                  </div>
                 </div>
-                <div class="form-row">
-                  <label for="nInternoVisitanteNombre">Equipo visitante *</label>
-                  <input id="nInternoVisitanteNombre" type="text" value="Murciélagas Naranja" autocomplete="off">
+                <div class="btn-row" style="margin-top:0">
+                  <button id="autoRepartoBtn" class="btn secondary small" type="button">Repartir automáticamente</button>
+                  <button id="guardarInternosBtn" class="btn secondary small" type="button">Guardar equipos internos</button>
                 </div>
+                <div class="hint">Asigná el plantel activo entre dos equipos. Lo guardado queda disponible en el catálogo para próximos análisis y estadísticas.</div>
+                <div id="internoResumen" class="status-line"></div>
+                <div id="internoRoster" style="margin-top:10px"></div>
               </div>
-              <div class="btn-row" style="margin-top:0">
-                <button id="autoRepartoBtn" class="btn secondary small" type="button">Repartir automáticamente</button>
-                <button id="guardarInternosBtn" class="btn secondary small" type="button">Guardar equipos internos</button>
+            </details>
+
+            <details id="tercerosEditor" class="form-block hidden" open>
+              <summary><span class="block-title">Equipos</span><span class="block-arrow">▼</span></summary>
+              <div class="block-body">
+                <div class="context-grid">
+                  <div class="form-row">
+                    <label for="nLocalSelect">Equipo local</label>
+                    <select id="nLocalSelect"></select>
+                  </div>
+                  <div class="form-row">
+                    <label for="nVisitanteSelect">Equipo visitante</label>
+                    <select id="nVisitanteSelect"></select>
+                  </div>
+                  <div class="form-row">
+                    <label for="nLocalPlantelSelect">Plantel local</label>
+                    <select id="nLocalPlantelSelect"></select>
+                  </div>
+                  <div class="form-row">
+                    <label for="nVisitantePlantelSelect">Plantel visitante</label>
+                    <select id="nVisitantePlantelSelect"></select>
+                  </div>
+                </div>
+                <div class="hint">Usalo para analizar partidos donde no juegan Las Murciélagas. El registro de acciones toma los planteles de esos equipos.</div>
               </div>
-              <div class="hint">Asigná el plantel activo entre dos equipos. Lo guardado queda disponible en el catálogo para próximos análisis y estadísticas.</div>
-              <div id="internoResumen" class="status-line"></div>
-              <div id="internoRoster" style="margin-top:10px"></div>
-            </div>
+            </details>
 
-            <div id="tercerosEditor" class="context-card hidden">
-              <div class="context-grid">
-                <div class="form-row">
-                  <label for="nLocalSelect">Equipo local</label>
-                  <select id="nLocalSelect"></select>
-                </div>
-                <div class="form-row">
-                  <label for="nVisitanteSelect">Equipo visitante</label>
-                  <select id="nVisitanteSelect"></select>
-                </div>
-                <div class="form-row">
-                  <label for="nLocalPlantelSelect">Plantel local</label>
-                  <select id="nLocalPlantelSelect"></select>
-                </div>
-                <div class="form-row">
-                  <label for="nVisitantePlantelSelect">Plantel visitante</label>
-                  <select id="nVisitantePlantelSelect"></select>
-                </div>
+            <details class="form-block">
+              <summary><span class="block-title">Datos opcionales</span><span class="block-arrow">▼</span></summary>
+              <div class="block-body">
+                <div class="form-row"><label for="nNombre">Nombre del partido</label><input id="nNombre" type="text" placeholder="Se completa con contexto + rival si lo dejás vacío"></div>
+                <div class="form-row"><label for="nNotas">Observaciones</label><textarea id="nNotas" placeholder="Contexto del partido, condiciones, notas generales..."></textarea></div>
               </div>
-              <div class="hint">Usalo para analizar partidos donde no juegan Las Murciélagas. El registro de acciones toma los planteles de esos equipos.</div>
-            </div>
+            </details>
 
-            <div class="modo-toggle">
-              <button class="modo-btn active" id="modoRapidoBtn">Modo rápido</button>
-              <button class="modo-btn" id="modoDetalleBtn">Modo completo</button>
-            </div>
-
-            <div class="form-row"><label for="nNombre">Nombre del partido</label><input id="nNombre" type="text" placeholder="Se completa con contexto + rival si lo dejás vacío"></div>
-
-
-            <!-- Extras modo completo -->
-            <div id="detalleExtras" class="hidden">
-              <div class="form-separator">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                  <div class="form-row"><label for="nFormPropia">Formación propia</label><input id="nFormPropia" type="text" placeholder="Ej: 3-3-1"></div>
-                  <div class="form-row"><label for="nFormRival">Formación rival</label><input id="nFormRival" type="text" placeholder="Ej: 4-2-1"></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                  <div class="form-row"><label for="nSistemaPropio">Sistema propio</label><input id="nSistemaPropio" type="text" placeholder="Ej: Presión alta"></div>
-                  <div class="form-row"><label for="nSistemaRival">Sistema rival</label><input id="nSistemaRival" type="text" placeholder="Ej: Contraataque"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-row"><label for="nNotas">Observaciones</label><textarea id="nNotas" placeholder="Contexto del partido, condiciones, notas generales..."></textarea></div>
-            <div class="btn-row"><button id="crearBtn" class="btn">Crear e ir a registrar acciones</button></div>
+            <div class="btn-row" style="margin-top:14px"><button id="crearBtn" class="btn">Crear e ir a registrar acciones</button></div>
             <div id="crearStatus" class="status-line"></div>
           </div>
         </div>
@@ -359,13 +388,10 @@
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
-      document.getElementById('modoRapidoBtn').addEventListener('click',()=>setModo('rapido'));
-      document.getElementById('modoDetalleBtn').addEventListener('click',()=>setModo('detalle'));
       document.getElementById('crearBtn').addEventListener('click',crearPartido);
       document.getElementById('guardarRivalBtn').addEventListener('click',guardarRivalActual);
       document.getElementById('guardarInternosBtn').addEventListener('click',guardarEquiposInternosActuales);
       document.getElementById('autoRepartoBtn').addEventListener('click',repartirPlantelAutomaticamente);
-      document.getElementById('nModoPartido').addEventListener('change',onModoPartidoChange);
       document.getElementById('nInternoLocalNombre').addEventListener('input',renderInternalRoster);
       document.getElementById('nInternoVisitanteNombre').addEventListener('input',renderInternalRoster);
       document.getElementById('nEquipoSelect').addEventListener('change',onEquipoChange);
@@ -378,6 +404,15 @@
       document.getElementById('nFecha').valueAsDate=new Date();
       loadAll();
     });
+
+    function selectChip(groupId,clickedBtn){
+      document.querySelectorAll('#'+groupId+' .chip-btn').forEach(b=>b.classList.remove('sel'));
+      clickedBtn.classList.add('sel');
+    }
+    function getChipVal(groupId){
+      const sel=document.querySelector('#'+groupId+' .chip-btn.sel');
+      return sel?sel.dataset.val:'';
+    }
 
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
@@ -405,9 +440,6 @@
 
     function setModo(m){
       state.modo=m;
-      document.getElementById('modoRapidoBtn').classList.toggle('active',m==='rapido');
-      document.getElementById('modoDetalleBtn').classList.toggle('active',m==='detalle');
-      document.getElementById('detalleExtras').classList.toggle('hidden',m==='rapido');
     }
 
     function adjScore(side,d){
@@ -446,11 +478,14 @@
     }
 
     function onModoPartidoChange(){
-      const modo=document.getElementById('nModoPartido').value||'rival';
+      const modo=getChipVal('nModoChips')||'rival';
       state.modoPartido=modo;
-      document.getElementById('rivalEditor').classList.toggle('hidden',modo!=='rival');
-      document.getElementById('internoEditor').classList.toggle('hidden',modo!=='interno');
-      document.getElementById('tercerosEditor').classList.toggle('hidden',modo!=='terceros');
+      const rivalEl=document.getElementById('rivalEditor');
+      const internoEl=document.getElementById('internoEditor');
+      const tercerosEl=document.getElementById('tercerosEditor');
+      if(rivalEl){rivalEl.classList.toggle('hidden',modo!=='rival');if(modo==='rival')rivalEl.open=true;}
+      if(internoEl){internoEl.classList.toggle('hidden',modo!=='interno');if(modo==='interno')internoEl.open=true;}
+      if(tercerosEl){tercerosEl.classList.toggle('hidden',modo!=='terceros');if(modo==='terceros')tercerosEl.open=true;}
       if(modo==='interno'&&Object.keys(state.internoAsignacion||{}).length===0){
         repartirPlantelAutomaticamente();
       }
@@ -485,38 +520,52 @@
       const localName=(document.getElementById('nInternoLocalNombre')?.value||'Murciélagas Azul').trim()||'Murciélagas Azul';
       const visitanteName=(document.getElementById('nInternoVisitanteNombre')?.value||'Murciélagas Naranja').trim()||'Murciélagas Naranja';
       const counts={local:0,visitante:0,libre:0};
-      cont.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Jugadora</th><th>Asignación</th></tr></thead><tbody>${
-        jugadoras.map(p=>{
-          const key=personaKey(p);
-          const asignacion=state.internoAsignacion[key]||'';
-          if(asignacion==='local')counts.local++;
-          else if(asignacion==='visitante')counts.visitante++;
-          else counts.libre++;
-          const nombre=nombrePersona(p);
-          return `<tr><td>${esc(nombre)}</td><td>
-            <select data-interno-key="${esc(key)}" onchange="onInternoAsignacionChange(this)">
-              <option value="">Sin asignar</option>
-              <option value="local"${asignacion==='local'?' selected':''}>${esc(localName)}</option>
-              <option value="visitante"${asignacion==='visitante'?' selected':''}>${esc(visitanteName)}</option>
-            </select>
-          </td></tr>`;
-        }).join('')
-      }</tbody></table></div>`;
+      cont.innerHTML=jugadoras.map(p=>{
+        const key=personaKey(p);
+        const asig=state.internoAsignacion[key]||'';
+        if(asig==='local')counts.local++;
+        else if(asig==='visitante')counts.visitante++;
+        else counts.libre++;
+        const nombre=nombrePersona(p);
+        const isArquera=String(p.Tipo_Integrante||'').trim()==='Arquera';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--borde)">
+          <span style="font-weight:700;font-size:.92rem;color:var(--azul-950);min-width:0;flex:1">${esc(nombre)}${isArquera?'<span class="badge info" style="margin-left:6px;font-size:.7rem">Arq</span>':''}</span>
+          <div class="asig-chip-group">
+            <button type="button" class="asig-chip${asig==='local'?' sel-local':''}" data-interno-key="${esc(key)}" data-asig="local" onclick="onInternoChipClick(this)">${esc(localName.length>10?localName.slice(0,10)+'…':localName)}</button>
+            <button type="button" class="asig-chip${asig==='visitante'?' sel-visitante':''}" data-interno-key="${esc(key)}" data-asig="visitante" onclick="onInternoChipClick(this)">${esc(visitanteName.length>10?visitanteName.slice(0,10)+'…':visitanteName)}</button>
+          </div>
+        </div>`;
+      }).join('');
       resumen.textContent=`${counts.local} en ${localName} · ${counts.visitante} en ${visitanteName} · ${counts.libre} sin asignar`;
     }
 
-    function onInternoAsignacionChange(sel){
-      const key=String(sel.dataset.internoKey||'').trim();
-      if(!key)return;
-      const value=String(sel.value||'').trim();
-      if(value)state.internoAsignacion[key]=value;else delete state.internoAsignacion[key];
+    function onInternoChipClick(btn){
+      const key=String(btn.dataset.internoKey||'').trim();
+      const asig=String(btn.dataset.asig||'').trim();
+      if(!key||!asig)return;
+      if(state.internoAsignacion[key]===asig){delete state.internoAsignacion[key];}
+      else{state.internoAsignacion[key]=asig;}
       renderInternalRoster();
     }
 
     function repartirPlantelAutomaticamente(){
-      const keys=(state.plantelActivo||[]).map(p=>personaKey(p)).filter(Boolean);
       state.internoAsignacion={};
-      keys.forEach((key,idx)=>{state.internoAsignacion[key]=idx%2===0?'local':'visitante';});
+      const jugadoras=(state.plantelActivo||[]).filter(x=>['Jugadora','Arquera'].includes(String(x.Tipo_Integrante||'').trim()));
+      const arqueras=jugadoras.filter(p=>String(p.Tipo_Integrante||'').trim()==='Arquera');
+      const resto=jugadoras.filter(p=>String(p.Tipo_Integrante||'').trim()!=='Arquera');
+      // Shuffle del resto
+      for(let i=resto.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[resto[i],resto[j]]=[resto[j],resto[i]];}
+      // Asignar arqueras primero
+      if(arqueras.length>=2){
+        state.internoAsignacion[personaKey(arqueras[0])]='local';
+        state.internoAsignacion[personaKey(arqueras[1])]='visitante';
+        // arqueras adicionales van al reparto normal
+        arqueras.slice(2).forEach((p,idx)=>{state.internoAsignacion[personaKey(p)]=idx%2===0?'local':'visitante';});
+      }else if(arqueras.length===1){
+        state.internoAsignacion[personaKey(arqueras[0])]='local';
+      }
+      // Repartir el resto alternando
+      resto.forEach((p,idx)=>{state.internoAsignacion[personaKey(p)]=idx%2===0?'local':'visitante';});
       renderInternalRoster();
     }
 
@@ -649,7 +698,7 @@
 
     async function crearPartido(){
       const contexto=document.getElementById('nContexto').value.trim();
-      const modoPartido=document.getElementById('nModoPartido').value||'rival';
+      const modoPartido=getChipVal('nModoChips')||'rival';
       const selectedEquipoId=document.getElementById('nEquipoSelect').value;
       const selectedEquipo=state.equipos.find(e=>String(e.id)===String(selectedEquipoId));
       const localEquipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nLocalSelect').value));
@@ -663,7 +712,7 @@
           ? [localEquipo?.nombre,visitanteEquipo?.nombre].filter(Boolean).join(' vs ')
           : (document.getElementById('nRival').value.trim()||(selectedEquipo&&selectedEquipo.nombre)||'').trim();
       const fecha=document.getElementById('nFecha').value;
-      const tipo=document.getElementById('nTipo').value;
+      const tipo=getChipVal('nTipoChips')||'oficial';
       const notas=document.getElementById('nNotas').value.trim();
       const nombre=document.getElementById('nNombre').value.trim()||nombrePartidoDefault(contexto,rival,modoPartido,fecha);
       const st=document.getElementById('crearStatus');
@@ -698,12 +747,6 @@
       }
       if(htP!=='')payload.ht_propios=parseInt(htP);
       if(htR!=='')payload.ht_rival=parseInt(htR);
-      if(state.modo==='detalle'){
-        payload.formacion_propia=document.getElementById('nFormPropia').value.trim();
-        payload.formacion_rival=document.getElementById('nFormRival').value.trim();
-        payload.sistema_propio=document.getElementById('nSistemaPropio').value.trim();
-        payload.sistema_rival=document.getElementById('nSistemaRival').value.trim();
-      }
       st.textContent='Guardando...';st.className='status-line';btn.disabled=true;
       try{
         const res=await apiPost(payload);
@@ -718,14 +761,19 @@
     }
 
     function resetNuevoForm(){
-      ['nContexto','nRival','nRivalPlantel','nNombre','nNotas','nFormPropia','nFormRival','nSistemaPropio','nSistemaRival','nHtPropio','nHtRival'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+      ['nContexto','nRival','nRivalPlantel','nNombre','nNotas','nHtPropio','nHtRival'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
       document.getElementById('nEquipoSelect').value='';
-      document.getElementById('nModoPartido').value='rival';
+      // Reset chips
+      selectChip('nModoChips',document.querySelector('#nModoChips .chip-btn[data-val="rival"]'));
+      selectChip('nTipoChips',document.querySelector('#nTipoChips .chip-btn[data-val="oficial"]'));
       state.modoPartido='rival';
       state.internoAsignacion={};
-      document.getElementById('rivalEditor').classList.remove('hidden');
-      document.getElementById('internoEditor').classList.add('hidden');
-      document.getElementById('tercerosEditor').classList.add('hidden');
+      const rivalEl=document.getElementById('rivalEditor');
+      const internoEl=document.getElementById('internoEditor');
+      const tercerosEl=document.getElementById('tercerosEditor');
+      if(rivalEl){rivalEl.classList.remove('hidden');rivalEl.open=true;}
+      if(internoEl)internoEl.classList.add('hidden');
+      if(tercerosEl)tercerosEl.classList.add('hidden');
       document.getElementById('nLocalSelect').value='';
       document.getElementById('nVisitanteSelect').value='';
       document.getElementById('nRivalPlantelSelect').innerHTML='';
@@ -736,9 +784,6 @@
       renderEquiposSelect();
       document.getElementById('nFecha').valueAsDate=new Date();
       state.nuevoScore={goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0};
-      document.getElementById('scorePropio').textContent='0';
-      document.getElementById('scoreRival').textContent='0';
-      Object.values(STAT_IDS).forEach(id=>document.getElementById(id).textContent='0');
       document.getElementById('crearBtn').disabled=false;
       setModo('rapido');
     }
