@@ -236,6 +236,7 @@
               <input id="searchInput" type="search" placeholder="Buscar rival o nombre...">
               <select id="tipoFilter"><option value="">Todos los tipos</option><option value="oficial">Oficiales</option><option value="amistoso">Amistosos</option></select>
               <select id="resFilter"><option value="">Todos los resultados</option><option value="victoria">Victorias</option><option value="empate">Empates</option><option value="derrota">Derrotas</option></select>
+              <select id="concFilter"><option value="">Todas las concentraciones</option></select>
             </div>
             <div id="listaPartidos"><div class="empty">Sin partidos registrados.</div></div>
           </div>
@@ -268,6 +269,10 @@
                     <input id="nContexto" type="text" placeholder="Ej: Mundial 2026 · fase de grupos" autocomplete="off">
                   </div>
                   <div class="form-row"><label for="nFecha">Fecha *</label><input id="nFecha" type="date"></div>
+                  <div class="form-row">
+                    <label for="nConcentracionSelect">Concentración</label>
+                    <select id="nConcentracionSelect"><option value="">Sin concentración asociada</option></select>
+                  </div>
                 </div>
                 <div class="form-row">
                   <label>Tipo</label>
@@ -408,7 +413,7 @@
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null},propioAsignacion:{}};
+    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],concentraciones:[],fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null},propioAsignacion:{}};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -429,9 +434,70 @@
       document.getElementById('searchInput').addEventListener('input',renderLista);
       document.getElementById('tipoFilter').addEventListener('change',renderLista);
       document.getElementById('resFilter').addEventListener('change',renderLista);
+      document.getElementById('concFilter').addEventListener('change',renderLista);
+      document.getElementById('nFecha').addEventListener('change',autoSelectConcentracion);
+      document.getElementById('nConcentracionSelect').addEventListener('change',onConcentracionChange);
       document.getElementById('nFecha').valueAsDate=new Date();
       loadAll();
     });
+
+    function concFechaRange(c) {
+      const startStr = c.fecha_inicio || c.fechaInicio || c.inicio || '';
+      const endStr = c.fecha_fin || c.fechaFin || c.fin || startStr;
+      const start = startStr ? new Date(startStr.substring(0,10)+'T00:00:00') : null;
+      const end = endStr ? new Date(endStr.substring(0,10)+'T23:59:59') : start;
+      return {start, end};
+    }
+
+    function getConcId(c) { return String(c?.id || c?.concentracion_id || c?.ID || ''); }
+
+    function getConcentracionPorFecha(fechaStr) {
+      if (!fechaStr || !state.concentraciones.length) return null;
+      const d = new Date(fechaStr);
+      return state.concentraciones.find(c => {
+        const {start, end} = concFechaRange(c);
+        return start && end && d >= start && d <= end;
+      }) || null;
+    }
+
+    function populateConcFilter() {
+      const sel = document.getElementById('concFilter');
+      if (!sel) return;
+      const current = sel.value;
+      sel.innerHTML = '<option value="">Todas las concentraciones</option>' +
+        state.concentraciones.map(c => `<option value="${esc(getConcId(c))}">${esc(c.nombre || 'Sin nombre')}</option>`).join('');
+      if (current) sel.value = current;
+    }
+
+    function populateNuevoConcentracionSelect(selectedId) {
+      const sel = document.getElementById('nConcentracionSelect');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Sin concentración asociada</option>' +
+        state.concentraciones.map(c => `<option value="${esc(getConcId(c))}"${getConcId(c)===String(selectedId||'')?'selected':''}>${esc(c.nombre || 'Sin nombre')}</option>`).join('');
+    }
+
+    function autoSelectConcentracion() {
+      const fecha = document.getElementById('nFecha').value;
+      const conc = getConcentracionPorFecha(fecha);
+      const sel = document.getElementById('nConcentracionSelect');
+      if (sel && conc) sel.value = getConcId(conc);
+      populateNuevoConcentracionSelect(conc ? getConcId(conc) : '');
+    }
+
+    function onConcentracionChange() {
+      const sel = document.getElementById('nConcentracionSelect');
+      const id = sel?.value;
+      if (!id) return;
+      const conc = state.concentraciones.find(c => getConcId(c) === id);
+      if (!conc) return;
+      const ctxEl = document.getElementById('nContexto');
+      if (ctxEl && !ctxEl.value.trim()) ctxEl.value = conc.nombre || '';
+      const fechaEl = document.getElementById('nFecha');
+      if (fechaEl && !fechaEl.value) {
+        const startStr = conc.fecha_inicio || conc.fechaInicio || conc.inicio || '';
+        if (startStr) fechaEl.value = startStr.substring(0, 10);
+      }
+    }
 
     function selectChip(groupId,clickedBtn){
       document.querySelectorAll('#'+groupId+' .chip-btn').forEach(b=>b.classList.remove('sel'));
@@ -445,12 +511,15 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantelRes,equiposRes,partidosRes,sesionesRes]=await Promise.allSettled([obtenerPlantel(),apiGet('equipos_getEquipos'),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones')]);
+        const [plantelRes,equiposRes,partidosRes,sesionesRes,concRes]=await Promise.allSettled([obtenerPlantel(),apiGet('equipos_getEquipos'),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones'),Murci.apiGetCached('concentraciones_getConcentraciones',{},{ttlMs:5*60*1000},API_URL)]);
         state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
         state.plantelActivo=state.plantel.filter(p=>p&&p.activo!==false&&p.inactivo!==true);
         state.equipos=equiposRes.status==='fulfilled'&&Array.isArray(equiposRes.value)?equiposRes.value:[];
         state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
         state.sesionesPenales=sesionesRes.status==='fulfilled'&&Array.isArray(sesionesRes.value)?sesionesRes.value:[];
+        const rawConc=concRes.status==='fulfilled'?concRes.value:[];
+        state.concentraciones=(Array.isArray(rawConc)?rawConc:Array.isArray(rawConc?.data)?rawConc.data:[]).sort((a,b)=>String(b.fecha_inicio||b.inicio||'').localeCompare(String(a.fecha_inicio||a.inicio||'')));
+        populateConcFilter();
         renderEquiposSelect();
         renderPropioPlantelSelector();
         onModoPartidoChange();
@@ -825,10 +894,12 @@
       const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
       const tipo=document.getElementById('tipoFilter').value;
       const res=document.getElementById('resFilter').value;
+      const concFiltro=document.getElementById('concFilter').value;
       const items=state.partidos.filter(p=>{
         if(q&&!p.rival.toLowerCase().includes(q)&&!(p.nombre||'').toLowerCase().includes(q))return false;
         if(tipo&&p.tipo!==tipo)return false;
         if(res&&calcRes(p)!==res)return false;
+        if(concFiltro){const conc=getConcentracionPorFecha(p.fecha);if(!conc||getConcId(conc)!==concFiltro)return false;}
         return true;
       });
       tot.textContent=`${state.partidos.length} partido${state.partidos.length!==1?'s':''}`;
