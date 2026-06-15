@@ -74,7 +74,7 @@
 
       <section id="detalleView" class="app-section hidden">
         <div class="panel">
-          <div class="panel-head"><div><h2 id="detalleTitulo">Concentración</h2><p id="detalleSubtitulo">Detalle operativo.</p></div><div class="actions"><button class="btn ghost small" type="button" onclick="showView('listaView')">← Volver</button><button id="eliminarConcBtn" class="btn danger small" type="button">Eliminar</button></div></div>
+          <div class="panel-head"><div><h2 id="detalleTitulo">Concentración</h2><p id="detalleSubtitulo">Detalle operativo.</p></div><div class="actions"><button class="btn ghost small" type="button" onclick="showView('listaView')">← Volver</button><button id="resumenConcBtn" class="btn secondary small" type="button">Ver resumen</button><button id="eliminarConcBtn" class="btn danger small" type="button">Eliminar</button></div></div>
           <div class="split">
             <div class="section-card">
               <h3>Datos generales</h3>
@@ -168,6 +168,13 @@
     </div>
   </div>
 
+  <div id="resumenModal" class="doc-modal" aria-hidden="true">
+    <div class="doc-card" style="width:min(600px,100%);max-height:90vh;overflow-y:auto">
+      <div class="panel-head"><div><h2>Resumen de concentración</h2></div><div class="actions"><button onclick="window.print()" class="btn secondary small" type="button">Imprimir</button><button id="cerrarResumenBtn" class="btn ghost small" type="button">Cerrar</button></div></div>
+      <div id="resumenBody" class="grid" style="margin-top:4px"></div>
+    </div>
+  </div>
+
   <div id="docPreviewModal" class="doc-modal" aria-hidden="true">
     <div class="doc-card">
       <div class="panel-head"><div><h2>Documento</h2><p>Revisá, abrí o imprimí el archivo.</p></div><button id="cerrarDocPreviewBtn" class="btn ghost small" type="button">Cerrar</button></div>
@@ -203,6 +210,9 @@
       document.getElementById('docsModal').addEventListener('click',e=>{if(e.target.id==='docsModal')closeDocsModal()});
       document.getElementById('cerrarDocPreviewBtn').addEventListener('click',closeDocPreviewModal);
       document.getElementById('docPreviewModal').addEventListener('click',e=>{if(e.target.id==='docPreviewModal')closeDocPreviewModal()});
+      document.getElementById('resumenConcBtn').addEventListener('click',abrirResumen);
+      document.getElementById('cerrarResumenBtn').addEventListener('click',()=>document.getElementById('resumenModal').classList.remove('show'));
+      document.getElementById('resumenModal').addEventListener('click',e=>{if(e.target.id==='resumenModal')document.getElementById('resumenModal').classList.remove('show')});
       document.getElementById('marcarTodasBtn').addEventListener('click',()=>setAllConvocadas(true));
       document.getElementById('limpiarConvBtn').addEventListener('click',()=>setAllConvocadas(false));
       document.getElementById('recargarDiasBtn').addEventListener('click',loadDias);
@@ -495,6 +505,47 @@
       try{await apiPost(payload);mergeConc({id:concId(c),convocadas_json:payload.convocadas_json});state.convocatoriaEditById[concId(c)]=false;st.textContent='Convocatoria guardada.';st.className='status-line ok';renderLista();updateConvCount();renderConvocatoria();renderAsistenciaReal()}
       catch(err){st.textContent='Error: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
+    }
+    function abrirResumen(){
+      const c=currentConc();if(!c)return;
+      const nombre=c.nombre||'Concentración';
+      const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ')||'—';
+      const inicio=dateValue(c,'fecha_inicio','fechaInicio','inicio')||'';
+      const fin=dateValue(c,'fecha_fin','fechaFin','fin')||'';
+      const rango=inicio&&fin?`${inicio}${inicio!==fin?' → '+fin:''}`:(inicio||'—');
+      const convocadas=convocatoriaDnisEfectivos(c);
+      const personMap=new Map((state.plantel||[]).map(p=>[asistenciaKeyForPerson(p),p]).filter(([k])=>k));
+      const convNombres=convocadas.map(key=>{const p=personMap.get(key);return p?Murci.personName(p)||key:key;});
+      const asistencia=state.asistenciaDrafts[concId(c)]||parseAsistencia(c);
+      const presentes=asistencia.filter(a=>String(a.presente)==='true'||a.presente===true).length;
+      const ausentes=asistencia.filter(a=>String(a.presente)==='false'||a.presente===false).length;
+      const actCount={};
+      (state.dias||[]).forEach(dia=>(dia.actividades||[]).forEach(act=>{const t=act.tipo||act.categoria||'Otro';actCount[t]=(actCount[t]||0)+1;}));
+      const actRows=Object.entries(actCount).sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<tr><td style="padding:4px 8px">${esc(t)}</td><td style="padding:4px 8px;text-align:right;font-weight:800">${n}</td></tr>`).join('');
+      const body=document.getElementById('resumenBody');
+      body.innerHTML=`
+        <div style="border:1px solid var(--borde);border-radius:14px;padding:14px;background:#f8fbfd">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;color:var(--azul-950)">${esc(nombre)}</div>
+          <div style="color:var(--muted);font-size:.9rem;margin-top:4px">${esc(rango)}${lugar!=='—'?' · '+esc(lugar):''}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="border:1px solid var(--borde);border-radius:14px;padding:12px">
+            <div style="font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Convocadas</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:700;color:var(--azul-950);line-height:1">${convocadas.length}</div>
+            <div style="margin-top:8px;font-size:.82rem;color:var(--texto);line-height:1.5">${convNombres.map(n=>esc(n)).join(' · ')||'—'}</div>
+          </div>
+          <div style="border:1px solid var(--borde);border-radius:14px;padding:12px">
+            <div style="font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Asistencia registrada</div>
+            ${presentes+ausentes>0?`<div style="display:flex;gap:10px;margin-top:4px"><span style="color:var(--ok);font-weight:800">${presentes} presentes</span><span style="color:var(--danger);font-weight:800">${ausentes} ausentes</span></div>`:'<div style="color:var(--muted);font-size:.85rem;margin-top:4px">Sin datos de asistencia</div>'}
+          </div>
+        </div>
+        ${actRows?`<div style="border:1px solid var(--borde);border-radius:14px;padding:12px">
+          <div style="font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Actividades por tipo</div>
+          <table style="width:100%;border-collapse:collapse;font-size:.88rem">${actRows}</table>
+        </div>`:''}
+        ${c.notas?`<div style="border:1px solid var(--borde);border-radius:14px;padding:12px"><div style="font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Notas</div><div style="font-size:.9rem;line-height:1.5">${esc(c.notas||c.observaciones||'')}</div></div>`:''}
+      `;
+      document.getElementById('resumenModal').classList.add('show');
     }
     function openDocsModal(flow){
       const c=currentConc();if(!c)return;

@@ -767,6 +767,8 @@ let canonicalPlantel=[];
 let canonicalPlantelPromise=null;
 let rivals=JSON.parse(localStorage.getItem('tb_rivals')||'[]');
 let rosterTeam='A';
+const TB_AUTOSAVE_KEY='tb_autosave_v2';
+let _autosaveTimer=null;
 
 // =============================================
 // CANVAS — mismo landscape rotado 90°
@@ -1272,7 +1274,22 @@ function clearAll(){
   saveHistory();players=[];arrows=[];counterA=1;counterB=1;arrowFrom=null;arrowMode=false;
   placedMur=new Set();manualPhaseBreaks=[];currentPhase=1;phaseView='all';updatePhaseBadge();
   if(arrowMode) toggleArrowMode();
+  localStorage.removeItem(TB_AUTOSAVE_KEY);
   draw();toast('Tablero reiniciado');
+}
+function autosave(){
+  if(!players.length)return;
+  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,cA:counterA,cB:counterB,pm:[...placedMur],ts:Date.now()}));}catch(e){}
+}
+function tryRestoreAutosave(){
+  try{
+    const raw=localStorage.getItem(TB_AUTOSAVE_KEY);if(!raw)return;
+    const s=JSON.parse(raw);if(!s||!Array.isArray(s.players)||!s.players.length)return;
+    players=s.players;arrows=s.arrows||[];manualPhaseBreaks=s.breaks||[];
+    currentPhase=s.phase||1;phaseView=s.phaseView||'all';
+    counterA=s.cA||1;counterB=s.cB||1;placedMur=new Set(s.pm||[]);
+    updatePhaseBadge();draw();toast('Tablero restaurado de la sesión anterior');
+  }catch(e){}
 }
 
 // =============================================
@@ -2181,6 +2198,7 @@ function draw(animOverride){
       ctx.restore();
     });
   });
+  if(!animOverride){clearTimeout(_autosaveTimer);_autosaveTimer=setTimeout(autosave,800);}
 }
 
 // =============================================
@@ -3038,6 +3056,7 @@ loadCanonicalPlantel().catch(()=>{});
 resizeCanvas();
 draw();
 updatePhaseBadge();
+tryRestoreAutosave();
 </script>
 <script>
 // El service worker global se registra desde la landing.

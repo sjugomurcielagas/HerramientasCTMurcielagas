@@ -33,8 +33,8 @@
 
 ## Backlog (sin fecha)
 
-- [ ] Asistencia a entrenamientos fuera de concentración
-- [ ] Persistencia del tablero táctico (sistemas frecuentes)
-- [ ] Penales vinculados a partidos
-- [ ] Resumen exportable al cerrar una concentración
-- [ ] Modo multi-dispositivo para registro de partido en vivo
+- [ ] Asistencia a entrenamientos fuera de concentración — requiere backend nuevo
+- [x] Persistencia del tablero táctico — autosave en localStorage; se restaura al reabrir la sesión
+- [ ] Penales vinculados a partidos — requiere coordinación de dos sistemas backend
+- [x] Resumen exportable de concentración — botón "Ver resumen" con convocadas, asistencia y actividades; imprimible
+- [ ] Modo multi-dispositivo para registro de partido en vivo — requiere backend
