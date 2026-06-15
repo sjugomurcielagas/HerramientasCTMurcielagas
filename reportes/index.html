@@ -1117,7 +1117,7 @@ footer {
           <input id="exclude-concentrations" type="checkbox">
           <span>Excluir concentraciones del análisis</span>
         </label>
-        <div class="hint">Se aplica por comentarios y también por semanas inferidas cuando el volumen colectivo del plantel sube de forma atípica respecto de lo habitual.</div>
+        <div class="hint">Se aplica primero por fechas reales del módulo de Concentraciones. Para registros anteriores sin datos en ese módulo, se complementa con palabras clave en comentarios y heurística estadística.</div>
       </div>
 
       <div class="btn-row maintenance-actions">
@@ -1856,6 +1856,16 @@ function inferConcentrationWeeksFromLoad(inputRows) {
   );
 }
 
+function getConcentrationForWeek(weekKey) {
+  if (!concentrationRanges.length) return null;
+  const start = getIsoWeekStartDate(weekKey);
+  if (!start) return null;
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return concentrationRanges.find(r => start <= r.end && end >= r.start) || null;
+}
+
 function populateWeeks() {
   const select = $('week-select');
   if (!select || !rows.length) return;
@@ -1876,9 +1886,11 @@ function populateWeeks() {
   allWeeks.slice().reverse().forEach(w => {
     const opt = document.createElement('option');
     opt.value = w;
+    const conc = getConcentrationForWeek(w);
+    const concSuffix = conc ? ` · ${conc.nombre || 'Concentración'}` : '';
     opt.textContent = w === currentOperationalWeek
-      ? `${formatWeekLabel(w)} · período actual`
-      : formatWeekLabel(w);
+      ? `${formatWeekLabel(w)} · período actual${concSuffix}`
+      : `${formatWeekLabel(w)}${concSuffix}`;
     select.appendChild(opt);
   });
 

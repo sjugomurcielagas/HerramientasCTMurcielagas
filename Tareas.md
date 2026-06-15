@@ -17,8 +17,8 @@
 
 ## Prioridad alta
 
-- [ ] **Integrar Concentraciones ↔ Reportes** — Que los períodos de concentración sean conocidos por el sistema y no inferidos. Hoy Reportes ya usa una heurística para excluirlos; el próximo paso es que el módulo de Concentraciones los provea directamente.
-- [ ] **Resolver TUE duplicada** — Antidoping y Base de datos tienen los mismos campos con formularios independientes. Definir Antidoping como fuente de edición; Base de datos en modo solo lectura con link a Antidoping.
+- [x] **Integrar Concentraciones ↔ Reportes** — API integrada; selector de semanas muestra nombre de la concentración cuando la semana cae dentro de una.
+- [x] **Resolver TUE duplicada** — Antidoping como fuente de edición; Base de datos en modo solo lectura con link.
 
 ---
 
