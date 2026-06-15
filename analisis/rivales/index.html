@@ -9,22 +9,32 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
   <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../../index.html');}})();</script>
   <style>
-    :root{--azul-950:#06172f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
+    :root{--azul-950:#06172f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 10px 28px rgba(6,23,47,.10);--radius:16px}
     *{box-sizing:border-box}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}button,input,select,textarea{font-family:inherit}button{font-weight:700}.hidden{display:none!important}.loading{opacity:.7;pointer-events:none}
     .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 14px;display:flex;gap:12px;align-items:center}
     .home-link{text-decoration:none;color:var(--azul-800);background:var(--celeste-100);padding:9px 12px;border-radius:999px;white-space:nowrap;font-weight:800;font-size:.9rem}
     .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:1}.brand img{height:40px;width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:4px}.brand img:nth-child(2){height:44px}.brand-title{font-family:"Barlow Condensed",sans-serif;font-size:clamp(1.35rem,4vw,2.05rem);font-weight:700;color:var(--azul-950);line-height:1}
     main{max-width:1180px;margin:0 auto;padding:14px 14px 72px}.grid{display:grid;gap:13px}.split{display:grid;gap:13px}
     .panel{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 15px;border-bottom:1px solid var(--borde);flex-wrap:wrap}.panel-head h2{font-family:"Barlow Condensed",sans-serif;font-size:1.22rem;color:var(--azul-950);margin:0;line-height:1}.panel-body{padding:14px 15px}
-    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}.btn:hover{background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.small{font-size:.83rem;padding:7px 10px;border-radius:10px}.btn:disabled{opacity:.48;cursor:not-allowed}
+    .btn{border:0;border-radius:999px;padding:10px 15px;min-height:40px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}.btn:hover{background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:#fff;color:var(--azul-800);border:1px solid var(--borde)}.btn.small{font-size:.83rem;padding:7px 11px;min-height:35px;border-radius:999px}.btn:disabled{opacity:.48;cursor:not-allowed}
     .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}label{font-size:.86rem;font-weight:800;color:#334155}
-    input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:11px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.97rem}textarea{min-height:110px;resize:vertical;line-height:1.4}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(34,168,232,.13)}
+    input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.97rem}textarea{min-height:110px;resize:vertical;line-height:1.4}input:focus,select:focus,textarea:focus{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(34,168,232,.13)}
     .toolbar{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px}.empty{border:1px dashed var(--borde);background:#f8fbfd;color:var(--muted);border-radius:14px;padding:16px;text-align:center;font-weight:700;font-size:.92rem}
     .rival-card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--borde)}.rival-card:last-child{border-bottom:none}.rival-title{font-weight:800;color:var(--azul-950);font-size:1rem}.rival-meta{color:var(--muted);font-size:.84rem;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
     .badge{display:inline-flex;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:800;color:#334155;background:#eef3f7}.badge.ok{background:#dcfce7;color:#166534}.badge.info{background:var(--celeste-100);color:var(--azul-800)}.badge.warn{background:#fef3c7;color:#92400e}
-    .stat-card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:13px}.stat-card{background:linear-gradient(135deg,#fff 0%,#eaf7ff 100%);border:1px solid var(--borde);border-radius:14px;padding:14px;text-align:center}.sc-val{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:700;color:var(--azul-950);line-height:1}.sc-label{font-size:.72rem;color:var(--muted);font-weight:800;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+    .stat-card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:13px}.stat-card{background:#f8fbfd;border:1px solid var(--borde);border-radius:14px;padding:14px;text-align:center}.sc-val{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:700;color:var(--azul-950);line-height:1}.sc-label{font-size:.72rem;color:var(--muted);font-weight:800;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
     .stat-row{padding:10px 0;border-bottom:1px solid var(--borde)}.stat-row:last-child{border-bottom:none}.stat-nombre{font-weight:800;color:var(--azul-950);margin-bottom:4px;font-size:.92rem}.stat-nums{font-size:.84rem;color:var(--texto)}.status-line{margin-top:8px;font-weight:700;font-size:.88rem;color:var(--muted)}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
     .hint{font-size:.8rem;color:var(--muted);line-height:1.35;margin-top:4px}
+    details.secondary-fields{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;margin:4px 0 12px;overflow:hidden}
+    details.secondary-fields>summary{list-style:none;cursor:pointer;padding:11px 13px;font-weight:800;color:var(--azul-800);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    details.secondary-fields>summary::-webkit-details-marker,.secondary-panel summary::-webkit-details-marker{display:none}
+    details.secondary-fields>summary::after,.secondary-panel summary::after{content:"Desplegar";font-size:.75rem;color:var(--muted);font-weight:800}
+    details.secondary-fields[open]>summary,.secondary-panel details[open]>summary{border-bottom:1px solid var(--borde)}
+    details.secondary-fields[open]>summary::after,.secondary-panel details[open]>summary::after{content:"Ocultar"}
+    .secondary-fields-body{padding:12px 13px}
+    .secondary-panel{box-shadow:none;background:#fbfdff}
+    .secondary-panel details{display:block}
+    .secondary-panel summary.panel-head{cursor:pointer;list-style:none}
     @media(min-width:820px){.split{grid-template-columns:1fr 1.15fr}.stat-card-grid{grid-template-columns:repeat(4,1fr)}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .form-row{margin-bottom:11px}}
   </style>
 </head>
@@ -66,25 +76,32 @@
               <div class="form-row"><label for="ePais">País</label><input id="ePais" placeholder="Ej: Japón"></div>
               <div class="form-row"><label for="eActivo">Estado</label><select id="eActivo"><option value="SI">Activo</option><option value="NO">Inactivo</option></select></div>
             </div>
-            <div class="form-grid">
-              <div class="form-row"><label for="plantelSelect">Planteles guardados</label><select id="plantelSelect"></select></div>
-              <div class="form-row"><label for="plantelNombre">Nombre del plantel</label><input id="plantelNombre" placeholder="Ej: Copa América 2026"></div>
-            </div>
-            <div class="form-grid">
-              <div class="form-row"><label for="plantelContexto">Contexto</label><input id="plantelContexto" placeholder="Ej: Mundial 2023"></div>
-              <div class="form-row"><label for="plantelFecha">Fecha / referencia</label><input id="plantelFecha" placeholder="Ej: 2023"></div>
-            </div>
-            <div class="form-row"><label for="ePlantel">Jugadoras del plantel</label><textarea id="ePlantel" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea><div class="hint">Podés cargar planteles históricos, convocatorias por torneo o equipos que ya no están vigentes.</div></div>
-            <div class="btn-row" style="margin-top:0"><button class="btn secondary small" id="nuevoPlantelBtn" type="button">Nuevo plantel</button><button class="btn ghost small" id="eliminarPlantelBtn" type="button">Eliminar plantel</button></div>
-            <div class="form-row"><label for="eNotas">Aclaración / notas</label><textarea id="eNotas" style="min-height:70px" placeholder="Si no es selección nacional, dejá la aclaración acá."></textarea></div>
+            <details class="secondary-fields">
+              <summary>Plantel, contexto y notas</summary>
+              <div class="secondary-fields-body">
+                <div class="form-grid">
+                  <div class="form-row"><label for="plantelSelect">Planteles guardados</label><select id="plantelSelect"></select></div>
+                  <div class="form-row"><label for="plantelNombre">Nombre del plantel</label><input id="plantelNombre" placeholder="Ej: Copa América 2026"></div>
+                </div>
+                <div class="form-grid">
+                  <div class="form-row"><label for="plantelContexto">Contexto</label><input id="plantelContexto" placeholder="Ej: Mundial 2023"></div>
+                  <div class="form-row"><label for="plantelFecha">Fecha / referencia</label><input id="plantelFecha" placeholder="Ej: 2023"></div>
+                </div>
+                <div class="form-row"><label for="ePlantel">Jugadoras del plantel</label><textarea id="ePlantel" placeholder="Una jugadora por línea. Opcional: 10 - Apellido Nombre"></textarea><div class="hint">Podés cargar planteles históricos, convocatorias por torneo o equipos que ya no están vigentes.</div></div>
+                <div class="btn-row" style="margin-top:0"><button class="btn secondary small" id="nuevoPlantelBtn" type="button">Nuevo plantel</button><button class="btn ghost small" id="eliminarPlantelBtn" type="button">Eliminar plantel</button></div>
+                <div class="form-row"><label for="eNotas">Aclaración / notas</label><textarea id="eNotas" style="min-height:70px" placeholder="Si no es selección nacional, dejá la aclaración acá."></textarea></div>
+              </div>
+            </details>
             <div class="btn-row"><button class="btn" id="guardarBtn" type="button">Guardar rival</button></div>
             <div id="editorStatus" class="status-line"></div>
           </div>
         </section>
 
-        <section class="panel">
-          <div class="panel-head"><h2>Estadísticas guardadas</h2><span id="statsUpdated" class="badge info"></span></div>
+        <section class="panel secondary-panel">
+          <details>
+          <summary class="panel-head"><h2>Estadísticas guardadas</h2><span id="statsUpdated" class="badge info"></span></summary>
           <div class="panel-body" id="statsContent"><div class="empty">Seleccioná un rival.</div></div>
+          </details>
         </section>
       </section>
     </div>
