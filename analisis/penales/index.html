@@ -83,6 +83,17 @@
     .pot-btn{border:2px solid var(--borde);background:#fff;color:var(--texto);border-radius:12px;padding:11px 6px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;font-size:1rem;font-weight:700;text-align:center;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
     .pot-btn:active{transform:scale(.95)}.pot-btn.sel.fuerte{background:#fee2e2;border-color:#dc2626;color:#b91c1c}.pot-btn.sel.medio{background:#fef3c7;border-color:#d97706;color:#92400e}.pot-btn.sel.debil{background:var(--celeste-100);border-color:var(--celeste);color:var(--azul-800)}
 
+    /* Arquera calidad */
+    .arq-cal-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+    .arq-cal-btn{border:2px solid var(--borde);background:#fff;color:var(--muted);border-radius:12px;padding:11px 4px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;font-size:1.05rem;font-weight:700;text-align:center;transition:.1s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .arq-cal-btn:active{transform:scale(.95)}
+    .arq-cal-btn.sel[data-ac="-2"]{background:#b91c1c;border-color:#b91c1c;color:#fff}
+    .arq-cal-btn.sel[data-ac="-1"]{background:#d97706;border-color:#d97706;color:#fff}
+    .arq-cal-btn.sel[data-ac="0"]{background:var(--muted);border-color:var(--muted);color:#fff}
+    .arq-cal-btn.sel[data-ac="1"]{background:#15803d;border-color:#15803d;color:#fff}
+    .arq-cal-btn.sel[data-ac="2"]{background:#047857;border-color:#047857;color:#fff}
+    .arq-cal-hint{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px;padding:0 2px}
+
     /* Penal rows */
     .penal-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde)}.penal-row:last-child{border-bottom:none}
     .penal-info{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-width:0;font-size:.9rem}
@@ -297,6 +308,17 @@
                     <button class="pot-btn debil" data-pot="debil" type="button">Débil</button>
                   </div>
                 </div>
+                <div class="form-row">
+                  <label>Intervención de la arquera <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+                  <div class="arq-cal-btns" id="arqueraCalidadBtns" role="group" aria-label="Calidad de intervención de la arquera">
+                    <button class="arq-cal-btn" data-ac="-2" type="button">−−</button>
+                    <button class="arq-cal-btn" data-ac="-1" type="button">−</button>
+                    <button class="arq-cal-btn" data-ac="0" type="button">/</button>
+                    <button class="arq-cal-btn" data-ac="1" type="button">+</button>
+                    <button class="arq-cal-btn" data-ac="2" type="button">++</button>
+                  </div>
+                  <div class="arq-cal-hint"><span>Muy mal</span><span>Normal</span><span>Excelente</span></div>
+                </div>
                 <div class="btn-row">
                   <button id="registrarBtn" class="btn" disabled>Registrar penal</button>
                 </div>
@@ -377,7 +399,7 @@
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false,role_fallback_when_no_tipo:true};
     const LAST_ARQUERA_KEY='penales_last_arquera_dni';
-    const state={plantel:[],partidos:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null};
+    const state={plantel:[],partidos:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null,arqueraCalidad:null};
     const MAX_PENALES_RENDER=120;
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -394,6 +416,7 @@
       document.getElementById('zonaSelector').addEventListener('click',e=>{const b=e.target.closest('[data-zona]');if(b)setZona(b.dataset.zona)});
       document.getElementById('resultadoBtns').addEventListener('click',e=>{const b=e.target.closest('.res-btn');if(b)setResultado(b.dataset.res)});
       document.getElementById('potenciaBtns').addEventListener('click',e=>{const b=e.target.closest('[data-pot]');if(b)setPotencia(b.dataset.pot)});
+      document.getElementById('arqueraCalidadBtns').addEventListener('click',e=>{const b=e.target.closest('[data-ac]');if(b)setArqueraCalidad(Number(b.dataset.ac),b)});
       document.getElementById('registrarBtn').addEventListener('click',registrarPenal);
       document.getElementById('refreshPenalesBtn').addEventListener('click',actualizarPenales);
       document.getElementById('listaPenalesBody').addEventListener('click',e=>{const b=e.target.closest('[data-delete-penal]');if(b)eliminarPenal(b.dataset.deletePenal)});
@@ -607,6 +630,11 @@
       document.querySelectorAll('.pot-btn').forEach(b=>b.classList.toggle('sel',b.dataset.pot===p));
       checkRegistrarBtn();
     }
+    function setArqueraCalidad(v,btn){
+      state.arqueraCalidad=v;
+      document.querySelectorAll('.arq-cal-btn').forEach(b=>b.classList.remove('sel'));
+      if(btn)btn.classList.add('sel');
+    }
 
     function checkRegistrarBtn(){
       const ok=state.sesionActualId&&document.getElementById('jugadoraSelect').value&&document.getElementById('arqueraSelect').value&&state.zona&&state.resultado&&state.potencia;
@@ -622,9 +650,9 @@
       const arquera_dni=aSel.value;
       const jugadora_nombre=jSel.selectedOptions[0]?.text||jugadora_dni;
       const arquera_nombre=aSel.selectedOptions[0]?.text||arquera_dni;
-      const snapshot={zona:state.zona,resultado:state.resultado,potencia:state.potencia,jugadora:jugadora_dni};
+      const snapshot={zona:state.zona,resultado:state.resultado,potencia:state.potencia,arqueraCalidad:state.arqueraCalidad,jugadora:jugadora_dni};
       const tempId='tmp_'+Date.now();
-      const nuevo=normalizePenalRecord({id:tempId,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia,timestamp:new Date().toISOString(),local_pending:true,local_created:true});
+      const nuevo=normalizePenalRecord({id:tempId,sesionId:state.sesionActualId,jugadora_dni,jugadora_nombre,arquera_dni,arquera_nombre,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia,arquera_calidad:snapshot.arqueraCalidad,timestamp:new Date().toISOString(),local_pending:true,local_created:true});
       btn.disabled=true;status.textContent='Guardando...';status.className='status-line';
       state.penales.push(nuevo);
       indexPenalRecord(nuevo);
@@ -633,7 +661,7 @@
       renderListaPenales();
       checkRegistrarBtn();
       try{
-        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora_persona_id:jugadora_dni,arquera_persona_id:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia});
+        const result=await apiPost({action:'penales_registrarPenal',sesionId:state.sesionActualId,jugadora_persona_id:jugadora_dni,arquera_persona_id:arquera_dni,sesion_id:state.sesionActualId,jugadora_dni,arquera_dni,zona:snapshot.zona,resultado:snapshot.resultado,potencia:snapshot.potencia,arquera_calidad:snapshot.arqueraCalidad!==null?snapshot.arqueraCalidad:''});
         nuevo.id=result.id||tempId;
         nuevo.local_pending=false;
         nuevo.local_created=true;
@@ -644,10 +672,11 @@
         state.penales=state.penales.filter(p=>p.id!==tempId);
         rebuildPenalesIndex();
         jSel.value=snapshot.jugadora;
-        state.zona=snapshot.zona;state.resultado=snapshot.resultado;state.potencia=snapshot.potencia;
+        state.zona=snapshot.zona;state.resultado=snapshot.resultado;state.potencia=snapshot.potencia;state.arqueraCalidad=snapshot.arqueraCalidad;
         document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.toggle('sel',b.dataset.zona===String(snapshot.zona)));
         document.querySelectorAll('.res-btn').forEach(b=>b.classList.toggle('sel',b.dataset.res===snapshot.resultado));
         document.querySelectorAll('.pot-btn').forEach(b=>b.classList.toggle('sel',b.dataset.pot===snapshot.potencia));
+        document.querySelectorAll('.arq-cal-btn').forEach(b=>b.classList.toggle('sel',snapshot.arqueraCalidad!==null&&Number(b.dataset.ac)===snapshot.arqueraCalidad));
         renderListaPenales();
         status.textContent='Error: '+err.message;status.className='status-line error';
         checkRegistrarBtn();
@@ -655,11 +684,12 @@
     }
 
     function resetRegistroPenal(jSel){
-      state.zona=null;state.resultado=null;state.potencia=null;
+      state.zona=null;state.resultado=null;state.potencia=null;state.arqueraCalidad=null;
       if(jSel)jSel.value='';
       document.querySelectorAll('#zonaSelector [data-zona]').forEach(b=>b.classList.remove('sel'));
       document.querySelectorAll('.res-btn').forEach(b=>b.classList.remove('sel'));
       document.querySelectorAll('.pot-btn').forEach(b=>b.classList.remove('sel'));
+      document.querySelectorAll('.arq-cal-btn').forEach(b=>b.classList.remove('sel'));
     }
 
     async function eliminarPenal(id){
@@ -695,6 +725,7 @@
           <span class="badge">${esc(zonaLabel(p.zona))}</span>
           <span class="badge ${resBadge(p.resultado)}">${resLabel(p.resultado)}</span>
           ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
+          ${p.arquera_calidad!=null&&p.arquera_calidad!==''?`<span class="badge" title="Intervención arquera">${arqueraCalLabel(Number(p.arquera_calidad))}</span>`:''}
         </div>
         ${p.local_pending?'<span class="badge warn">Guardando</span>':`<button class="btn small danger" type="button" data-delete-penal="${esc(String(p.id))}">×</button>`}
       </div>`).join('');
@@ -989,6 +1020,7 @@
 
     /* ===== HELPERS ===== */
     function zonaLabel(z){const m={'palo-izq':'Palo izq.','palo-der':'Palo der.','travesano':'Travesaño','fuera-izq':'Fuera izq.','fuera-arr':'Fuera arr.','fuera-der':'Fuera der.'};return m[z]?m[z]:`Z${z}`}
+    function arqueraCalLabel(v){return{'-2':'Arq −−','-1':'Arq −','0':'Arq /','1':'Arq +','2':'Arq ++'}[String(v)]||'Arq /'}
     function resBadge(res){return{gol:'ok',atajado:'danger',afuera:'warn',palo:''}[res]||''}
     function resLabel(res){return{gol:'Gol',atajado:'Atajado',afuera:'Afuera',palo:'Palo'}[res]||res}
     function potLabel(p){return{fuerte:'Fuerte',medio:'Medio',debil:'Débil'}[p]||p||'—'}
@@ -1011,6 +1043,7 @@
         zona:p.zona??'',
         resultado:p.resultado??'',
         potencia:p.potencia??'',
+        arquera_calidad:p.arquera_calidad!==undefined?p.arquera_calidad:null,
       };
     }
     function mergePenalesServidor(penalesServidor){
