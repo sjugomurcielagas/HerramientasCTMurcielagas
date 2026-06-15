@@ -1376,6 +1376,7 @@
       const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
       return m?`${m[3]}/${m[2]}/${m[1]}`:s;
     }
+    function nombrePersona(p){return Murci.personName(p)||'';}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
     function jsArg(v){return esc(JSON.stringify(String(v??'')))}
   </script>
