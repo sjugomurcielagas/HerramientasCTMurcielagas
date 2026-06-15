@@ -952,6 +952,17 @@ footer {
   .metric, .table-wrap { border-color: #ddd; background: #fff; }
   .report-meta, .metric-label, .metric-sub, th, td { color: #444 !important; }
 }
+  /* Unificacion visual global */
+  :root{--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--radius:16px;--shadow:0 1px 1px rgba(6,23,47,.04),0 10px 24px -16px rgba(6,23,47,.28);--bg:var(--fondo);--surface:var(--card);--border:var(--borde);--text:var(--texto)}
+  body{background:radial-gradient(circle at 14% 0%,rgba(34,168,232,.14),transparent 24rem),linear-gradient(180deg,#fbfdff 0%,var(--bg) 100%)}
+  .top-nav{background:rgba(255,255,255,.98);border-color:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+  .back-home{background:#fff;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:999px}.report-brand img{border-radius:10px;filter:drop-shadow(0 1px 1px rgba(6,23,47,.06))}
+  .panel,.card,.section-card,.status-panel,.status-line,.table-wrap,.summary-card,.chart-card,.metric-card{background:var(--surface);border-color:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .status-line,.table-wrap{box-shadow:none}.status-panel,.metric-card{background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)}
+  input,select,textarea{border-color:var(--border);border-radius:10px;background:#fff}.btn,button.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--border)}
+  .tab-btn,.chip,.period-btn{border-radius:999px;border-color:var(--border);background:#fff}.empty{background:#f8fbfd;border-color:var(--border)}
+  table th{background:#f8fbfd}table th,table td{border-color:var(--border)}
+  @media(max-width:560px){.top-nav{border-radius:14px}.panel,.card,.section-card,.status-panel{border-radius:14px}}
   .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
   @media (max-width:1024px){.page-version-tag{display:none}}
   </style>

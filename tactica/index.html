@@ -379,6 +379,16 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
   #statusbar{font-size:13px;}
 }
 
+    /* Unificacion visual global conservadora para tablero tactico */
+    :root{--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--radius:16px;--shadow:0 1px 1px rgba(6,23,47,.04),0 10px 24px -16px rgba(6,23,47,.28)}
+    #header{background:rgba(255,255,255,.98);border-bottom:1px solid var(--borde);box-shadow:0 1px 1px rgba(6,23,47,.03);backdrop-filter:blur(10px)}
+    .topbar-inner{padding:10px 14px}.home-link{background:#fff;border:1px solid var(--borde);box-shadow:var(--shadow);border-radius:999px}.brand img{border-radius:10px;box-shadow:0 1px 1px rgba(6,23,47,.04)}
+    #sidebar,#right-rail,#bottom{background:#fff;border-color:var(--borde);box-shadow:var(--shadow)}
+    .sb-btn,.rail-btn,.chip,.phase-badge{background:#fff;border-color:var(--borde);border-radius:12px;box-shadow:none}
+    .sb-btn.primary,.rail-btn.primary{background:var(--celeste);border-color:var(--celeste);color:#fff}.chip.active,.chip.arrow-on,.phase-badge.active{box-shadow:none}
+    .modal,.modal-card,.panel,.exercise-card{border-color:var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}
+    input,select,textarea{border-color:var(--borde);border-radius:10px;background:#fff}
+    @media(max-width:560px){.topbar-inner{padding:10px 11px}.sb-btn,.rail-btn,.chip{border-radius:10px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
 

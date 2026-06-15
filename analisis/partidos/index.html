@@ -181,6 +181,17 @@
 
     @media(min-width:740px){.split{grid-template-columns:1fr 1fr}.stat-card-grid{grid-template-columns:repeat(4,1fr)}.conv-grid{grid-template-columns:repeat(3,1fr)}.lista-toolbar{grid-template-columns:1fr 160px 160px}.context-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:540px){main{padding:12px 11px 64px}.panel-head h2{font-size:1.08rem}.lista-toolbar{grid-template-columns:1fr 1fr}}
+    /* Unificacion visual global */
+    :root{--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--radius:16px;--shadow:0 1px 1px rgba(6,23,47,.04),0 10px 24px -16px rgba(6,23,47,.28)}
+    body{background:radial-gradient(circle at 14% 0%,rgba(34,168,232,.14),transparent 24rem),linear-gradient(180deg,#fbfdff 0%,var(--fondo) 100%)}
+    .topbar{background:rgba(255,255,255,.98);border-bottom:1px solid var(--borde);box-shadow:0 1px 1px rgba(6,23,47,.03);backdrop-filter:blur(10px)}
+    .topbar-inner{padding:10px 14px}.home-link{background:#fff;border:1px solid var(--borde);box-shadow:var(--shadow);border-radius:999px}.brand img{border-radius:10px;box-shadow:0 1px 1px rgba(6,23,47,.04)}
+    .panel,.login-card,.table-wrap,.context-card,.mini-stat,.tipo-comp-wrap,.goleadoras-box,.stat-card{background:var(--card);border-color:var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .table-wrap,.context-card,.mini-stat,.tipo-comp-wrap,.goleadoras-box{box-shadow:none}.stat-card{background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)}
+    input,select,textarea{border-color:var(--borde);border-radius:10px;background:#fff}.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--borde)}.btn.small{border-radius:999px}
+    .tabs{background:linear-gradient(180deg,rgba(244,249,253,1) 0%,rgba(244,249,253,.94) 100%)}.tab-btn{border-radius:999px;background:#fff}.empty{background:#f8fbfd;border-color:var(--borde)}.badge{font-weight:800}
+    .chip-btn,.asig-chip,.modo-toggle,.tipo-btn,.conv-btn,.propio-chip{border-color:var(--borde)}.partido-card,.stat-row,.match-stat-row,.momento-row,.rating-row,.goleadora-row{border-bottom-color:var(--borde)}
+    @media(max-width:540px){.topbar-inner{padding:10px 11px}.panel,.login-card{border-radius:14px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
     .propio-chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0}
