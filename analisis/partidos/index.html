@@ -231,7 +231,19 @@
               </div>
             </div>
 
-            <div class="context-card rival-editor">
+            <div class="context-card">
+              <div class="form-row">
+                <label for="nModoPartido">Modo de partido</label>
+                <select id="nModoPartido">
+                  <option value="rival">Las Murciélagas vs rival</option>
+                  <option value="interno">Partido interno</option>
+                  <option value="terceros">Terceros vs terceros</option>
+                </select>
+              </div>
+              <div class="hint">El modo interno usa el plantel activo y te deja repartirlo entre dos equipos guardables.</div>
+            </div>
+
+            <div id="rivalEditor" class="context-card rival-editor">
               <div class="context-grid">
                 <div class="form-row">
                   <label for="nEquipoSelect">Equipo / rival *</label>
@@ -258,11 +270,28 @@
               <div id="rivalStatus" class="status-line"></div>
             </div>
 
-            <div class="context-card">
-              <label style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-                <input id="nNeutral" type="checkbox" style="width:auto"> Partido entre equipos de terceros
-              </label>
-              <div id="neutralWrap" class="context-grid hidden">
+            <div id="internoEditor" class="context-card rival-editor hidden">
+              <div class="context-grid">
+                <div class="form-row">
+                  <label for="nInternoLocalNombre">Equipo local *</label>
+                  <input id="nInternoLocalNombre" type="text" value="Murciélagas Azul" autocomplete="off">
+                </div>
+                <div class="form-row">
+                  <label for="nInternoVisitanteNombre">Equipo visitante *</label>
+                  <input id="nInternoVisitanteNombre" type="text" value="Murciélagas Naranja" autocomplete="off">
+                </div>
+              </div>
+              <div class="btn-row" style="margin-top:0">
+                <button id="autoRepartoBtn" class="btn secondary small" type="button">Repartir automáticamente</button>
+                <button id="guardarInternosBtn" class="btn secondary small" type="button">Guardar equipos internos</button>
+              </div>
+              <div class="hint">Asigná el plantel activo entre dos equipos. Lo guardado queda disponible en el catálogo para próximos análisis y estadísticas.</div>
+              <div id="internoResumen" class="status-line"></div>
+              <div id="internoRoster" style="margin-top:10px"></div>
+            </div>
+
+            <div id="tercerosEditor" class="context-card hidden">
+              <div class="context-grid">
                 <div class="form-row">
                   <label for="nLocalSelect">Equipo local</label>
                   <select id="nLocalSelect"></select>
@@ -390,7 +419,7 @@
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],equipos:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:''};
+    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null}};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -402,9 +431,13 @@
       document.getElementById('modoDetalleBtn').addEventListener('click',()=>setModo('detalle'));
       document.getElementById('crearBtn').addEventListener('click',crearPartido);
       document.getElementById('guardarRivalBtn').addEventListener('click',guardarRivalActual);
+      document.getElementById('guardarInternosBtn').addEventListener('click',guardarEquiposInternosActuales);
+      document.getElementById('autoRepartoBtn').addEventListener('click',repartirPlantelAutomaticamente);
+      document.getElementById('nModoPartido').addEventListener('change',onModoPartidoChange);
+      document.getElementById('nInternoLocalNombre').addEventListener('input',renderInternalRoster);
+      document.getElementById('nInternoVisitanteNombre').addEventListener('input',renderInternalRoster);
       document.getElementById('nEquipoSelect').addEventListener('change',onEquipoChange);
       document.getElementById('nRivalPlantelSelect').addEventListener('change',onRivalPlantelChange);
-      document.getElementById('nNeutral').addEventListener('change',onNeutralChange);
       document.getElementById('nLocalSelect').addEventListener('change',()=>renderPlantelesEquipo('nLocalSelect','nLocalPlantelSelect'));
       document.getElementById('nVisitanteSelect').addEventListener('change',()=>renderPlantelesEquipo('nVisitanteSelect','nVisitantePlantelSelect'));
       document.getElementById('searchInput').addEventListener('input',renderLista);
@@ -419,10 +452,12 @@
       try{
         const [plantelRes,equiposRes,partidosRes,sesionesRes]=await Promise.allSettled([obtenerPlantel(),apiGet('equipos_getEquipos'),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones')]);
         state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
+        state.plantelActivo=state.plantel.filter(p=>p&&p.activo!==false&&p.inactivo!==true);
         state.equipos=equiposRes.status==='fulfilled'&&Array.isArray(equiposRes.value)?equiposRes.value:[];
         state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
         state.sesionesPenales=sesionesRes.status==='fulfilled'&&Array.isArray(sesionesRes.value)?sesionesRes.value:[];
         renderEquiposSelect();
+        onModoPartidoChange();
         renderLista();
       }catch(e){alert('Error al cargar datos: '+e.message)}
       finally{app.classList.remove('loading')}
@@ -465,7 +500,8 @@
     function renderEquiposSelect(){
       const sel=document.getElementById('nEquipoSelect');
       if(!sel)return;
-      const options=state.equipos.map(e=>`<option value="${esc(e.id)}">${esc(e.nombre)}</option>`).join('');
+      const equipoLabel=e=>`${e.nombre}${e.tipo ? ` · ${String(e.tipo).replace(/_/g,' ')}` : ''}`;
+      const options=state.equipos.map(e=>`<option value="${esc(e.id)}">${esc(equipoLabel(e))}</option>`).join('');
       sel.innerHTML='<option value="">Crear nuevo rival...</option>'+options;
       ['nLocalSelect','nVisitanteSelect'].forEach(id=>{
         const el=document.getElementById(id);
@@ -474,12 +510,19 @@
       renderPlantelesEquipo('nEquipoSelect','nRivalPlantelSelect');
       renderPlantelesEquipo('nLocalSelect','nLocalPlantelSelect');
       renderPlantelesEquipo('nVisitanteSelect','nVisitantePlantelSelect');
+      renderInternalRoster();
     }
 
-    function onNeutralChange(){
-      const active=document.getElementById('nNeutral').checked;
-      document.getElementById('neutralWrap').classList.toggle('hidden',!active);
-      document.querySelector('.rival-editor').classList.toggle('hidden',active);
+    function onModoPartidoChange(){
+      const modo=document.getElementById('nModoPartido').value||'rival';
+      state.modoPartido=modo;
+      document.getElementById('rivalEditor').classList.toggle('hidden',modo!=='rival');
+      document.getElementById('internoEditor').classList.toggle('hidden',modo!=='interno');
+      document.getElementById('tercerosEditor').classList.toggle('hidden',modo!=='terceros');
+      if(modo==='interno'&&Object.keys(state.internoAsignacion||{}).length===0){
+        repartirPlantelAutomaticamente();
+      }
+      renderInternalRoster();
     }
 
     function onEquipoChange(){
@@ -495,6 +538,70 @@
     function onRivalPlantelChange(){
       const equipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nEquipoSelect').value));
       if(equipo)document.getElementById('nRivalPlantel').value=plantelToLines(getPlantelSeleccionado(equipo,'nRivalPlantelSelect'));
+    }
+
+    function renderInternalRoster(){
+      const cont=document.getElementById('internoRoster');
+      const resumen=document.getElementById('internoResumen');
+      if(!cont||!resumen)return;
+      const jugadoras=state.plantelActivo||[];
+      if(!jugadoras.length){
+        cont.innerHTML='<div class="empty">No hay jugadoras activas para repartir.</div>';
+        resumen.textContent='';
+        return;
+      }
+      const localName=(document.getElementById('nInternoLocalNombre')?.value||'Murciélagas Azul').trim()||'Murciélagas Azul';
+      const visitanteName=(document.getElementById('nInternoVisitanteNombre')?.value||'Murciélagas Naranja').trim()||'Murciélagas Naranja';
+      const counts={local:0,visitante:0,libre:0};
+      cont.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Jugadora</th><th>Asignación</th></tr></thead><tbody>${
+        jugadoras.map(p=>{
+          const key=personaKey(p);
+          const asignacion=state.internoAsignacion[key]||'';
+          if(asignacion==='local')counts.local++;
+          else if(asignacion==='visitante')counts.visitante++;
+          else counts.libre++;
+          const nombre=nombrePersona(p);
+          return `<tr><td>${esc(nombre)}</td><td>
+            <select data-interno-key="${esc(key)}" onchange="onInternoAsignacionChange(this)">
+              <option value="">Sin asignar</option>
+              <option value="local"${asignacion==='local'?' selected':''}>${esc(localName)}</option>
+              <option value="visitante"${asignacion==='visitante'?' selected':''}>${esc(visitanteName)}</option>
+            </select>
+          </td></tr>`;
+        }).join('')
+      }</tbody></table></div>`;
+      resumen.textContent=`${counts.local} en ${localName} · ${counts.visitante} en ${visitanteName} · ${counts.libre} sin asignar`;
+    }
+
+    function onInternoAsignacionChange(sel){
+      const key=String(sel.dataset.internoKey||'').trim();
+      if(!key)return;
+      const value=String(sel.value||'').trim();
+      if(value)state.internoAsignacion[key]=value;else delete state.internoAsignacion[key];
+      renderInternalRoster();
+    }
+
+    function repartirPlantelAutomaticamente(){
+      const keys=(state.plantelActivo||[]).map(p=>personaKey(p)).filter(Boolean);
+      state.internoAsignacion={};
+      keys.forEach((key,idx)=>{state.internoAsignacion[key]=idx%2===0?'local':'visitante';});
+      renderInternalRoster();
+    }
+
+    function armarPlantelInterno(tipo){
+      return (state.plantelActivo||[]).filter(p=>state.internoAsignacion[personaKey(p)]===tipo);
+    }
+
+    function nombreEquipoInterno(tipo){
+      return tipo==='local'
+        ? (document.getElementById('nInternoLocalNombre')?.value||'Murciélagas Azul').trim() || 'Murciélagas Azul'
+        : (document.getElementById('nInternoVisitanteNombre')?.value||'Murciélagas Naranja').trim() || 'Murciélagas Naranja';
+    }
+
+    function nombrePartidoDefault(contexto, rival, modoPartido, fecha){
+      const prefijo = modoPartido==='interno' || modoPartido==='terceros' ? rival : 'vs ' + rival;
+      const nombre = [contexto, prefijo].filter(Boolean).join(' · ');
+      return nombre || ((modoPartido==='interno' || modoPartido==='terceros' ? '' : 'vs ') + rival + ' · ' + formatDate(fecha));
     }
 
     function renderPlantelesEquipo(equipoSelectId,plantelSelectId){
@@ -552,27 +659,111 @@
       finally{btn.disabled=false}
     }
 
+    async function guardarEquiposInternosActuales(){
+      const st=document.getElementById('internoResumen');
+      const btn=document.getElementById('guardarInternosBtn');
+      const localNombre=nombreEquipoInterno('local');
+      const visitanteNombre=nombreEquipoInterno('visitante');
+      const localPlantel=armarPlantelInterno('local');
+      const visitantePlantel=armarPlantelInterno('visitante');
+      if(!localNombre||!visitanteNombre){
+        st.textContent='Completá los nombres de ambos equipos internos.';
+        st.className='status-line error';
+        return null;
+      }
+      if(!localPlantel.length||!visitantePlantel.length){
+        st.textContent='Asigná jugadoras a ambos equipos antes de guardar.';
+        st.className='status-line error';
+        return null;
+      }
+      st.textContent='Guardando equipos internos...';
+      st.className='status-line';
+      btn.disabled=true;
+      try{
+        const contexto=document.getElementById('nContexto').value.trim();
+        const fecha=document.getElementById('nFecha').value;
+        const [localEq,visitanteEq]=await Promise.all([
+          apiPost({action:'equipos_guardarEquipo',nombre:localNombre,tipo:'interno',categoria:'interno',plantel:localPlantel,planteles:[{id:'base',nombre:contexto||'Plantel actual',contexto,fecha,plantel:localPlantel}]}),
+          apiPost({action:'equipos_guardarEquipo',nombre:visitanteNombre,tipo:'interno',categoria:'interno',plantel:visitantePlantel,planteles:[{id:'base',nombre:contexto||'Plantel actual',contexto,fecha,plantel:visitantePlantel}]})
+        ]);
+        upsertEquipoState(localEq);
+        upsertEquipoState(visitanteEq);
+        state.internoEquipos={local:localEq,visitante:visitanteEq};
+        renderEquiposSelect();
+        const localSel=document.getElementById('nLocalSelect');
+        const visitanteSel=document.getElementById('nVisitanteSelect');
+        if(localSel)localSel.value=localEq.id;
+        if(visitanteSel)visitanteSel.value=visitanteEq.id;
+        if(st){
+          st.textContent='Equipos internos guardados.';
+          st.className='status-line ok';
+        }
+        return {local:localEq,visitante:visitanteEq};
+      }catch(e){
+        st.textContent='Error: '+e.message;
+        st.className='status-line error';
+        return null;
+      }finally{
+        btn.disabled=false;
+      }
+    }
+
+    function upsertEquipoState(equipo){
+      if(!equipo||!equipo.id)return;
+      const idx=state.equipos.findIndex(e=>String(e.id)===String(equipo.id));
+      if(idx>=0)state.equipos[idx]=equipo;else state.equipos.push(equipo);
+      state.equipos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    }
+
     async function crearPartido(){
       const contexto=document.getElementById('nContexto').value.trim();
-      const neutral=document.getElementById('nNeutral').checked;
+      const modoPartido=document.getElementById('nModoPartido').value||'rival';
       const selectedEquipoId=document.getElementById('nEquipoSelect').value;
       const selectedEquipo=state.equipos.find(e=>String(e.id)===String(selectedEquipoId));
       const localEquipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nLocalSelect').value));
       const visitanteEquipo=state.equipos.find(e=>String(e.id)===String(document.getElementById('nVisitanteSelect').value));
-      const rival=neutral?[localEquipo?.nombre,visitanteEquipo?.nombre].filter(Boolean).join(' vs '):(document.getElementById('nRival').value.trim()||(selectedEquipo&&selectedEquipo.nombre)||'').trim();
+      const esInterno=modoPartido==='interno';
+      const esTerceros=modoPartido==='terceros';
+      const esRival=!esInterno&&!esTerceros;
+      const rival=esInterno
+        ? [nombreEquipoInterno('local'),nombreEquipoInterno('visitante')].filter(Boolean).join(' vs ')
+        : esTerceros
+          ? [localEquipo?.nombre,visitanteEquipo?.nombre].filter(Boolean).join(' vs ')
+          : (document.getElementById('nRival').value.trim()||(selectedEquipo&&selectedEquipo.nombre)||'').trim();
       const fecha=document.getElementById('nFecha').value;
       const tipo=document.getElementById('nTipo').value;
       const notas=document.getElementById('nNotas').value.trim();
-      const nombre=document.getElementById('nNombre').value.trim()||([contexto,neutral?rival:'vs '+rival].filter(Boolean).join(' · ')||((neutral?'':'vs ')+rival+' · '+formatDate(fecha)));
+      const nombre=document.getElementById('nNombre').value.trim()||nombrePartidoDefault(contexto,rival,modoPartido,fecha);
       const st=document.getElementById('crearStatus');
       const btn=document.getElementById('crearBtn');
       if(!contexto){st.textContent='Ingresá el contexto del partido.';st.className='status-line error';return}
-      if(neutral&&(!localEquipo||!visitanteEquipo)){st.textContent='Seleccioná equipo local y visitante.';st.className='status-line error';return}
-      if(!rival){st.textContent='Ingresá el nombre del rival.';st.className='status-line error';return}
+      if(esTerceros&&(!localEquipo||!visitanteEquipo)){st.textContent='Seleccioná equipo local y visitante.';st.className='status-line error';return}
+      if(esRival&&!rival){st.textContent='Ingresá el nombre del rival.';st.className='status-line error';return}
+      if(esInterno){
+        const localPlantel=armarPlantelInterno('local');
+        const visitantePlantel=armarPlantelInterno('visitante');
+        if(!localPlantel.length||!visitantePlantel.length){st.textContent='Asigná jugadoras a ambos equipos internos.';st.className='status-line error';return}
+      }
       if(!fecha){st.textContent='Seleccioná una fecha.';st.className='status-line error';return}
       const htP=document.getElementById('nHtPropio').value;
       const htR=document.getElementById('nHtRival').value;
-      const payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,rival_plantel_id:document.getElementById('nRivalPlantelSelect').value,contexto_partido:contexto,tipo,modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:neutral?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel_id:document.getElementById('nLocalPlantelSelect').value,equipo_visitante_plantel_id:document.getElementById('nVisitantePlantelSelect').value,equipo_local_plantel:getPlantelSeleccionado(localEquipo,'nLocalPlantelSelect'),equipo_visitante_plantel:getPlantelSeleccionado(visitanteEquipo,'nVisitantePlantelSelect'),...state.nuevoScore};
+      let payload={action:'partidos_crearPartido',nombre,fecha,rival,rival_id:selectedEquipoId,rival_plantel_id:document.getElementById('nRivalPlantelSelect').value,contexto_partido:contexto,tipo,tipo_partido:esInterno?'interno':(esTerceros?'terceros':'murci_vs_rival'),modo:state.modo,notas,rival_plantel:parsePlantelLines(document.getElementById('nRivalPlantel').value),incluye_murcielagas:(esTerceros||esInterno)?'NO':'SI',equipo_local_id:localEquipo?.id||'',equipo_visitante_id:visitanteEquipo?.id||'',equipo_local_nombre:localEquipo?.nombre||'',equipo_visitante_nombre:visitanteEquipo?.nombre||'',equipo_local_plantel_id:document.getElementById('nLocalPlantelSelect').value,equipo_visitante_plantel_id:document.getElementById('nVisitantePlantelSelect').value,equipo_local_plantel:getPlantelSeleccionado(localEquipo,'nLocalPlantelSelect'),equipo_visitante_plantel:getPlantelSeleccionado(visitanteEquipo,'nVisitantePlantelSelect'),...state.nuevoScore};
+      if(esInterno){
+        const equiposInternos=await guardarEquiposInternosActuales();
+        if(!equiposInternos)return;
+        payload.equipo_local_id=equiposInternos.local.id;
+        payload.equipo_visitante_id=equiposInternos.visitante.id;
+        payload.equipo_local_nombre=equiposInternos.local.nombre;
+        payload.equipo_visitante_nombre=equiposInternos.visitante.nombre;
+        payload.equipo_local_plantel_id='base';
+        payload.equipo_visitante_plantel_id='base';
+        payload.equipo_local_plantel=armarPlantelInterno('local');
+        payload.equipo_visitante_plantel=armarPlantelInterno('visitante');
+        payload.rival='';
+        payload.rival_id='';
+        payload.rival_plantel_id='';
+        payload.rival_plantel=[];
+      }
       if(htP!=='')payload.ht_propios=parseInt(htP);
       if(htR!=='')payload.ht_rival=parseInt(htR);
       if(state.modo==='detalle'){
@@ -597,15 +788,19 @@
     function resetNuevoForm(){
       ['nContexto','nRival','nRivalPlantel','nNombre','nNotas','nFormPropia','nFormRival','nSistemaPropio','nSistemaRival','nHtPropio','nHtRival'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
       document.getElementById('nEquipoSelect').value='';
-      document.getElementById('nNeutral').checked=false;
-      document.getElementById('neutralWrap').classList.add('hidden');
-      document.querySelector('.rival-editor').classList.remove('hidden');
+      document.getElementById('nModoPartido').value='rival';
+      state.modoPartido='rival';
+      state.internoAsignacion={};
+      document.getElementById('rivalEditor').classList.remove('hidden');
+      document.getElementById('internoEditor').classList.add('hidden');
+      document.getElementById('tercerosEditor').classList.add('hidden');
       document.getElementById('nLocalSelect').value='';
       document.getElementById('nVisitanteSelect').value='';
       document.getElementById('nRivalPlantelSelect').innerHTML='';
       document.getElementById('nLocalPlantelSelect').innerHTML='';
       document.getElementById('nVisitantePlantelSelect').innerHTML='';
       document.getElementById('rivalStatus').textContent='';
+      document.getElementById('internoResumen').textContent='';
       renderEquiposSelect();
       document.getElementById('nFecha').valueAsDate=new Date();
       state.nuevoScore={goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0};

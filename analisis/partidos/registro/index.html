@@ -710,14 +710,14 @@
     function renderMatchBar() {
       const p = state.partido;
       if (!p) return;
-      const neutral = p.incluye_murcielagas === false;
-      const local = neutral ? (p.equipo_local_nombre || 'Local') : 'Las Murciélagas';
-      const rival = neutral ? (p.equipo_visitante_nombre || 'Visitante') : (p.rival || 'Rival');
-      document.getElementById('matchRival').textContent = neutral ? `${esc(local)} vs ${esc(rival)}` : 'vs ' + esc(rival);
+      const dual = p.incluye_murcielagas === false || String(p.tipo_partido || '').trim() === 'interno';
+      const local = dual ? (p.equipo_local_nombre || 'Local') : 'Las Murciélagas';
+      const rival = dual ? (p.equipo_visitante_nombre || 'Visitante') : (p.rival || 'Rival');
+      document.getElementById('matchRival').textContent = dual ? `${esc(local)} vs ${esc(rival)}` : 'vs ' + esc(rival);
       document.getElementById('matchMeta').textContent = [p.fecha ? formatDate(p.fecha) : '', p.tipo || ''].filter(Boolean).join(' · ');
       document.querySelector('.equipo-btn[data-eq="propio"]').textContent = esc(local);
       document.getElementById('equipoRivalBtn').textContent = esc(rival);
-      document.getElementById('brandTitle').textContent = neutral ? esc(local + ' vs ' + rival) : esc('vs ' + rival);
+      document.getElementById('brandTitle').textContent = dual ? esc(local + ' vs ' + rival) : esc('vs ' + rival);
       renderScore();
     }
 
@@ -1111,8 +1111,8 @@
     }
 
     function getJugadorasEquipoActual() {
-      const neutral = state.partido && state.partido.incluye_murcielagas === false;
-      const base = neutral
+      const dual = state.partido && (state.partido.incluye_murcielagas === false || String(state.partido.tipo_partido || '').trim() === 'interno');
+      const base = dual
         ? (state.equipo === 'rival' ? state.visitantePlantel : state.localPlantel)
         : (state.equipo === 'rival' ? state.rivalPlantel : state.plantel);
       return (base || []).filter(p => esJugadoraVisible(p));
@@ -1121,14 +1121,14 @@
     function hayJugadorasRival() { return getJugadorasEquipoActual().length > 0; }
 
     function equipoLabel(eq) {
-      const neutral = state.partido && state.partido.incluye_murcielagas === false;
-      if (neutral) return eq === 'rival' ? (state.partido.equipo_visitante_nombre || 'Visitante') : (state.partido.equipo_local_nombre || 'Local');
+      const dual = state.partido && (state.partido.incluye_murcielagas === false || String(state.partido.tipo_partido || '').trim() === 'interno');
+      if (dual) return eq === 'rival' ? (state.partido.equipo_visitante_nombre || 'Visitante') : (state.partido.equipo_local_nombre || 'Local');
       return eq === 'rival' ? (state.partido?.rival || 'Rival') : 'Las Murciélagas';
     }
 
     function equipoIdActual() {
-      const neutral = state.partido && state.partido.incluye_murcielagas === false;
-      if (neutral) return state.equipo === 'rival' ? (state.partido.equipo_visitante_id || '') : (state.partido.equipo_local_id || '');
+      const dual = state.partido && (state.partido.incluye_murcielagas === false || String(state.partido.tipo_partido || '').trim() === 'interno');
+      if (dual) return state.equipo === 'rival' ? (state.partido.equipo_visitante_id || '') : (state.partido.equipo_local_id || '');
       return state.equipo === 'rival' ? (state.partido?.rival_id || '') : '';
     }
 

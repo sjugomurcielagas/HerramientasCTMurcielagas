@@ -3190,6 +3190,7 @@ function _parsePartido(r) {
     equipo_visitante_plantel: equipos_parsePlantel_(r.equipo_visitante_plantel_json || '[]'),
     equipo_local_plantel_id: String(r.equipo_local_plantel_id || '').trim(),
     equipo_visitante_plantel_id: String(r.equipo_visitante_plantel_id || '').trim(),
+    tipo_partido: String(r.tipo_partido || '').trim(),
     tipo_competencia: String(r.tipo_competencia || '').trim(),
     tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim()
   };
@@ -3202,15 +3203,38 @@ function partidos_crearPartido(p) {
 
   const id = newId();
   const incluyeMurcielagas = String(p.incluye_murcielagas || 'SI').toUpperCase() !== 'NO';
-  const equipo = equipos_resolverEquipo_(p);
+  const tipoPartido = String(p.tipo_partido || (incluyeMurcielagas ? 'murci_vs_rival' : 'terceros')).trim();
+  const esInterno = tipoPartido === 'interno';
   const rivalPlantelId = String(p.rival_plantel_id || '').trim();
-  const rivalPlantel = equipos_getPlantelById_(equipo, rivalPlantelId).length ? equipos_getPlantelById_(equipo, rivalPlantelId) : (Array.isArray(p.rival_plantel) ? p.rival_plantel : []);
-  const rivalPlantelObj = (equipo.planteles || []).find(function(pl) { return String(pl.id) === rivalPlantelId; });
+  const equipo = esInterno ? null : equipos_resolverEquipo_(p);
+  const rivalPlantel = esInterno
+    ? []
+    : (equipo ? (equipos_getPlantelById_(equipo, rivalPlantelId).length ? equipos_getPlantelById_(equipo, rivalPlantelId) : (Array.isArray(p.rival_plantel) ? p.rival_plantel : [])) : (Array.isArray(p.rival_plantel) ? p.rival_plantel : []));
+  const rivalPlantelObj = equipo ? (equipo.planteles || []).find(function(pl) { return String(pl.id) === rivalPlantelId; }) : null;
   var equipoLocal = null;
   var equipoVisitante = null;
   var localPlantel = [];
   var visitantePlantel = [];
-  if (!incluyeMurcielagas) {
+  if (esInterno) {
+    equipoLocal = equipos_resolverEquipo_({
+      rival_id: p.equipo_local_id,
+      rival: p.equipo_local_nombre || 'Murciélagas Local',
+      rival_pais: p.equipo_local_pais || '',
+      categoria: 'interno',
+      tipo: 'interno',
+      rival_plantel: p.equipo_local_plantel || []
+    });
+    equipoVisitante = equipos_resolverEquipo_({
+      rival_id: p.equipo_visitante_id,
+      rival: p.equipo_visitante_nombre || 'Murciélagas Visitante',
+      rival_pais: p.equipo_visitante_pais || '',
+      categoria: 'interno',
+      tipo: 'interno',
+      rival_plantel: p.equipo_visitante_plantel || []
+    });
+    localPlantel = equipos_getPlantelById_(equipoLocal, p.equipo_local_plantel_id).length ? equipos_getPlantelById_(equipoLocal, p.equipo_local_plantel_id) : (equipoLocal.plantel || []);
+    visitantePlantel = equipos_getPlantelById_(equipoVisitante, p.equipo_visitante_plantel_id).length ? equipos_getPlantelById_(equipoVisitante, p.equipo_visitante_plantel_id) : (equipoVisitante.plantel || []);
+  } else if (!incluyeMurcielagas) {
     equipoLocal = equipos_resolverEquipo_({ rival_id: p.equipo_local_id, rival: p.equipo_local_nombre || p.local || p.rival, rival_plantel: p.equipo_local_plantel || [] });
     equipoVisitante = equipos_resolverEquipo_({ rival_id: p.equipo_visitante_id, rival: p.equipo_visitante_nombre || p.visitante || p.rival, rival_plantel: p.equipo_visitante_plantel || [] });
     localPlantel = equipos_getPlantelById_(equipoLocal, p.equipo_local_plantel_id).length ? equipos_getPlantelById_(equipoLocal, p.equipo_local_plantel_id) : (equipoLocal.plantel || []);
@@ -3230,11 +3254,14 @@ function partidos_crearPartido(p) {
     'incluye_murcielagas', 'equipo_local_id', 'equipo_visitante_id',
     'equipo_local_nombre', 'equipo_visitante_nombre',
     'equipo_local_plantel_json', 'equipo_visitante_plantel_json',
-    'equipo_local_plantel_id', 'equipo_visitante_plantel_id'
+    'equipo_local_plantel_id', 'equipo_visitante_plantel_id',
+    'tipo_partido'
   ];
   appendObjectRow_(sheet, {
     id: id,
-    rival: incluyeMurcielagas ? (equipo.nombre || p.rival) : [equipoLocal && equipoLocal.nombre, equipoVisitante && equipoVisitante.nombre].filter(Boolean).join(' vs '),
+    rival: esInterno
+      ? [equipoLocal && equipoLocal.nombre, equipoVisitante && equipoVisitante.nombre].filter(Boolean).join(' vs ')
+      : (incluyeMurcielagas ? (equipo.nombre || p.rival) : [equipoLocal && equipoLocal.nombre, equipoVisitante && equipoVisitante.nombre].filter(Boolean).join(' vs ')),
     fecha: p.fecha,
     tipo: p.tipo || 'amistoso',
     nombre: p.nombre || '',
@@ -3267,10 +3294,11 @@ function partidos_crearPartido(p) {
     equipo_local_plantel_json: JSON.stringify(equipoLocal ? localPlantel : []),
     equipo_visitante_plantel_json: JSON.stringify(equipoVisitante ? visitantePlantel : []),
     equipo_local_plantel_id: p.equipo_local_plantel_id || '',
-    equipo_visitante_plantel_id: p.equipo_visitante_plantel_id || ''
+    equipo_visitante_plantel_id: p.equipo_visitante_plantel_id || '',
+    tipo_partido: tipoPartido
   }, headers);
 
-  return ok(true, { id: id, rival_id: equipo.id || '', rival: equipo.nombre || p.rival });
+  return ok(true, { id: id, rival_id: equipo && equipo.id ? equipo.id : '', rival: esInterno ? (p.rival || '') : (equipo && equipo.nombre ? equipo.nombre : p.rival), tipo_partido: tipoPartido });
 }
 
 function partidos_actualizarPartido(p) {
