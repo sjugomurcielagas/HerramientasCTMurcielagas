@@ -189,6 +189,9 @@
     .panel,.login-card,.table-wrap,.context-card,.mini-stat,.tipo-comp-wrap,.goleadoras-box,.stat-card{background:var(--card);border-color:var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}
     .table-wrap,.context-card,.mini-stat,.tipo-comp-wrap,.goleadoras-box{box-shadow:none}.stat-card{background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)}
     input,select,textarea{border-color:var(--borde);border-radius:10px;background:#fff}.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--borde)}.btn.small{border-radius:999px}
+    details.form-block:not([open]) summary{border-bottom:0}
+    details.form-block:not([open]){background:#fbfdff}
+    details.form-block summary .block-arrow{color:var(--muted)}
     .tabs{background:linear-gradient(180deg,rgba(244,249,253,1) 0%,rgba(244,249,253,.94) 100%)}.tab-btn{border-radius:999px;background:#fff}.empty{background:#f8fbfd;border-color:var(--borde)}.badge{font-weight:800}
     .chip-btn,.asig-chip,.modo-toggle,.tipo-btn,.conv-btn,.propio-chip{border-color:var(--borde)}.partido-card,.stat-row,.match-stat-row,.momento-row,.rating-row,.goleadora-row{border-bottom-color:var(--borde)}
     @media(max-width:540px){.topbar-inner{padding:10px 11px}.panel,.login-card{border-radius:14px}}
@@ -276,7 +279,7 @@
               </div>
             </details>
 
-            <details class="form-block" open>
+            <details class="form-block">
               <summary><span class="block-title">Modo de partido</span><span class="block-arrow">▼</span></summary>
               <div class="block-body">
                 <div class="chip-group" id="nModoChips">

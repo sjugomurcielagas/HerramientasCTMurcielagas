@@ -959,6 +959,9 @@ footer {
   .back-home{background:#fff;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:999px}.report-brand img{border-radius:10px;filter:drop-shadow(0 1px 1px rgba(6,23,47,.06))}
   .panel,.card,.section-card,.status-panel,.status-line,.table-wrap,.summary-card,.chart-card,.metric-card{background:var(--surface);border-color:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
   .status-line,.table-wrap{box-shadow:none}.status-panel,.metric-card{background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)}
+  .production-details{display:block}.production-details>summary{list-style:none;cursor:pointer}.production-details>summary::-webkit-details-marker{display:none}
+  .production-details>summary .panel-title::after{content:'Desplegar';margin-left:10px;padding:3px 8px;border-radius:999px;background:var(--accent-dim);color:var(--accent-soft);font-family:var(--sans);font-size:11px;font-weight:800;text-transform:none;letter-spacing:0}
+  .production-details[open]>summary .panel-title::after{content:'Ocultar'}.production-details:not([open]) .panel-head{border-bottom:0}.production-details .panel-body{border-top:1px solid var(--border)}
   input,select,textarea{border-color:var(--border);border-radius:10px;background:#fff}.btn,button.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--border)}
   .tab-btn,.chip,.period-btn{border-radius:999px;border-color:var(--border);background:#fff}.empty{background:#f8fbfd;border-color:var(--border)}
   table th{background:#f8fbfd}table th,table td{border-color:var(--border)}
@@ -994,9 +997,10 @@ footer {
 <main class="layout">
 
   <section class="panel controls-panel" aria-label="Herramientas del reporte">
-    <div class="panel-head">
+    <details class="production-details">
+    <summary class="panel-head">
       <div class="panel-title">Herramientas</div>
-    </div>
+    </summary>
 
     <div class="panel-body">
 
@@ -1136,6 +1140,7 @@ footer {
       </div>
 
     </div>
+    </details>
   </section>
 
   <section class="panel main-report-panel" aria-label="Vista operativa">

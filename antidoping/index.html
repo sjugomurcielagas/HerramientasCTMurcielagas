@@ -32,6 +32,13 @@
     .result-card,.med-card,.section-card,.tue-card,.detail-box{box-shadow:none}.tue-stat{background:#f8fbfd}.notice{background:#fffbeb;border-color:#fde68a;box-shadow:none}
     input,select,textarea{border-color:var(--borde);border-radius:10px;background:#fff}.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--borde)}.btn.small,.btn.tiny{border-radius:999px}
     .tabs{background:linear-gradient(180deg,rgba(244,249,253,1) 0%,rgba(244,249,253,.94) 100%)}.tab-btn{border-radius:999px;background:#fff}.empty{background:#f8fbfd;border-color:var(--borde)}.badge{font-weight:800}
+    details.secondary-toggle{border:1px solid var(--borde);border-radius:var(--radius);background:#fbfdff;margin:0 0 13px;overflow:hidden;box-shadow:var(--shadow)}
+    details.secondary-toggle>summary{list-style:none;cursor:pointer;padding:11px 13px;font-weight:800;color:var(--azul-800);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    details.secondary-toggle>summary::-webkit-details-marker{display:none}
+    details.secondary-toggle>summary::after{content:"Desplegar";font-size:.74rem;color:var(--muted);font-weight:800}
+    details.secondary-toggle[open]>summary{border-bottom:1px solid var(--borde)}
+    details.secondary-toggle[open]>summary::after{content:"Ocultar"}
+    details.secondary-toggle .notice,details.secondary-toggle .tue-helper{margin:0;border:0;border-radius:0;box-shadow:none;background:#fff;padding:12px 13px}
     @media(max-width:560px){.topbar-inner{padding:10px 11px}.panel,.login-card,.result-card,.med-card,.section-card{border-radius:14px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
@@ -57,7 +64,7 @@
       <section id="tueView" class="app-section hidden">
         <div class="panel">
           <div class="panel-head"><div><h2>TUE</h2><p>Gestioná autorizaciones terapéuticas por jugadora y controlá su vigencia.</p></div></div>
-          <div class="notice">Usá esta sección cuando una medicación prohibida o condicionada no pueda reemplazarse y haya que iniciar o seguir una TUE. La fecha de vencimiento se propone a un año por defecto, pero se puede editar según la aprobación real.</div>
+          <details class="secondary-toggle"><summary>Criterio de uso TUE</summary><div class="notice">Usá esta sección cuando una medicación prohibida o condicionada no pueda reemplazarse y haya que iniciar o seguir una TUE. La fecha de vencimiento se propone a un año por defecto, pero se puede editar según la aprobación real.</div></details>
           <div class="actions" style="margin-top:13px">
             <a class="btn secondary small" id="tueFormBtn" href="#" target="_blank" rel="noopener noreferrer">Formulario TUE IBSA</a>
             <a class="btn ghost small" id="tueGuideBtn" href="#" target="_blank" rel="noopener noreferrer">Instrucciones y proceso</a>
@@ -90,7 +97,7 @@
                 <a id="tueArchivoLink" class="btn ghost small hidden" href="#" target="_blank" rel="noopener noreferrer">Ver TUE cargado</a>
               </div>
               <div id="tueStatus" class="status-line"></div>
-              <div class="tue-helper" style="margin-top:10px">Primero podés descargar el formulario oficial, completar la ficha para la jugadora y después subir el TUE firmado cuando vuelva de la médica.</div>
+              <details class="secondary-toggle"><summary>Ayuda para completar TUE</summary><div class="tue-helper">Primero podés descargar el formulario oficial, completar la ficha para la jugadora y después subir el TUE firmado cuando vuelva de la médica.</div></details>
             </div>
             <div class="section-card">
               <h3>Seguimiento TUE</h3>

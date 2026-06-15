@@ -165,6 +165,13 @@
     input,select{border-color:var(--borde);border-radius:10px;background:#fff}.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--borde)}.btn.small{border-radius:999px}
     .tabs{background:linear-gradient(180deg,rgba(244,249,253,1) 0%,rgba(244,249,253,.94) 100%)}.tab-btn{border-radius:999px;background:#fff}.empty{background:#f8fbfd;border-color:var(--borde)}.badge{font-weight:800}
     .res-btn,.pot-btn,.arq-cal-btn,.zona-ext-btn{border-color:var(--borde);box-shadow:none}.sesion-card,.penal-row,.stat-row,.evol-row{border-bottom-color:var(--borde)}
+    details.secondary-toggle{border:1px solid var(--borde);border-radius:14px;background:#fbfdff;margin:8px 0 11px;overflow:hidden}
+    details.secondary-toggle>summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;color:var(--azul-800);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    details.secondary-toggle>summary::-webkit-details-marker{display:none}
+    details.secondary-toggle>summary::after{content:"Desplegar";font-size:.74rem;color:var(--muted)}
+    details.secondary-toggle[open]>summary{border-bottom:1px solid var(--borde)}
+    details.secondary-toggle[open]>summary::after{content:"Ocultar"}
+    details.secondary-toggle .secondary-body{padding:11px 12px}
     @media(max-width:540px){.topbar-inner{padding:10px 11px}.panel,.login-card{border-radius:14px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
@@ -282,7 +289,9 @@
                       <button class="zona-btn" data-zona="9" type="button" aria-label="Zona 9">9</button>
                     </div>
                     <div class="zona-label-hint">1–3 arriba · 4–6 medio · 7–9 abajo (vista del tirador)</div>
-                    <div class="zona-ext-wrap">
+                    <details class="secondary-toggle">
+                      <summary>Palos y tiros fuera</summary>
+                      <div class="zona-ext-wrap secondary-body">
                       <div class="zona-ext-section">
                         <div class="zona-ext-section-label">En los palos</div>
                         <div class="zona-ext-row">
@@ -299,7 +308,8 @@
                           <button class="zona-ext-btn fuera" data-zona="fuera-der" type="button">Derecha →</button>
                         </div>
                       </div>
-                    </div>
+                      </div>
+                    </details>
                   </div>
                 </div>
                 <div class="form-row">
@@ -319,17 +329,22 @@
                     <button class="pot-btn debil" data-pot="debil" type="button">Débil</button>
                   </div>
                 </div>
-                <div class="form-row">
-                  <label>Intervención de la arquera <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
-                  <div class="arq-cal-btns" id="arqueraCalidadBtns" role="group" aria-label="Calidad de intervención de la arquera">
-                    <button class="arq-cal-btn" data-ac="-2" type="button">−−</button>
-                    <button class="arq-cal-btn" data-ac="-1" type="button">−</button>
-                    <button class="arq-cal-btn" data-ac="0" type="button">/</button>
-                    <button class="arq-cal-btn" data-ac="1" type="button">+</button>
-                    <button class="arq-cal-btn" data-ac="2" type="button">++</button>
+                <details class="secondary-toggle">
+                  <summary>Intervención de la arquera</summary>
+                  <div class="secondary-body">
+                    <div class="form-row">
+                      <label>Intervención de la arquera <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+                      <div class="arq-cal-btns" id="arqueraCalidadBtns" role="group" aria-label="Calidad de intervención de la arquera">
+                        <button class="arq-cal-btn" data-ac="-2" type="button">−−</button>
+                        <button class="arq-cal-btn" data-ac="-1" type="button">−</button>
+                        <button class="arq-cal-btn" data-ac="0" type="button">/</button>
+                        <button class="arq-cal-btn" data-ac="1" type="button">+</button>
+                        <button class="arq-cal-btn" data-ac="2" type="button">++</button>
+                      </div>
+                      <div class="arq-cal-hint"><span>Muy mal</span><span>Normal</span><span>Excelente</span></div>
+                    </div>
                   </div>
-                  <div class="arq-cal-hint"><span>Muy mal</span><span>Normal</span><span>Excelente</span></div>
-                </div>
+                </details>
                 <div class="btn-row">
                   <button id="registrarBtn" class="btn" disabled>Registrar penal</button>
                 </div>

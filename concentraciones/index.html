@@ -28,6 +28,13 @@
     .panel,.login-card,.item-card,.section-card,.calendar-day,.attendance-card,.attendance-person,.doc-card,.doc-option,.calendar-activity{background:var(--card);border-color:var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}
     .item-card,.section-card,.calendar-activity,.attendance-person,.doc-option{box-shadow:none}.calendar-day,.activity-form-card{background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)}
     input,select,textarea{border-color:var(--borde);border-radius:10px;background:#fff}.btn{border-radius:999px;font-weight:800;box-shadow:none}.btn.secondary,.btn.ghost{border:1px solid var(--borde)}.btn.small{border-radius:999px}
+    details.secondary-toggle{border:1px solid var(--borde);border-radius:var(--radius);background:#fbfdff;margin-bottom:13px;overflow:hidden;box-shadow:var(--shadow)}
+    details.secondary-toggle>summary{list-style:none;cursor:pointer;padding:11px 13px;font-weight:800;color:var(--azul-800);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    details.secondary-toggle>summary::-webkit-details-marker{display:none}
+    details.secondary-toggle>summary::after{content:"Desplegar";font-size:.74rem;color:var(--muted);font-weight:800}
+    details.secondary-toggle[open]>summary{border-bottom:1px solid var(--borde)}
+    details.secondary-toggle[open]>summary::after{content:"Ocultar"}
+    details.secondary-toggle .toolbar{padding:12px;margin-bottom:0}
     .tabs{background:linear-gradient(180deg,rgba(244,249,253,1) 0%,rgba(244,249,253,.94) 100%)}.tab-btn{border-radius:999px;background:#fff}.empty{background:#f8fbfd;border-color:var(--borde)}.badge,.calendar-pill,.calendar-day-count{font-weight:800}
     @media(max-width:560px){.topbar-inner{padding:10px 11px}.panel,.login-card,.item-card,.section-card{border-radius:14px}}
     .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
@@ -43,7 +50,7 @@
       <section id="listaView" class="app-section">
         <div class="panel">
           <div class="panel-head"><div><h2>Concentraciones</h2><p>Listado de concentraciones registradas.</p></div><button id="refreshBtn" class="btn secondary small">Actualizar</button></div>
-          <div class="toolbar"><input id="searchInput" type="search" placeholder="Buscar por nombre, lugar o notas"><select id="estadoFilter"><option value="">Todas</option><option value="actual">Actuales y próximas</option><option value="pasada">Pasadas</option></select></div>
+          <details class="secondary-toggle"><summary>Filtros de concentración</summary><div class="toolbar"><input id="searchInput" type="search" placeholder="Buscar por nombre, lugar o notas"><select id="estadoFilter"><option value="">Todas</option><option value="actual">Actuales y próximas</option><option value="pasada">Pasadas</option></select></div></details>
           <div id="listaConcentraciones" class="item-list"><div class="empty">Sin datos cargados.</div></div>
         </div>
       </section>
@@ -59,7 +66,7 @@
             <div class="form-row"><label for="newInicio">Inicio *</label><input id="newInicio" type="date"></div>
             <div class="form-row"><label for="newFin">Fin</label><input id="newFin" type="date"></div>
           </div>
-          <div class="form-row"><label for="newNotas">Notas</label><textarea id="newNotas" placeholder="Objetivos, logística o referencias internas"></textarea></div>
+          <details class="secondary-toggle"><summary>Notas y referencias</summary><div class="toolbar"><div class="form-row" style="margin-bottom:0"><label for="newNotas">Notas</label><textarea id="newNotas" placeholder="Objetivos, logística o referencias internas"></textarea></div></div></details>
           <div class="actions"><button id="crearBtn" class="btn">Crear concentración</button><button class="btn ghost" type="button" onclick="showView('listaView')">Cancelar</button></div>
           <div id="crearStatus" class="status-line"></div>
         </div>
