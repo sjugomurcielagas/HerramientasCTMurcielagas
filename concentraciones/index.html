@@ -1039,15 +1039,12 @@
         const days=buildConcentrationDays(range.inicio,range.fin,buckets);
         if(!days.length){alert('No hay días para exportar.');return}
         const nombre=c.nombre||'Concentración';
-        const sandbox=document.createElement('div');
-        sandbox.style.cssText='position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
         const wrapper=document.createElement('div');
         // A4 landscape con margen 4mm: 297-8=289mm × (96/25.4) ≈ 1093px usable
         const WRAP_W=1093;
-        wrapper.style.cssText=`position:relative;width:${WRAP_W}px;max-width:${WRAP_W}px;margin:0;padding:12px 16px;box-sizing:border-box;background:#fff;font-family:Arial,sans-serif`;
+        wrapper.style.cssText=`position:fixed;top:0;left:0;z-index:999999;width:${WRAP_W}px;max-width:${WRAP_W}px;margin:0;padding:12px 16px;box-sizing:border-box;background:#fff;font-family:Arial,sans-serif;pointer-events:none`;
         wrapper.innerHTML=buildCalendarPdfContent(c,days);
-        sandbox.appendChild(wrapper);
-        document.body.appendChild(sandbox);
+        document.body.appendChild(wrapper);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
         const filename=(nombre.replace(/[^a-z0-9\s]/gi,'').trim().replaceAll(' ','_')||'concentracion')+'_calendario.pdf';
         await window.html2pdf().set({
@@ -1057,7 +1054,7 @@
           html2canvas:{scale:2,useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:WRAP_W},
           jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
         }).from(wrapper).save();
-        sandbox.remove();
+        wrapper.remove();
       }catch(err){
         alert('No se pudo generar el PDF: '+err.message);
       }finally{
