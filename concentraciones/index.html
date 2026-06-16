@@ -959,6 +959,32 @@
         {tipo:'otro',label:'Otro'},
       ].map(t=>`<span class="calendar-pill" style="border-left:3px solid ${TIPO_COLOR[t.tipo]||'#ccc'};padding-left:7px">${esc(t.label)}</span>`).join('');
     }
+    function buildCalendarPdfTable(c,days){
+      const nombre=c.nombre||'Concentración';
+      const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
+      const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
+      const rangoTexto=inicio?`${formatDate(inicio)}${fin&&fin!==inicio?` al ${formatDate(fin)}`:''}`:'';
+      const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ');
+      const colW=Math.floor(100/days.length);
+      const headerCells=days.map(day=>{
+        const dn=weekdayLabel(day.date),dd=formatDate(day.date)||'';
+        return`<th style="background:#0b2f5f;color:#fff;padding:7px 6px;font-size:8.5pt;text-align:left;border:1px solid #1e4080;font-family:Arial,sans-serif;width:${colW}%">${dn}<br><span style="font-weight:400;font-size:7.5pt;opacity:.85">${dd}</span></th>`;
+      }).join('');
+      const dataCells=days.map(day=>{
+        const acts=sortCalendarActivities(day.actividades||[]);
+        const timed=acts.filter(a=>a.hora),untimed=acts.filter(a=>!a.hora);
+        const blocks=[...timed,...untimed].map(a=>{
+          const tipo=activityTipo(a);
+          const color=TIPO_COLOR[tipo]||'#64748b',bg=TIPO_BG[tipo]||'#f8fafc';
+          const title=esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipoLabel(tipo)||'Actividad');
+          const dur=Number(a.duracion||a.Duracion||0);
+          const det=esc(String(a.detalle||a.Detalle||a.notas||'').trim());
+          return`<div style="margin-bottom:4px;padding:3px 5px 3px 7px;border-left:3px solid ${color};background:${bg};border-radius:3px;font-family:Arial,sans-serif">${a.hora?`<div style="font-size:7pt;color:#64748b">${esc(a.hora)}${dur?` · ${dur} min`:''}</div>`:''}<div style="font-weight:700;font-size:8pt;color:#0f172a">${title}</div>${det?`<div style="font-size:7pt;color:#475569;margin-top:1px">${det}</div>`:''}</div>`;
+        }).join('');
+        return`<td style="vertical-align:top;padding:5px;border:1px solid #e2e8f0;background:#fff;font-family:Arial,sans-serif">${blocks||'<span style="color:#cbd5e1;font-size:7.5pt">Sin actividades</span>'}</td>`;
+      }).join('');
+      return`<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #0b2f5f;font-family:Arial,sans-serif"><div style="font-size:13pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:8pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${headerCells}</tr></thead><tbody><tr>${dataCells}</tr></tbody></table>`;
+    }
     async function exportCalendarPdf(){
       const c=currentConc();if(!c)return;
       const btn=document.querySelector('[onclick="exportCalendarPdf()"]');
@@ -972,25 +998,20 @@
             document.head.appendChild(s);
           });
         }
-        const calEl=document.querySelector('.cal-layout');
-        if(!calEl){alert('No hay calendario para exportar.');return}
-        const nombre=c.nombre||'Concentración';
+        const buckets=buildCalendarDayBuckets(state.dias);
         const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
         const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
-        const rangoTexto=inicio?`${formatDate(inicio)}${fin&&fin!==inicio?` al ${formatDate(fin)}`:''}`:'';
-        const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ');
+        const range=resolveCalendarRange(inicio,fin,buckets);
+        const days=buildConcentrationDays(range.inicio,range.fin,buckets);
+        if(!days.length){alert('No hay días para exportar.');return}
+        const nombre=c.nombre||'Concentración';
         const overlay=document.createElement('div');
         overlay.style.cssText='position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:1rem;color:#64748b';
         overlay.textContent='Generando PDF…';
         document.body.appendChild(overlay);
         const wrapper=document.createElement('div');
         wrapper.style.cssText='font-family:Arial,sans-serif;padding:12px 16px;background:#fff;color:#102033;width:1100px;position:fixed;top:0;left:0;z-index:9998;pointer-events:none';
-        wrapper.innerHTML=`<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #0b2f5f"><div style="font-size:15pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:9pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div>`;
-        const clone=calEl.cloneNode(true);
-        clone.querySelectorAll('.cal-act-actions').forEach(el=>el.remove());
-        clone.querySelectorAll('button').forEach(el=>el.remove());
-        clone.style.fontSize='0.78em';
-        wrapper.appendChild(clone);
+        wrapper.innerHTML=buildCalendarPdfTable(c,days);
         document.body.appendChild(wrapper);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
         const filename=(nombre.replace(/[^a-z0-9\s]/gi,'').trim().replaceAll(' ','_')||'concentracion')+'_calendario.pdf';
