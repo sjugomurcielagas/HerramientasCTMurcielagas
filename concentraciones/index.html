@@ -1023,7 +1023,15 @@
       const c=currentConc();if(!c)return;
       const btn=document.querySelector('[onclick="exportCalendarPdf()"]');
       if(btn){btn.disabled=true;btn.textContent='Generando...';}
+      let wrapper=null;
       try{
+        const loadScript=src=>new Promise((resolve,reject)=>{
+          const s=document.createElement('script');
+          s.src=src;
+          s.onload=resolve;
+          s.onerror=()=>reject(new Error('No se pudo cargar la libreria de PDF.'));
+          document.head.appendChild(s);
+        });
         if(!window.html2pdf){
           await new Promise((resolve,reject)=>{
             const s=document.createElement('script');
@@ -1032,6 +1040,8 @@
             document.head.appendChild(s);
           });
         }
+        if(!window.html2canvas)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+        if(!window.jspdf?.jsPDF&&!window.jsPDF)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
         const buckets=buildCalendarDayBuckets(state.dias);
         const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
         const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
@@ -1039,25 +1049,52 @@
         const days=buildConcentrationDays(range.inicio,range.fin,buckets);
         if(!days.length){alert('No hay días para exportar.');return}
         const nombre=c.nombre||'Concentración';
-        const wrapper=document.createElement('div');
+        wrapper=document.createElement('div');
         // A4 landscape con margen 4mm: 297-8=289mm × (96/25.4) ≈ 1093px usable
         const WRAP_W=1093;
-        wrapper.style.cssText=`position:fixed;top:0;left:0;z-index:999999;width:${WRAP_W}px;max-width:${WRAP_W}px;margin:0;padding:12px 16px;box-sizing:border-box;background:#fff;font-family:Arial,sans-serif;pointer-events:none`;
+        wrapper.style.cssText=`position:absolute;top:${Math.max(window.scrollY,0)}px;left:0;z-index:0;width:${WRAP_W}px;max-width:${WRAP_W}px;margin:0;padding:12px 16px;box-sizing:border-box;background:#fff;font-family:Arial,sans-serif;pointer-events:none`;
         wrapper.innerHTML=buildCalendarPdfContent(c,days);
         document.body.appendChild(wrapper);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
         const filename=(nombre.replace(/[^a-z0-9\s]/gi,'').trim().replaceAll(' ','_')||'concentracion')+'_calendario.pdf';
-        await window.html2pdf().set({
-          margin:[4,4,4,4],
-          filename,
-          image:{type:'jpeg',quality:0.95},
-          html2canvas:{scale:2,useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:WRAP_W},
-          jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
-        }).from(wrapper).save();
-        wrapper.remove();
+        const html2canvas=window.html2canvas;
+        const JsPDF=window.jspdf?.jsPDF||window.jsPDF;
+        if(!html2canvas||!JsPDF)throw new Error('La libreria de PDF no expuso html2canvas/jsPDF.');
+        const canvas=await html2canvas(wrapper,{
+          backgroundColor:'#ffffff',
+          scale:2,
+          useCORS:true,
+          logging:false,
+          scrollX:0,
+          scrollY:0,
+          windowWidth:WRAP_W,
+          windowHeight:Math.max(wrapper.scrollHeight,1)
+        });
+        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+        const sample=ctx.getImageData(0,0,Math.min(canvas.width,80),Math.min(canvas.height,80)).data;
+        let hasInk=false;
+        for(let i=0;i<sample.length;i+=4){
+          if(sample[i]<248||sample[i+1]<248||sample[i+2]<248){hasInk=true;break}
+        }
+        if(!hasInk)throw new Error('La captura del calendario salio en blanco.');
+        const pdf=new JsPDF({unit:'mm',format:'a4',orientation:'landscape'});
+        const pageW=297,pageH=210,margin=4,usableW=pageW-margin*2,usableH=pageH-margin*2;
+        const pagePx=Math.floor(canvas.width*(usableH/usableW));
+        for(let y=0,page=0;y<canvas.height;y+=pagePx,page++){
+          const sliceH=Math.min(pagePx,canvas.height-y);
+          const pageCanvas=document.createElement('canvas');
+          pageCanvas.width=canvas.width;
+          pageCanvas.height=sliceH;
+          pageCanvas.getContext('2d').drawImage(canvas,0,y,canvas.width,sliceH,0,0,canvas.width,sliceH);
+          if(page>0)pdf.addPage('a4','landscape');
+          const imgH=sliceH*usableW/canvas.width;
+          pdf.addImage(pageCanvas.toDataURL('image/jpeg',0.95),'JPEG',margin,margin,usableW,imgH);
+        }
+        pdf.save(filename);
       }catch(err){
         alert('No se pudo generar el PDF: '+err.message);
       }finally{
+        if(wrapper)wrapper.remove();
         if(btn){btn.disabled=false;btn.textContent='Descargar PDF';}
       }
     }
