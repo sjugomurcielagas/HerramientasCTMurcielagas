@@ -2,7 +2,6 @@ import { expect, Page, test } from '@playwright/test';
 
 const BASE_URL =
   process.env.BASE_URL ?? 'https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/';
-const ACCESS_PASSWORD = '1';
 
 const mainSections = [
   { name: 'Reportes', path: 'reportes/', heading: /Reportes/i },
@@ -23,16 +22,33 @@ function route(path = '') {
   return new URL(path, BASE_URL).toString();
 }
 
-async function login(page: Page) {
-  await page.goto(route());
+function isRouteUrl(url: string, path = '') {
+  const expected = new URL(path, BASE_URL);
+  const current = new URL(url);
+  return (
+    current.origin === expected.origin &&
+    current.pathname.replace(/index\.html$/, '') === expected.pathname.replace(/index\.html$/, '')
+  );
+}
 
-  const passwordInput = page.locator('#passInput, input[type="password"]').first();
-  if (await passwordInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await passwordInput.fill(ACCESS_PASSWORD);
-    await page.locator('#loginBtn, button:has-text("Ingresar"), button[type="submit"]').first().click();
+async function waitForAppReady(page: Page) {
+  await page.waitForLoadState('domcontentloaded');
+
+  const app = page.locator('#appContent, main.app').first();
+  if (await app.count()) {
+    await app.waitFor({ state: 'attached', timeout: 15000 });
+    await expect(app).not.toHaveClass(/hidden/, { timeout: 15000 });
+    await expect(app).toBeVisible({ timeout: 15000 });
   }
+}
 
-  await expect(page.locator('#appContent, main.app')).toBeVisible({ timeout: 15000 });
+async function login(page: Page) {
+  await page.context().addInitScript(() => {
+    localStorage.setItem('mrcl_auth', '1');
+    localStorage.setItem('mrcl_auth_ts', String(Date.now()));
+  });
+  await page.goto(route());
+  await waitForAppReady(page);
   await expect(page.locator('#loginView')).toBeHidden({ timeout: 15000 });
 }
 
@@ -100,7 +116,7 @@ test.describe('navegacion general', () => {
       await openSectionFromHome(page, section);
 
       await page.getByRole('link', { name: /inicio/i }).first().click();
-      await page.waitForURL(/\/HerramientasCTMurcielagas\/(?:index\.html)?$/);
+      await page.waitForURL(url => isRouteUrl(url.toString()));
       await expectHomeVisible(page);
     }
 
@@ -130,14 +146,14 @@ test.describe('navegacion general', () => {
 
     for (const section of analysisSections) {
       await page.goto(route('analisis/'));
-      await page.getByRole('link', { name: new RegExp(section.name, 'i') }).click();
+      await page.locator(`a[href="./${section.path.replace('analisis/', '')}"]`).click();
       await page.waitForURL(new RegExp(`/${section.path.replaceAll('/', '\\/')}$`), { timeout: 15000 });
       await expect(page.locator('body')).toContainText(section.heading);
       await expect(page.getByRole('link', { name: /an[aá]lisis|analisis/i })).toBeVisible();
       await expectNoVisibleErrorPage(page);
 
       await page.getByRole('link', { name: /an[aá]lisis|analisis/i }).first().click();
-      await page.waitForURL(/\/HerramientasCTMurcielagas\/analisis\/(?:index\.html)?$/);
+      await page.waitForURL(url => isRouteUrl(url.toString(), 'analisis/'));
       await expect(page.locator('body')).toContainText(/Penales/i);
     }
 

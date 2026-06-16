@@ -1,7 +1,16 @@
 .codex/
 .agents/
 .wrangler/
+.claude/settings.local.json
 .env.local
 node_modules/
 playwright-report/
 test-results/
+.tmp/
+auditorias/
+*.report.html
+auditoria.html
+reporte-lighthouse.html
+lighthouse-*.html
+reportes/lighthouse-*.html
+test_cal*.png
