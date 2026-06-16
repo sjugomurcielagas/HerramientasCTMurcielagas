@@ -959,31 +959,62 @@
         {tipo:'otro',label:'Otro'},
       ].map(t=>`<span class="calendar-pill" style="border-left:3px solid ${TIPO_COLOR[t.tipo]||'#ccc'};padding-left:7px">${esc(t.label)}</span>`).join('');
     }
-    function buildCalendarPdfTable(c,days){
+    function buildCalendarPdfContent(c,days){
       const nombre=c.nombre||'Concentración';
       const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
       const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
       const rangoTexto=inicio?`${formatDate(inicio)}${fin&&fin!==inicio?` al ${formatDate(fin)}`:''}`:'';
       const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ');
-      const colW=Math.floor(100/days.length);
-      const headerCells=days.map(day=>{
-        const dn=weekdayLabel(day.date),dd=formatDate(day.date)||'';
-        return`<th style="background:#0b2f5f;color:#fff;padding:7px 6px;font-size:8.5pt;text-align:left;border:1px solid #1e4080;font-family:Arial,sans-serif;width:${colW}%">${dn}<br><span style="font-weight:400;font-size:7.5pt;opacity:.85">${dd}</span></th>`;
-      }).join('');
-      const dataCells=days.map(day=>{
-        const acts=sortCalendarActivities(day.actividades||[]);
-        const timed=acts.filter(a=>a.hora),untimed=acts.filter(a=>!a.hora);
-        const blocks=[...timed,...untimed].map(a=>{
-          const tipo=activityTipo(a);
-          const color=TIPO_COLOR[tipo]||'#64748b',bg=TIPO_BG[tipo]||'#f8fafc';
-          const title=esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipoLabel(tipo)||'Actividad');
-          const dur=Number(a.duracion||a.Duracion||0);
-          const det=esc(String(a.detalle||a.Detalle||a.notas||'').trim());
-          return`<div style="margin-bottom:4px;padding:3px 5px 3px 7px;border-left:3px solid ${color};background:${bg};border-radius:3px;font-family:Arial,sans-serif">${a.hora?`<div style="font-size:7pt;color:#64748b">${esc(a.hora)}${dur?` · ${dur} min`:''}</div>`:''}<div style="font-weight:700;font-size:8pt;color:#0f172a">${title}</div>${det?`<div style="font-size:7pt;color:#475569;margin-top:1px">${det}</div>`:''}</div>`;
-        }).join('');
-        return`<td style="vertical-align:top;padding:5px;border:1px solid #e2e8f0;background:#fff;font-family:Arial,sans-serif">${blocks||'<span style="color:#cbd5e1;font-size:7.5pt">Sin actividades</span>'}</td>`;
-      }).join('');
-      return`<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #0b2f5f;font-family:Arial,sans-serif"><div style="font-size:13pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:8pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${headerCells}</tr></thead><tbody><tr>${dataCells}</tr></tbody></table>`;
+      const header=`<div style="margin-bottom:8px;padding-bottom:7px;border-bottom:2px solid #0b2f5f;font-family:Arial,sans-serif"><div style="font-size:13pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:8pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div>`;
+      let gMin=Infinity,gMax=0;
+      days.forEach(day=>(day.actividades||[]).forEach(a=>{
+        if(!a.hora)return;
+        const [hh,mm]=(a.hora+':0').split(':').map(Number);
+        const s=hh*60+(mm||0);
+        const dur=Math.max(Number(a.duracion||a.Duracion||0),30);
+        if(s<gMin)gMin=s;if(s+dur>gMax)gMax=s+dur;
+      }));
+      if(!isFinite(gMin)){gMin=8*60;gMax=20*60;}
+      gMin=Math.floor(gMin/60)*60;gMax=Math.ceil(gMax/60)*60;
+      const PX=1.0;
+      const totalPx=(gMax-gMin)*PX;
+      const hours=[];for(let m=gMin;m<=gMax;m+=60)hours.push(m);
+      const WRAP=1076,TIME_COL=38,GAP=3,CHUNK=4;
+      const chunks=[];
+      for(let i=0;i<days.length;i+=CHUNK)chunks.push(days.slice(i,i+CHUNK));
+      const buildChunk=(chunkDays,isLast)=>{
+        const N=chunkDays.length;
+        const colW=Math.floor((WRAP-TIME_COL-GAP*(N))/N);
+        const timeLabels=hours.map(m=>`<div style="position:absolute;top:${(m-gMin)*PX}px;right:3px;transform:translateY(-50%);font-size:6.5pt;color:#94a3b8;font-family:Arial,sans-serif;white-space:nowrap;line-height:1">${String(Math.floor(m/60)).padStart(2,'0')}:00</div>`).join('');
+        const hourLines=hours.slice(1,-1).map(m=>`<div style="position:absolute;top:${(m-gMin)*PX}px;left:0;right:0;border-top:1px dashed #e2e8f0"></div>`).join('');
+        const timeCol=`<div style="width:${TIME_COL}px;flex-shrink:0;position:relative;height:${totalPx}px">${timeLabels}</div>`;
+        const dayHds=chunkDays.map(day=>{
+          const dn=weekdayLabel(day.date),dd=formatDate(day.date)||'';
+          return`<div style="width:${colW}px;flex-shrink:0;padding:4px 5px;background:#0b2f5f;color:#fff;font-family:Arial,sans-serif;box-sizing:border-box;border-radius:3px 3px 0 0"><div style="font-size:8pt;font-weight:700">${dn}</div><div style="font-size:7pt;opacity:.8">${dd}</div></div>`;
+        }).join(`<div style="width:${GAP}px;flex-shrink:0"></div>`);
+        const dayCols=chunkDays.map(day=>{
+          const timed=sortCalendarActivities(day.actividades||[]).filter(a=>a.hora);
+          const untimed=sortCalendarActivities(day.actividades||[]).filter(a=>!a.hora);
+          const blocks=timed.map(a=>{
+            const [hh,mm]=(a.hora+':0').split(':').map(Number);
+            const s=hh*60+(mm||0);
+            const dur=Math.max(Number(a.duracion||a.Duracion||0),30);
+            const top=(s-gMin)*PX;
+            const height=Math.max(dur*PX,18);
+            const tipo=activityTipo(a);
+            const color=TIPO_COLOR[tipo]||'#64748b',bg=TIPO_BG[tipo]||'#f8fafc';
+            const title=esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipoLabel(tipo)||'Actividad');
+            const det=esc(String(a.detalle||a.Detalle||a.notas||'').trim());
+            const durMeta=Number(a.duracion||a.Duracion||0)>0?` · ${a.duracion||a.Duracion}min`:'';
+            return`<div style="position:absolute;top:${top}px;height:${height}px;left:2px;right:2px;border-left:3px solid ${color};background:${bg};border-radius:2px;padding:2px 3px;overflow:hidden;box-sizing:border-box;font-family:Arial,sans-serif"><div style="font-size:6pt;color:#64748b;line-height:1.1">${esc(a.hora)}${durMeta}</div><div style="font-size:7pt;font-weight:700;color:#0f172a;line-height:1.2;overflow:hidden">${title}</div>${det&&height>36?`<div style="font-size:6pt;color:#475569;line-height:1.1;overflow:hidden">${det}</div>`:''}</div>`;
+          }).join('');
+          const untimedBlocks=untimed.length?`<div style="margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0">${untimed.map(a=>{const tipo=activityTipo(a);const color=TIPO_COLOR[tipo]||'#64748b',bg=TIPO_BG[tipo]||'#f8fafc';const title=esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipoLabel(tipo)||'Actividad');return`<div style="margin-bottom:3px;padding:2px 3px 2px 6px;border-left:3px solid ${color};background:${bg};border-radius:2px;font-family:Arial,sans-serif"><div style="font-size:7pt;font-weight:700;color:#0f172a">${title}</div></div>`;}).join('')}</div>`:'';
+          return`<div style="width:${colW}px;flex-shrink:0;position:relative;height:${totalPx}px;background:#fff;border:1px solid #e2e8f0;border-top:none;box-sizing:border-box">${hourLines}${blocks}${untimedBlocks}</div>`;
+        }).join(`<div style="width:${GAP}px;flex-shrink:0"></div>`);
+        const pb=isLast?'':'page-break-after:always;';
+        return`<div style="${pb}margin-bottom:${isLast?0:16}px"><div style="display:flex;gap:0;align-items:flex-end;margin-left:${TIME_COL+GAP}px">${dayHds}</div><div style="display:flex;gap:0;align-items:flex-start">${timeCol}<div style="width:${GAP}px;flex-shrink:0"></div>${dayCols}</div></div>`;
+      };
+      return header+chunks.map((ch,i)=>buildChunk(ch,i===chunks.length-1)).join('');
     }
     async function exportCalendarPdf(){
       const c=currentConc();if(!c)return;
@@ -1009,7 +1040,7 @@
         sandbox.style.cssText='position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
         const wrapper=document.createElement('div');
         wrapper.style.cssText='position:relative;width:1120px;background:#fff;font-family:Arial,sans-serif;padding:12px 16px;box-sizing:border-box';
-        wrapper.innerHTML=buildCalendarPdfTable(c,days);
+        wrapper.innerHTML=buildCalendarPdfContent(c,days);
         sandbox.appendChild(wrapper);
         document.body.appendChild(sandbox);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
