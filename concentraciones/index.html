@@ -705,7 +705,7 @@
         const cols=days.map(day=>{const acts=sortCalendarActivities(day.actividades||[]).filter(a=>!a.hora);return`<div class="cal-untimed-col">${acts.map(a=>activityCardHtml(a,String(day.date||''))).join('')}</div>`;}).join('');
         untimedSection=label+cols;
       }
-      cont.innerHTML=`<div class="calendar-week"><div class="calendar-toolbar"><div><h3>Planificación de la concentración</h3><p class="muted">${esc(rangoTexto)} · ${N} jornada${N===1?'':'s'}.</p></div><div class="legend">${buildCalendarLegend()}<button class="btn secondary small" type="button" onclick="exportCalendarPdf()" style="margin-left:4px">Imprimir / PDF</button></div></div><div class="cal-layout" style="grid-template-columns:${gridCols}">${corner}${dayHds}${timecol}${dayBodies}${untimedSection}</div></div>`;
+      cont.innerHTML=`<div class="calendar-week"><div class="calendar-toolbar"><div><h3>Planificación de la concentración</h3><p class="muted">${esc(rangoTexto)} · ${N} jornada${N===1?'':'s'}.</p></div><div class="legend">${buildCalendarLegend()}<button class="btn secondary small" type="button" onclick="exportCalendarPdf()" style="margin-left:4px">Descargar PDF</button></div></div><div class="cal-layout" style="grid-template-columns:${gridCols}">${corner}${dayHds}${timecol}${dayBodies}${untimedSection}</div></div>`;
       cont.querySelectorAll('[data-edit-act]').forEach(btn=>btn.addEventListener('click',()=>startEditarActividad(btn.dataset.editAct,btn.dataset.fecha)));
       cont.querySelectorAll('[data-del-act]').forEach(btn=>btn.addEventListener('click',()=>eliminarActividad(btn.dataset.delAct)));
     }
@@ -959,42 +959,49 @@
         {tipo:'otro',label:'Otro'},
       ].map(t=>`<span class="calendar-pill" style="border-left:3px solid ${TIPO_COLOR[t.tipo]||'#ccc'};padding-left:7px">${esc(t.label)}</span>`).join('');
     }
-    function exportCalendarPdf(){
+    async function exportCalendarPdf(){
       const c=currentConc();if(!c)return;
-      const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
-      const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
-      const buckets=buildCalendarDayBuckets(state.dias);
-      const range=resolveCalendarRange(inicio,fin,buckets);
-      const days=buildConcentrationDays(range.inicio,range.fin,buckets);
-      const rangoTexto=range.inicio||range.fin?`${formatDate(range.inicio||range.fin)}${range.fin&&range.fin!==range.inicio?` al ${formatDate(range.fin)}`:''}`:'';
-      const nombre=c.nombre||'Concentración';
-      const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ');
-      const timeSlotsSet=new Set();
-      days.forEach(day=>(day.actividades||[]).forEach(a=>{if(a.hora)timeSlotsSet.add(a.hora)}));
-      const times=[...timeSlotsSet].sort();
-      const hasUntimed=days.some(day=>(day.actividades||[]).some(a=>!a.hora));
-      const PRINT_COLORS={entrenamiento:{bg:'#dbeafe',border:'#1d4ed8'},charla_tactica:{bg:'#ede9fe',border:'#7c3aed'},partido:{bg:'#dcfce7',border:'#16a34a'},recuperacion:{bg:'#fef9c3',border:'#ca8a04'},medica:{bg:'#fee2e2',border:'#dc2626'},comida:{bg:'#ffedd5',border:'#ea580c'},libre:{bg:'#f1f5f9',border:'#94a3b8'},otro:{bg:'#f0fdf4',border:'#22c55e'}};
-      function pAct(a){
-        const tipo=activityTipo(a);
-        const col=PRINT_COLORS[tipo]||{bg:'#f8fafc',border:'#94a3b8'};
-        const title=esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipoLabel(tipo)||'Actividad');
-        const dur=a.duracion||a.Duracion||'';
-        const det=String(a.detalle||a.Detalle||a.notas||'').trim();
-        const meta=esc([tipoLabel(tipo),dur?dur+' min':''].filter(Boolean).join(' · '));
-        return`<div style="background:${col.bg};border-left:3px solid ${col.border};border-radius:3px;padding:3px 6px;margin:2px 0;font-size:8.5pt"><div style="font-weight:700">${title}</div>${meta?`<div style="color:#555;font-size:7.5pt">${meta}</div>`:''}${det?`<div style="color:#777;font-size:7.5pt;margin-top:1px">${esc(det)}</div>`:''}</div>`;
+      const btn=document.querySelector('[onclick="exportCalendarPdf()"]');
+      if(btn){btn.disabled=true;btn.textContent='Generando...';}
+      try{
+        if(!window.html2pdf){
+          await new Promise((resolve,reject)=>{
+            const s=document.createElement('script');
+            s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            s.onload=resolve;s.onerror=()=>reject(new Error('No se pudo cargar la librería de PDF.'));
+            document.head.appendChild(s);
+          });
+        }
+        const calEl=document.querySelector('.cal-layout');
+        if(!calEl){alert('No hay calendario para exportar.');return}
+        const nombre=c.nombre||'Concentración';
+        const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
+        const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
+        const rangoTexto=inicio?`${formatDate(inicio)}${fin&&fin!==inicio?` al ${formatDate(fin)}`:''}`:'';
+        const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ');
+        const wrapper=document.createElement('div');
+        wrapper.style.cssText='font-family:Arial,sans-serif;padding:12px 16px;background:#fff;color:#102033;width:1100px';
+        wrapper.innerHTML=`<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #0b2f5f"><div style="font-size:15pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:9pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div>`;
+        const clone=calEl.cloneNode(true);
+        clone.querySelectorAll('.cal-act-actions').forEach(el=>el.remove());
+        clone.querySelectorAll('button').forEach(el=>el.remove());
+        clone.style.fontSize='0.78em';
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+        const filename=(nombre.replace(/[^a-z0-9\s]/gi,'').trim().replaceAll(' ','_')||'concentracion')+'_calendario.pdf';
+        await window.html2pdf().set({
+          margin:[8,6,8,6],
+          filename,
+          image:{type:'jpeg',quality:0.92},
+          html2canvas:{scale:1.5,useCORS:true,logging:false,scrollX:0,scrollY:0},
+          jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
+        }).from(wrapper).save();
+        document.body.removeChild(wrapper);
+      }catch(err){
+        alert('No se pudo generar el PDF: '+err.message);
+      }finally{
+        if(btn){btn.disabled=false;btn.textContent='Descargar PDF';}
       }
-      const TH=`background:#0b2f5f;color:#fff;padding:6px 8px;text-align:center;font-size:8.5pt;border:1px solid #0b2f5f`;
-      const TD=`border:1px solid #ddd;padding:4px 6px;vertical-align:top`;
-      const TC=`border:1px solid #ddd;padding:4px 6px;vertical-align:middle;font-weight:700;font-size:8.5pt;color:#334155;text-align:center;background:#f8fafc;white-space:nowrap;width:58px`;
-      const heads=days.map(d=>`<th style="${TH}">${weekdayLabel(d.date)}<br><span style="font-weight:400;font-size:7.5pt">${formatDate(d.date)}</span></th>`).join('');
-      const rows=times.map(t=>`<tr><td style="${TC}">${t}</td>${days.map(d=>`<td style="${TD}">${(sortCalendarActivities(d.actividades||[])).filter(a=>a.hora===t).map(pAct).join('')}</td>`).join('')}</tr>`).join('');
-      const noHoraRow=hasUntimed?`<tr><td style="${TC};color:#aaa;font-style:italic">Sin hora</td>${days.map(d=>`<td style="${TD}">${(sortCalendarActivities(d.actividades||[])).filter(a=>!a.hora).map(pAct).join('')}</td>`).join('')}</tr>`:'';
-      const legend=Object.entries(PRINT_COLORS).map(([k,v])=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:8pt"><span style="width:11px;height:11px;border-radius:2px;background:${v.bg};border:1px solid ${v.border};display:inline-block;flex-shrink:0"></span>${tipoLabel(k)}</span>`).join('');
-      const html=`<!DOCTYPE html><html lang="es-AR"><head><meta charset="UTF-8"><title>${esc(nombre)} · Planificación</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:18px 20px;color:#102033}table{width:100%;border-collapse:collapse}@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body><div style="margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #0b2f5f"><div style="font-size:15pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:9pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div><table><thead><tr><th style="${TH};width:60px">Horario</th>${heads}</tr></thead><tbody>${rows}${noHoraRow}</tbody></table><div style="margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><strong style="font-size:8pt;margin-right:6px">Referencias:</strong>${legend}</div><script>window.onload=()=>{window.print();}<\/script></body></html>`;
-      const win=window.open('','_blank');
-      if(!win){alert('Habilitá las ventanas emergentes del navegador para exportar el PDF.');return}
-      win.document.write(html);
-      win.document.close();
     }
     function norm(v){return Murci.normalizeText(v)}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
