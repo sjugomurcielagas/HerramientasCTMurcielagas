@@ -1005,25 +1005,23 @@
         const days=buildConcentrationDays(range.inicio,range.fin,buckets);
         if(!days.length){alert('No hay días para exportar.');return}
         const nombre=c.nombre||'Concentración';
-        const overlay=document.createElement('div');
-        overlay.style.cssText='position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:1rem;color:#64748b';
-        overlay.textContent='Generando PDF…';
-        document.body.appendChild(overlay);
+        const sandbox=document.createElement('div');
+        sandbox.style.cssText='position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
         const wrapper=document.createElement('div');
-        wrapper.style.cssText='font-family:Arial,sans-serif;padding:12px 16px;background:#fff;color:#102033;width:1100px;position:fixed;top:0;left:0;z-index:9998;pointer-events:none';
+        wrapper.style.cssText='position:relative;width:1120px;background:#fff;font-family:Arial,sans-serif;padding:12px 16px;box-sizing:border-box';
         wrapper.innerHTML=buildCalendarPdfTable(c,days);
-        document.body.appendChild(wrapper);
+        sandbox.appendChild(wrapper);
+        document.body.appendChild(sandbox);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
         const filename=(nombre.replace(/[^a-z0-9\s]/gi,'').trim().replaceAll(' ','_')||'concentracion')+'_calendario.pdf';
         await window.html2pdf().set({
           margin:[8,6,8,6],
           filename,
           image:{type:'jpeg',quality:0.92},
-          html2canvas:{scale:1.5,useCORS:true,logging:false,scrollX:0,scrollY:0},
+          html2canvas:{scale:1.5,useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:1920,windowHeight:1080},
           jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
         }).from(wrapper).save();
-        document.body.removeChild(wrapper);
-        document.body.removeChild(overlay);
+        sandbox.remove();
       }catch(err){
         alert('No se pudo generar el PDF: '+err.message);
       }finally{
