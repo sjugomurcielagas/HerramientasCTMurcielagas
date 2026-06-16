@@ -979,7 +979,7 @@
       const PX=1.0;
       const totalPx=(gMax-gMin)*PX;
       const hours=[];for(let m=gMin;m<=gMax;m+=60)hours.push(m);
-      const WRAP=1076,TIME_COL=38,GAP=3,CHUNK=4;
+      const WRAP=1088,TIME_COL=38,GAP=3,CHUNK=4;
       const chunks=[];
       for(let i=0;i<days.length;i+=CHUNK)chunks.push(days.slice(i,i+CHUNK));
       const buildChunk=(chunkDays,isLast)=>{
@@ -1039,17 +1039,17 @@
         const sandbox=document.createElement('div');
         sandbox.style.cssText='position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
         const wrapper=document.createElement('div');
-        wrapper.style.cssText='position:relative;width:1120px;background:#fff;font-family:Arial,sans-serif;padding:12px 16px;box-sizing:border-box';
+        wrapper.style.cssText='position:relative;width:1120px;max-width:1120px;margin:0;padding:12px 16px;box-sizing:border-box;background:#fff;font-family:Arial,sans-serif';
         wrapper.innerHTML=buildCalendarPdfContent(c,days);
         sandbox.appendChild(wrapper);
         document.body.appendChild(sandbox);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
         const filename=(nombre.replace(/[^a-z0-9\s]/gi,'').trim().replaceAll(' ','_')||'concentracion')+'_calendario.pdf';
         await window.html2pdf().set({
-          margin:[8,6,8,6],
+          margin:[0,0,0,0],
           filename,
-          image:{type:'jpeg',quality:0.92},
-          html2canvas:{scale:1.5,useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:1920,windowHeight:1080},
+          image:{type:'jpeg',quality:0.95},
+          html2canvas:{scale:2,useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:1120},
           jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
         }).from(wrapper).save();
         sandbox.remove();
