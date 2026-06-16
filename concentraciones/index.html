@@ -190,6 +190,7 @@
     const state={plantel:[],concentraciones:[],dias:[],actualId:null,editingActividad:null,docFlow:'general',asistenciaDrafts:{},convocatoriaEditById:{}};
     const DOC_TYPES_GENERAL=['convocatoria_fadec','certificacion_participacion'];
     const DOC_TYPES_PERSONAL=['licencia_agencia_cordoba','licencia_municipalidad_cordoba'];
+    const TIPO_COLOR={entrenamiento:'#1d4ed8',charla_tactica:'#7c3aed',partido:'#16a34a',recuperacion:'#ca8a04',medica:'#dc2626',comida:'#ea580c',libre:'#94a3b8',otro:'#22c55e'};
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -674,7 +675,7 @@
       const range=resolveCalendarRange(inicio,fin,buckets);
       const days=buildConcentrationDays(range.inicio,range.fin,buckets);
       const rangoTexto=range.inicio||range.fin?`${formatDate(range.inicio||range.fin)}${range.fin&&range.fin!==range.inicio?` al ${formatDate(range.fin)}`:''}`:'Sin rango';
-      cont.innerHTML=`<div class="calendar-week"><div class="calendar-toolbar"><div><h3>Planificación de la concentración</h3><p class="muted">${esc(rangoTexto)} · ${days.length} jornada${days.length===1?'':'s'}.</p></div><div class="legend"><span class="calendar-pill"><span class="dot"></span> Día con actividad</span><span class="calendar-pill ok">Pocas</span><span class="calendar-pill warn">Varias</span><span class="calendar-pill danger">Muchas</span></div></div><div class="calendar-days-grid">${days.map(day=>renderDaySection(day)).join('')}</div></div>`;
+      cont.innerHTML=`<div class="calendar-week"><div class="calendar-toolbar"><div><h3>Planificación de la concentración</h3><p class="muted">${esc(rangoTexto)} · ${days.length} jornada${days.length===1?'':'s'}.</p></div><div class="legend">${buildCalendarLegend()}<button class="btn secondary small" type="button" onclick="exportCalendarPdf()" style="margin-left:4px">Imprimir / PDF</button></div></div><div class="calendar-days-grid">${days.map(day=>renderDaySection(day)).join('')}</div></div>`;
       cont.querySelectorAll('[data-edit-act]').forEach(btn=>btn.addEventListener('click',()=>startEditarActividad(btn.dataset.editAct,btn.dataset.fecha)));
       cont.querySelectorAll('[data-del-act]').forEach(btn=>btn.addEventListener('click',()=>eliminarActividad(btn.dataset.delAct)));
       cont.querySelectorAll('[data-act-detail]').forEach(btn=>btn.addEventListener('click',()=>{const box=cont.querySelector(`[data-act-detail-box="${btn.dataset.actDetail}"]`);if(box)box.classList.toggle('hidden')}));
@@ -748,10 +749,9 @@
       const date=String(day.date||'');
       const activities=sortCalendarActivities(day.actividades||[]);
       const count=activities.length;
-      const countClass=count>=5?'danger':count>=3?'warn':'ok';
       const dayName=weekdayLabel(date);
       const note=day.notas.filter(Boolean).join(' · ');
-      return `<section class="section-card ${!count?'is-empty':''}" style="margin-bottom:0"><div class="calendar-day-head"><div><div class="calendar-day-label">${esc(dayName)}</div><div class="calendar-day-date">${esc(formatDate(date)||'')}</div></div><div class="calendar-day-count ${countClass}">${count}</div></div>${note?`<div class="calendar-activity-meta">${esc(note)}</div>`:''}<div class="calendar-day-list">${activities.length?activities.map(a=>activityCardHtml(a,date)).join(''):'<div class="empty" style="padding:12px">Sin actividades.</div>'}</div></section>`;
+      return `<section class="section-card ${!count?'is-empty':''}" style="margin-bottom:0"><div class="calendar-day-head"><div><div class="calendar-day-label">${esc(dayName)}</div><div class="calendar-day-date">${esc(formatDate(date)||'')}</div></div></div>${note?`<div class="calendar-activity-meta">${esc(note)}</div>`:''}<div class="calendar-day-list">${activities.length?activities.map(a=>activityCardHtml(a,date)).join(''):'<div class="empty" style="padding:12px">Sin actividades.</div>'}</div></section>`;
     }
     function sortCalendarActivities(activities){
       return [...(activities||[])].sort((a,b)=>{
@@ -770,7 +770,8 @@
       const tipo=activityTipo(a),duracion=a.duracion||a.Duracion||a.duration||'';
       const detail=(a.detalle||a.Detalle||a.notas||a.descripcion||'').trim();
       const resume=[a.hora?esc(a.hora):'',esc(tipoLabel(tipo)),duracion?esc(duracion)+' min':''].filter(Boolean).join(' · ');
-      return `<article class="calendar-activity"><div class="calendar-activity-top"><div class="calendar-activity-title">${esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipo||'Actividad')}</div>${a.hora?`<div class="calendar-activity-time">${esc(a.hora)}</div>`:''}</div><div class="calendar-activity-meta">${resume}</div>${detail?`<div class="calendar-activity-detail">${esc(detail)}</div>`:''}<div class="actions activity-mini-actions"><button class="btn ghost small" data-edit-act="${esc(id)}" data-fecha="${esc(fecha)}" ${id?'':'disabled'}>Editar</button><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
+      const color=TIPO_COLOR[tipo]||'var(--borde)';
+      return `<article class="calendar-activity" style="border-left:3px solid ${color}"><div class="calendar-activity-top"><div class="calendar-activity-title">${esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipo||'Actividad')}</div>${a.hora?`<div class="calendar-activity-time">${esc(a.hora)}</div>`:''}</div><div class="calendar-activity-meta">${resume}</div>${detail?`<div class="calendar-activity-detail">${esc(detail)}</div>`:''}<div class="actions activity-mini-actions"><button class="btn ghost small" data-edit-act="${esc(id)}" data-fecha="${esc(fecha)}" ${id?'':'disabled'}>Editar</button><button class="btn danger small" data-del-act="${esc(id)}" ${id?'':'disabled'}>Eliminar</button></div></article>`;
     }
 
     function actualizarTitulosActividad(){
@@ -897,6 +898,55 @@
     function nombrePersona(p){return Murci.personName(p)||p.DNI||p.dni||'Sin nombre'}
     function formatDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
     function formatDateTime(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+    function buildCalendarLegend(){
+      return[
+        {tipo:'entrenamiento',label:'Entrenamiento'},
+        {tipo:'charla_tactica',label:'Charla táct.'},
+        {tipo:'partido',label:'Partido'},
+        {tipo:'recuperacion',label:'Recuperación'},
+        {tipo:'medica',label:'Médica'},
+        {tipo:'comida',label:'Comida'},
+        {tipo:'libre',label:'Libre'},
+        {tipo:'otro',label:'Otro'},
+      ].map(t=>`<span class="calendar-pill" style="border-left:3px solid ${TIPO_COLOR[t.tipo]||'#ccc'};padding-left:7px">${esc(t.label)}</span>`).join('');
+    }
+    function exportCalendarPdf(){
+      const c=currentConc();if(!c)return;
+      const inicio=normalizeDateKey(dateValue(c,'fecha_inicio','fechaInicio','inicio'));
+      const fin=normalizeDateKey(dateValue(c,'fecha_fin','fechaFin','fin'))||inicio;
+      const buckets=buildCalendarDayBuckets(state.dias);
+      const range=resolveCalendarRange(inicio,fin,buckets);
+      const days=buildConcentrationDays(range.inicio,range.fin,buckets);
+      const rangoTexto=range.inicio||range.fin?`${formatDate(range.inicio||range.fin)}${range.fin&&range.fin!==range.inicio?` al ${formatDate(range.fin)}`:''}`:'';
+      const nombre=c.nombre||'Concentración';
+      const lugar=[c.lugar,c.ciudad].filter(Boolean).join(', ');
+      const timeSlotsSet=new Set();
+      days.forEach(day=>(day.actividades||[]).forEach(a=>{if(a.hora)timeSlotsSet.add(a.hora)}));
+      const times=[...timeSlotsSet].sort();
+      const hasUntimed=days.some(day=>(day.actividades||[]).some(a=>!a.hora));
+      const PRINT_COLORS={entrenamiento:{bg:'#dbeafe',border:'#1d4ed8'},charla_tactica:{bg:'#ede9fe',border:'#7c3aed'},partido:{bg:'#dcfce7',border:'#16a34a'},recuperacion:{bg:'#fef9c3',border:'#ca8a04'},medica:{bg:'#fee2e2',border:'#dc2626'},comida:{bg:'#ffedd5',border:'#ea580c'},libre:{bg:'#f1f5f9',border:'#94a3b8'},otro:{bg:'#f0fdf4',border:'#22c55e'}};
+      function pAct(a){
+        const tipo=activityTipo(a);
+        const col=PRINT_COLORS[tipo]||{bg:'#f8fafc',border:'#94a3b8'};
+        const title=esc(a.titulo||a.descripcion||a.Titulo||a.nombre||tipoLabel(tipo)||'Actividad');
+        const dur=a.duracion||a.Duracion||'';
+        const det=String(a.detalle||a.Detalle||a.notas||'').trim();
+        const meta=esc([tipoLabel(tipo),dur?dur+' min':''].filter(Boolean).join(' · '));
+        return`<div style="background:${col.bg};border-left:3px solid ${col.border};border-radius:3px;padding:3px 6px;margin:2px 0;font-size:8.5pt"><div style="font-weight:700">${title}</div>${meta?`<div style="color:#555;font-size:7.5pt">${meta}</div>`:''}${det?`<div style="color:#777;font-size:7.5pt;margin-top:1px">${esc(det)}</div>`:''}</div>`;
+      }
+      const TH=`background:#0b2f5f;color:#fff;padding:6px 8px;text-align:center;font-size:8.5pt;border:1px solid #0b2f5f`;
+      const TD=`border:1px solid #ddd;padding:4px 6px;vertical-align:top`;
+      const TC=`border:1px solid #ddd;padding:4px 6px;vertical-align:middle;font-weight:700;font-size:8.5pt;color:#334155;text-align:center;background:#f8fafc;white-space:nowrap;width:58px`;
+      const heads=days.map(d=>`<th style="${TH}">${weekdayLabel(d.date)}<br><span style="font-weight:400;font-size:7.5pt">${formatDate(d.date)}</span></th>`).join('');
+      const rows=times.map(t=>`<tr><td style="${TC}">${t}</td>${days.map(d=>`<td style="${TD}">${(sortCalendarActivities(d.actividades||[])).filter(a=>a.hora===t).map(pAct).join('')}</td>`).join('')}</tr>`).join('');
+      const noHoraRow=hasUntimed?`<tr><td style="${TC};color:#aaa;font-style:italic">Sin hora</td>${days.map(d=>`<td style="${TD}">${(sortCalendarActivities(d.actividades||[])).filter(a=>!a.hora).map(pAct).join('')}</td>`).join('')}</tr>`:'';
+      const legend=Object.entries(PRINT_COLORS).map(([k,v])=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:8pt"><span style="width:11px;height:11px;border-radius:2px;background:${v.bg};border:1px solid ${v.border};display:inline-block;flex-shrink:0"></span>${tipoLabel(k)}</span>`).join('');
+      const html=`<!DOCTYPE html><html lang="es-AR"><head><meta charset="UTF-8"><title>${esc(nombre)} · Planificación</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:18px 20px;color:#102033}table{width:100%;border-collapse:collapse}@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body><div style="margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #0b2f5f"><div style="font-size:15pt;font-weight:700;color:#06172f">${esc(nombre)}</div><div style="font-size:9pt;color:#64748b;margin-top:2px">${esc(rangoTexto)}${lugar?' · '+esc(lugar):''}</div></div><table><thead><tr><th style="${TH};width:60px">Horario</th>${heads}</tr></thead><tbody>${rows}${noHoraRow}</tbody></table><div style="margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><strong style="font-size:8pt;margin-right:6px">Referencias:</strong>${legend}</div><script>window.onload=()=>{window.print();}<\/script></body></html>`;
+      const win=window.open('','_blank');
+      if(!win){alert('Habilitá las ventanas emergentes del navegador para exportar el PDF.');return}
+      win.document.write(html);
+      win.document.close();
+    }
     function norm(v){return Murci.normalizeText(v)}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 
