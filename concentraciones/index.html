@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
-  <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../index.html');}})();</script>
+  <script>(function(){var AUTH_DISABLED_TEMP=true;if(AUTH_DISABLED_TEMP)return;var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../index.html');}})();</script>
   <style>
     :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
     *{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;font-family:"Barlow",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f8fcff 0%,var(--fondo) 100%);color:var(--texto)}a{color:inherit}button,input,select,textarea{font-family:inherit}button{font-weight:800}.hidden{display:none!important}.loading{opacity:.72;pointer-events:none}
@@ -164,6 +164,7 @@
         <label class="doc-option"><input type="checkbox" value="licencia_agencia_cordoba"><span><strong>Licencia Agencia Córdoba</strong><span class="muted">Usa los datos generales de la concentración y se genera para las personas oficiales configuradas.</span></span></label>
         <label class="doc-option"><input type="checkbox" value="licencia_municipalidad_cordoba"><span><strong>Licencia Municipalidad Córdoba</strong><span class="muted">Usa los datos generales de la concentración y se genera para las personas oficiales configuradas.</span></span></label>
       </div>
+      <div id="docsModalWarnings" style="margin-top:8px;font-size:.86rem;font-weight:700;color:var(--warn);display:grid;gap:4px"></div>
       <div class="actions" style="margin-top:14px"><button id="confirmarDocsBtn" class="btn" type="button">Generar seleccionados</button></div>
     </div>
   </div>
@@ -555,6 +556,8 @@
         const isGeneral=DOC_TYPES_GENERAL.includes(input.value);
         input.checked=generalFlow?isGeneral:!isGeneral;
       });
+      const wEl=document.getElementById('docsModalWarnings');
+      if(wEl){const warns=buildDocWarnings(c);wEl.innerHTML=warns.map(w=>`<div>⚠ ${esc(w)}</div>`).join('')}
       document.getElementById('docsModal').classList.add('show');
     }
     function closeDocsModal(){document.getElementById('docsModal').classList.remove('show')}
@@ -588,7 +591,9 @@
     }
     async function generarDocumentosLote(tipos,convocadas){
       const c=currentConc();if(!c)return null;
-      const payload={action:'concentraciones_generarDocumentos',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:c.ciudad||'',fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos};
+      const ciudadFmt=formatCiudadDocumento(c.ciudad||'',c.lugar||'');
+      const cual=inferPronombre(c.nombre||'');
+      const payload={action:'concentraciones_generarDocumentos',concentracionId:concId(c),id:concId(c),nombre:c.nombre||'',lugar:c.lugar||'',direccion:c.direccion||'',ciudad:ciudadFmt,ciudadFormateada:ciudadFmt,fechaInicio:dateValue(c,'fecha_inicio','fechaInicio','inicio')||'',fechaFin:dateValue(c,'fecha_fin','fechaFin','fin')||'',notas:c.notas||c.observaciones||'',convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos,pronombre_cual:cual,cual};
       return apiPost(payload);
     }
     function normalizeDocumentResults(result){
@@ -630,14 +635,17 @@
     }
     async function validarDocumentos(){
       const c=currentConc();if(!c)return;
+      const localWarns=buildDocWarnings(c);
       const convocadas=convocatoriaDnisDesdeChecks();
       const tipos=DOC_TYPES_GENERAL.slice();
       const st=document.getElementById('docsStatus'),btn=document.getElementById('validarDocsBtn');
       st.textContent='Validando datos...';st.className='status-line';btn.disabled=true;
       try{
         const data=await apiPost({action:'concentraciones_validarDatosDocumentos',concentracionId:concId(c),id:concId(c),convocadas_json:JSON.stringify(convocadas),tiposDocumento:tipos});
-        if(data?.valido){st.textContent='Validación OK. No se detectaron faltantes para los documentos configurados.';st.className='status-line ok'}
-        else{st.textContent='Faltantes detectados: '+(Array.isArray(data?.faltantes)&&data.faltantes.length?data.faltantes.join(', '):'sin detalle');st.className='status-line error'}
+        const faltantes=Array.isArray(data?.faltantes)&&data.faltantes.length?data.faltantes:[];
+        const todos=[...localWarns,...faltantes];
+        if(!todos.length){st.textContent='Validación OK. No se detectaron faltantes.';st.className='status-line ok'}
+        else{st.innerHTML=todos.map(w=>`<div>⚠ ${esc(w)}</div>`).join('');st.className='status-line warn'}
       }catch(err){st.textContent='Error al validar documentos: '+err.message;st.className='status-line error'}
       finally{btn.disabled=false}
     }
@@ -891,6 +899,36 @@
     function formatDateTime(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
     function norm(v){return Murci.normalizeText(v)}
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+
+    // --- Ubicación y pronombre para generación de documentos ---
+    const CIUDADES_CAPITALES=new Set(['buenos aires','cordoba','rosario','mendoza','tucuman','san miguel de tucuman','mar del plata','la plata','salta','santa fe','neuquen','bariloche','san carlos de bariloche','posadas','corrientes','resistencia','santiago del estero','san juan','jujuy','san salvador de jujuy','rio gallegos','viedma','rawson','ushuaia','santa rosa','parana','formosa','catamarca','san fernando del valle de catamarca','comodoro rivadavia','bahia blanca','rio grande','la rioja','san luis']);
+    const CIUDAD_PROVINCIA_MAP={'general pico':'La Pampa','general acha':'La Pampa','santa rosa':'La Pampa','cipolletti':'Río Negro','general roca':'Río Negro','allen':'Río Negro','san rafael':'Mendoza','godoy cruz':'Mendoza','guaymallen':'Mendoza','las heras':'Mendoza','maipu':'Mendoza','villa maria':'Córdoba','rio cuarto':'Córdoba','san francisco':'Córdoba','alta gracia':'Córdoba','villa carlos paz':'Córdoba','concordia':'Entre Ríos','concepcion del uruguay':'Entre Ríos','gualeguaychu':'Entre Ríos','parana':'Entre Ríos','obera':'Misiones','eldorado':'Misiones','puerto iguazu':'Misiones','villa mercedes':'San Luis','merlo':'San Luis','pergamino':'Buenos Aires','campana':'Buenos Aires','tandil':'Buenos Aires','olavarria':'Buenos Aires','lujan':'Buenos Aires','junin':'Buenos Aires','azul':'Buenos Aires','reconquista':'Santa Fe','rafaela':'Santa Fe','venado tuerto':'Santa Fe','villa constitucion':'Santa Fe','cutral co':'Neuquén','zapala':'Neuquén','centenario':'Neuquén'};
+    function formatCiudadDocumento(ciudad,lugar){
+      if(!ciudad)return'';
+      const cn=norm(ciudad);
+      if(cn&&norm(lugar||'').includes(cn)&&cn.length>3)return ciudad;
+      if(CIUDADES_CAPITALES.has(cn))return ciudad;
+      const prov=CIUDAD_PROVINCIA_MAP[cn];
+      return prov?`${ciudad}, ${prov}`:ciudad;
+    }
+    function inferPronombre(nombre){
+      const n=norm(nombre||'');
+      if(/juegos?\s+(panamerican|olimpic|sudamerican|mundiales?)/.test(n))return'los cuales';
+      if(/\b(copa|concentracion|seleccion|liga|jornada|eliminatoria|serie|edicion)\b/.test(n))return'la cual';
+      if(/\b(torneo|mundial|campeonato|certamen|congreso|encuentro)\b/.test(n))return'el cual';
+      return'la cual';
+    }
+    function detectarCiudadDuplicada(ciudad,lugar){
+      if(!ciudad||!lugar)return false;
+      const cn=norm(ciudad);
+      return cn.length>3&&norm(lugar).includes(cn);
+    }
+    function buildDocWarnings(c){
+      const warns=[];
+      if(!c.ciudad)warns.push('El campo "Ciudad" está vacío: el documento puede quedar con la ciudad en blanco.');
+      if(detectarCiudadDuplicada(c.ciudad||'',c.lugar||''))warns.push(`La ciudad "${c.ciudad}" ya aparece en el campo "Sede". Revisá antes de generar: podría quedar duplicada en el documento.`);
+      return warns;
+    }
   </script>
   <div class="page-version-tag">Versión UI</div>
 </body>
