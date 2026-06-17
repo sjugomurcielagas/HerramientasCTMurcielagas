@@ -622,14 +622,6 @@ const UI_DEPLOYED_AT = 'partidos-internos';
       if (global.__murciAntidopingPatched) return;
       global.__murciAntidopingPatched = true;
 
-      if (typeof SEARCH_ALIASES !== 'undefined' && SEARCH_ALIASES) {
-        const current = Array.isArray(SEARCH_ALIASES.anaflex) ? SEARCH_ALIASES.anaflex : [];
-        SEARCH_ALIASES.anaflex = Array.from(new Set([...current, 'anaflex', 'paracetamol', 'diclofenac']));
-      } else if (global.SEARCH_ALIASES) {
-        const current = Array.isArray(global.SEARCH_ALIASES.anaflex) ? global.SEARCH_ALIASES.anaflex : [];
-        global.SEARCH_ALIASES.anaflex = Array.from(new Set([...current, 'anaflex', 'paracetamol', 'diclofenac']));
-      }
-
       if (!doc.getElementById('murci-antidoping-patch-style')) {
         const style = doc.createElement('style');
         style.id = 'murci-antidoping-patch-style';
@@ -651,8 +643,31 @@ const UI_DEPLOYED_AT = 'partidos-internos';
         novalgina: ['metamizol'],
         tafirol: ['paracetamol'],
         ibupirac: ['ibuprofeno'],
-        actron: ['ibuprofeno']
+        actron: ['ibuprofeno'],
+        buscapina: ['hioscina butilbromuro'],
+        refrianex: ['pseudoefedrina'],
+        ventolin: ['salbutamol'],
+        aerolin: ['salbutamol'],
+        alernix: ['cetirizina'],
+        'qura plus': ['paracetamol + pseudoefedrina + clorfenamina'],
+        amoxidal: ['amoxicilina'],
+        reliveran: ['metoclopramida'],
+        decadron: ['dexametasona'],
+        betacort: ['betametasona'],
+        clarityne: ['loratadina']
       };
+
+      const registerSearchAlias = target => {
+        if (!target) return;
+        Object.entries(commercialFallbackMap).forEach(([brand, actives]) => {
+          const current = Array.isArray(target[brand]) ? target[brand] : [];
+          const activeTokens = actives.flatMap(active => String(active).split('+').map(part => part.trim()).filter(Boolean));
+          target[brand] = Array.from(new Set([brand, ...current, ...actives, ...activeTokens]));
+        });
+      };
+
+      const searchAliasSource = (typeof SEARCH_ALIASES !== 'undefined' && SEARCH_ALIASES) ? SEARCH_ALIASES : global.SEARCH_ALIASES;
+      registerSearchAlias(searchAliasSource);
 
       const firstText = (...values) => {
         for (const value of values) {
@@ -689,9 +704,9 @@ const UI_DEPLOYED_AT = 'partidos-internos';
       global.searchVariants = function searchVariantsPatched(query) {
         const normalized = normalizeKey(query);
         const direct = String(query || '').trim();
-        const extras = Array.isArray(SEARCH_ALIASES?.[normalized]) ? SEARCH_ALIASES[normalized] : [];
+        const extras = Array.isArray(searchAliasSource?.[normalized]) ? searchAliasSource[normalized] : [];
         const singular = normalized.length > 3 && normalized.endsWith('s') ? normalized.slice(0, -1) : '';
-        const hints = normalized === 'anaflex' ? ['paracetamol', 'diclofenac'] : [];
+        const hints = commercialFallbackMap[normalized] || [];
         return Array.from(new Set([direct, normalized, singular, ...extras, ...hints].filter(Boolean)));
       };
 

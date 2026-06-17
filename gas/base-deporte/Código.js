@@ -43,6 +43,7 @@ var SHEETS = {
   testeosMediciones: 'TesteosMediciones',
   columnasDinamicas: 'ColumnasDinamicas',
   antidopingCatalogo: 'Antidoping_Catalogo',
+  antidopingMarcaAlias: 'Antidoping_Marcas_Alias',
   antidopingVnmCatalogo: 'Antidoping_VNM_Catalogo',
   antidopingHistorial: 'Antidoping_Historial',
   antidopingCache: 'Antidoping_Cache',
@@ -54,8 +55,8 @@ var PERSONA_ID_ALIASES_ = ['persona_id', 'personaId', 'id'];
 
 var ANTIDOPING_CACHE_TTL_DAYS = 180;
 var ANTIDOPING_CACHE_MAX_ROWS = 150;
-var ANTIDOPING_CACHE_VERSION = 'v2';
-var ANTIDOPING_BACKEND_VERSION = '2026-05-17.3';
+var ANTIDOPING_CACHE_VERSION = 'v3';
+var ANTIDOPING_BACKEND_VERSION = '2026-06-16.1';
 var ANTIDOPING_VNM_SHEET = 'Antidoping_VNM_Catalogo';
 var ANTIDOPING_VNM_SYNC_KEY = 'antidoping_vnm_last_sync';
 var ANTIDOPING_VNM_SYNC_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -341,6 +342,104 @@ function antidoping_seedCatalogo_(sheet) {
     ['Budesonida', 'Budesonida', '', 'Revisar la vía de administración y el contexto competitivo.', 'Catálogo interno', 'WADA_Sustancias', '', ahora, 'SI']
   ];
   sheet.getRange(2, 1, base.length, base[0].length).setValues(base);
+}
+
+function antidoping_getMarcaAliasSheet_() {
+  var headers = [
+    'marca',
+    'principio_activo',
+    'presentacion',
+    'laboratorio',
+    'observaciones',
+    'fuente',
+    'fecha_revision',
+    'activo'
+  ];
+  var sheet = antidoping_getOrCreateSheet_(SHEETS.antidopingMarcaAlias || 'Antidoping_Marcas_Alias', headers);
+  antidoping_seedMarcaAlias_(sheet);
+  return sheet;
+}
+
+function antidoping_seedMarcaAlias_(sheet) {
+  if (sheet.getLastRow() > 1) return;
+  var ahora = Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd');
+  var rows = [
+    ['Anaflex', 'Paracetamol + Diclofenac', '', '', 'Marca con formulaciones/variantes. Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Ventolin', 'Salbutamol', '', '', 'Confirmar dosis, via y pauta de uso.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Aerolin', 'Salbutamol', '', '', 'Confirmar dosis, via y pauta de uso.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Alernix', 'Cetirizina', '', '', 'Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Qura Plus', 'Paracetamol + Pseudoefedrina + Clorfenamina', '', '', 'Los antigripales pueden variar composicion. Confirmar envase/prospecto.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Amoxidal', 'Amoxicilina', '', '', 'Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Tafirol', 'Paracetamol', '', '', 'Confirmar si es simple o combinado.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Novalgina', 'Metamizol', '', '', 'Tambien conocida como dipirona.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Ibupirac', 'Ibuprofeno', '', '', 'Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Actron', 'Ibuprofeno', '', '', 'Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Buscapina', 'Hioscina butilbromuro', '', '', 'Confirmar si es simple o compuesta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Reliveran', 'Metoclopramida', '', '', 'Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Decadron', 'Dexametasona', '', '', 'Corticoide: revisar via, contexto y TUE.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Betacort', 'Betametasona', '', '', 'Corticoide: revisar via, contexto y TUE.', 'Catalogo curado interno', ahora, 'SI'],
+    ['Clarityne', 'Loratadina', '', '', 'Confirmar presentacion exacta.', 'Catalogo curado interno', ahora, 'SI']
+  ];
+  sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+}
+
+function antidoping_readMarcaAliases_() {
+  var sheet = antidoping_getMarcaAliasSheet_();
+  return sheetToObjects(sheet)
+    .map(function(row) {
+      return {
+        marca: String(row.marca || row.Marca || row.nombre_comercial || '').trim(),
+        principio_activo: String(row.principio_activo || row.principioActivo || row.sustancia || '').trim(),
+        presentacion: String(row.presentacion || '').trim(),
+        laboratorio: String(row.laboratorio || '').trim(),
+        observaciones: String(row.observaciones || '').trim(),
+        fuente: String(row.fuente || 'Catalogo curado interno').trim(),
+        fecha_revision: String(row.fecha_revision || '').trim(),
+        activo: String(row.activo || 'SI').trim()
+      };
+    })
+    .filter(function(row) {
+      return row.marca && row.principio_activo && normalizeText(row.activo) !== 'no';
+    });
+}
+
+function antidoping_scoreMarcaAlias_(consultaNorm, item) {
+  var marca = normalizeText(item.marca || '');
+  if (!consultaNorm || !marca) return 0;
+  if (consultaNorm === marca) return 100;
+  if (marca.indexOf(consultaNorm) !== -1) return 88;
+  if (consultaNorm.indexOf(marca) !== -1) return 72;
+  var compactConsulta = consultaNorm.replace(/\s+/g, '');
+  var compactMarca = marca.replace(/\s+/g, '');
+  if (compactConsulta && compactConsulta === compactMarca) return 96;
+  return 0;
+}
+
+function antidoping_lookupMarcaAlias_(consulta) {
+  var consultaNorm = normalizeText(consulta);
+  return antidoping_readMarcaAliases_()
+    .map(function(item) {
+      return {
+        item: item,
+        score: antidoping_scoreMarcaAlias_(consultaNorm, item)
+      };
+    })
+    .filter(function(x) { return x.score > 0; })
+    .sort(function(a, b) { return b.score - a.score; })
+    .slice(0, 6)
+    .map(function(x) {
+      return {
+        medicamento: x.item.marca || consulta,
+        principio_activo: x.item.principio_activo || '',
+        presentacion: x.item.presentacion || '',
+        laboratorio: x.item.laboratorio || '',
+        observaciones: x.item.observaciones || 'Marca comercial resuelta por catalogo curado interno. Confirmar presentacion exacta.',
+        fuente_argentina: x.item.fuente || 'Catalogo curado interno',
+        fuente_secundaria: 'Antidoping_Marcas_Alias',
+        fuente_url: '',
+        fecha_revision: x.item.fecha_revision || Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
+      };
+    });
 }
 
 function antidoping_getVnmSheet_() {
@@ -928,6 +1027,14 @@ function antidoping_knownCommercialActive_(nombre) {
 
 function antidoping_knownCommercialCandidates_(nombre) {
   var n = normalizeText(nombre);
+  var aliasCandidates = [];
+  try {
+    aliasCandidates = antidoping_lookupMarcaAlias_(nombre).map(function(item) {
+      return item.principio_activo;
+    });
+  } catch (e) {
+    aliasCandidates = [];
+  }
   var map = {
     'tafirol': ['paracetamol'],
     'anaflex': ['paracetamol', 'paracetamol + diclofenac'],
@@ -937,8 +1044,15 @@ function antidoping_knownCommercialCandidates_(nombre) {
     'refrianex': ['pseudoefedrina'],
     'novalgina': ['metamizol']
   };
-  var out = map[n] || [];
-  return out.filter(Boolean);
+  var out = [].concat(aliasCandidates, map[n] || []);
+  var seen = {};
+  return out.filter(function(value) {
+    var active = String(value || '').trim();
+    var key = normalizeText(active);
+    if (!active || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function antidoping_scrapePrVademecum_(queryRaw) {
@@ -1067,8 +1181,14 @@ function antidoping_buscarMedicamento(payload) {
   var consultaNorm = normalizeText(consulta);
   var forceRefresh = !!(payload && payload.forceRefresh);
   var directActiveQuery = antidoping_resolveDirectActiveQuery_(consulta);
+  var marcaAliasMatches = [];
+  try {
+    marcaAliasMatches = antidoping_lookupMarcaAlias_(consulta);
+  } catch (e) {
+    marcaAliasMatches = [];
+  }
   var knownActiveFromQuery = antidoping_knownCommercialActive_(consulta);
-  var shouldBypassCache = !!knownActiveFromQuery || !!directActiveQuery;
+  var shouldBypassCache = !!knownActiveFromQuery || !!directActiveQuery || !!marcaAliasMatches.length;
   if (!forceRefresh && !shouldBypassCache) {
     var cached = antidoping_readCache_(consultaNorm);
     if (cached && cached.length) {
@@ -1093,6 +1213,11 @@ function antidoping_buscarMedicamento(payload) {
       fecha_revision: Utilities.formatDate(new Date(), 'GMT-3', 'yyyy-MM-dd')
     }];
     source = 'direct_active';
+  }
+
+  if (!matches.length && marcaAliasMatches.length) {
+    matches = marcaAliasMatches;
+    source = 'marca_alias_curado';
   }
 
   if (!matches.length) {
