@@ -123,6 +123,80 @@ function getReportRows_() {
     rows.push(item);
   }
 
+  return applyTemporalRules_(rows);
+}
+
+function applyTemporalRules_(rows) {
+  const sorted = rows.slice().sort((a, b) => {
+    const da = parseReportDate_(a.fecha);
+    const db = parseReportDate_(b.fecha);
+    const ta = da ? da.getTime() : 0;
+    const tb = db ? db.getTime() : 0;
+    if (ta !== tb) return ta - tb;
+    return Number(a.rowNumber || 0) - Number(b.rowNumber || 0);
+  });
+  const seenByPlayerWeek = {};
+
+  sorted.forEach(row => {
+    const date = parseReportDate_(row.fecha);
+    if (!date) return;
+    const originalStart = getTrainingPeriodStart_(date);
+    let analysisStart = new Date(originalStart);
+    const playerKey = row.jugadoraKey || buildPlayerKey_(row.jugadora);
+    const originalKey = isoWeekKey_(originalStart);
+    const isWeekendLoad = date.getDay() === 0 || date.getDay() === 6;
+
+    if (isWeekendLoad && playerKey && seenByPlayerWeek[playerKey] && seenByPlayerWeek[playerKey][originalKey]) {
+      analysisStart.setDate(analysisStart.getDate() + 7);
+      row.cargaAnticipada = true;
+      row.issues = row.issues || [];
+      row.issues.push('CARGA ANTICIPADA: se interpreta como registro de la semana siguiente porque ya existia una carga previa para la semana trabajada.');
+    } else {
+      row.cargaAnticipada = false;
+    }
+
+    row.periodoOriginal = originalKey;
+    row.periodoAnalisis = isoWeekKey_(analysisStart);
+    row.periodoAnalisisLabel = formatPeriodLabel_(analysisStart);
+    row.excluirAnalisis = false;
+
+    if (playerKey) {
+      seenByPlayerWeek[playerKey] = seenByPlayerWeek[playerKey] || {};
+      seenByPlayerWeek[playerKey][row.periodoAnalisis] = true;
+    }
+  });
+
+  const grouped = {};
+  sorted.forEach(row => {
+    const key = (row.jugadoraKey || buildPlayerKey_(row.jugadora)) + '|' + (row.periodoAnalisis || '');
+    if (!row.periodoAnalisis || key === '|') return;
+    grouped[key] = grouped[key] || [];
+    grouped[key].push(row);
+  });
+
+  Object.keys(grouped).forEach(key => {
+    const group = grouped[key];
+    if (group.length < 2) return;
+    group.sort((a, b) => {
+      const da = parseReportDate_(a.fecha);
+      const db = parseReportDate_(b.fecha);
+      const ta = da ? da.getTime() : 0;
+      const tb = db ? db.getTime() : 0;
+      if (ta !== tb) return ta - tb;
+      return Number(a.rowNumber || 0) - Number(b.rowNumber || 0);
+    });
+    const keep = group[group.length - 1];
+    group.forEach(row => {
+      row.issues = row.issues || [];
+      if (row === keep) {
+        row.issues.push('ADVERTENCIA DOBLE CARGA: existe mas de un registro para esta jugadora y semana; para calculos se usa esta carga por ser la mas nueva.');
+      } else {
+        row.excluirAnalisis = true;
+        row.issues.push('DOBLE CARGA: registro anterior para la misma jugadora y semana. Se excluye de calculos y se conserva la carga mas nueva.');
+      }
+    });
+  });
+
   return rows;
 }
 
@@ -174,6 +248,52 @@ function validateRequiredColumns_(headerMap, headers, headerRowIndex) {
 
 function getCell_(row, index) {
   return String(row[index] || '').trim();
+}
+
+function parseReportDate_(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const s = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.substring(0, 10) + 'T12:00:00');
+  const firstPart = s.split(' ')[0];
+  const parts = firstPart.split(/[\/.-]/).map(Number);
+  if (parts.length >= 3) {
+    const d = parts[0];
+    const m = parts[1];
+    const y = parts[2];
+    if (y > 1900) return new Date(y, m - 1, d, 12);
+  }
+  const parsed = new Date(s);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getTrainingPeriodStart_(date) {
+  const d = new Date(date);
+  d.setHours(12, 0, 0, 0);
+  const day = d.getDay();
+  const daysSinceMonday = (day + 6) % 7;
+  d.setDate(d.getDate() - daysSinceMonday);
+  d.setDate(d.getDate() - 7);
+  return d;
+}
+
+function isoWeekKey_(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() + '-S' + String(weekNo).padStart(2, '0');
+}
+
+function formatPeriodLabel_(start) {
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return formatShortDate_(start) + ' al ' + formatShortDate_(end);
+}
+
+function formatShortDate_(date) {
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), 'dd/MM');
 }
 
 function normalizeNumber_(value) {
@@ -293,7 +413,7 @@ function generateClientReport(payload) {
   }
 }
 
-function generarAuditoriaDatos() {
+function generarAuditoriaDatosLegacy_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const dataSheet = getSheet_(ss);
   let auditSheet = ss.getSheetByName(AUDIT_SHEET_NAME);
@@ -338,6 +458,55 @@ function generarAuditoriaDatos() {
   auditSheet.getRange(2, 11, values.length, 1).setBackground('#fff2cc');
 
   return { ok: true, totalIssues: conIssues.length, auditUrl: ss.getUrl() + '#gid=' + auditSheet.getSheetId(), message: 'Auditoría generada correctamente.' };
+}
+
+function generarAuditoriaDatos() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const dataSheet = getSheet_(ss);
+  let auditSheet = ss.getSheetByName(AUDIT_SHEET_NAME);
+  if (!auditSheet) auditSheet = ss.insertSheet(AUDIT_SHEET_NAME);
+  auditSheet.clear();
+
+  const headers = ['Abrir', 'Fila original', 'Fecha', 'Periodo analisis', 'Jugadora', 'Total', 'Fisico', 'Tecnico-tactico', 'Total sugerido', 'Problema detectado', 'Comentario', 'Decision calculo', 'Estado'];
+  auditSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+
+  const rows = getReportRows_();
+  const conIssues = rows.filter(r => r.issues && r.issues.length);
+
+  if (!conIssues.length) {
+    auditSheet.getRange(2, 1).setValue('No se detectaron inconsistencias pendientes.');
+    return { ok: true, totalIssues: 0, auditUrl: ss.getUrl() + '#gid=' + auditSheet.getSheetId(), message: 'No se detectaron inconsistencias pendientes.' };
+  }
+
+  const values = conIssues.map(r => [
+    'Abrir fila ' + r.rowNumber,
+    r.rowNumber,
+    r.fecha,
+    r.periodoAnalisisLabel || r.periodoAnalisis || '',
+    r.jugadora,
+    r.total,
+    r.fisico,
+    r.tecnico,
+    r.fisico + r.tecnico,
+    r.issues.join(' | '),
+    r.comentario,
+    r.excluirAnalisis ? 'Excluida: doble carga anterior' : (r.cargaAnticipada ? 'Incluida: carga anticipada' : 'Incluida'),
+    'Pendiente'
+  ]);
+
+  auditSheet.getRange(2, 1, values.length, headers.length).setValues(values);
+  conIssues.forEach((r, index) => {
+    const url = ss.getUrl() + '#gid=' + dataSheet.getSheetId() + '&range=A' + r.rowNumber;
+    const richText = SpreadsheetApp.newRichTextValue().setText('Abrir fila ' + r.rowNumber).setLinkUrl(url).build();
+    auditSheet.getRange(index + 2, 1).setRichTextValue(richText);
+  });
+
+  auditSheet.setFrozenRows(1);
+  auditSheet.autoResizeColumns(1, headers.length);
+  auditSheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#d9ead3');
+  auditSheet.getRange(2, 12, values.length, 1).setBackground('#fff2cc');
+
+  return { ok: true, totalIssues: conIssues.length, auditUrl: ss.getUrl() + '#gid=' + auditSheet.getSheetId(), message: 'Auditoria generada correctamente.' };
 }
 
 function detectDataIssues_(item, rawItem) {

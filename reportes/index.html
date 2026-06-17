@@ -1548,6 +1548,22 @@ function trainingPeriodLabelFromDate(date) {
   return formatShortDate(start) + ' al ' + formatShortDate(end);
 }
 
+function trainingPeriodLabelFromKey(weekKey) {
+  const start = getIsoWeekStartDate(weekKey);
+  if (!start) return '';
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  return formatShortDate(start) + ' al ' + formatShortDate(end);
+}
+
+function nextTrainingPeriodKey(weekKey) {
+  const start = getIsoWeekStartDate(weekKey);
+  if (!start) return weekKey;
+  const next = new Date(start);
+  next.setUTCDate(start.getUTCDate() + 7);
+  return isoWeekKey(new Date(next.getUTCFullYear(), next.getUTCMonth(), next.getUTCDate(), 12));
+}
+
 function formatShortDate(date) {
   return new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
@@ -1572,14 +1588,17 @@ function formatShortDate(date) {
       const fisico = keys.fisico || keys['estimulos fisicos'] || keys['trabajo fisico'] || keys['volumen fisico'];
       const tecnico = keys.tecnico || keys['tecnico tactico'] || keys['tecnico-tactico'] || keys['trabajo tecnico'] || keys['trabajo tecnico tactico'] || keys['volumen tecnico'];
       const comentario = keys.comentario || keys.observaciones || keys.observacion || keys.novedades || keys.comentarios || '';
+      const periodoAnalisis = String(r.periodoAnalisis || r.periodo_analisis || r.week || '').trim();
+      const periodoOriginal = String(r.periodoOriginal || r.periodo_original || '').trim();
 
       const d = parseDate(fecha);
       if (!d || !jugadora) return null;
 
       return {
   fecha: d,
-  week: trainingPeriodKey(d),
-  weekLabel: trainingPeriodLabelFromDate(d),
+  week: periodoAnalisis || trainingPeriodKey(d),
+  originalWeek: periodoOriginal || trainingPeriodKey(d),
+  weekLabel: String(r.periodoAnalisisLabel || r.periodo_analisis_label || '').trim() || (periodoAnalisis ? trainingPeriodLabelFromKey(periodoAnalisis) : trainingPeriodLabelFromDate(d)),
   jugadora: String(jugadora).trim(),
   persona_id: String(r.persona_id || r.personaId || r.persona?.persona_id || r.persona?.Persona_ID || '').trim(),
   persona: r.persona || null,
@@ -1588,7 +1607,11 @@ function formatShortDate(date) {
   total: toNumber(total),
   fisico: toNumber(fisico),
   tecnico: toNumber(tecnico),
-  comentario: String(comentario || '').trim()
+  comentario: String(comentario || '').trim(),
+  cargaAnticipada: r.cargaAnticipada === true || r.carga_anticipada === true || String(r.cargaAnticipada || r.carga_anticipada || '').toLowerCase() === 'true',
+  excluirAnalisis: r.excluirAnalisis === true || r.excluir_analisis === true || String(r.excluirAnalisis || r.excluir_analisis || '').toLowerCase() === 'true',
+  serverTemporalRules: !!periodoAnalisis,
+  rowNumber: Number(r.rowNumber || r.fila || 0) || 0
 };
     }
 
@@ -1655,10 +1678,55 @@ function aiGroupLabel(group) {
   return map[group] || map.all;
 }
 
+function applyClientTemporalRules(mappedRows) {
+  const sorted = mappedRows.slice().sort((a, b) => {
+    const diff = a.fecha - b.fecha;
+    if (diff) return diff;
+    return Number(a.rowNumber || 0) - Number(b.rowNumber || 0);
+  });
+  const seenByPlayerWeek = new Map();
+
+  sorted.forEach(row => {
+    if (row.serverTemporalRules) return;
+    const playerKey = normalizeKey(row.jugadora);
+    const originalWeek = row.originalWeek || trainingPeriodKey(row.fecha);
+    const isWeekendLoad = row.fecha.getDay() === 0 || row.fecha.getDay() === 6;
+    const seenKey = `${playerKey}|${originalWeek}`;
+
+    if (isWeekendLoad && seenByPlayerWeek.has(seenKey)) {
+      row.week = nextTrainingPeriodKey(originalWeek);
+      row.weekLabel = trainingPeriodLabelFromKey(row.week);
+      row.cargaAnticipada = true;
+    }
+
+    seenByPlayerWeek.set(`${playerKey}|${row.week}`, true);
+  });
+
+  const byPlayerWeek = new Map();
+  sorted.forEach(row => {
+    const key = `${normalizeKey(row.jugadora)}|${row.week}`;
+    if (!byPlayerWeek.has(key)) byPlayerWeek.set(key, []);
+    byPlayerWeek.get(key).push(row);
+  });
+
+  byPlayerWeek.forEach(group => {
+    if (group.length < 2) return;
+    group.sort((a, b) => {
+      const diff = a.fecha - b.fecha;
+      if (diff) return diff;
+      return Number(a.rowNumber || 0) - Number(b.rowNumber || 0);
+    });
+    group.slice(0, -1).forEach(row => { row.excluirAnalisis = true; });
+  });
+
+  return mappedRows;
+}
+
 function setRows(inputRows, sourceLabel) {
-  rawRows = inputRows
+  rawRows = applyClientTemporalRules(inputRows
     .map(mapIncomingRow)
-    .filter(Boolean)
+    .filter(Boolean))
+    .filter(r => !r.excluirAnalisis)
     .sort((a, b) => a.fecha - b.fecha);
 
   // Primera vez: incluye a todas por defecto.
