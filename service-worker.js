@@ -4,6 +4,8 @@ const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [
   './',
   './index.html',
+  './tactica/',
+  './tactica/index.html',
   './manifest.json',
   './assets/config.js?v=20260525021325',
   './assets/logo-murcielagas.webp',
