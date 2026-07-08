@@ -1258,6 +1258,7 @@ function setDrawMode(m){
 }
 function toggleArrowMode(){
   arrowMode=!arrowMode;arrowFrom=null;
+  curveStep=0;curveP1=null;curveP2=null;freeDrawing=false;freePath=[];
   const btn=document.getElementById('mode-toggle-chip');
   if(btn){
     if(arrowMode){
@@ -1794,7 +1795,7 @@ canvas.addEventListener('mouseup',()=>{
   if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 });
-canvas.addEventListener('mouseleave',()=>{if(freeDrawing){freeDrawing=false;freePath=[];draw();};dragging=null;});
+canvas.addEventListener('mouseleave',()=>{if(freeDrawing){freeDrawing=false;freePath=[];arrowFrom=null;draw();}dragging=null;});
 canvas.addEventListener('contextmenu',e=>{
   e.preventDefault();
   const{x,y}=getPos(e);
@@ -1918,7 +1919,28 @@ function drawCurveArrow(x1,y1,cxp,cyp,x2,y2,color,dash,type){
     ctx.fillStyle='#e53935';ctx.beginPath();
     ctx.moveTo(x2,y2);ctx.lineTo(x2-ux*16-uy*8,y2-uy*16+ux*8);ctx.lineTo(x2-ux*16+uy*8,y2-uy*16-ux*8);
     ctx.closePath();ctx.fill();
-  } else drawArrowHead(x2,y2,ux,uy,color);
+  } else if(type==='press'){
+    // Espinas sobre la curva — muestrear puntos equidistantes
+    const step=18,spineLen=7,totalSteps=Math.floor(Math.hypot(x2-x1,y2-y1)*1.2/step);
+    ctx.lineWidth=2;
+    for(let si=1;si<=totalSteps;si++){
+      const t=si/(totalSteps+1);
+      const mt=1-t;
+      const mx=mt*mt*x1+2*mt*t*cxp+t*t*x2;
+      const my=mt*mt*y1+2*mt*t*cyp+t*t*y2;
+      const tdx=2*mt*(cxp-x1)+2*t*(x2-cxp);
+      const tdy=2*mt*(cyp-y1)+2*t*(y2-cyp);
+      const tlen=Math.hypot(tdx,tdy)||1;
+      const tux=tdx/tlen,tuy=tdy/tlen;
+      ctx.beginPath();
+      ctx.moveTo(mx,my);
+      ctx.lineTo(mx-tuy*spineLen-tux*spineLen*0.5,my+tux*spineLen-tuy*spineLen*0.5);
+      ctx.stroke();
+    }
+    drawArrowHead(x2,y2,ux,uy,color);
+  } else {
+    drawArrowHead(x2,y2,ux,uy,color);
+  }
   ctx.restore();
 }
 function drawFreeArrowFromPlayer(px,py,path,color,dash,type){
@@ -1935,6 +1957,27 @@ function drawFreeArrow(path,color,dash,type){
   ctx.stroke();ctx.setLineDash([]);
   const last=path[path.length-1],prev=path[path.length-2];
   const dx=last.x-prev.x,dy=last.y-prev.y,len=Math.hypot(dx,dy);
+  if(type==='press'){
+    // Espinas a lo largo del trayecto
+    const step=18,spineLen=7;
+    let dist=0;
+    ctx.lineWidth=2;
+    for(let i=1;i<path.length;i++){
+      const ax=path[i-1].x,ay=path[i-1].y,bx=path[i].x,by=path[i].y;
+      const seg=Math.hypot(bx-ax,by-ay);
+      const sux=(bx-ax)/(seg||1),suy=(by-ay)/(seg||1);
+      let d=step-(dist%step);
+      while(d<=seg){
+        const mx=ax+sux*d,my=ay+suy*d;
+        ctx.beginPath();
+        ctx.moveTo(mx,my);
+        ctx.lineTo(mx-suy*spineLen-sux*spineLen*0.5,my+sux*spineLen-suy*spineLen*0.5);
+        ctx.stroke();
+        d+=step;
+      }
+      dist+=seg;
+    }
+  }
   if(len>2) drawArrowHead(last.x,last.y,dx/len,dy/len,color);
   ctx.restore();
 }
