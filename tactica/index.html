@@ -284,24 +284,32 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 
 /* MODALES */
 #roster-modal{display:none;position:fixed;inset:0;z-index:200;background:rgba(26,58,92,.5);backdrop-filter:blur(4px)}
-#roster-modal.show{display:flex;align-items:flex-end}
+#roster-modal.show{display:flex;align-items:flex-end;justify-content:center}
 #roster-sheet{background:var(--blanco);border-radius:20px 20px 0 0;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
 #roster-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 6px}
 #roster-header{padding:0 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
 #roster-title{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--celeste2);letter-spacing:1px}
 #roster-close{background:var(--surface2);border:none;border-radius:50%;width:28px;height:28px;color:var(--text-dim);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 #roster-team-toggle{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+#roster-search-wrap{padding:9px 16px 0;flex-shrink:0}
+#roster-search{margin-bottom:0}
 #roster-body{overflow-y:auto;flex:1;padding:10px 16px 20px}
 #roster-body::-webkit-scrollbar{display:none}
-.rcard{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);margin-bottom:5px;cursor:pointer;transition:all .15s}
+.rcard{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);margin-bottom:4px;cursor:pointer;transition:all .15s;min-height:40px}
 .rcard:active{background:var(--celeste-light);border-color:var(--celeste)}
 .rcard.placed{opacity:.35;pointer-events:none}
-.rnum{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--celeste2);width:26px;text-align:center;flex-shrink:0}
+.rnum{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--celeste2);width:28px;text-align:center;flex-shrink:0}
 .rinfo{flex:1}
-.rapellido{font-size:13px;font-weight:500;color:var(--text)}
-.rnombre{font-size:10px;color:var(--text-dim)}
+.rapellido{font-size:12.5px;font-weight:800;color:var(--text)}
+.rnombre{font-size:11px;color:var(--text-dim)}
+.rplaced{font-size:9px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.5px;background:#eef6fb;padding:2px 6px;border-radius:6px;border:1px solid var(--border)}
 .rgk{font-size:9px;color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;background:#fff3ef;padding:2px 6px;border-radius:6px;border:1px solid #ffc8a8}
 .rsection{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+@media (min-width:900px) and (orientation:landscape){
+  #roster-modal.show{align-items:flex-start;justify-content:flex-start;background:rgba(26,58,92,.18);backdrop-filter:none}
+  #roster-sheet{width:330px;max-height:calc(100vh - 94px);margin:78px 0 0 72px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+  #roster-handle{display:none}
+}
 
 /* MODAL GUARDAR */
 #save-modal{display:none;position:fixed;inset:0;z-index:250;background:rgba(26,58,92,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center}
@@ -547,6 +555,10 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
     <div class="chip" id="at-shot" onclick="setArrowType('shot')">⚡ Disparo</div>
     <div class="chip" id="at-dribble" onclick="setArrowType('dribble')">◎ C/pelota</div>
     <div class="vsep"></div>
+    <span class="bar-label">Pelota</span>
+    <div id="ball-chip-wrap" style="display:flex;gap:5px;align-items:center;flex-shrink:0"></div>
+    <div class="chip" onclick="addBall()" title="Agregar pelota">+ Pelota</div>
+    <div class="vsep"></div>
     <span class="bar-label">Modo</span>
     <div class="chip active" id="dm-straight" onclick="setDrawMode('straight')">Recta</div>
     <div class="chip" id="dm-curve" onclick="setDrawMode('curve')">Curva</div>
@@ -590,6 +602,9 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
       <button class="btn btn-sm" style="border-color:var(--team-b);color:var(--team-b);background:#eff6ff" id="rs-B" onclick="setRosterTeam('B')">⚪ Visita</button>
       <span id="roster-team-hint" style="margin-left:auto;font-size:12px;color:var(--text-dim);font-weight:700">Carga en: Local</span>
       <button class="btn btn-sm" onclick="showRivalForm()" style="font-size:10px">+ Rival</button>
+    </div>
+    <div id="roster-search-wrap">
+      <input class="einput" id="roster-search" placeholder="Buscar por numero, apellido o nombre" oninput="renderRoster()">
     </div>
     <div id="roster-body"></div>
   </div>
@@ -769,6 +784,7 @@ let rivals=JSON.parse(localStorage.getItem('tb_rivals')||'[]');
 let rosterTeam='A';
 const TB_AUTOSAVE_KEY='tb_autosave_v2';
 let _autosaveTimer=null;
+let placedEntityIds=new Set();
 
 // =============================================
 // CANVAS — mismo landscape rotado 90°
@@ -856,6 +872,8 @@ let touchStartPos=null;
 const LONG_PRESS_MS=1000;
 const LONG_PRESS_MOVE_TOLERANCE=14;
 let selectedArrowIdx=null;
+let balls=[];
+let currentBallId='ball_1';
 
 // Sistema de fases
 let currentPhase=1;
@@ -894,6 +912,30 @@ function tacticaNameKey(p){
 
 function tacticaNameDisplay(p){
   return Murci.personName(p) || p?.nombre || p?.Apellido || '';
+}
+
+function tacticaPersonaId(p){
+  return String(p?.Persona_ID||p?.persona_id||p?.personaId||p?.id_persona||p?.id||'').trim();
+}
+
+function tacticaStableId(p, idx){
+  const pid=tacticaPersonaId(p);
+  if(pid)return 'persona:'+pid;
+  const dni=String(p?.DNI||p?.dni||'').replace(/\D+/g,'').trim();
+  if(dni)return 'dni:'+dni;
+  const name=tacticaNameKey(p);
+  if(name)return 'name:'+name;
+  return 'fallback:'+idx;
+}
+
+function tacticaIsActive(p){
+  const explicit=[p?.activo,p?.Activa,p?.activa,p?.Activo,p?.estadoNormalizado].filter(v=>v!==undefined&&v!==null);
+  if(explicit.some(v=>v===true||String(v).toLowerCase()==='true'||String(v).toLowerCase()==='activo'||String(v).toLowerCase()==='activa'))return true;
+  if(explicit.some(v=>v===false||String(v).toLowerCase()==='false'||String(v).toLowerCase()==='inactivo'||String(v).toLowerCase()==='inactiva'))return false;
+  const estado=normalizeTacticaText([p?.Estado,p?.estado,p?.Estado_Convocatoria,p?.estado_convocatoria,p?.estadoPlantel].filter(Boolean).join(' '));
+  if(!estado)return true;
+  if(estado.includes('baja')||estado.includes('inactiv')||estado.includes('retir')||estado.includes('histori'))return false;
+  return estado.includes('activ')||estado.includes('convoc')||estado.includes('dispon')||true;
 }
 
 function tacticaNumberFromLocal(p){
@@ -956,6 +998,7 @@ function tacticaIsKeeperToken(v){
 
 function tacticaNormalizePlayer(p, idx){
   if(!p)return null;
+  if(!tacticaIsActive(p))return null;
   const nombre=tacticaNameDisplay(p);
   const num=tacticaNumberFromLocal(p);
   const localMatch=tacticaFindLocalMatch(p);
@@ -963,14 +1006,20 @@ function tacticaNormalizePlayer(p, idx){
   const gkByTipo=tipo ? tacticaIsKeeperToken(tipo) : false;
   const gkByRol=tacticaValuesRol(p).some(tacticaIsKeeperToken);
   const gk=!!(gkByTipo||gkByRol||localMatch?.gk||p?.gk);
+  const roles=[tipo,...tacticaValuesRol(p)].filter(Boolean);
+  const isPlayerLike=!roles.length||gk||roles.some(v=>v.includes('jugadora')||v.includes('jugador')||v.includes('campo')||v.includes('arquer')||v.includes('portera')||v.includes('portero')||v.includes('deportista'));
+  if(!isPlayerLike)return null;
   const apellido=String(p?.Apellido||p?.apellido||'').trim();
   const nombreSolo=String(p?.Nombre||p?.nombre||'').trim();
   return {
+    entityId:tacticaStableId(p,idx),
+    personaId:tacticaPersonaId(p),
     apellido: apellido || nombre || `Jugador${idx+1}`,
     nombre: nombreSolo,
     num: num!=null ? num : 50 + idx,
     gk,
-    dni: String(p?.DNI||p?.dni||'').trim()
+    dni: String(p?.DNI||p?.dni||'').trim(),
+    active:true
   };
 }
 
@@ -984,8 +1033,10 @@ async function loadCanonicalPlantel(){
 
   canonicalPlantelPromise=(async()=>{
     try{
-      const plantel=await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL);
+      const data=await Murci.apiGetCached('site_getPlantel', {}, { ttlMs: 10 * 60 * 1000 }, API_URL);
+      const plantel=Array.isArray(data?.plantel)?data.plantel:(Array.isArray(data)?data:[]);
       canonicalPlantel=plantel.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
+      if(!canonicalPlantel.length)canonicalPlantel=MURCIELAGAS.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
     }catch(err){
       canonicalPlantel=MURCIELAGAS.map((p,i)=>tacticaNormalizePlayer(p,i)).filter(Boolean);
     }finally{
@@ -1004,6 +1055,140 @@ function setTeam(t){
   currentTeam=t;
   document.getElementById('sb-teamA').classList.toggle('sel',t==='A');
   document.getElementById('sb-teamB').classList.toggle('sel',t==='B');
+}
+
+// =============================================
+// PELOTAS
+// =============================================
+function ensureDefaultBall(){
+  if(!Array.isArray(balls))balls=[];
+  if(!balls.length)balls=[{id:'ball_1',label:'A'}];
+  if(!balls.some(b=>b.id===currentBallId))currentBallId=balls[0].id;
+  renderBallChips();
+}
+function renderBallChips(){
+  const wrap=document.getElementById('ball-chip-wrap');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  ensureBallIds();
+  balls.forEach(b=>{
+    const chip=document.createElement('div');
+    chip.className='chip'+(b.id===currentBallId?' active':'');
+    chip.textContent=b.label||'?';
+    chip.title='Pelota '+(b.label||'');
+    chip.addEventListener('click',()=>{currentBallId=b.id;renderBallChips();status('Pelota activa: '+(b.label||b.id));});
+    wrap.appendChild(chip);
+  });
+}
+function ensureBallIds(){
+  balls.forEach((b,i)=>{if(!b.id)b.id='ball_'+(i+1);if(!b.label)b.label=String.fromCharCode(65+i);});
+}
+function addBall(){
+  ensureDefaultBall();
+  const next=balls.length+1;
+  const label=String.fromCharCode(64+next);
+  const id='ball_'+next;
+  balls.push({id,label});
+  currentBallId=id;
+  renderBallChips();
+  status('Pelota '+label+' agregada');
+}
+function isBallActionType(type){
+  return type==='pass'||type==='dribble'||type==='shot';
+}
+function playerActionKey(idx){
+  const p=players[idx];
+  if(!p)return '';
+  return p.entityId||p.personaId||(p.murIdx!=null?'mur:'+p.murIdx:(p.team+':'+p.num));
+}
+function normalizeArrowAction(a){
+  if(!a)return a;
+  if(isBallActionType(a.type)&&!a.ballId)a.ballId=currentBallId||'ball_1';
+  if(!Number.isFinite(Number(a.phase)))a.phase=getActivePhaseForNewArrow();
+  return a;
+}
+function inferBallOwner(ballId, untilIndex=arrows.length){
+  let owner=null;
+  for(let i=0;i<untilIndex;i++){
+    const a=arrows[i];
+    if(!a||!isBallActionType(a.type)||(a.ballId||'ball_1')!==ballId)continue;
+    if(a.type==='pass'){
+      if(a.to!=null&&players[a.to])owner=playerActionKey(a.to);
+      else owner=null;
+    }else if(a.type==='dribble'){
+      owner=a.from!=null?playerActionKey(a.from):owner;
+    }else if(a.type==='shot'){
+      owner=null;
+    }
+  }
+  return owner;
+}
+function canAddArrowAction(a){
+  if(!a||!isBallActionType(a.type))return true;
+  ensureDefaultBall();
+  a.ballId=a.ballId||currentBallId;
+  const fromKey=a.from!=null?playerActionKey(a.from):'';
+  const owner=inferBallOwner(a.ballId,arrows.length);
+  if(owner&&fromKey&&owner!==fromKey){
+    const ball=balls.find(b=>b.id===a.ballId);
+    const p=players[a.from];
+    toast('La pelota '+(ball?.label||'')+' no la tiene '+(p?.role||p?.num||'esa jugadora'),2800);
+    return false;
+  }
+  if(!owner&&fromKey&&isBallActionType(a.type)){
+    const ball=balls.find(b=>b.id===a.ballId);
+    status('Pelota '+(ball?.label||'')+' inicia con '+(players[a.from]?.role||players[a.from]?.num));
+  }
+  return true;
+}
+function addArrowAction(a){
+  normalizeArrowAction(a);
+  if(!canAddArrowAction(a)){
+    if(a.to!=null&&players[a.to]?.ghost)players.splice(a.to,1);
+    return false;
+  }
+  arrows.push(a);
+  return true;
+}
+function normalizeBoardState(src={}){
+  players=(players||[]).map((p,i)=>{
+    if(!p)return p;
+    if(!p.entityId){
+      if(p.personaId)p.entityId='persona:'+p.personaId;
+      else if(p.dni)p.entityId='dni:'+String(p.dni).replace(/\D+/g,'');
+      else if(p.murIdx!=null)p.entityId='mur:'+p.murIdx;
+      else if(p.utilityType)p.entityId='utility:'+p.utilityType+':'+i;
+      else p.entityId='local:'+p.team+':'+p.num+':'+i;
+    }
+    if(!p.role&&p.apellido)p.role=p.apellido;
+    return p;
+  });
+  balls=Array.isArray(balls)&&balls.length?balls:[{id:'ball_1',label:'A'}];
+  ensureBallIds();
+  currentBallId=currentBallId||balls[0].id;
+  arrows=(arrows||[]).map((a,i)=>{
+    if(!a)return a;
+    if(isBallActionType(a.type)&&!a.ballId)a.ballId=balls[0].id;
+    if(!Number.isFinite(Number(a.phase)))a.phase=computePhase(arrows,i);
+    return a;
+  });
+  placedEntityIds=new Set(src.pe||src.placedEntityIds||[]);
+  players.forEach((p,i)=>{if(!p?.ghost&&!p?.utilityType&&p.entityId)placedEntityIds.add(p.entityId);});
+}
+
+function playerSurnameBase(p){
+  return String(p?.apellido||p?.role||'').split(',')[0].trim();
+}
+function playerDisplayLabel(p){
+  if(!p||p.utilityType)return '';
+  const surname=playerSurnameBase(p);
+  if(!surname||surname===String(p.num||''))return '';
+  const same=players.filter(x=>!x.ghost&&!x.utilityType&&normalizeTacticaText(playerSurnameBase(x))===normalizeTacticaText(surname));
+  if(same.length>1){
+    const initial=String(p.nombre||'').trim().charAt(0);
+    return initial?`${surname} ${initial}.`:surname;
+  }
+  return surname;
 }
 
 // =============================================
@@ -1127,31 +1312,45 @@ function setRosterTeam(t){
 }
 function renderRoster(){
   const body=document.getElementById('roster-body');body.innerHTML='';
+  normalizeBoardState();
+  const q=normalizeTacticaText(document.getElementById('roster-search')?.value||'');
   const sec=document.createElement('div');sec.className='rsection';
-  sec.innerHTML='<span>⚡ Nómina base</span>';
+  sec.innerHTML='<span>Nomina activa</span>';
   body.appendChild(sec);
   const rosterSource=(canonicalPlantel&&canonicalPlantel.length)?canonicalPlantel:MURCIELAGAS;
   const sorted=[...rosterSource].sort((a,b)=>{
     if(a.gk!==b.gk)return a.gk?-1:1;
     if(a.num&&b.num)return a.num-b.num;
-    if(a.num)return -1;if(b.num)return 1;return 0;
+    if(a.num)return -1;if(b.num)return 1;return String(a.apellido||'').localeCompare(String(b.apellido||''),'es');
   });
+  let shown=0;
   sorted.forEach(p=>{
-    const ri=rosterSource.indexOf(p);const placed=placedMur.has(ri);
+    const ri=rosterSource.indexOf(p);
+    const entityId=p.entityId||tacticaStableId(p,ri);
+    const haystack=normalizeTacticaText([p.num,p.apellido,p.nombre,p.gk?'arquera':''].filter(Boolean).join(' '));
+    if(q&&!haystack.includes(q))return;
+    shown++;
+    const placed=placedEntityIds.has(entityId)||players.some(pl=>!pl.ghost&&!pl.utilityType&&pl.entityId===entityId);
     const c=document.createElement('div');c.className='rcard'+(placed?' placed':'');
-    c.innerHTML=`<span class="rnum">${p.num||'—'}</span>
-      <span class="rinfo"><span class="rapellido">${p.apellido}</span><br><span class="rnombre">${p.nombre}</span></span>
-      ${p.gk?'<span class="rgk">ARQ</span>':''}`;
+    c.innerHTML=`<span class="rnum">${escapeHtml(p.num||'-')}</span>
+      <span class="rinfo"><span class="rapellido">${escapeHtml(p.apellido||'Sin apellido')}</span><br><span class="rnombre">${escapeHtml(p.nombre||'')}</span></span>
+      ${placed?'<span class="rplaced">EN CANCHA</span>':(p.gk?'<span class="rgk">ARQ</span>':'')}`;
     if(!placed)c.addEventListener('click',()=>{addFromRoster(p,ri,false);});
     body.appendChild(c);
   });
+  if(!shown){
+    const empty=document.createElement('div');
+    empty.style='color:var(--text-dim);font-size:12px;text-align:center;padding:12px';
+    empty.textContent='Sin jugadoras activas para ese filtro.';
+    body.appendChild(empty);
+  }
   rivals.forEach((r,ri)=>{
     const rs=document.createElement('div');rs.className='rsection';
-    rs.innerHTML=`<span>${r.name}</span><button onclick="deleteRival(${ri})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px">✕</button>`;
+    rs.innerHTML=`<span>${escapeHtml(r.name)}</span><button onclick="deleteRival(${ri})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px">x</button>`;
     body.appendChild(rs);
     (r.players||[]).forEach((p,pi)=>{
       const c=document.createElement('div');c.className='rcard';
-      c.innerHTML=`<span class="rnum">${p.num||'—'}</span><span class="rinfo"><span class="rapellido">${p.apellido}</span></span>`;
+      c.innerHTML=`<span class="rnum">${escapeHtml(p.num||'-')}</span><span class="rinfo"><span class="rapellido">${escapeHtml(p.apellido||'Rival')}</span></span>`;
       c.addEventListener('click',()=>{addFromRoster(p,pi,true);});
       body.appendChild(c);
     });
@@ -1165,13 +1364,14 @@ function renderRoster(){
 function addFromRoster(p,idx,isRival){
   saveHistory();
   const num=p.num||(rosterTeam==='A'?counterA++:counterB++);
+  const entityId=isRival?('rival:'+rosterTeam+':'+idx+':'+String(p.apellido||'').toLowerCase()):(p.entityId||tacticaStableId(p,idx));
+  if(!isRival&&placedEntityIds.has(entityId)){toast('Esa jugadora ya esta en cancha');return;}
   players.push({x:fcx+(Math.random()-.5)*150,y:fcy+(Math.random()-.5)*110,
-    team:rosterTeam,num,role:p.apellido,r:18,ghost:false,gk:p.gk||false,
-    murIdx:isRival?undefined:idx});
-  if(!isRival)placedMur.add(idx);
-  draw();status(p.apellido+' #'+num+' → '+(rosterTeam==='A'?'Local':'Visita'));
-}
-function addRivalPlayer(ri){
+    team:rosterTeam,num,role:p.apellido,apellido:p.apellido,nombre:p.nombre||'',r:18,ghost:false,gk:p.gk||false,
+    entityId,personaId:p.personaId||'',dni:p.dni||'',murIdx:isRival?undefined:idx});
+  if(!isRival){placedMur.add(idx);placedEntityIds.add(entityId);}
+  draw();renderRoster();status((p.apellido||'Jugadora')+' #'+num+' -> '+(rosterTeam==='A'?'Local':'Visita'));
+}function addRivalPlayer(ri){
   const num=document.getElementById(`rp-num-${ri}`).value.trim();
   const ap=document.getElementById(`rp-name-${ri}`).value.trim();if(!ap)return;
   rivals[ri].players=rivals[ri].players||[];
@@ -1193,7 +1393,7 @@ function deleteRival(i){rivals.splice(i,1);localStorage.setItem('tb_rivals',JSON
 function addPlayer(isGK){
   saveHistory();const num=currentTeam==='A'?counterA++:counterB++;
   players.push({x:fcx+(Math.random()-.5)*120,y:fcy+(Math.random()-.5)*90,
-    team:currentTeam,num,role:String(num),r:18,ghost:false,gk:isGK});
+    team:currentTeam,num,role:String(num),r:18,ghost:false,gk:isGK,entityId:'manual:'+currentTeam+':'+Date.now()+':'+num});
   draw();status((isGK?'Arquera':'Jugadora')+' #'+num+' ('+currentTeam+') agregada');
 }
 function addUtility(type){
@@ -1212,7 +1412,8 @@ function addUtility(type){
     r:cfg.r,
     ghost:false,
     gk:false,
-    utilityType:cfg.utilityType
+    utilityType:cfg.utilityType,
+    entityId:'utility:'+cfg.utilityType+':'+Date.now()
   });
   draw();status(cfg.role+' agregado al tablero');
 }
@@ -1260,35 +1461,35 @@ function toggleArrowMode(){
 // HISTORIAL
 // =============================================
 function saveHistory(){
-  history.push({players:JSON.parse(JSON.stringify(players)),arrows:JSON.parse(JSON.stringify(arrows)),cA:counterA,cB:counterB,pm:[...placedMur],breaks:[...manualPhaseBreaks],phase:currentPhase,phaseView});
+  history.push({players:JSON.parse(JSON.stringify(players)),arrows:JSON.parse(JSON.stringify(arrows)),balls:JSON.parse(JSON.stringify(balls)),currentBallId,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],breaks:[...manualPhaseBreaks],phase:currentPhase,phaseView});
   if(history.length>40)history.shift();
 }
 function undo(){
   if(!history.length){toast('Nada para deshacer');return;}
-  const s=history.pop();players=s.players;arrows=s.arrows;counterA=s.cA;counterB=s.cB;placedMur=new Set(s.pm);
+  const s=history.pop();players=s.players;arrows=s.arrows;balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';counterA=s.cA;counterB=s.cB;placedMur=new Set(s.pm);
   manualPhaseBreaks=s.breaks||[];currentPhase=s.phase||1;phaseView=s.phaseView||'all';
-  updatePhaseBadge();draw();status('Acción deshecha');
+  normalizeBoardState(s);ensureDefaultBall();updatePhaseBadge();draw();status('Acción deshecha');
 }
-function clearArrows(){saveHistory();arrows=[];manualPhaseBreaks=[];currentPhase=1;phaseView='all';updatePhaseBadge();draw();toast('Flechas borradas');}
+function clearArrows(){saveHistory();arrows=[];manualPhaseBreaks=[];currentPhase=1;phaseView='all';balls=[{id:'ball_1',label:'A'}];currentBallId='ball_1';ensureDefaultBall();updatePhaseBadge();draw();toast('Flechas borradas');}
 function clearAll(){
   saveHistory();players=[];arrows=[];counterA=1;counterB=1;arrowFrom=null;arrowMode=false;
-  placedMur=new Set();manualPhaseBreaks=[];currentPhase=1;phaseView='all';updatePhaseBadge();
+  placedMur=new Set();placedEntityIds=new Set();manualPhaseBreaks=[];currentPhase=1;phaseView='all';balls=[{id:'ball_1',label:'A'}];currentBallId='ball_1';ensureDefaultBall();updatePhaseBadge();
   if(arrowMode) toggleArrowMode();
   localStorage.removeItem(TB_AUTOSAVE_KEY);
   draw();toast('Tablero reiniciado');
 }
 function autosave(){
   if(!players.length)return;
-  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,cA:counterA,cB:counterB,pm:[...placedMur],ts:Date.now()}));}catch(e){}
+  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,balls,currentBallId,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],ts:Date.now()}));}catch(e){}
 }
 function tryRestoreAutosave(){
   try{
     const raw=localStorage.getItem(TB_AUTOSAVE_KEY);if(!raw)return;
     const s=JSON.parse(raw);if(!s||!Array.isArray(s.players)||!s.players.length)return;
-    players=s.players;arrows=s.arrows||[];manualPhaseBreaks=s.breaks||[];
+    players=s.players;arrows=s.arrows||[];balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';manualPhaseBreaks=s.breaks||[];
     currentPhase=s.phase||1;phaseView=s.phaseView||'all';
     counterA=s.cA||1;counterB=s.cB||1;placedMur=new Set(s.pm||[]);
-    updatePhaseBadge();draw();toast('Tablero restaurado de la sesión anterior');
+    normalizeBoardState(s);ensureDefaultBall();updatePhaseBadge();draw();toast('Tablero restaurado de la sesión anterior');
   }catch(e){}
 }
 
@@ -1444,11 +1645,14 @@ function saveExercise(){
     descripcion,
     players:JSON.parse(JSON.stringify(players)),
     arrows:JSON.parse(JSON.stringify(arrows)),
+    balls:JSON.parse(JSON.stringify(balls)),
+    currentBallId,
     breaks:[...manualPhaseBreaks],
     phase:currentPhase,
     phaseView,
     cA:counterA,cB:counterB,
-    pm:[...placedMur]
+    pm:[...placedMur],
+    pe:[...placedEntityIds]
   };
   exercises.unshift(savedExercise);
   if(exercises.length>30)exercises.pop();
@@ -1549,13 +1753,16 @@ function loadExercise(i){
   saveHistory();
   players=JSON.parse(JSON.stringify(ex.players));
   arrows=JSON.parse(JSON.stringify(ex.arrows));
+  balls=JSON.parse(JSON.stringify(ex.balls||[{id:'ball_1',label:'A'}]));
+  currentBallId=ex.currentBallId||balls[0]?.id||'ball_1';
   manualPhaseBreaks=ex.breaks||[];
   currentPhase=ex.phase||1;
   phaseView=ex.phaseView||'all';
   counterA=ex.cA||1;counterB=ex.cB||1;
   placedMur=new Set(ex.pm||[]);
+  normalizeBoardState(ex);
   currentExerciseMeta=ex;
-  updatePhaseBadge();draw();
+  ensureDefaultBall();updatePhaseBadge();draw();
   document.getElementById('save-modal').classList.remove('show');
   updateAnimMeta();
   toast('✓ Ejercicio cargado: '+ex.name);
@@ -1586,7 +1793,7 @@ function exportJSON(){
       hora,
       equipo:'Las Murciélagas'
     },
-    players,arrows,manualPhaseBreaks,currentPhase,phaseView,counterA,counterB
+    players,arrows,balls,currentBallId,manualPhaseBreaks,currentPhase,phaseView,counterA,counterB,placedEntityIds:[...placedEntityIds]
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1605,12 +1812,12 @@ function importJSON(event){
     try{
       const data=JSON.parse(e.target.result);
       saveHistory();
-      players=data.players||[];arrows=data.arrows||[];
+      players=data.players||[];arrows=data.arrows||[];balls=data.balls||[{id:'ball_1',label:'A'}];currentBallId=data.currentBallId||balls[0]?.id||'ball_1';
       manualPhaseBreaks=data.manualPhaseBreaks||[];
       currentPhase=data.currentPhase||1;
       phaseView=data.phaseView||'all';
       counterA=data.counterA||1;counterB=data.counterB||1;
-      updatePhaseBadge();draw();
+      normalizeBoardState(data);ensureDefaultBall();updatePhaseBadge();draw();
       // Mostrar metadata si existe
       const meta=data.meta;
       if(meta){
@@ -1688,13 +1895,14 @@ function getPlayerAt(x,y){
 function addGhost(type,origin,x,y){
   if((type==='run'||type==='dribble'||type==='press')&&origin){
     players.push({x:Math.max(fx+20,Math.min(fx+fw-20,x)),y:Math.max(fy+20,Math.min(fy+fh-20,y)),
-      team:origin.team,num:origin.num,role:origin.role,r:18,ghost:true,gk:origin.gk});
+      team:origin.team,num:origin.num,role:origin.role,apellido:origin.apellido,nombre:origin.nombre,r:18,ghost:true,gk:origin.gk,entityId:origin.entityId,personaId:origin.personaId,dni:origin.dni});
     return players.length-1;
   }return null;
 }
 function removePlayer(idx){
   saveHistory();const p=players[idx];
   if(p.murIdx!=null)placedMur.delete(p.murIdx);
+  if(p.entityId)placedEntityIds.delete(p.entityId);
   arrows=arrows.filter(a=>a.from!==idx&&a.to!==idx);
   arrows=arrows.map(a=>({...a,from:a.from>idx?a.from-1:a.from,to:a.to!=null?(a.to>idx?a.to-1:a.to):a.to}));
   players.splice(idx,1);if(arrowFrom===idx)arrowFrom=null;
@@ -1723,15 +1931,15 @@ function handleDown(x,y,isDouble,clientX,clientY){
         if(arrowFrom===null){arrowFrom=idx;status('Origen → tocá destino');}
         else if(arrowFrom!==idx){
           saveHistory();
-          arrows.push({kind:'straight',from:arrowFrom,to:idx,type:arrowType});
+          addArrowAction({kind:'straight',from:arrowFrom,to:idx,type:arrowType});
           arrowFrom=null;status('Flecha agregada');
         }
       }else{
         if(arrowFrom!==null){
           saveHistory();
           const gi=addGhost(arrowType,players[arrowFrom],x,y);
-          if(gi!=null)arrows.push({kind:'straight',from:arrowFrom,to:gi,type:arrowType});
-          else arrows.push({kind:'straight',from:arrowFrom,toX:x,toY:y,type:arrowType});
+          if(gi!=null)addArrowAction({kind:'straight',from:arrowFrom,to:gi,type:arrowType});
+          else addArrowAction({kind:'straight',from:arrowFrom,toX:x,toY:y,type:arrowType});
           arrowFrom=null;status('Flecha agregada');
         }else arrowFrom=null;
       }
@@ -1744,7 +1952,7 @@ function handleDown(x,y,isDouble,clientX,clientY){
       } else if(curveStep===1){curveP2={x,y};curveStep=2;status('Curva · tocá punto final');}
       else{
         saveHistory();
-        arrows.push({kind:'curve',from:arrowFrom,x1:curveP1.x,y1:curveP1.y,cx:curveP2.x,cy:curveP2.y,x2:x,y2:y,type:arrowType});
+        addArrowAction({kind:'curve',from:arrowFrom,x1:curveP1.x,y1:curveP1.y,cx:curveP2.x,cy:curveP2.y,x2:x,y2:y,type:arrowType});
         curveStep=0;curveP1=null;curveP2=null;arrowFrom=null;status('Curva agregada');
       }
     }
@@ -1762,7 +1970,7 @@ canvas.addEventListener('mousemove',e=>{
   players[dragging].y=Math.max(fy+20,Math.min(fy+fh-20,y+dragOffY));draw();
 });
 canvas.addEventListener('mouseup',()=>{
-  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){arrows.push({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
+  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 });
 canvas.addEventListener('mouseleave',()=>{if(freeDrawing){freeDrawing=false;freePath=[];draw();};dragging=null;});
@@ -1814,7 +2022,7 @@ canvas.addEventListener('touchmove',e=>{
 },{passive:false});
 canvas.addEventListener('touchend',e=>{
   e.preventDefault();clearTimeout(longPressTimer);touchStartPos=null;
-  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){arrows.push({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
+  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 },{passive:false});
 
@@ -2185,10 +2393,10 @@ function draw(animOverride){
       ctx.fillStyle=textC;ctx.font="bold 18px 'Barlow Condensed', sans-serif";
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(p.num,0,0);
-      if(p.role&&p.role!==String(p.num)){
-        const short=p.role.split(',')[0].split(' ')[0].substring(0,10);
-        ctx.fillStyle=isA?'rgba(139,37,0,0.8)':'rgba(13,58,110,0.8)';
-        ctx.font="700 10.5px 'Barlow', sans-serif";ctx.fillText(short,0,12);
+      const label=playerDisplayLabel(p);
+      if(label){
+        ctx.fillStyle=isA?'rgba(26,58,92,0.92)':'rgba(255,255,255,0.9)';
+        ctx.font="800 10.5px 'Barlow Condensed', sans-serif";ctx.fillText(label.substring(0,16),0,12);
       }
       ctx.restore();
       if(arrowFrom===i){
@@ -2260,7 +2468,8 @@ function buildSegments(phArrows){
       const _fp=players[fromIdx];
       if(_fp){
         // Buscar el jugador ORIGINAL (no-ghost) con el mismo team:num
-        const origIdx=players.findIndex(pl=>!pl.ghost&&pl.team===_fp.team&&pl.num===_fp.num);
+        const origKey=playerActionKey(fromIdx);
+        const origIdx=players.findIndex((pl,pi)=>!pl.ghost&&playerActionKey(pi)===origKey);
         if(origIdx>=0&&animPositions[origIdx]){
           fp=animPositions[origIdx];
         } else if(animPositions[fromIdx]){
@@ -2402,8 +2611,7 @@ function realPlayerKey(playerIdx){
   if(playerIdx==null) return null;
   const p=players[playerIdx];
   if(!p) return playerIdx;
-  // Usar team+num como clave única del jugador real
-  return p.team+':'+p.num;
+  return p.entityId||p.personaId||(p.team+':'+p.num);
 }
 
 function buildAutoAnimationGroups(arrows){
@@ -2428,7 +2636,7 @@ function buildAutoAnimationGroups(arrows){
     // Grupo mínimo por dependencia de pelota:
     // si este jugador es receptor de un pase en un grupo anterior,
     // no puede actuar antes de que ese pase llegue (grupo del pase + 1)
-    const depMin = minGroupByBallDep.get(key) || 0;
+    const depMin = Math.max(minGroupByBallDep.get(key) || 0, minGroupByBallDep.get(key+':'+(arrow.ballId||'ball_1')) || 0);
 
     const groupIndex = Math.max(previousCount, depMin);
 
@@ -2440,7 +2648,7 @@ function buildAutoAnimationGroups(arrows){
     // Si esta flecha es un pase/disparo con destino a otro jugador,
     // ese jugador no puede actuar antes del grupo siguiente
     if ((arrow.type === 'pass' || arrow.type === 'shot') && arrow.to != null){
-      const receiverKey = realPlayerKey(arrow.to);
+      const receiverKey = realPlayerKey(arrow.to)+':'+(arrow.ballId||'ball_1');
       const currentMin = minGroupByBallDep.get(receiverKey) || 0;
       minGroupByBallDep.set(receiverKey, Math.max(currentMin, groupIndex + 1));
     }
@@ -2512,13 +2720,13 @@ function drawAnimPlayersGroup(group,moverStarts,pos){
   const moverByKey=new Map();
   moverMap.forEach((ms,idx)=>{
     const p=players[idx];
-    if(p){ moverByKey.set(p.team+':'+p.num, ms); }
+    if(p){ moverByKey.set(playerActionKey(idx), ms); }
   });
 
   // 1. Estela: ghostTrails con clave team:num
   players.forEach((p,i)=>{
     if(p.ghost)return;
-    const key=p.team+':'+p.num;
+    const key=playerActionKey(i);
     const trail=ghostTrails.get(key);
     if(!trail||!trail.length)return;
     trail.forEach((pt,ti)=>{
@@ -2530,7 +2738,7 @@ function drawAnimPlayersGroup(group,moverStarts,pos){
   // 2. Jugadoras originales en posición animada actual (pos[origIdx] siempre actualizado)
   players.forEach((p,i)=>{
     if(p.ghost)return;
-    const key=p.team+':'+p.num;
+    const key=playerActionKey(i);
     const cur=pos[i]||{x:p.x,y:p.y};
     if(moverByKey.has(key)){
       const ms=moverByKey.get(key);
@@ -2585,7 +2793,8 @@ function runAutoGroup(autoGroups, groupIdx){
       // Actualizar también el jugador original en tiempo real durante la interpolación
       const _mp=players[seg.fromIdx];
       if(_mp&&_mp.ghost){
-        const _oi=players.findIndex(pl=>!pl.ghost&&pl.team===_mp.team&&pl.num===_mp.num);
+        const _key=playerActionKey(seg.fromIdx);
+        const _oi=players.findIndex((pl,pi)=>!pl.ghost&&playerActionKey(pi)===_key);
         if(_oi>=0){ animPositions[_oi].x=np.x; animPositions[_oi].y=np.y; }
       }
     });
@@ -2643,7 +2852,7 @@ function runAutoGroup(autoGroups, groupIdx){
           else fp={x:seg.tx, y:seg.ty};
           // Acumular fantasma usando team:num como clave (unifica original + ghosts)
           const _p=players[seg.fromIdx];
-          const _key=_p?(_p.team+':'+_p.num):seg.fromIdx;
+          const _key=_p?playerActionKey(seg.fromIdx):seg.fromIdx;
           const trail=ghostTrails.get(_key)||[];
           trail.push({x:ms.x, y:ms.y});
           ghostTrails.set(_key, trail);
@@ -2651,7 +2860,7 @@ function runAutoGroup(autoGroups, groupIdx){
           animPositions[seg.fromIdx].x=fp.x;
           animPositions[seg.fromIdx].y=fp.y;
           // SIEMPRE actualizar el jugador original (no-ghost) — es la fuente de verdad
-          const _origIdx=players.findIndex(pl=>!pl.ghost&&pl.team===_p.team&&pl.num===_p.num);
+          const _origIdx=players.findIndex((pl,pi)=>!pl.ghost&&playerActionKey(pi)===_key);
           if(_origIdx>=0&&_origIdx!==seg.fromIdx){
             animPositions[_origIdx].x=fp.x;
             animPositions[_origIdx].y=fp.y;
@@ -2734,7 +2943,7 @@ function drawFinalFrame(){
   const trailMap = new Map();      // key → [{x,y},...]
 
   players.forEach((p,i)=>{
-    const key = p.team+':'+p.num;
+    const key = playerActionKey(i);
     const pos = animPositions[i]||{x:p.x,y:p.y};
     // La posición final es la del último índice procesado con ese key
     // (los ghosts tienen índices más altos = acciones más recientes)
@@ -2750,7 +2959,7 @@ function drawFinalFrame(){
   // Estela: todas las posiciones intermedias, muy atenuadas
   players.forEach((p,i)=>{
     if(p.ghost) return; // solo dibujar estela desde el original
-    const key = p.team+':'+p.num;
+    const key = playerActionKey(i);
     const finalPos = finalPosMap.get(key)||{x:p.x,y:p.y};
     const trail = trailMap.get(key)||[];
     if(!trail.length) return;
@@ -2768,7 +2977,7 @@ function drawFinalFrame(){
   // Sólidas al final — solo jugadores originales (no ghost), en posición final real
   players.forEach((p,i)=>{
     if(p.ghost) return;
-    const key = p.team+':'+p.num;
+    const key = playerActionKey(i);
     const pos = finalPosMap.get(key)||{x:p.x,y:p.y};
     ctx.save();
     ctx.shadowColor='rgba(0,0,0,0.55)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;
@@ -2801,6 +3010,11 @@ function drawFinalPlayer(px,py,p,alpha,dashed){
   ctx.font=`bold ${dashed?14:18}px 'Barlow Condensed',sans-serif`;
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(p.num,0,0);
+  const label=playerDisplayLabel(p);
+  if(label&&!dashed){
+    ctx.font="800 10.5px 'Barlow Condensed',sans-serif";
+    ctx.fillText(label.substring(0,16),0,12);
+  }
   ctx.restore();
   ctx.restore();
 }
@@ -3028,7 +3242,7 @@ EJEMPLO — presión sobre rival:
     const role=p.apellido?p.apellido:String(p.nombre||num);
     const px=Math.max(90,Math.min(830,Number(p.x)||450));
     const py=Math.max(75,Math.min(445,Number(p.y)||260));
-    players.push({x:px,y:py,team:p.team||'A',num,role,r:18,ghost:false,gk:!!p.gk});
+    players.push({x:px,y:py,team:p.team||'A',num,role,apellido:role,nombre:'',r:18,ghost:false,gk:!!p.gk,entityId:'ia:'+(p.team||'A')+':'+num+':'+i});
     numToIdx.set(num,baseIdx+i);
   });
   (parsed.arrows||[]).forEach(a=>{
@@ -3037,11 +3251,11 @@ EJEMPLO — presión sobre rival:
     const kind=a.kind||'straight';
     const type=a.type||'pass';
     if(a.toNum!=null&&numToIdx.has(a.toNum)){
-      arrows.push({kind,from:fromIdx,to:numToIdx.get(a.toNum),type});
+      addArrowAction({kind,from:fromIdx,to:numToIdx.get(a.toNum),type});
     }else if(a.toX!=null){
       const tx=Math.max(70,Math.min(830,Number(a.toX)));
       const ty=Math.max(55,Math.min(465,Number(a.toY)||260));
-      arrows.push({kind,from:fromIdx,toX:tx,toY:ty,type});
+      addArrowAction({kind,from:fromIdx,toX:tx,toY:ty,type});
     }
   });
   updatePhaseBadge();
@@ -3054,6 +3268,8 @@ EJEMPLO — presión sobre rival:
 // =============================================
 loadCanonicalPlantel().catch(()=>{});
 resizeCanvas();
+ensureDefaultBall();
+normalizeBoardState();
 draw();
 updatePhaseBadge();
 tryRestoreAutosave();
