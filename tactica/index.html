@@ -365,7 +365,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
 }
 
 /* BOTÓN DOWNLOAD */
-#dl-btn{display:none;position:fixed;bottom:20%;right:10px;z-index:350;background:#1a3a5c;border:none;border-radius:16px;color:#fff;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);letter-spacing:.5px}
+#dl-btn{display:none;position:fixed;bottom:20%;right:10px;z-index:350;background:var(--azul-800);border:none;border-radius:16px;color:var(--card);padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);letter-spacing:.5px}
 
 .arrow-action-grid{
   display:grid;
@@ -399,7 +399,7 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
     .modal,.modal-card,.panel,.exercise-card{border-color:var(--borde);border-radius:var(--radius);box-shadow:var(--shadow)}
     input,select,textarea{border-color:var(--borde);border-radius:10px;background:#fff}
     @media(max-width:560px){.topbar-inner{padding:10px 11px}.sb-btn,.rail-btn,.chip{border-radius:10px}}
-    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(16,32,51,.74);color:#e2e8f0;font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
+    .page-version-tag{position:fixed;right:14px;bottom:10px;padding:4px 8px;border-radius:8px;background:rgba(6,23,47,.74);color:var(--celeste-100);font-size:.72rem;letter-spacing:.02em;z-index:9999;pointer-events:none}
     @media (max-width:1024px){.page-version-tag{display:none}}
   </style>
 
@@ -707,7 +707,9 @@ let placedEntityIds=new Set();
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const IW=900,IH=520;
-canvas.width=IW;canvas.height=IH;
+const DPR=Math.min(window.devicePixelRatio||1,2);
+canvas.width=IW*DPR;canvas.height=IH*DPR;
+ctx.scale(DPR,DPR);
 
 let canvasOrientation='vertical';
 
