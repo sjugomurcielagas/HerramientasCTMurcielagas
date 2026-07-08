@@ -474,6 +474,16 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
       title="Fase siguiente">+</button>
   </div>
   <div class="sb-sep"></div>
+  <!-- Anotaciones -->
+  <button id="sb-freedraw" class="sb-btn" onclick="toggleAnnotMode('freedraw')" title="Dibujo libre">
+    <span class="sb-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 C5 15 7 10 10 8 C13 6 15 7 16 9 C17 11 15 14 13 15"/><circle cx="16" cy="9" r="1.5" fill="currentColor" stroke="none"/></svg></span>
+    <span style="font-size:9px">Dibujo</span>
+  </button>
+  <button id="sb-textannot" class="sb-btn" onclick="toggleAnnotMode('text')" title="Texto sobre el tablero">
+    <span class="sb-icon" style="font-size:22px;font-weight:900;font-family:'Barlow Condensed',sans-serif">T</span>
+    <span style="font-size:9px">Texto</span>
+  </button>
+  <div class="sb-sep"></div>
   <!-- Deshacer / Reiniciar -->
   <button class="sb-btn danger" onclick="undo()" title="Deshacer">
     <span class="sb-icon">↩</span>
@@ -784,9 +794,13 @@ function getPos(e){
 const fx=70,fy=55,fw=760,fh=410;
 const fcx=fx+fw/2,fcy=fy+fh/2;
 const mH=fw/40,mV=fh/20;
-let players=[],arrows=[],history=[];
+let players=[],arrows=[],annotations=[],history=[];
 let dragging=null,dragOffX=0,dragOffY=0;
 let arrowMode=false,arrowFrom=null;
+let annotMode=null; // null | 'freedraw' | 'text'
+let annotDrawing=false,annotPath=[],annotColor='#4a9fd4';
+let selectedAnnotIdx=null;
+let _phaseLabelHits=[]; // [{idx, type:'arrow'|'annot', x, y, w, h, arrowOrAnnotRef}]
 let currentTeam='A';
 let counterA=1,counterB=1;
 let arrowType='pass',drawMode='straight';
@@ -802,6 +816,7 @@ const LONG_PRESS_MOVE_TOLERANCE=14;
 let selectedArrowIdx=null;
 let balls=[];
 let currentBallId='ball_1';
+const PHASE_COLORS=['#1e40af','#0891b2','#059669','#d97706','#dc2626','#7c3aed'];
 
 // Sistema de fases
 let currentPhase=1;
@@ -1141,6 +1156,126 @@ function setActivePhase(delta){
 }
 
 // =============================================
+// ANOTACIONES
+// =============================================
+function toggleAnnotMode(mode){
+  if(annotMode===mode){
+    annotMode=null;
+    updateAnnotButtons();
+    status('Modo mover');
+    return;
+  }
+  // Si estaba en modo flecha, desactivarlo
+  if(arrowMode) toggleArrowMode();
+  annotMode=mode;
+  annotDrawing=false;annotPath=[];
+  selectedAnnotIdx=null;
+  updateAnnotButtons();
+  if(mode==='freedraw') status('Dibujo libre: arrastrá sobre el tablero para dibujar');
+  else if(mode==='text') status('Texto: tocá el tablero para escribir');
+}
+function updateAnnotButtons(){
+  const fd=document.getElementById('sb-freedraw');
+  const tx=document.getElementById('sb-textannot');
+  if(fd){
+    fd.style.background=annotMode==='freedraw'?'var(--celeste2)':'';
+    fd.style.color=annotMode==='freedraw'?'#fff':'';
+    fd.style.borderColor=annotMode==='freedraw'?'var(--celeste2)':'';
+  }
+  if(tx){
+    tx.style.background=annotMode==='text'?'var(--celeste2)':'';
+    tx.style.color=annotMode==='text'?'#fff':'';
+    tx.style.borderColor=annotMode==='text'?'var(--celeste2)':'';
+  }
+}
+function annotDefaultColor(){return '#4a9fd4';}
+function annotBoundingBox(ann){
+  if(ann.type==='text'){
+    const w=ann.fontSize*ann.text.length*0.6;
+    const h=ann.fontSize;
+    return {x:ann.x,y:ann.y-h,w:Math.max(w,20),h:Math.max(h,16)};
+  }
+  if(ann.type==='freedraw'&&ann.points&&ann.points.length>0){
+    let minX=ann.points[0].x,maxX=ann.points[0].x;
+    let minY=ann.points[0].y,maxY=ann.points[0].y;
+    ann.points.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
+    return {x:minX,y:minY,w:maxX-minX||10,h:maxY-minY||10};
+  }
+  return null;
+}
+function hitTestAnnot(ann,x,y){
+  if(ann.type==='text'){
+    const bb=annotBoundingBox(ann);
+    if(!bb)return false;
+    return x>=bb.x-4&&x<=bb.x+bb.w+4&&y>=bb.y-4&&y<=bb.y+bb.h+4;
+  }
+  if(ann.type==='freedraw'&&ann.points&&ann.points.length>1){
+    for(let i=1;i<ann.points.length;i++){
+      if(distancePointToSegment(x,y,ann.points[i-1].x,ann.points[i-1].y,ann.points[i].x,ann.points[i].y)<=8) return true;
+    }
+  }
+  return false;
+}
+function getAnnotAt(x,y){
+  for(let i=annotations.length-1;i>=0;i--){
+    if(hitTestAnnot(annotations[i],x,y)) return i;
+  }
+  return -1;
+}
+function deleteSelectedAnnot(){
+  if(selectedAnnotIdx===null||!annotations[selectedAnnotIdx]) return;
+  saveHistory();
+  annotations.splice(selectedAnnotIdx,1);
+  selectedAnnotIdx=null;
+  draw();
+  status('Anotación eliminada');
+}
+function openTextInput(x,y){
+  // Calcular posición en pantalla
+  const rect=canvas.getBoundingClientRect();
+  let sx,sy;
+  if(canvasOrientation==='horizontal'){
+    sx=rect.left+x*(rect.width/IW);
+    sy=rect.top+y*(rect.height/IH);
+  } else {
+    // invertir la rotación para obtener posición en pantalla
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+    const lx=x-IW/2,ly=y-IH/2;
+    const scale=rect.height/IW;
+    sx=cx+(-ly)*scale;
+    sy=cy+lx*scale;
+  }
+  const inp=document.createElement('input');
+  inp.type='text';
+  inp.maxLength=80;
+  inp.style.cssText='position:fixed;z-index:500;background:rgba(6,23,47,.88);color:#fff;border:2px solid #4a9fd4;border-radius:8px;padding:5px 9px;font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;outline:none;min-width:120px;max-width:260px;';
+  inp.style.left=Math.min(window.innerWidth-140,Math.max(4,sx-6))+'px';
+  inp.style.top=Math.min(window.innerHeight-50,Math.max(4,sy-20))+'px';
+  document.body.appendChild(inp);
+  inp.focus();
+  function commit(){
+    const txt=inp.value.trim();
+    inp.remove();
+    if(!txt) return;
+    saveHistory();
+    annotations.push({
+      id:String(Date.now())+String(Math.random()).slice(2,7),
+      type:'text',
+      phase:activePhase,
+      color:annotDefaultColor(),
+      x,y,
+      text:txt,
+      fontSize:16
+    });
+    draw();
+    status('Texto agregado');
+  }
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){inp.remove();}});
+  inp.addEventListener('blur',commit);
+}
+
+// =============================================
 // ROSTER
 // =============================================
 function showRoster(){Promise.allSettled([loadCanonicalPlantel(),loadRivals()]).finally(()=>{renderRoster();document.getElementById('roster-modal').classList.add('show');});}
@@ -1278,6 +1413,7 @@ function setDrawMode(m){
 function toggleArrowMode(){
   arrowMode=!arrowMode;arrowFrom=null;
   curveStep=0;curveP1=null;curveP2=null;freeDrawing=false;freePath=[];
+  if(arrowMode&&annotMode){annotMode=null;annotDrawing=false;annotPath=[];updateAnnotButtons();}
   const btn=document.getElementById('mode-toggle-chip');
   if(btn){
     if(arrowMode){
@@ -1302,32 +1438,34 @@ function toggleArrowMode(){
 // HISTORIAL
 // =============================================
 function saveHistory(){
-  history.push({players:JSON.parse(JSON.stringify(players)),arrows:JSON.parse(JSON.stringify(arrows)),balls:JSON.parse(JSON.stringify(balls)),currentBallId,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],breaks:[...manualPhaseBreaks],phase:currentPhase,phaseView});
+  history.push({players:JSON.parse(JSON.stringify(players)),arrows:JSON.parse(JSON.stringify(arrows)),annotations:JSON.parse(JSON.stringify(annotations)),balls:JSON.parse(JSON.stringify(balls)),currentBallId,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],breaks:[...manualPhaseBreaks],phase:currentPhase,phaseView});
   if(history.length>40)history.shift();
 }
 function undo(){
   if(!history.length){toast('Nada para deshacer');return;}
   const s=history.pop();players=s.players;arrows=s.arrows;balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';counterA=s.cA;counterB=s.cB;placedMur=new Set(s.pm);
+  annotations=Array.isArray(s.annotations)?s.annotations:[];
   manualPhaseBreaks=s.breaks||[];currentPhase=s.phase||1;phaseView=s.phaseView||'all';
   normalizeBoardState(s);ensureDefaultBall();updatePhaseBadge();draw();status('Acción deshecha');
 }
-function clearArrows(){saveHistory();arrows=[];manualPhaseBreaks=[];currentPhase=1;phaseView='all';balls=[{id:'ball_1',label:'A'}];currentBallId='ball_1';ensureDefaultBall();updatePhaseBadge();draw();toast('Flechas borradas');}
+function clearArrows(){saveHistory();arrows=[];annotations=[];manualPhaseBreaks=[];currentPhase=1;phaseView='all';balls=[{id:'ball_1',label:'A'}];currentBallId='ball_1';ensureDefaultBall();updatePhaseBadge();draw();toast('Flechas borradas');}
 function clearAll(){
-  saveHistory();players=[];arrows=[];counterA=1;counterB=1;arrowFrom=null;arrowMode=false;
+  saveHistory();players=[];arrows=[];annotations=[];counterA=1;counterB=1;arrowFrom=null;arrowMode=false;
   placedMur=new Set();placedEntityIds=new Set();manualPhaseBreaks=[];currentPhase=1;phaseView='all';balls=[{id:'ball_1',label:'A'}];currentBallId='ball_1';ensureDefaultBall();updatePhaseBadge();
   if(arrowMode) toggleArrowMode();
+  selectedAnnotIdx=null;annotMode=null;updateAnnotButtons();
   localStorage.removeItem(TB_AUTOSAVE_KEY);
   draw();toast('Tablero reiniciado');
 }
 function autosave(){
   if(!players.length)return;
-  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,balls,currentBallId,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],ts:Date.now()}));}catch(e){}
+  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,annotations,balls,currentBallId,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],ts:Date.now()}));}catch(e){}
 }
 function tryRestoreAutosave(){
   try{
     const raw=localStorage.getItem(TB_AUTOSAVE_KEY);if(!raw)return;
     const s=JSON.parse(raw);if(!s||!Array.isArray(s.players)||!s.players.length)return;
-    players=s.players;arrows=s.arrows||[];balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';manualPhaseBreaks=s.breaks||[];
+    players=s.players;arrows=s.arrows||[];annotations=Array.isArray(s.annotations)?s.annotations:[];balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';manualPhaseBreaks=s.breaks||[];
     currentPhase=s.phase||1;phaseView=s.phaseView||'all';
     counterA=s.cA||1;counterB=s.cB||1;placedMur=new Set(s.pm||[]);
     normalizeBoardState(s);ensureDefaultBall();updatePhaseBadge();draw();toast('Tablero restaurado de la sesión anterior');
@@ -1453,7 +1591,10 @@ function deleteSelectedArrow(){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){ closeEdit(); closeArrowEdit(); }
+  if(e.key==='Escape'){ closeEdit(); closeArrowEdit(); selectedAnnotIdx=null; draw(); }
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedAnnotIdx!==null&&document.activeElement===document.body){
+    e.preventDefault();deleteSelectedAnnot();
+  }
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
 });
 
@@ -1486,6 +1627,7 @@ function saveExercise(){
     descripcion,
     players:JSON.parse(JSON.stringify(players)),
     arrows:JSON.parse(JSON.stringify(arrows)),
+    annotations:JSON.parse(JSON.stringify(annotations)),
     balls:JSON.parse(JSON.stringify(balls)),
     currentBallId,
     breaks:[...manualPhaseBreaks],
@@ -1594,6 +1736,14 @@ function loadExercise(i){
   saveHistory();
   players=JSON.parse(JSON.stringify(ex.players));
   arrows=JSON.parse(JSON.stringify(ex.arrows)).map(a=>({...a,ownerId:a.ownerId??null}));
+  annotations=(ex.annotations||[]).map(a=>({
+    id:a.id||String(Date.now()+Math.random()),
+    type:a.type||'freedraw',
+    phase:Number(a.phase)||1,
+    color:a.color||'#4a9fd4',
+    ...(a.type==='text'?{x:Number(a.x)||0,y:Number(a.y)||0,text:String(a.text||''),fontSize:Number(a.fontSize)||16}:{}),
+    ...(a.type!=='text'?{points:Array.isArray(a.points)?a.points:[],strokeWidth:Number(a.strokeWidth)||2}:{})
+  }));
   balls=JSON.parse(JSON.stringify(ex.balls||[{id:'ball_1',label:'A'}]));
   currentBallId=ex.currentBallId||balls[0]?.id||'ball_1';
   manualPhaseBreaks=ex.breaks||[];
@@ -1634,7 +1784,7 @@ function exportJSON(){
       hora,
       equipo:'Las Murciélagas'
     },
-    players,arrows,balls,currentBallId,manualPhaseBreaks,currentPhase,phaseView,counterA,counterB,placedEntityIds:[...placedEntityIds]
+    players,arrows,annotations,balls,currentBallId,manualPhaseBreaks,currentPhase,phaseView,counterA,counterB,placedEntityIds:[...placedEntityIds]
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1653,7 +1803,7 @@ function importJSON(event){
     try{
       const data=JSON.parse(e.target.result);
       saveHistory();
-      players=data.players||[];arrows=(data.arrows||[]).map(a=>({...a,ownerId:a.ownerId??null}));balls=data.balls||[{id:'ball_1',label:'A'}];currentBallId=data.currentBallId||balls[0]?.id||'ball_1';
+      players=data.players||[];arrows=(data.arrows||[]).map(a=>({...a,ownerId:a.ownerId??null}));annotations=Array.isArray(data.annotations)?data.annotations:[];balls=data.balls||[{id:'ball_1',label:'A'}];currentBallId=data.currentBallId||balls[0]?.id||'ball_1';
       manualPhaseBreaks=data.manualPhaseBreaks||[];
       currentPhase=data.currentPhase||1;
       phaseView=data.phaseView||'all';
@@ -1763,12 +1913,44 @@ function removePlayer(idx){
 }
 function handleDown(x,y,isDouble,clientX,clientY){
   if(animRunning)return;
+
+  // Modos de anotación — tienen prioridad sobre todo excepto doble-tap
+  if(annotMode==='freedraw'){
+    if(!isDouble){
+      saveHistory();
+      annotDrawing=true;annotPath=[{x,y}];
+      return;
+    }
+  }
+  if(annotMode==='text'){
+    if(!isDouble){
+      openTextInput(x,y);
+      return;
+    }
+  }
+
   if(isDouble){
     const ai=getArrowAt(x,y);
     if(ai>=0){openArrowEdit(ai,clientX||window.innerWidth/2,clientY||window.innerHeight/2);return;}
     const idx=getPlayerAt(x,y);
     if(idx>=0){openEdit(idx);return;}
   }
+
+  // En modo mover (ni flecha ni anotación): detectar click en etiqueta de fase primero
+  if(!arrowMode&&!annotMode){
+    const hit=_phaseLabelHits.find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h);
+    if(hit){openPhaseSelect(hit,clientX,clientY);return;}
+    // Luego detección de anotación
+    const ai=getAnnotAt(x,y);
+    if(ai>=0){
+      selectedAnnotIdx=selectedAnnotIdx===ai?null:ai;
+      draw();
+      if(selectedAnnotIdx!==null) status('Anotación seleccionada — Delete/Backspace para borrar');
+      return;
+    }
+    selectedAnnotIdx=null;
+  }
+
   if(arrowMode&&drawMode==='free'){
     const fidx=findTokenAtPoint(x,y);
     if(fidx<0){toast('Seleccioná un jugador como origen',1500);return;}
@@ -1827,19 +2009,30 @@ function handleDown(x,y,isDouble,clientX,clientY){
 canvas.addEventListener('mousedown',e=>{if(e.button===2)return;const{x,y}=getPos(e);handleDown(x,y,e.detail===2,e.clientX,e.clientY);});
 canvas.addEventListener('mousemove',e=>{
   const{x,y}=getPos(e);
+  if(annotMode==='freedraw'&&annotDrawing){annotPath.push({x,y});draw();return;}
   if(arrowMode&&drawMode==='free'&&freeDrawing){freePath.push({x,y});draw();return;}
   if(dragging===null)return;
   players[dragging].x=Math.max(fx+20,Math.min(fx+fw-20,x+dragOffX));
   players[dragging].y=Math.max(fy+20,Math.min(fy+fh-20,y+dragOffY));draw();
 });
 canvas.addEventListener('mouseup',()=>{
+  if(annotMode==='freedraw'&&annotDrawing){
+    annotDrawing=false;
+    if(annotPath.length>=8){
+      annotations.push({id:String(Date.now())+String(Math.random()).slice(2,7),type:'freedraw',phase:activePhase,color:annotDefaultColor(),points:[...annotPath],strokeWidth:2});
+      draw();status('Trazado guardado');
+    } else {annotPath=[];}
+    return;
+  }
   if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){const ownerId=arrowFrom!=null&&players[arrowFrom]?players[arrowFrom].entityId||null:null;addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType,ownerId});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 });
-canvas.addEventListener('mouseleave',()=>{if(freeDrawing){freeDrawing=false;freePath=[];arrowFrom=null;draw();}dragging=null;});
+canvas.addEventListener('mouseleave',()=>{if(annotDrawing){annotDrawing=false;annotPath=[];draw();}if(freeDrawing){freeDrawing=false;freePath=[];arrowFrom=null;draw();}dragging=null;});
 canvas.addEventListener('contextmenu',e=>{
   e.preventDefault();
   const{x,y}=getPos(e);
+  const annI=getAnnotAt(x,y);
+  if(annI>=0){selectedAnnotIdx=annI;deleteSelectedAnnot();return;}
   const ai=getArrowAt(x,y);
   if(ai>=0){deleteArrowAt(ai);return;}
   const idx=getPlayerAt(x,y);
@@ -1850,6 +2043,13 @@ canvas.addEventListener('touchstart',e=>{
   const{x,y}=getPos(e);
   const src=e.touches[0];
   touchStartPos={x,y,clientX:src.clientX,clientY:src.clientY};
+
+  if(annotMode==='freedraw'){
+    saveHistory();annotDrawing=true;annotPath=[{x,y}];return;
+  }
+  if(annotMode==='text'){
+    openTextInput(x,y);return;
+  }
 
   if(arrowMode&&drawMode==='free'){
     const fidx=findTokenAtPoint(x,y);
@@ -1879,6 +2079,7 @@ canvas.addEventListener('touchmove',e=>{
   if(touchStartPos && Math.hypot(x-touchStartPos.x,y-touchStartPos.y)>LONG_PRESS_MOVE_TOLERANCE){
     clearTimeout(longPressTimer);
   }
+  if(annotMode==='freedraw'&&annotDrawing){annotPath.push({x,y});draw();return;}
   if(arrowMode&&drawMode==='free'&&freeDrawing){freePath.push({x,y});draw();return;}
   if(dragging===null)return;
   players[dragging].x=Math.max(fx+20,Math.min(fx+fw-20,x+dragOffX));
@@ -1886,9 +2087,51 @@ canvas.addEventListener('touchmove',e=>{
 },{passive:false});
 canvas.addEventListener('touchend',e=>{
   e.preventDefault();clearTimeout(longPressTimer);touchStartPos=null;
+  if(annotMode==='freedraw'&&annotDrawing){
+    annotDrawing=false;
+    if(annotPath.length>=8){
+      annotations.push({id:String(Date.now())+String(Math.random()).slice(2,7),type:'freedraw',phase:activePhase,color:annotDefaultColor(),points:[...annotPath],strokeWidth:2});
+      draw();status('Trazado guardado');
+    } else {annotPath=[];}
+    return;
+  }
   if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){const ownerId=arrowFrom!=null&&players[arrowFrom]?players[arrowFrom].entityId||null:null;addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType,ownerId});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 },{passive:false});
+
+// =============================================
+// SELECTOR DE FASE (desde etiqueta)
+// =============================================
+function openPhaseSelect(hit,clientX,clientY){
+  const existing=document.getElementById('_phase-sel-popup');
+  if(existing)existing.remove();
+  const sel=document.createElement('select');
+  sel.id='_phase-sel-popup';
+  sel.style.cssText='position:fixed;z-index:600;background:var(--card,#fff);border:2px solid var(--celeste,#4a9fd4);border-radius:8px;padding:4px 8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:800;color:var(--texto,#1a3a5c);outline:none;cursor:pointer;';
+  sel.style.left=Math.min(window.innerWidth-100,Math.max(4,clientX-10))+'px';
+  sel.style.top=Math.min(window.innerHeight-180,Math.max(4,clientY-10))+'px';
+  for(let f=1;f<=9;f++){
+    const opt=document.createElement('option');
+    opt.value=f;opt.textContent='F'+f;
+    if(f===(hit.phase||1))opt.selected=true;
+    sel.appendChild(opt);
+  }
+  document.body.appendChild(sel);
+  sel.focus();
+  function commit(){
+    const newPhase=parseInt(sel.value)||1;
+    if(hit.objType==='arrow'&&arrows[hit.objIdx]!=null){
+      saveHistory();
+      arrows[hit.objIdx].phase=newPhase;
+    } else if(hit.objType==='annot'&&annotations[hit.objIdx]!=null){
+      saveHistory();
+      annotations[hit.objIdx].phase=newPhase;
+    }
+    sel.remove();draw();
+  }
+  sel.addEventListener('change',commit);
+  sel.addEventListener('blur',()=>{sel.remove();});
+}
 
 // =============================================
 // DIBUJO
@@ -2127,11 +2370,68 @@ function drawField(){
   });
 }
 
+function drawAnnotation(ann,selected){
+  ctx.save();
+  if(ann.type==='freedraw'&&ann.points&&ann.points.length>1){
+    ctx.strokeStyle=ann.color||'#4a9fd4';
+    ctx.lineWidth=ann.strokeWidth||2;
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();
+    ann.points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.stroke();
+    if(selected){
+      const bb=annotBoundingBox(ann);
+      if(bb){
+        ctx.strokeStyle='rgba(110,198,240,0.9)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+        ctx.strokeRect(bb.x-4,bb.y-4,bb.w+8,bb.h+8);
+        ctx.setLineDash([]);
+      }
+    }
+  } else if(ann.type==='text'&&ann.text){
+    ctx.font=`bold ${ann.fontSize||16}px 'Barlow Condensed',sans-serif`;
+    ctx.fillStyle=ann.color||'#4a9fd4';
+    ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    // Fondo semitransparente
+    const w=ctx.measureText(ann.text).width;
+    ctx.fillStyle='rgba(6,23,47,0.55)';
+    ctx.fillRect(ann.x-3,ann.y-(ann.fontSize||16)-2,w+6,(ann.fontSize||16)+4);
+    ctx.fillStyle=ann.color||'#4a9fd4';
+    ctx.fillText(ann.text,ann.x,ann.y);
+    if(selected){
+      ctx.strokeStyle='rgba(110,198,240,0.9)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.strokeRect(ann.x-5,ann.y-(ann.fontSize||16)-4,w+10,(ann.fontSize||16)+8);
+      ctx.setLineDash([]);
+    }
+  }
+  ctx.restore();
+}
+
+function drawPhaseLabel(lx,ly,phase,objIdx,objType){
+  const phColor=PHASE_COLORS[(phase-1)%PHASE_COLORS.length];
+  const label='F'+phase;
+  ctx.save();
+  ctx.font="800 9px 'Barlow Condensed',sans-serif";
+  const tw=ctx.measureText(label).width;
+  const pw=tw+8,ph=14,pr=4;
+  const rx=lx-pw/2,ry=ly-ph-4;
+  ctx.fillStyle=phColor;
+  ctx.beginPath();ctx.roundRect(rx,ry,pw,ph,pr);ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label,lx,ry+ph/2);
+  ctx.restore();
+  _phaseLabelHits.push({x:rx,y:ry,w:pw,h:ph,phase,objIdx,objType});
+}
+
 function draw(animOverride){
   // animOverride: {positions:[...]} para animación
   const pos=animOverride?animOverride.positions:null;
   if(!pos) updatePhaseBadge();
   drawField();
+
+  // Reset hits de etiquetas de fase
+  _phaseLabelHits=[];
+  const showPhaseLabels=!animOverride&&getMaxPhase()>1;
 
   // Flechas: las fases quedan internas para animación; en edición se muestra toda la jugada.
   arrows.forEach((a,ai)=>{
@@ -2181,8 +2481,33 @@ function draw(animOverride){
           drawPlayerGhost(players[a.from],a.toX,a.toY);
       }
     }
+    // Etiqueta de fase sobre la flecha
+    if(showPhaseLabels&&mx!==0&&my!==0){
+      drawPhaseLabel(mx,my,ph,ai,'arrow');
+    }
     ctx.restore();
   });
+
+  // Anotaciones guardadas
+  if(!animOverride){
+    annotations.forEach((ann,ai)=>{
+      drawAnnotation(ann,ai===selectedAnnotIdx);
+      if(showPhaseLabels){
+        if(ann.type==='freedraw'){
+          const bb=annotBoundingBox(ann);
+          if(bb) drawPhaseLabel(bb.x+bb.w/2,bb.y,ann.phase||1,ai,'annot');
+        } else if(ann.type==='text'){
+          drawPhaseLabel(ann.x+(ann.fontSize||16)*ann.text.length*0.3,ann.y-(ann.fontSize||16)-2,ann.phase||1,ai,'annot');
+        }
+      }
+    });
+    // Preview del trazo en curso
+    if(annotMode==='freedraw'&&annotDrawing&&annotPath.length>1){
+      ctx.save();ctx.strokeStyle=annotColor;ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=0.75;
+      ctx.beginPath();annotPath.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      ctx.stroke();ctx.restore();
+    }
+  }
 
   // Preview curva
   if(arrowMode&&drawMode==='curve'&&curveStep>0&&curveP1){
