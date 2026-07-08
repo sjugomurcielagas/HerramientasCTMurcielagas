@@ -31,6 +31,19 @@
 
 ---
 
+## Tablero táctico — fixes pendientes (auditoría 2026-07-08)
+
+Ver detalle completo en `docs/tablero-tactico-pendientes.md`.
+
+- [ ] **A — Bug doble-commit texto**: Enter + blur agregan la misma anotación dos veces → flag `committed` en `openTextInput`
+- [ ] **B — Bug doble-tap en modo annot**: dispara editor de jugadora/flecha por debajo → `return` explícito para `isDouble` en ambos modos
+- [ ] **C — activePhase no persiste**: no se guarda en `saveHistory`/`autosave` ni se restaura en `undo`/`tryRestoreAutosave`/`importJSON`
+- [ ] **D — MOVER_TYPES antes de declararse**: `resolvedPos` las usa antes de la línea donde están declaradas como `const` → mover declaraciones arriba
+- [ ] **E — Input flotante huérfano**: cambiar de modo sin confirmar deja el input en el DOM → `closeTextInputIfOpen()` en `toggleAnnotMode` y `toggleArrowMode`
+- [ ] **F — exportJSON sin clonar**: pasa referencias vivas; `saveExercise` clona con `JSON.parse(JSON.stringify)` → alinear patrón
+
+---
+
 ## Backlog (sin fecha)
 
 - [ ] Asistencia a entrenamientos fuera de concentración — requiere backend nuevo
