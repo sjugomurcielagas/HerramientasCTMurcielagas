@@ -542,7 +542,6 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
     <div class="chip" id="dm-curve" onclick="setDrawMode('curve')">Curva</div>
     <div class="chip" id="dm-free" onclick="setDrawMode('free')">Libre</div>
     <div class="vsep"></div>
-    <div class="vsep"></div>
     <div class="chip" onclick="clearArrows()" style="color:var(--red)">✕ Flechas</div>
   </div>
 
@@ -1098,42 +1097,6 @@ function playerDisplayLabel(p){
 // =============================================
 // FASES
 // =============================================
-function getArrowPhase(arrowIdx){
-  // Calcula la fase de una flecha según faseado automático y manual
-  // Faseado manual: si arrowIdx está después de un manualPhaseBreak, se suma la fase
-  let phase=1;
-  // contar breaks manuales antes de este índice
-  for(const bp of manualPhaseBreaks){
-    if(bp<=arrowIdx) phase++;
-    else break;
-  }
-  // Faseado automático: si la jugadora origen ya tiene una flecha en la misma fase, la siguiente es fase+1
-  // Aplicado sobre el resultado manual
-  return phase;
-}
-
-function getArrowPhaseAuto(arrows, idx){
-  // Implementación completa: fase = max(manual_phase, auto_phase)
-  const a=arrows[idx];
-  // Fase base por breaks manuales
-  let manualPhase=1;
-  let sortedBreaks=[...manualPhaseBreaks].sort((a,b)=>a-b);
-  for(const bp of sortedBreaks){
-    if(bp<idx) manualPhase++;
-  }
-  // Faseado automático: contar flechas anteriores del mismo origen con la misma fase
-  if(a.from==null) return manualPhase;
-  let usedPhases=new Set();
-  for(let i=0;i<idx;i++){
-    if(arrows[i].from===a.from){
-      usedPhases.add(computePhase(arrows,i));
-    }
-  }
-  let autoPhase=manualPhase;
-  while(usedPhases.has(autoPhase)) autoPhase++;
-  return Math.max(manualPhase,autoPhase);
-}
-
 function computePhase(arrowList, idx){
   const a=arrowList[idx];
   if(a && Number.isFinite(Number(a.phase))) return Math.max(1,Number(a.phase));
@@ -1156,50 +1119,6 @@ function getMaxPhase(){
 function getActivePhaseForNewArrow(){
   if(phaseView==='all') return Math.max(1,currentPhase||getMaxPhase());
   return Math.max(1,Number(phaseView)||1);
-}
-
-function setPhaseView(phase){
-  const max=Math.max(1,getMaxPhase());
-  currentPhase=Math.max(1,Math.min(Number(phase)||1,Math.max(max,currentPhase||1)));
-  phaseView=currentPhase;
-  updatePhaseBadge();
-  draw();
-  status('Editando fase F'+currentPhase+' · las nuevas flechas se guardan en esta fase');
-}
-
-function showAllPhases(){
-  phaseView='all';
-  updatePhaseBadge();
-  draw();
-  status('Vista completa de la jugada');
-}
-
-function movePhaseView(delta){
-  const max=Math.max(1,getMaxPhase());
-  if(phaseView==='all'){
-    setPhaseView(delta<0?max:1);
-    return;
-  }
-  const next=Math.max(1,Math.min(max,(Number(phaseView)||1)+delta));
-  setPhaseView(next);
-}
-
-function newPhase(){
-  currentPhase=getMaxPhase()+1;
-  phaseView=currentPhase;
-  updatePhaseBadge();
-  draw();
-  status('Nueva fase F'+currentPhase+' · agregá el movimiento que faltaba');
-  toast('Editando F'+currentPhase);
-}
-
-function updatePhaseViewUI(){
-  const chip=document.getElementById('phase-view-chip');
-  if(!chip) return;
-  const max=getMaxPhase();
-  chip.textContent=phaseView==='all'?'Todas':'F'+phaseView+' / F'+max;
-  chip.classList.toggle('active',phaseView!=='all');
-  chip.title=phaseView==='all'?'Mostrando todas las fases':'Tocar para volver a ver todas las fases';
 }
 
 // =============================================
@@ -2020,19 +1939,6 @@ function drawFreeArrow(path,color,dash,type){
   ctx.restore();
 }
 
-// Dibujar indicador de fase sobre flecha
-function drawPhaseLabel(x,y,phase){
-  const opacities=[1,0.7,0.5];
-  const op=opacities[Math.min(phase-1,2)];
-  ctx.save();ctx.globalAlpha=op*0.85;
-  ctx.fillStyle='rgba(26,58,92,0.9)';
-  ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#fff';ctx.font="bold 9px 'Barlow Condensed',sans-serif";
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('F'+phase,x,y+0.5);
-  ctx.globalAlpha=1;ctx.restore();
-}
-
 function drawPlayerGhost(p, px, py){
   // Dibuja un jugador semitransparente en la posición de destino
   const isA=p.team==='A';
@@ -2213,7 +2119,6 @@ function draw(animOverride){
   }
 
   // Jugadoras
-  const drawPos=pos||players.map(p=>p);
   [false,true].forEach(showGhost=>{
     players.forEach((p,i)=>{
       if(!!p.ghost!==showGhost) return;
@@ -2320,7 +2225,6 @@ let animSpeedMult = 2; // default lenta
 
 const MOVER_TYPES   = new Set(['run','press']);
 const DRIBBLE_TYPES = new Set(['dribble']);
-const BALL_TYPES    = new Set(['pass','shot']);
 
 let ballState = null;        // {x,y} pelota entre fases
 let lastBallReceiver = null; // playerIdx que recibió la pelota al final de la fase anterior
@@ -3003,9 +2907,6 @@ normalizeBoardState();
 draw();
 updatePhaseBadge();
 tryRestoreAutosave();
-</script>
-<script>
-// El service worker global se registra desde la landing.
 </script>
   <div class="page-version-tag">Versión UI</div>
 </body>
