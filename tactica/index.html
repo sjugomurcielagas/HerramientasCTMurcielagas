@@ -462,6 +462,17 @@ html,body{height:100%;background:var(--bg);font-family:'Barlow',sans-serif;color
     <span style="font-size:23px;line-height:1">🏃</span>
     <span>MOVER</span>
   </button>
+  <!-- Control de fase activa -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0">
+    <button onclick="setActivePhase(-1)"
+      style="width:30px;height:22px;border-radius:8px;border:1px solid var(--borde);background:var(--card);color:var(--azul-800);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;"
+      title="Fase anterior">−</button>
+    <div id="active-phase-label"
+      style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;color:var(--celeste2);letter-spacing:.5px;width:30px;text-align:center;background:var(--celeste-100);border-radius:6px;padding:2px 0;border:1px solid var(--borde)">F1</div>
+    <button onclick="setActivePhase(1)"
+      style="width:30px;height:22px;border-radius:8px;border:1px solid var(--borde);background:var(--card);color:var(--azul-800);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;"
+      title="Fase siguiente">+</button>
+  </div>
   <div class="sb-sep"></div>
   <!-- Deshacer / Reiniciar -->
   <button class="sb-btn danger" onclick="undo()" title="Deshacer">
@@ -796,6 +807,7 @@ let currentBallId='ball_1';
 let currentPhase=1;
 let phaseView='all'; // 'all' o número de fase visible/editable
 let manualPhaseBreaks=[]; // compatibilidad con versiones anteriores
+let activePhase=1; // fase activa para nuevas flechas (control manual)
 
 // Animación
 let animRunning=false,animPaused=false;
@@ -1075,6 +1087,7 @@ function normalizeBoardState(src={}){
     if(!a)return a;
     if(isBallActionType(a.type)&&!a.ballId)a.ballId=balls[0].id;
     if(!Number.isFinite(Number(a.phase)))a.phase=computePhase(arrows,i);
+    if(!('ownerId' in a))a.ownerId=null;
     return a;
   });
   placedEntityIds=new Set(src.pe||src.placedEntityIds||[]);
@@ -1119,8 +1132,12 @@ function getMaxPhase(){
 }
 
 function getActivePhaseForNewArrow(){
-  if(phaseView==='all') return Math.max(1,currentPhase||getMaxPhase());
-  return Math.max(1,Number(phaseView)||1);
+  return Math.max(1,activePhase||1);
+}
+function setActivePhase(delta){
+  activePhase=Math.max(1,Math.min(9,(activePhase||1)+delta));
+  const el=document.getElementById('active-phase-label');
+  if(el)el.textContent='F'+activePhase;
 }
 
 // =============================================
@@ -1576,7 +1593,7 @@ function loadExercise(i){
   const ex=exercises[i];
   saveHistory();
   players=JSON.parse(JSON.stringify(ex.players));
-  arrows=JSON.parse(JSON.stringify(ex.arrows));
+  arrows=JSON.parse(JSON.stringify(ex.arrows)).map(a=>({...a,ownerId:a.ownerId??null}));
   balls=JSON.parse(JSON.stringify(ex.balls||[{id:'ball_1',label:'A'}]));
   currentBallId=ex.currentBallId||balls[0]?.id||'ball_1';
   manualPhaseBreaks=ex.breaks||[];
@@ -1636,7 +1653,7 @@ function importJSON(event){
     try{
       const data=JSON.parse(e.target.result);
       saveHistory();
-      players=data.players||[];arrows=data.arrows||[];balls=data.balls||[{id:'ball_1',label:'A'}];currentBallId=data.currentBallId||balls[0]?.id||'ball_1';
+      players=data.players||[];arrows=(data.arrows||[]).map(a=>({...a,ownerId:a.ownerId??null}));balls=data.balls||[{id:'ball_1',label:'A'}];currentBallId=data.currentBallId||balls[0]?.id||'ball_1';
       manualPhaseBreaks=data.manualPhaseBreaks||[];
       currentPhase=data.currentPhase||1;
       phaseView=data.phaseView||'all';
@@ -1692,6 +1709,18 @@ function resolvedPos(idx, upTo){
   return {x:players[idx].x, y:players[idx].y};
 }
 
+function findTokenAtPoint(x,y){
+  // Devuelve el índice del token (jugador no-ghost) más cercano al punto dado,
+  // usando radio del token + 10px como área de detección.
+  // Retorna -1 si no hay ninguno.
+  for(let i=players.length-1;i>=0;i--){
+    const p=players[i];
+    if(p.ghost)continue;
+    if(Math.hypot(x-p.x,y-p.y)<=p.r+10)return i;
+  }
+  return -1;
+}
+
 function getPlayerAt(x,y){
   // Primero buscar jugador real en su posición actual
   for(let i=players.length-1;i>=0;i--)
@@ -1741,42 +1770,52 @@ function handleDown(x,y,isDouble,clientX,clientY){
     if(idx>=0){openEdit(idx);return;}
   }
   if(arrowMode&&drawMode==='free'){
+    const fidx=findTokenAtPoint(x,y);
+    if(fidx<0){toast('Seleccioná un jugador como origen',1500);return;}
     saveHistory();
     freeDrawing=true;freePath=[{x,y}];
-    // Capturar jugador origen si el toque empieza sobre uno
-    const fidx=getPlayerAt(x,y);
-    arrowFrom=fidx>=0?fidx:null;
+    arrowFrom=fidx;
     return;
   }
   const idx=getPlayerAt(x,y);
   if(arrowMode){
     if(drawMode==='straight'){
       if(idx>=0){
-        if(arrowFrom===null){arrowFrom=idx;status('Origen → tocá destino');}
+        if(arrowFrom===null){
+          const oidx=findTokenAtPoint(x,y);
+          if(oidx<0){toast('Seleccioná un jugador como origen',1500);return;}
+          arrowFrom=oidx;status('Origen → tocá destino');
+        }
         else if(arrowFrom!==idx){
           saveHistory();
-          addArrowAction({kind:'straight',from:arrowFrom,to:idx,type:arrowType});
+          const ownerId=players[arrowFrom]?players[arrowFrom].entityId||null:null;
+          addArrowAction({kind:'straight',from:arrowFrom,to:idx,type:arrowType,ownerId});
           arrowFrom=null;status('Flecha agregada');
         }
       }else{
         if(arrowFrom!==null){
           saveHistory();
+          const ownerId=players[arrowFrom]?players[arrowFrom].entityId||null:null;
           const gi=addGhost(arrowType,players[arrowFrom],x,y);
-          if(gi!=null)addArrowAction({kind:'straight',from:arrowFrom,to:gi,type:arrowType});
-          else addArrowAction({kind:'straight',from:arrowFrom,toX:x,toY:y,type:arrowType});
+          if(gi!=null)addArrowAction({kind:'straight',from:arrowFrom,to:gi,type:arrowType,ownerId});
+          else addArrowAction({kind:'straight',from:arrowFrom,toX:x,toY:y,type:arrowType,ownerId});
           arrowFrom=null;status('Flecha agregada');
-        }else arrowFrom=null;
+        }else{
+          toast('Seleccioná un jugador como origen',1500);
+          arrowFrom=null;
+        }
       }
     }else if(drawMode==='curve'){
       if(curveStep===0){
-        // Primer toque: origen — capturar jugador si hay uno ahí
-        const cidx=getPlayerAt(x,y);
-        arrowFrom=cidx>=0?cidx:null;
+        const cidx=findTokenAtPoint(x,y);
+        if(cidx<0){toast('Seleccioná un jugador como origen',1500);return;}
+        arrowFrom=cidx;
         curveP1={x,y};curveStep=1;status('Curva · tocá punto de control');
       } else if(curveStep===1){curveP2={x,y};curveStep=2;status('Curva · tocá punto final');}
       else{
         saveHistory();
-        addArrowAction({kind:'curve',from:arrowFrom,x1:curveP1.x,y1:curveP1.y,cx:curveP2.x,cy:curveP2.y,x2:x,y2:y,type:arrowType});
+        const ownerId=arrowFrom!=null&&players[arrowFrom]?players[arrowFrom].entityId||null:null;
+        addArrowAction({kind:'curve',from:arrowFrom,x1:curveP1.x,y1:curveP1.y,cx:curveP2.x,cy:curveP2.y,x2:x,y2:y,type:arrowType,ownerId});
         curveStep=0;curveP1=null;curveP2=null;arrowFrom=null;status('Curva agregada');
       }
     }
@@ -1794,7 +1833,7 @@ canvas.addEventListener('mousemove',e=>{
   players[dragging].y=Math.max(fy+20,Math.min(fy+fh-20,y+dragOffY));draw();
 });
 canvas.addEventListener('mouseup',()=>{
-  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
+  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){const ownerId=arrowFrom!=null&&players[arrowFrom]?players[arrowFrom].entityId||null:null;addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType,ownerId});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 });
 canvas.addEventListener('mouseleave',()=>{if(freeDrawing){freeDrawing=false;freePath=[];arrowFrom=null;draw();}dragging=null;});
@@ -1813,10 +1852,11 @@ canvas.addEventListener('touchstart',e=>{
   touchStartPos={x,y,clientX:src.clientX,clientY:src.clientY};
 
   if(arrowMode&&drawMode==='free'){
+    const fidx=findTokenAtPoint(x,y);
+    if(fidx<0){toast('Seleccioná un jugador como origen',1500);return;}
     saveHistory();
     freeDrawing=true;freePath=[{x,y}];
-    const fidx=getPlayerAt(x,y);
-    arrowFrom=fidx>=0?fidx:null;
+    arrowFrom=fidx;
     return;
   }
 
@@ -1846,7 +1886,7 @@ canvas.addEventListener('touchmove',e=>{
 },{passive:false});
 canvas.addEventListener('touchend',e=>{
   e.preventDefault();clearTimeout(longPressTimer);touchStartPos=null;
-  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType});}freePath=[];arrowFrom=null;draw();return;}
+  if(arrowMode&&drawMode==='free'&&freeDrawing){freeDrawing=false;if(freePath.length>2){const ownerId=arrowFrom!=null&&players[arrowFrom]?players[arrowFrom].entityId||null:null;addArrowAction({kind:'free',from:arrowFrom,path:[...freePath],type:arrowType,ownerId});}freePath=[];arrowFrom=null;draw();return;}
   dragging=null;
 },{passive:false});
 
