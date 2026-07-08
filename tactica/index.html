@@ -1164,7 +1164,7 @@ function renderRoster(){
   if(!shown){
     const empty=document.createElement('div');
     empty.style='color:var(--text-dim);font-size:12px;text-align:center;padding:12px';
-    empty.textContent=q?'Sin jugadoras activas para ese filtro.':'No se pudo cargar la nomina activa desde la base de datos.';
+    empty.textContent=q?'Sin jugadoras activas para ese filtro.':(rosterSource.length?'No hay jugadoras activas en la nomina.':'No se pudo cargar la nomina desde la base de datos.');
     body.appendChild(empty);
   }
   const rivalSec=document.createElement('div');rivalSec.className='rsection';
@@ -1330,7 +1330,7 @@ function applyEdit(){
   const num=document.getElementById('edit-num').value.trim();
   const name=document.getElementById('edit-name').value.trim();
   if(num)players[editingIdx].num=isNaN(num)?num:parseInt(num);
-  if(name)players[editingIdx].role=name;
+  if(name){players[editingIdx].role=name;players[editingIdx].apellido=name;}
   closeEdit();draw();
 }
 function closeEdit(){editingIdx=null;document.getElementById('edit-popup').style.display='none';}
@@ -1960,7 +1960,7 @@ function drawPlayerGhost(p, px, py){
   ctx.fillStyle=textC;
   ctx.save();ctx.translate(px,py);ctx.rotate(-Math.PI/2);
   ctx.font="bold 14px 'Barlow Condensed',sans-serif";
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.num,0,0);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.num!=null?String(p.num):'',0,0);
   ctx.restore();
   ctx.restore();
 }
@@ -2199,7 +2199,7 @@ function draw(animOverride){
       ctx.save();ctx.translate(px,py);ctx.rotate(-Math.PI/2);
       ctx.fillStyle=textC;ctx.font="bold 18px 'Barlow Condensed', sans-serif";
       ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(p.num,0,0);
+      ctx.fillText(p.num!=null?String(p.num):'',0,0);
       const label=playerDisplayLabel(p);
       if(label){
         ctx.fillStyle=isA?'rgba(26,58,92,0.92)':'rgba(255,255,255,0.9)';
@@ -2517,7 +2517,7 @@ function drawAnimPlayersGroup(group,moverStarts,pos){
     ctx.fillStyle=textC;
     ctx.font=dashed?"bold 14px 'Barlow Condensed',sans-serif":"bold 18px 'Barlow Condensed',sans-serif";
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(p.num,0,0);
+    ctx.fillText(p.num!=null?String(p.num):'',0,0);
     ctx.restore();
     ctx.restore();
   }
@@ -2815,7 +2815,7 @@ function drawFinalPlayer(px,py,p,alpha,dashed){
   ctx.fillStyle=textC;
   ctx.font=`bold ${dashed?14:18}px 'Barlow Condensed',sans-serif`;
   ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(p.num,0,0);
+  ctx.fillText(p.num!=null?String(p.num):'',0,0);
   const label=playerDisplayLabel(p);
   if(label&&!dashed){
     ctx.font="800 10.5px 'Barlow Condensed',sans-serif";
