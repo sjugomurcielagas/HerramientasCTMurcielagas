@@ -789,6 +789,12 @@ function getPos(e){
 }
 
 // =============================================
+// CONSTANTES DE TIPOS (declaradas antes de resolvedPos y getPlayerAt)
+// =============================================
+const MOVER_TYPES   = new Set(['run','press']);
+const DRIBBLE_TYPES = new Set(['dribble']);
+
+// =============================================
 // ESTADO
 // =============================================
 const fx=70,fy=55,fw=760,fh=410;
@@ -1254,7 +1260,10 @@ function openTextInput(x,y){
   inp.style.top=Math.min(window.innerHeight-50,Math.max(4,sy-20))+'px';
   document.body.appendChild(inp);
   inp.focus();
+  let committed=false;
   function commit(){
+    if(committed)return;
+    committed=true;
     const txt=inp.value.trim();
     inp.remove();
     if(!txt) return;
@@ -1271,7 +1280,7 @@ function openTextInput(x,y){
     draw();
     status('Texto agregado');
   }
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){inp.remove();}});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){committed=true;inp.remove();}});
   inp.addEventListener('blur',commit);
 }
 
@@ -1438,7 +1447,7 @@ function toggleArrowMode(){
 // HISTORIAL
 // =============================================
 function saveHistory(){
-  history.push({players:JSON.parse(JSON.stringify(players)),arrows:JSON.parse(JSON.stringify(arrows)),annotations:JSON.parse(JSON.stringify(annotations)),balls:JSON.parse(JSON.stringify(balls)),currentBallId,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],breaks:[...manualPhaseBreaks],phase:currentPhase,phaseView});
+  history.push({players:JSON.parse(JSON.stringify(players)),arrows:JSON.parse(JSON.stringify(arrows)),annotations:JSON.parse(JSON.stringify(annotations)),balls:JSON.parse(JSON.stringify(balls)),currentBallId,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],breaks:[...manualPhaseBreaks],phase:currentPhase,phaseView,activePhase});
   if(history.length>40)history.shift();
 }
 function undo(){
@@ -1446,6 +1455,8 @@ function undo(){
   const s=history.pop();players=s.players;arrows=s.arrows;balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';counterA=s.cA;counterB=s.cB;placedMur=new Set(s.pm);
   annotations=Array.isArray(s.annotations)?s.annotations:[];
   manualPhaseBreaks=s.breaks||[];currentPhase=s.phase||1;phaseView=s.phaseView||'all';
+  activePhase=s.activePhase||1;
+  const _apl=document.getElementById('active-phase-label');if(_apl)_apl.textContent='F'+activePhase;
   normalizeBoardState(s);ensureDefaultBall();updatePhaseBadge();draw();status('Acción deshecha');
 }
 function clearArrows(){saveHistory();arrows=[];annotations=[];manualPhaseBreaks=[];currentPhase=1;phaseView='all';balls=[{id:'ball_1',label:'A'}];currentBallId='ball_1';ensureDefaultBall();updatePhaseBadge();draw();toast('Flechas borradas');}
@@ -1459,7 +1470,7 @@ function clearAll(){
 }
 function autosave(){
   if(!players.length)return;
-  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,annotations,balls,currentBallId,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],ts:Date.now()}));}catch(e){}
+  try{localStorage.setItem(TB_AUTOSAVE_KEY,JSON.stringify({players,arrows,annotations,balls,currentBallId,breaks:manualPhaseBreaks,phase:currentPhase,phaseView,activePhase,cA:counterA,cB:counterB,pm:[...placedMur],pe:[...placedEntityIds],ts:Date.now()}));}catch(e){}
 }
 function tryRestoreAutosave(){
   try{
@@ -1467,6 +1478,8 @@ function tryRestoreAutosave(){
     const s=JSON.parse(raw);if(!s||!Array.isArray(s.players)||!s.players.length)return;
     players=s.players;arrows=s.arrows||[];annotations=Array.isArray(s.annotations)?s.annotations:[];balls=s.balls||[{id:'ball_1',label:'A'}];currentBallId=s.currentBallId||balls[0]?.id||'ball_1';manualPhaseBreaks=s.breaks||[];
     currentPhase=s.phase||1;phaseView=s.phaseView||'all';
+    activePhase=s.activePhase||1;
+    const _rapl=document.getElementById('active-phase-label');if(_rapl)_rapl.textContent='F'+activePhase;
     counterA=s.cA||1;counterB=s.cB||1;placedMur=new Set(s.pm||[]);
     normalizeBoardState(s);ensureDefaultBall();updatePhaseBadge();draw();toast('Tablero restaurado de la sesión anterior');
   }catch(e){}
@@ -1914,19 +1927,17 @@ function removePlayer(idx){
 function handleDown(x,y,isDouble,clientX,clientY){
   if(animRunning)return;
 
-  // Modos de anotación — tienen prioridad sobre todo excepto doble-tap
+  // Modos de anotación — tienen prioridad sobre todo
   if(annotMode==='freedraw'){
-    if(!isDouble){
-      saveHistory();
-      annotDrawing=true;annotPath=[{x,y}];
-      return;
-    }
+    if(isDouble)return; // ignorar doble-tap en modo dibujo
+    saveHistory();
+    annotDrawing=true;annotPath=[{x,y}];
+    return;
   }
   if(annotMode==='text'){
-    if(!isDouble){
-      openTextInput(x,y);
-      return;
-    }
+    if(isDouble)return; // ignorar doble-tap en modo texto
+    openTextInput(x,y);
+    return;
   }
 
   if(isDouble){
@@ -2632,9 +2643,6 @@ function draw(animOverride){
 const ANIM_BASE_MS = 2000;
 const ANIM_PAUSE_MS = 700;
 let animSpeedMult = 2; // default lenta
-
-const MOVER_TYPES   = new Set(['run','press']);
-const DRIBBLE_TYPES = new Set(['dribble']);
 
 let ballState = null;        // {x,y} pelota entre fases
 let lastBallReceiver = null; // playerIdx que recibió la pelota al final de la fase anterior
