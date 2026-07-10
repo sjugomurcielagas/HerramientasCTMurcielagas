@@ -198,6 +198,15 @@ const UI_DEPLOYED_AT = 'partidos-internos';
     const apellido = String(persona?.Apellido || persona?.apellido || '').trim();
     const nombre = String(persona?.Nombre || persona?.nombre || '').trim();
     const nombreCompleto = String(persona?.nombre || '').trim() || [apellido, nombre].filter(Boolean).join(', ');
+    const nombreCorto = String(
+      persona?.Nombre_Corto ||
+      persona?.nombre_corto ||
+      persona?.nombreCorto ||
+      persona?.NombreCorto ||
+      persona?.apodo ||
+      persona?.Apodo ||
+      ''
+    ).trim();
     const tipoIntegrante = String(
       persona?.Tipo_Integrante ||
       persona?.tipoIntegrante ||
@@ -221,6 +230,9 @@ const UI_DEPLOYED_AT = 'partidos-internos';
       Apellido: apellido || persona?.Apellido || '',
       Nombre: nombre || persona?.Nombre || '',
       nombre: nombreCompleto || persona?.nombre || '',
+      Nombre_Corto: nombreCorto || persona?.Nombre_Corto || '',
+      nombre_corto: nombreCorto || persona?.nombre_corto || '',
+      nombreCorto: nombreCorto || persona?.nombreCorto || '',
       tipo: tipoIntegrante || persona?.tipo || '',
       Tipo_Integrante: tipoIntegrante || persona?.Tipo_Integrante || '',
       tipoIntegrante: tipoIntegrante || persona?.tipoIntegrante || '',
@@ -593,6 +605,20 @@ const UI_DEPLOYED_AT = 'partidos-internos';
       .filter(Boolean)
       .join(', ')
       .trim();
+  };
+
+  Murci.personShortName = function personShortName(persona) {
+    if (!persona) return '';
+    const shortName = String(
+      persona.Nombre_Corto ||
+      persona.nombre_corto ||
+      persona.nombreCorto ||
+      persona.NombreCorto ||
+      persona.apodo ||
+      persona.Apodo ||
+      ''
+    ).trim();
+    return shortName || Murci.personName(persona);
   };
 
   function syncUiVersionTags() {

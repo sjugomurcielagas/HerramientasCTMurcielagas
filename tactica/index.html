@@ -862,7 +862,7 @@ function tacticaNameKey(p){
 }
 
 function tacticaNameDisplay(p){
-  return Murci.personName(p) || p?.nombre || p?.Apellido || '';
+  return (Murci.personShortName ? Murci.personShortName(p) : Murci.personName(p)) || p?.nombre || p?.Apellido || '';
 }
 
 function tacticaPersonaId(p){

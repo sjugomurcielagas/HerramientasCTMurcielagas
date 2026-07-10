@@ -933,7 +933,7 @@
       document.getElementById('fichaContent').innerHTML='<div style="padding:20px 0"><div class="empty">Cargando...</div></div>';
       showView('fichaView');
       try{
-        const det=await apiGet('partidos_getDetalle',{partido_id:id});
+        const det=await apiGet('partidos_getDetalle',{id});
         renderFicha(p,det||{});
       }catch(e){document.getElementById('fichaContent').innerHTML=`<div class="empty" style="margin:10px 0">Error al cargar: ${esc(e.message)}</div>`}
     }
@@ -1445,7 +1445,7 @@
     function resLabel(r){return{victoria:'V',empate:'E',derrota:'D'}[r]||'—'}
     function mLabel(t){return{'gol-propio':'Gol propio','gol-rival':'Gol rival','pelota-parada':'Pelota parada',jugada:'Jugada puntual',cambio:'Cambio',tarjeta:'Tarjeta',nota:'Nota'}[t]||t}
     function mColor(t){return{'gol-propio':'#15803d','gol-rival':'var(--danger)','pelota-parada':'var(--azul-800)',jugada:'var(--celeste)',cambio:'var(--celeste)',tarjeta:'#92400e',nota:'var(--muted)'}[t]||'var(--muted)'}
-    function nombrar(item){return Murci.personName(item)}
+    function nombrar(item){return Murci.personShortName ? Murci.personShortName(item) : Murci.personName(item)}
     function personaKey(v){
       if(v&&typeof v==='object')return Murci.personaRef(v);
       const raw=String(v||'').trim();

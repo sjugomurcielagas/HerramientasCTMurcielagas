@@ -287,6 +287,7 @@ function base_ensureSportsColumns_(sheet) {
   var ws = sheet || getSheet_();
   ensureColumn_(ws, 'Posicion');
   ensureColumn_(ws, 'Rol');
+  ensureColumn_(ws, 'Nombre_Corto');
   return ws;
 }
 
@@ -2409,6 +2410,7 @@ function doPost(e) {
       case 'partidos_eliminarPartido':   result = partidos_eliminarPartido(payload); break;
       case 'partidos_guardarDetalle':    result = partidos_guardarDetalle(payload); break;
       case 'partidos_guardarConvocatoria': result = partidos_guardarConvocatoria(payload); break;
+      case 'partidos_guardarEstadoCancha': result = partidos_guardarEstadoCancha(payload); break;
       case 'partidos_guardarRatings':    result = partidos_guardarRatings(payload); break;
       case 'partidos_agregarMomento':    result = partidos_agregarMomento(payload); break;
       case 'partidos_eliminarMomento':   result = partidos_eliminarMomento(payload); break;
@@ -2576,6 +2578,7 @@ function base_agregarIntegrante(p) {
   var email = String(payload.email || '').trim();
   var posicion = String(payload.posicion || payload.posicionCampo || payload.posicion_campo || '').trim();
   var numeroCamiseta = String(payload.numeroCamiseta || payload.numero_camiseta || payload.nroCamiseta || payload.nro_camiseta || payload.camiseta || '').trim();
+  var nombreCorto = String(payload.nombreCorto || payload.nombre_corto || payload.Nombre_Corto || '').trim();
   var clasifIBSA = String(payload.clasifVisualIBSA || payload.clasif_visual_ibsa || payload.clasifIBSA || '').trim();
 
   if (!nombreCompleto) throw new Error('El nombre completo es obligatorio.');
@@ -2598,9 +2601,11 @@ function base_agregarIntegrante(p) {
     DNI: dni,
     dni: dni,
     Apellido: partesNombre.apellido || '',
-    Nombre: partesNombre.nombre || nombreCompleto,
-    nombre: nombreCompleto,
-    'Tipo Integrante': tipo,
+	    Nombre: partesNombre.nombre || nombreCompleto,
+	    nombre: nombreCompleto,
+	    Nombre_Corto: nombreCorto,
+	    nombre_corto: nombreCorto,
+	    'Tipo Integrante': tipo,
     Tipo_Integrante: tipo,
     tipoIntegrante: tipo,
     tipo_integrante: tipo,
@@ -3274,10 +3279,11 @@ function partidos_getPartidos() {
 }
 
 function partidos_getDetalle(p) {
-  if (!p.id) throw new Error('id es requerido');
+  const id = p.id || p.partido_id;
+  if (!id) throw new Error('id es requerido');
 
   const row = sheetToObjects(getSheet(SHEETS.partidos))
-    .find(r => String(r.id) === String(p.id));
+    .find(r => String(r.id) === String(id));
 
   if (!row) throw new Error('Partido no encontrado');
 
@@ -3317,7 +3323,8 @@ function _parsePartido(r) {
     equipo_visitante_plantel_id: String(r.equipo_visitante_plantel_id || '').trim(),
     tipo_partido: String(r.tipo_partido || '').trim(),
     tipo_competencia: String(r.tipo_competencia || '').trim(),
-    tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim()
+    tipo_competencia_otro: String(r.tipo_competencia_otro || '').trim(),
+    estado_cancha: safeJsonParse(r.estado_cancha_json || r.estado_cancha || '', null)
   };
 }
 
@@ -3378,9 +3385,9 @@ function partidos_crearPartido(p) {
     'rival_plantel_id', 'rival_plantel_nombre',
     'incluye_murcielagas', 'equipo_local_id', 'equipo_visitante_id',
     'equipo_local_nombre', 'equipo_visitante_nombre',
-    'equipo_local_plantel_json', 'equipo_visitante_plantel_json',
-    'equipo_local_plantel_id', 'equipo_visitante_plantel_id',
-    'tipo_partido'
+	    'equipo_local_plantel_json', 'equipo_visitante_plantel_json',
+	    'equipo_local_plantel_id', 'equipo_visitante_plantel_id',
+	    'tipo_partido', 'estado_cancha_json'
   ];
   appendObjectRow_(sheet, {
     id: id,
@@ -3420,8 +3427,9 @@ function partidos_crearPartido(p) {
     equipo_visitante_plantel_json: JSON.stringify(equipoVisitante ? visitantePlantel : []),
     equipo_local_plantel_id: p.equipo_local_plantel_id || '',
     equipo_visitante_plantel_id: p.equipo_visitante_plantel_id || '',
-    tipo_partido: tipoPartido
-  }, headers);
+	    tipo_partido: tipoPartido,
+	    estado_cancha_json: JSON.stringify(p.estado_cancha || { propio: [], rival: [] })
+	  }, headers);
 
   return ok(true, { id: id, rival_id: equipo && equipo.id ? equipo.id : '', rival: esInterno ? (p.rival || '') : (equipo && equipo.nombre ? equipo.nombre : p.rival), tipo_partido: tipoPartido });
 }
@@ -3511,17 +3519,41 @@ function partidos_eliminarAccionesPorPartido_(partidoId) {
 // ─────────────────────────────────────────
 
 function partidos_guardarConvocatoria(p) {
-  if (!p.id) throw new Error('id es requerido');
+  if (!p.id && !p.partido_id) throw new Error('id es requerido');
+  const id = p.id || p.partido_id;
 
   const sheet = getSheet(SHEETS.partidos);
-  const row = findRowIndex(sheet, 'id', p.id);
+  const row = findRowIndex(sheet, 'id', id);
 
   if (row === -1) throw new Error('Partido no encontrado');
 
   const convocadas = p.convocadas || p.convocatoria || p.convocatoria_ids || [];
   setCell(sheet, row, 'convocadas', JSON.stringify(convocadas));
 
-  return ok(true, { id: p.id });
+  return ok(true, { id: id });
+}
+
+function partidos_guardarEstadoCancha(p) {
+  if (!p.id && !p.partido_id) throw new Error('id es requerido');
+  const id = p.id || p.partido_id;
+  const sheet = getSheet(SHEETS.partidos);
+  const row = findRowIndex(sheet, 'id', id);
+
+  if (row === -1) throw new Error('Partido no encontrado');
+
+  ensureColumn_(sheet, 'estado_cancha_json');
+  var estado = p.estado_cancha || p.cancha || { propio: [], rival: [] };
+  if (typeof estado === 'string') {
+    estado = safeJsonParse(estado, { propio: [], rival: [] });
+  }
+  estado = {
+    propio: Array.isArray(estado && estado.propio) ? estado.propio.map(String).filter(Boolean) : [],
+    rival: Array.isArray(estado && estado.rival) ? estado.rival.map(String).filter(Boolean) : [],
+    updated_at: new Date().toISOString()
+  };
+  setCell(sheet, row, 'estado_cancha_json', JSON.stringify(estado));
+
+  return ok(true, { id: id, estado_cancha: estado });
 }
 
 function partidos_guardarRatings(p) {
@@ -3730,7 +3762,8 @@ var ACCIONES_HEADERS_ = [
   'id', 'partido_id', 'timestamp_registro', 'equipo', 'tipo_partido',
   'contexto', 'accion', 'zona', 'jugadora_id', 'valoracion',
   'resultado', 'arquera_valoracion', 'es_pase_relevante', 'tiempo_neto',
-  'jugadora_anterior_id', 'narracion', 'equipo_id'
+  'jugadora_anterior_id', 'narracion', 'equipo_id',
+  'secuencia_id', 'secuencia_orden', 'observacion_tactica'
 ];
 
 function partidos_getOrCreateAccionesSheet_() {
@@ -3779,10 +3812,13 @@ function partidos_registrarAccion(p) {
 	    arquera_valoracion: (p.arquera_valoracion !== undefined && p.arquera_valoracion !== null && p.arquera_valoracion !== '') ? Number(p.arquera_valoracion) : '',
 	    es_pase_relevante: (p.es_pase_relevante !== undefined && p.es_pase_relevante !== null && p.es_pase_relevante !== '') ? String(p.es_pase_relevante) : '',
 	    tiempo_neto: (p.tiempo_neto !== undefined && p.tiempo_neto !== null && p.tiempo_neto !== '') ? Number(p.tiempo_neto) : '',
-	    jugadora_anterior_id: p.jugadora_anterior_id || '',
-	    narracion: p.narracion || '',
-	    equipo_id: p.equipo_id || ''
-	  }, ACCIONES_HEADERS_);
+		    jugadora_anterior_id: p.jugadora_anterior_id || '',
+		    narracion: p.narracion || '',
+		    equipo_id: p.equipo_id || '',
+		    secuencia_id: p.secuencia_id || '',
+		    secuencia_orden: (p.secuencia_orden !== undefined && p.secuencia_orden !== null && p.secuencia_orden !== '') ? Number(p.secuencia_orden) : '',
+		    observacion_tactica: p.observacion_tactica || ''
+		  }, ACCIONES_HEADERS_);
 
 	  equipos_recalcularStatsPorPartido_(p.partido_id);
 
@@ -3800,8 +3836,9 @@ function partidos_getAcciones(p) {
       valoracion: (r.valoracion !== '' && r.valoracion !== undefined) ? Number(r.valoracion) : null,
       arquera_valoracion: (r.arquera_valoracion !== '' && r.arquera_valoracion !== undefined) ? Number(r.arquera_valoracion) : null,
       es_pase_relevante: r.es_pase_relevante === 'true' ? true : r.es_pase_relevante === 'false' ? false : null,
-      tiempo_neto: (r.tiempo_neto !== '' && r.tiempo_neto !== undefined) ? Number(r.tiempo_neto) : null
-    }));
+	      tiempo_neto: (r.tiempo_neto !== '' && r.tiempo_neto !== undefined) ? Number(r.tiempo_neto) : null
+	      ,secuencia_orden: (r.secuencia_orden !== '' && r.secuencia_orden !== undefined) ? Number(r.secuencia_orden) : null
+	    }));
 
   return ok(true, rows);
 }

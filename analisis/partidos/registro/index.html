@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
   <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../../../index.html');}})();</script>
   <style>
-    :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 10px 28px rgba(6,23,47,.10);--radius:16px}
+    :root{--azul-950:#06172f;--azul-900:#071f3f;--azul-800:#0b2f5f;--azul-700:#0f4c81;--celeste:#22a8e8;--celeste-100:#e7f6fd;--fondo:#f4f9fd;--card:#fff;--borde:#dbe7ef;--texto:#102033;--muted:#64748b;--ok:#047857;--warn:#b45309;--danger:#b91c1c;--shadow:0 14px 35px rgba(6,23,47,.12);--radius:18px}
     *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:var(--fondo);color:var(--texto);min-height:100vh}button,input,select,textarea{font-family:inherit}button{font-weight:700}.hidden{display:none!important}.loading{opacity:.6;pointer-events:none}
     /* Topbar */
     .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}.topbar-inner{max-width:640px;margin:0 auto;padding:10px 14px;display:flex;gap:10px;align-items:center}
@@ -23,13 +23,14 @@
     @keyframes pulse-live{0%,100%{opacity:1}50%{opacity:.6}}
     /* Tabs */
     .tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;position:sticky;top:57px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.92) 100%);border-bottom:1px solid var(--borde);max-width:640px;margin:0 auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
-    .tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:8px 14px;min-height:35px;border-radius:999px;cursor:pointer;font-weight:800;font-size:.85rem;flex-shrink:0}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .tab-btn{white-space:nowrap;border:1px solid var(--borde);background:#fff;color:var(--azul-800);padding:7px 14px;border-radius:999px;cursor:pointer;font-weight:800;font-size:.85rem;flex-shrink:0}.tab-btn.active{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
     /* Layout */
     main{max-width:640px;margin:0 auto;padding:12px 14px 100px}
     /* Badges */
     .badge{display:inline-flex;border-radius:999px;padding:2px 8px;font-size:.73rem;font-weight:800;color:#334155;background:#eef3f7}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.info{background:var(--celeste-100);color:var(--azul-800)}
     /* Buttons */
-    .btn{border:0;border-radius:999px;padding:10px 15px;min-height:40px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}.btn:hover{background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:#fff;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.82rem;padding:7px 11px;min-height:35px;border-radius:999px}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--azul-800);color:#fff;display:inline-flex;justify-content:center;align-items:center;gap:6px;transition:.12s ease;font-size:.92rem;text-decoration:none}.btn:hover{background:var(--azul-700)}.btn.secondary{background:var(--celeste-100);color:var(--azul-800)}.btn.ghost{background:transparent;color:var(--azul-800);border:1px solid var(--borde)}.btn.danger{background:var(--danger)}.btn.small{font-size:.82rem;padding:7px 10px;border-radius:10px}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn-row{display:flex;flex-wrap:wrap;gap:8px}
     /* Panel */
     .panel{background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}.panel-head{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--borde)}.panel-head h2{font-family:"Barlow Condensed",sans-serif;font-size:1.1rem;color:var(--azul-950);margin:0}.panel-body{padding:13px 14px}
     /* Empty */
@@ -37,19 +38,77 @@
     /* Status */
     .status-line{margin-top:7px;font-weight:700;font-size:.86rem;color:var(--muted)}.status-line.ok{color:var(--ok)}.status-line.error{color:var(--danger)}
 
-    /* ── TITULARES ── */
-    .titulares-wrap{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
-    .titular-circulo{width:50px;height:50px;border-radius:14px;border:1px solid var(--borde);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;gap:1px}
-    .titular-circulo.sel{background:var(--azul-800);border-color:var(--azul-800)}
-    .tc-num{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;font-weight:700;color:var(--azul-800);line-height:1}
-    .titular-circulo.sel .tc-num{color:#fff}
-    .tc-name{font-size:.52rem;font-weight:700;color:var(--muted);text-align:center;line-height:1;max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .titular-circulo.sel .tc-name{color:rgba(255,255,255,.8)}
-    .team-label-sm{font-size:.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+    /* ── MODO TOGGLE ── */
+    .modo-toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--borde);border-radius:12px;overflow:hidden;margin-bottom:12px}
+    .modo-btn{border:0;background:var(--card);color:var(--muted);padding:9px 8px;cursor:pointer;font-weight:800;font-size:.88rem;transition:.1s}.modo-btn.active{background:var(--azul-800);color:#fff}
+
+    /* ── PASOS ── */
+    .pasos{display:flex;flex-direction:column;gap:8px}
+    .paso{background:var(--card);border:1.5px solid var(--borde);border-radius:14px;overflow:hidden;transition:border-color .2s}
+    .paso.activo{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(34,168,232,.1)}
+    .paso.completado{border-color:#a3cfbb}
+    .paso.bloqueado{opacity:.38;pointer-events:none}
+    .paso-header{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+    .paso-num{width:26px;height:26px;border-radius:50%;background:#f1f5f9;border:1.5px solid var(--borde);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--muted);flex-shrink:0;transition:all .2s}
+    .paso.activo .paso-num{background:var(--celeste);border-color:var(--celeste);color:#fff}
+    .paso.completado .paso-num{background:#d4edda;border-color:#a3cfbb;color:#1a5e36}
+    .paso-info{flex:1;min-width:0}
+    .paso-titulo{font-size:.88rem;font-weight:800;color:var(--azul-950)}
+    .paso.bloqueado .paso-titulo{color:var(--muted)}
+    .paso-sel{font-size:.78rem;color:var(--celeste);font-weight:700;margin-top:1px;min-height:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .paso-chevron{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0}
+    .paso.activo .paso-chevron{transform:rotate(180deg)}
+    .paso-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+    .paso.activo .paso-body{max-height:700px}
+    .paso-inner{padding:0 14px 14px}
+
+    /* ── EQUIPO ── */
+    .equipo-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .equipo-btn{border:2px solid var(--borde);background:var(--card);color:var(--texto);border-radius:12px;padding:15px 8px;font-size:1rem;font-weight:800;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .equipo-btn.sel{background:var(--azul-800);border-color:var(--azul-800);color:#fff}
+
+    /* ── CONTEXTO ── */
+    .contexto-btns{display:flex;flex-wrap:wrap;gap:6px}
+    .contexto-btn{border:1.5px solid var(--borde);background:var(--card);color:var(--azul-800);border-radius:999px;padding:7px 13px;font-size:.84rem;font-weight:800;cursor:pointer;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .contexto-btn.sel{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+
+    /* ── ACCIONES ── */
+    .acciones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+    .accion-btn{background:var(--card);border:1.5px solid var(--borde);border-radius:11px;padding:11px 5px;cursor:pointer;text-align:center;font-size:.78rem;font-weight:800;color:var(--texto);transition:.12s;display:flex;flex-direction:column;align-items:center;gap:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .accion-btn:active{transform:scale(.95)}.accion-icon{font-size:20px;line-height:1}
+    .accion-btn.sel{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .accion-btn.danger.sel{background:var(--danger);border-color:var(--danger)}
+    .accion-btn.warn.sel{background:#92400e;border-color:#d97706}
+    .accion-btn.ok.sel{background:var(--ok);border-color:var(--ok)}
+    .accion-btn.disabled-btn{opacity:.32;pointer-events:none}
+
+    /* ── CANCHA ── */
+    .cancha-wrap{position:relative}
+    .cancha-labels{display:flex;justify-content:space-between;margin-bottom:4px;padding:0 2px}
+    .cancha-label-txt{font-size:.68rem;font-weight:800;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+    .cancha-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);gap:3px;background:#1b5e2f;border:2px solid #134722;border-radius:12px;padding:5px;height:120px;position:relative}
+    .cancha-zona{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:6px;cursor:pointer;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .cancha-zona:active,.cancha-zona.sel{background:rgba(255,255,255,.82)}
+    .cancha-hint{font-size:.7rem;color:var(--muted);margin-top:5px;text-align:center}
+
+    /* ── ARCO ── */
+    .arco-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;background:#1b5e2f;border:2px solid #134722;border-radius:12px;padding:7px;max-width:220px}
+    .arco-zona{background:rgba(255,255,255,.17);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:14px 4px;font-family:"Barlow Condensed",sans-serif;font-size:1.1rem;font-weight:700;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .arco-zona.sel{background:rgba(255,255,255,.9);color:#1b5e2f;border-color:transparent}
+
+    /* ── JUGADORAS ── */
+    .jugadoras-scroll{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;scrollbar-width:none}.jugadoras-scroll::-webkit-scrollbar{display:none}
+    .jugadora-card{background:var(--card);border:1.5px solid var(--borde);border-radius:11px;padding:10px 9px;min-width:58px;text-align:center;cursor:pointer;transition:.1s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+    .jugadora-card.sel{background:var(--azul-800);border-color:var(--azul-800);color:#fff}
+    .jc-num{font-family:"Barlow Condensed",sans-serif;font-size:1.4rem;font-weight:700;color:var(--azul-800);line-height:1}
+    .jugadora-card.sel .jc-num{color:#fff}
+    .jc-name{font-size:.68rem;font-weight:700;color:var(--muted);margin-top:2px}
+    .jugadora-card.sel .jc-name{color:rgba(255,255,255,.8)}
+    .auto-assign-msg{background:var(--celeste-100);border-radius:10px;padding:10px 12px;font-size:.86rem;font-weight:700;color:var(--azul-800)}
 
     /* ── VALORACIÓN ── */
     .semaforo{display:flex;gap:7px;justify-content:center}
-    .sema-btn{width:50px;height:46px;border-radius:14px;border:1px solid var(--borde);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;font-family:"Barlow Condensed",sans-serif;transition:.1s;-webkit-tap-highlight-color:transparent;color:var(--muted)}
+    .sema-btn{width:50px;height:50px;border-radius:50%;border:2px solid var(--borde);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;font-family:"Barlow Condensed",sans-serif;transition:.1s;-webkit-tap-highlight-color:transparent;color:var(--muted)}
     .sema-btn:active{transform:scale(.9)}
     .sema-btn.sel[data-val="-2"]{background:#b91c1c;border-color:#b91c1c;color:#fff}
     .sema-btn.sel[data-val="-1"]{background:#d97706;border-color:#d97706;color:#fff}
@@ -58,6 +117,35 @@
     .sema-btn.sel[data-val="2"]{background:#047857;border-color:#047857;color:#fff}
     .sema-label{font-size:.7rem;color:var(--muted);text-align:center;margin-top:4px}
     .val-row{display:flex;flex-direction:column;align-items:center}
+
+    /* ── RESULTADO ── */
+    .resultado-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .res-btn{border:2px solid var(--borde);background:var(--card);color:var(--texto);border-radius:12px;padding:14px 8px;font-family:"Barlow Condensed",sans-serif;font-size:1rem;font-weight:700;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .res-btn:active{transform:scale(.95)}
+    .res-btn.sel.gol{background:#dcfce7;border-color:#16a34a;color:#15803d}
+    .res-btn.sel.atajado{background:#fee2e2;border-color:#dc2626;color:#b91c1c}
+    .res-btn.sel.afuera{background:#fef3c7;border-color:#d97706;color:#92400e}
+    .res-btn.sel.palo{background:#f1f5f9;border-color:#64748b;color:#334155}
+    .res-btn.sel.bloqueo{background:#dbeafe;border-color:#2563eb;color:#1d4ed8}
+    .arquera-val-wrap{margin-top:10px;padding:10px 12px;background:#f8fbfd;border:1px solid var(--borde);border-radius:12px}
+    .arquera-val-label{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+
+    /* ── TIEMPO ── */
+    .tiempo-row{display:flex;gap:10px;align-items:center}
+    .tiempo-input{background:var(--card);border:1.5px solid var(--borde);border-radius:10px;color:var(--texto);font-size:1.1rem;font-weight:800;padding:10px 12px;width:84px;text-align:center;-moz-appearance:textfield}
+    .tiempo-input::-webkit-outer-spin-button,.tiempo-input::-webkit-inner-spin-button{-webkit-appearance:none}
+    .tiempo-input:focus{outline:none;border-color:var(--celeste)}
+    .tiempo-hint{font-size:.8rem;color:var(--muted)}
+    .skip-tiempo-btn{border:1.5px solid var(--borde);background:transparent;color:var(--muted);border-radius:8px;padding:7px 12px;font-size:.8rem;font-weight:700;cursor:pointer}
+
+    /* ── NARRACION ── */
+    .narr-input{background:var(--card);border:1.5px solid var(--borde);border-radius:11px;color:var(--texto);font-size:.9rem;padding:10px 12px;width:100%;resize:none;line-height:1.5}.narr-input:focus{outline:none;border-color:var(--celeste)}
+
+    /* ── TOGGLE SI/NO ── */
+    .sino-btns{display:flex;gap:8px}
+    .sino-btn{flex:1;border:1.5px solid var(--borde);background:var(--card);color:var(--azul-800);border-radius:10px;padding:10px 8px;font-size:.9rem;font-weight:800;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
+    .sino-btn.sel.si{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
+    .sino-btn.sel.no{background:#f1f5f9;color:var(--muted);border-color:#94a3b8}
 
     /* ── FOOTER ── */
     .registrar-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-top:1px solid var(--borde);padding:10px 14px 16px;display:flex;gap:8px;z-index:30;max-width:640px;margin:0 auto}
@@ -77,19 +165,27 @@
     .stat-bar{height:100%;background:var(--celeste);border-radius:999px}
     .stat-nums{font-size:.82rem;color:var(--texto)}
     .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-    .stat-card{background:#f8fbfd;border:1px solid var(--borde);border-radius:14px;padding:14px;text-align:center}
+    .stat-card{background:linear-gradient(135deg,#fff 0%,#eaf7ff 100%);border:1px solid var(--borde);border-radius:14px;padding:14px;text-align:center}
     .sc-val{font-family:"Barlow Condensed",sans-serif;font-size:2rem;font-weight:700;color:var(--azul-950);line-height:1}
     .sc-label{font-size:.72rem;color:var(--muted);font-weight:800;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
 
     /* ── MODAL CAMBIO ── */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:flex-end;justify-content:center}
     .modal-overlay.open{display:flex}
-    .modal{background:var(--card);border-radius:16px 16px 0 0;padding:18px 14px 30px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:13px}
+    .modal{background:var(--card);border-radius:20px 20px 0 0;padding:18px 14px 30px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:13px}
     .modal-handle{width:36px;height:4px;background:var(--borde);border-radius:2px;margin:0 auto}
     .modal-title{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;font-weight:700;text-align:center;color:var(--azul-950)}
     .form-row{display:flex;flex-direction:column;gap:5px}.form-row label{font-size:.82rem;font-weight:800;color:#334155}
-    select,input[type=number],input[type=text]{width:100%;border:1px solid var(--borde);border-radius:12px;padding:10px 11px;color:var(--texto);background:#fff;outline:none;font-size:.94rem;font-family:inherit}
+    select,input[type=number],input[type=text]{width:100%;border:1.5px solid var(--borde);border-radius:10px;padding:9px 11px;color:var(--texto);background:#fff;outline:none;font-size:.94rem;font-family:inherit}
     select:focus,input:focus{border-color:var(--celeste)}
+    .titulares-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .titulares-section{border:1px solid var(--borde);border-radius:14px;background:#f8fbfd;padding:11px;display:grid;gap:9px}
+    .titulares-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+    .titulares-title{font-weight:800;color:var(--azul-950)}
+    .titulares-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .titular-btn{border:1.5px solid var(--borde);background:#fff;color:var(--texto);border-radius:10px;padding:8px 9px;cursor:pointer;text-align:left;font-size:.86rem;font-weight:800;line-height:1.2}
+    .titular-btn.sel{background:var(--azul-800);border-color:var(--azul-800);color:#fff}
+    .titular-num{font-family:"Barlow Condensed",sans-serif;font-size:1.05rem;margin-right:5px}
 
     /* ── TOAST ── */
     .toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:10px 18px;border-radius:10px;font-weight:800;font-size:.88rem;z-index:999;transition:opacity .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(4,120,87,.3)}
@@ -97,96 +193,12 @@
     /* ── GOL MODAL ── */
     .gol-modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:none;align-items:flex-end;justify-content:center}
     .gol-modal.open{display:flex}
-    .gol-card{background:var(--card);border-radius:16px 16px 0 0;padding:24px 16px 32px;width:100%;max-width:640px;text-align:center}
+    .gol-card{background:var(--card);border-radius:20px 20px 0 0;padding:24px 16px 32px;width:100%;max-width:640px;text-align:center}
     .gol-emoji{font-size:3rem;line-height:1;margin-bottom:8px}
     .gol-title{font-family:"Barlow Condensed",sans-serif;font-size:1.5rem;font-weight:700;color:#15803d;margin-bottom:14px}
     .gol-btns{display:flex;flex-direction:column;gap:8px}
 
-    /* ── TIEMPO (modal cambio) ── */
-    .tiempo-input{background:var(--card);border:1px solid var(--borde);border-radius:12px;color:var(--texto);font-size:1.1rem;font-weight:800;padding:10px 12px;width:84px;text-align:center;-moz-appearance:textfield}
-    .tiempo-input::-webkit-outer-spin-button,.tiempo-input::-webkit-inner-spin-button{-webkit-appearance:none}
-
-    /* ══════════════════════════════════════
-       FLUJO RÁPIDO — NUEVO
-    ══════════════════════════════════════ */
-
-    /* EQUIPO GRANDE */
-    .equipo-grande-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:16px;overflow:hidden;border:1px solid var(--borde);margin-bottom:10px;box-shadow:0 6px 18px rgba(6,23,47,.06)}
-    .equipo-grande-btn{border:0;background:#fff;color:var(--muted);padding:13px 8px;cursor:pointer;font-weight:800;font-size:1rem;font-family:"Barlow Condensed",sans-serif;letter-spacing:0;text-align:center;transition:.15s;-webkit-tap-highlight-color:transparent;line-height:1.2;width:100%}
-    .equipo-grande-btn.sel-propio{background:var(--azul-800);color:#fff}
-    .equipo-grande-btn.sel-rival{background:#c2410c;color:#fff}
-
-    /* CONTEXTO */
-    .ctx-strip{display:flex;gap:5px;overflow-x:auto;padding:10px 12px 12px;scrollbar-width:none;margin-bottom:2px}
-    .ctx-strip::-webkit-scrollbar{display:none}
-    .ctx-chip{border:1px solid var(--borde);background:var(--card);color:var(--muted);border-radius:999px;padding:7px 12px;min-height:35px;cursor:pointer;font-size:.78rem;font-weight:800;white-space:nowrap;flex-shrink:0;transition:.1s;-webkit-tap-highlight-color:transparent}
-    .ctx-chip.sel{background:var(--azul-700);color:#fff;border-color:var(--azul-700)}
-    .ctx-chip[data-ctx="penal_6"],.ctx-chip[data-ctx="penal_8"]{color:#b45309;border-color:#d97706}
-    .ctx-chip[data-ctx="penal_6"].sel,.ctx-chip[data-ctx="penal_8"].sel{background:#b45309;border-color:#b45309;color:#fff}
-
-    /* JUGADORAS STRIP */
-    .jugadoras-strip{display:flex;gap:7px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none;min-height:74px}
-    .jugadoras-strip::-webkit-scrollbar{display:none}
-
-    /* ACCIONES */
-    .acc-strip{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px}
-    .acc-btn{border:1px solid var(--borde);background:var(--card);color:var(--azul-800);border-radius:999px;padding:8px 11px;min-height:35px;cursor:pointer;font-size:.82rem;font-weight:800;display:flex;align-items:center;gap:5px;transition:.1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;white-space:nowrap}
-    .acc-btn span{font-size:14px;line-height:1}
-    .acc-btn.sel{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
-    .acc-btn.acc-warn.sel{background:#92400e;border-color:#92400e}
-    .acc-btn.acc-ok.sel{background:var(--ok);border-color:var(--ok)}
-    .acc-btn.acc-danger.sel{background:var(--danger);border-color:var(--danger)}
-
-    /* SECCIONES */
-    .reg-sec{margin-bottom:10px}
-    .reg-sec-label{font-size:.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-
-    /* CANCHA TERCIOS */
-    .cancha-tercios{display:flex;align-items:stretch;background:#1b5e2f;border:1px solid #134722;border-radius:14px;padding:5px;gap:3px;height:128px}
-    .arco-el{width:9px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.38);border-radius:3px;flex-shrink:0;align-self:center;height:46%}
-    .tercio-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:3px}
-    .tercio-sep{width:2px;background:rgba(255,255,255,.3);flex-shrink:0;margin:2px 0;border-radius:1px}
-    .zona-t{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:4px;cursor:pointer;transition:.1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-    .zona-t.sel,.zona-t:active{background:rgba(255,255,255,.82)}
-
-    /* EXTRAS */
-    .res-tiro-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px}
-    .res-tiro-btn{border:1px solid var(--borde);background:var(--card);color:var(--texto);border-radius:14px;padding:13px 6px;font-weight:800;font-size:.9rem;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
-    .res-tiro-btn.sel-gol{background:#dcfce7;border-color:#16a34a;color:#15803d}
-    .res-tiro-btn.sel-atajada{background:#fee2e2;border-color:#dc2626;color:#b91c1c}
-    .res-tiro-btn.sel-afuera{background:#fef3c7;border-color:#d97706;color:#92400e}
-    .res-tiro-btn.sel-palo{background:#f1f5f9;border-color:#64748b;color:#334155}
-    .tipo-tarjeta-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
-    .tipo-tarjeta-btn{border:1px solid var(--borde);background:var(--card);border-radius:14px;padding:14px 8px;font-weight:800;font-size:.95rem;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
-    .tipo-tarjeta-btn.sel-am{background:#fef3c7;border-color:#d97706;color:#92400e}
-    .tipo-tarjeta-btn.sel-roja{background:#fee2e2;border-color:#dc2626;color:#b91c1c}
-    .sino-rapido{display:flex;gap:8px;margin-top:4px}
-    .sino-r{flex:1;border:1px solid var(--borde);background:var(--card);color:var(--azul-800);border-radius:14px;padding:11px 8px;font-size:.9rem;font-weight:800;cursor:pointer;text-align:center;transition:.1s;-webkit-tap-highlight-color:transparent}
-    .sino-r.sel-si{background:var(--azul-800);color:#fff;border-color:var(--azul-800)}
-    .sino-r.sel-no{background:#f1f5f9;color:var(--muted);border-color:#94a3b8}
-    .falta-box{background:#f8fbfd;border:1px solid var(--borde);border-radius:12px;padding:10px 12px;margin-top:8px}
-    .falta-num-big{font-family:"Barlow Condensed",sans-serif;font-size:1.8rem;font-weight:700;color:var(--azul-950);line-height:1;margin-bottom:3px}
-    .falta-banner{padding:8px 12px;border-radius:10px;font-weight:800;font-size:.86rem;margin-top:8px;line-height:1.3}
-    .falta-banner.av3{background:#fef3c7;color:#92400e}
-    .falta-banner.av4{background:#fee2e2;color:#991b1b}
-    .falta-banner.penal{background:#b91c1c;color:#fff}
-    .arquera-semi-wrap{margin-top:10px;padding:10px 12px;background:#f8fbfd;border:1px solid var(--borde);border-radius:12px}
-    .arquera-semi-label{font-size:.76rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
-
-    /* MINUTO */
-    .minuto-row{display:flex;gap:10px;align-items:center;margin-top:4px}
-    .minuto-input{background:var(--card);border:1px solid var(--borde);border-radius:12px;color:var(--texto);font-size:1.1rem;font-weight:800;padding:10px 12px;width:84px;text-align:center;-moz-appearance:textfield}
-    .minuto-input::-webkit-outer-spin-button,.minuto-input::-webkit-inner-spin-button{-webkit-appearance:none}
-    .minuto-input:focus{outline:none;border-color:var(--celeste)}
-    .skip-min-btn{border:1px solid var(--borde);background:#fff;color:var(--muted);border-radius:999px;padding:7px 12px;font-size:.8rem;font-weight:700;cursor:pointer}
-    .secondary-toggle{border:1px solid var(--borde);border-radius:16px;background:#fbfdff;margin-bottom:10px;overflow:hidden}
-    .secondary-toggle>summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;color:var(--azul-800);display:flex;justify-content:space-between;align-items:center}
-    .secondary-toggle>summary::-webkit-details-marker{display:none}
-    .secondary-toggle>summary::after{content:"Desplegar";font-size:.72rem;color:var(--muted)}
-    .secondary-toggle[open]>summary{border-bottom:1px solid var(--borde)}
-    .secondary-toggle[open]>summary::after{content:"Ocultar"}
-
-    @media(max-width:500px){main{padding:10px 12px 96px}.topbar-inner,.match-bar,.tabs,.registrar-footer{padding-left:12px;padding-right:12px}}
+    @media(max-width:500px){main{padding:10px 12px 96px}.paso-inner{padding:0 12px 13px}.topbar-inner,.match-bar,.tabs,.registrar-footer{padding-left:12px;padding-right:12px}}
   </style>
 </head>
 <body>
@@ -221,102 +233,287 @@
     <!-- ═══ TAB: REGISTRAR ═══ -->
     <section id="registrarView" class="app-section">
 
-      <!-- 1. EQUIPO -->
-      <div class="equipo-grande-wrap">
-        <button id="btnEquipoPropio" class="equipo-grande-btn sel-propio" onclick="selEquipoActivo('propio')">
-          <span id="labelEquipoPropio">Las Murciélagas</span>
-        </button>
-        <button id="btnEquipoRival" class="equipo-grande-btn" onclick="selEquipoActivo('rival')">
-          <span id="labelEquipoRival">Rival</span>
-        </button>
+      <div class="modo-toggle">
+        <button class="modo-btn active" id="modoRapidoBtn">⚡ Modo rápido</button>
+        <button class="modo-btn" id="modoLentoBtn">🔍 Análisis</button>
+      </div>
+      <div class="btn-row" style="margin:0 0 12px">
+        <button class="btn secondary small" type="button" onclick="openModalTitulares(true)">Titulares / en cancha</button>
       </div>
 
-      <!-- 2. CONTEXTO -->
-      <details class="secondary-toggle">
-        <summary>Contexto de jugada</summary>
-        <div class="ctx-strip">
-          <button class="ctx-chip" data-ctx="corner" onclick="selContextoActivo('corner',this)">Córner</button>
-          <button class="ctx-chip" data-ctx="tiro_libre" onclick="selContextoActivo('tiro_libre',this)">T. libre</button>
-          <button class="ctx-chip" data-ctx="penal_6" onclick="selContextoActivo('penal_6',this)">Penal 6m</button>
-          <button class="ctx-chip" data-ctx="penal_8" onclick="selContextoActivo('penal_8',this)">Penal 8m</button>
-        </div>
-      </details>
+      <div class="pasos" id="pasos">
 
-      <!-- 3. JUGADORAS -->
-      <div class="reg-sec">
-        <div class="reg-sec-label">Jugadora</div>
-        <div class="jugadoras-strip" id="jugadorasStrip"></div>
-      </div>
-
-      <!-- 4. ACCIONES -->
-      <div class="reg-sec">
-        <div class="reg-sec-label">Acción</div>
-        <div class="acc-strip">
-          <button class="acc-btn" onclick="selAccionRapido('Tiro',this)"><span>🎯</span>Tiro</button>
-          <button class="acc-btn" onclick="selAccionRapido('Aproximación',this)"><span>⚡</span>Aprox.</button>
-          <button class="acc-btn" onclick="selAccionRapido('Regate',this)"><span>💨</span>Regate</button>
-          <button class="acc-btn" onclick="selAccionRapido('Recepción',this)"><span>🤲</span>Recep.</button>
-          <button class="acc-btn" onclick="selAccionRapido('Recuperación',this)"><span>🛡️</span>Recup.</button>
-          <button class="acc-btn" onclick="selAccionRapido('Entrada',this)"><span>💪</span>Entrada</button>
-          <button class="acc-btn acc-danger" onclick="selAccionRapido('Pérdida',this)"><span>❌</span>Pérdida</button>
-          <button class="acc-btn acc-warn" onclick="selAccionRapido('Falta',this)"><span>⚠️</span>Falta</button>
-          <button class="acc-btn acc-warn" onclick="selAccionRapido('Tarjeta',this)"><span>🟨</span>Tarjeta</button>
-          <button class="acc-btn acc-ok" onclick="selAccionRapido('Saque',this)"><span>🧤</span>Saque</button>
-          <button class="acc-btn" onclick="selAccionRapido('Pase relevante',this)"><span>➡️</span>Pase rel.</button>
-          <button class="acc-btn acc-ok" onclick="selAccionRapido('Asistencia',this)"><span>🤝</span>Asist.</button>
-        </div>
-      </div>
-
-      <!-- 5. ZONA -->
-      <div class="reg-sec" id="secZona" style="display:none">
-        <div class="reg-sec-label">Zona</div>
-        <div class="cancha-tercios" id="canchaGrid"></div>
-      </div>
-
-      <!-- 6. CALIDAD -->
-      <div class="reg-sec" id="secCalidad" style="display:none">
-        <div class="reg-sec-label">Calidad de ejecución</div>
-        <div class="semaforo" id="semaforoRapido">
-          <div class="val-row"><button class="sema-btn" data-val="-2" onclick="selCalidadRapido(-2,this)">−−</button><div class="sema-label">Muy mal</div></div>
-          <div class="val-row"><button class="sema-btn" data-val="-1" onclick="selCalidadRapido(-1,this)">−</button><div class="sema-label">Mal</div></div>
-          <div class="val-row"><button class="sema-btn" data-val="0" onclick="selCalidadRapido(0,this)">/</button><div class="sema-label">Normal</div></div>
-          <div class="val-row"><button class="sema-btn" data-val="1" onclick="selCalidadRapido(1,this)">+</button><div class="sema-label">Bien</div></div>
-          <div class="val-row"><button class="sema-btn" data-val="2" onclick="selCalidadRapido(2,this)">++</button><div class="sema-label">Excelente</div></div>
-        </div>
-      </div>
-
-      <!-- 7. EXTRAS (resultado tiro / falta / tarjeta) -->
-      <div class="reg-sec" id="secExtras" style="display:none"></div>
-
-      <!-- 8. MINUTO -->
-      <div class="reg-sec" id="secMinuto" style="display:none">
-        <div class="reg-sec-label">Minuto (opcional)</div>
-        <div class="minuto-row">
-          <input class="minuto-input" type="number" min="0" max="40" placeholder="0" id="inputMinuto" oninput="onMinutoInput()">
-          <span style="font-size:.8rem;color:var(--muted)">min · 2 tiempos de 20'</span>
-          <button class="skip-min-btn" onclick="skipMinuto()">Sin minuto →</button>
-        </div>
-      </div>
-
-      <!-- 9. TITULARES (colapsado al fondo) -->
-      <div class="panel" id="titularesPanel" style="margin-top:8px">
-        <div class="panel-head" style="cursor:pointer" onclick="toggleTitulares()">
-          <h2>Titulares</h2>
-          <span id="titularesResumen" class="badge info">No definidos</span>
-        </div>
-        <div id="titularesBody" class="hidden">
-          <div class="panel-body">
-            <div id="titularesPropio">
-              <div class="team-label-sm" id="titularesLabelPropio">Las Murciélagas</div>
-              <div class="titulares-wrap" id="titularesGridPropio"></div>
+        <!-- PASO 1: EQUIPO -->
+        <div class="paso activo" id="paso-equipo">
+          <div class="paso-header" onclick="togglePaso('equipo')">
+            <div class="paso-num">1</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Equipo</div>
+              <div class="paso-sel" id="sel-equipo">Propio o rival</div>
             </div>
-            <div id="titularesRivalSection" class="hidden" style="margin-top:12px">
-              <div class="team-label-sm" id="titularesLabelRival">Rival</div>
-              <div class="titulares-wrap" id="titularesGridRival"></div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="equipo-btns">
+                <button class="equipo-btn" data-eq="propio" onclick="selEquipo('propio',this)">Las Murciélagas</button>
+                <button class="equipo-btn" data-eq="rival" onclick="selEquipo('rival',this)" id="equipoRivalBtn">Rival</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- PASO 2: CONTEXTO -->
+        <div class="paso bloqueado" id="paso-contexto">
+          <div class="paso-header" onclick="togglePaso('contexto')">
+            <div class="paso-num">2</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Contexto de la jugada</div>
+              <div class="paso-sel" id="sel-contexto">¿Cómo se originó?</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="contexto-btns">
+                <button class="contexto-btn" data-ctx="juego_libre" onclick="selContexto('juego_libre',this)">Juego libre</button>
+                <button class="contexto-btn" data-ctx="corner" onclick="selContexto('corner',this)">Córner</button>
+                <button class="contexto-btn" data-ctx="tiro_libre" onclick="selContexto('tiro_libre',this)">Tiro libre</button>
+                <button class="contexto-btn" data-ctx="penal" onclick="selContexto('penal',this)">Penal</button>
+                <button class="contexto-btn" data-ctx="doble_penal" onclick="selContexto('doble_penal',this)">Doble penal / 8m</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 3: ACCIÓN -->
+        <div class="paso bloqueado" id="paso-accion">
+          <div class="paso-header" onclick="togglePaso('accion')">
+            <div class="paso-num">3</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Acción</div>
+              <div class="paso-sel" id="sel-accion">¿Qué ocurrió?</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="acciones-grid" id="accionesGrid">
+                <button class="accion-btn" data-accion="Tiro" onclick="selAccion('Tiro',this)"><span class="accion-icon">🎯</span>Tiro</button>
+                <button class="accion-btn" data-accion="Aproximación" onclick="selAccion('Aproximación',this)"><span class="accion-icon">⚡</span>Aprox.</button>
+                <button class="accion-btn" data-accion="Regate" onclick="selAccion('Regate',this)"><span class="accion-icon">💨</span>Regate</button>
+                <button class="accion-btn" data-accion="Recepción" onclick="selAccion('Recepción',this)"><span class="accion-icon">🤲</span>Recepción</button>
+                <button class="accion-btn" data-accion="Recuperación" onclick="selAccion('Recuperación',this)"><span class="accion-icon">🛡️</span>Recup.</button>
+                <button class="accion-btn" data-accion="Entrada" onclick="selAccion('Entrada',this)"><span class="accion-icon">💪</span>Entrada</button>
+                <button class="accion-btn danger" data-accion="Pérdida" onclick="selAccion('Pérdida',this)"><span class="accion-icon">❌</span>Pérdida</button>
+                <button class="accion-btn warn" data-accion="Falta" onclick="selAccion('Falta',this)"><span class="accion-icon">⚠️</span>Falta</button>
+                <button class="accion-btn warn" data-accion="Tarjeta" onclick="selAccion('Tarjeta',this)"><span class="accion-icon">🟨</span>Tarjeta</button>
+                <button class="accion-btn ok" data-accion="Saque" onclick="selAccion('Saque',this)" id="btnSaque"><span class="accion-icon">🧤</span>Saque</button>
+                <button class="accion-btn ok" data-accion="Atajada de arquera" onclick="selAccion('Atajada de arquera',this)"><span class="accion-icon">🧤</span>Atajada</button>
+                <button class="accion-btn hidden" data-accion="Pase relevante" onclick="selAccion('Pase relevante',this)" id="btnPaseRapido"><span class="accion-icon">➡️</span>Pase rel.</button>
+                <button class="accion-btn hidden" data-accion="Pase" onclick="selAccion('Pase',this)" id="btnPaseLento"><span class="accion-icon">➡️</span>Pase</button>
+                <button class="accion-btn ok disabled-btn" data-accion="Asistencia" onclick="selAccion('Asistencia',this)" id="btnAsistencia"><span class="accion-icon">🤝</span>Asistencia</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 4: ZONA -->
+        <div class="paso bloqueado" id="paso-zona">
+          <div class="paso-header" onclick="togglePaso('zona')">
+            <div class="paso-num">4</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Zona</div>
+              <div class="paso-sel" id="sel-zona">¿Dónde ocurrió?</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div id="zonaCancha">
+                <div class="cancha-labels">
+                  <span class="cancha-label-txt">Defensa</span>
+                  <span class="cancha-label-txt">Medio</span>
+                  <span class="cancha-label-txt">Ataque</span>
+                </div>
+                <div class="cancha-grid" id="canchaGrid"></div>
+                <div class="cancha-hint">Tocá la zona de la cancha</div>
+              </div>
+              <div id="zonaArco" class="hidden">
+                <div class="arco-grid" id="arcoGrid">
+                  <button class="arco-zona" data-zona="arco-1" onclick="selZona('arco-1',this)">1</button>
+                  <button class="arco-zona" data-zona="arco-2" onclick="selZona('arco-2',this)">2</button>
+                  <button class="arco-zona" data-zona="arco-3" onclick="selZona('arco-3',this)">3</button>
+                  <button class="arco-zona" data-zona="arco-4" onclick="selZona('arco-4',this)">4</button>
+                  <button class="arco-zona" data-zona="arco-5" onclick="selZona('arco-5',this)">5</button>
+                  <button class="arco-zona" data-zona="arco-6" onclick="selZona('arco-6',this)">6</button>
+                  <button class="arco-zona" data-zona="arco-7" onclick="selZona('arco-7',this)">7</button>
+                  <button class="arco-zona" data-zona="arco-8" onclick="selZona('arco-8',this)">8</button>
+                  <button class="arco-zona" data-zona="arco-9" onclick="selZona('arco-9',this)">9</button>
+                </div>
+                <div class="cancha-hint">1–3 arriba · 4–6 medio · 7–9 abajo (vista del tirador)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 5: JUGADORA -->
+        <div class="paso bloqueado" id="paso-jugadora">
+          <div class="paso-header" onclick="togglePaso('jugadora')">
+            <div class="paso-num">5</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Jugadora</div>
+              <div class="paso-sel" id="sel-jugadora">¿Quién ejecutó?</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner" id="jugadoraBody">
+              <div class="jugadoras-scroll" id="jugadorasScroll"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 6: VALORACIÓN -->
+        <div class="paso bloqueado" id="paso-valoracion">
+          <div class="paso-header" onclick="togglePaso('valoracion')">
+            <div class="paso-num">6</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Calidad de ejecución</div>
+              <div class="paso-sel" id="sel-valoracion">¿Cómo salió?</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="semaforo" id="semaforoVal">
+                <div class="val-row"><button class="sema-btn" data-val="-2" onclick="selVal('-2',this)">−−</button><div class="sema-label">Muy mal</div></div>
+                <div class="val-row"><button class="sema-btn" data-val="-1" onclick="selVal('-1',this)">−</button><div class="sema-label">Mal</div></div>
+                <div class="val-row"><button class="sema-btn" data-val="0" onclick="selVal('0',this)">/</button><div class="sema-label">Normal</div></div>
+                <div class="val-row"><button class="sema-btn" data-val="1" onclick="selVal('1',this)">+</button><div class="sema-label">Bien</div></div>
+                <div class="val-row"><button class="sema-btn" data-val="2" onclick="selVal('2',this)">++</button><div class="sema-label">Excelente</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 7: RESULTADO (solo Tiro) -->
+        <div class="paso bloqueado hidden" id="paso-resultado">
+          <div class="paso-header" onclick="togglePaso('resultado')">
+            <div class="paso-num">7</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Resultado del tiro</div>
+              <div class="paso-sel" id="sel-resultado">¿Qué pasó?</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="resultado-grid">
+                <button class="res-btn gol" data-res="gol" onclick="selResultado('gol',this)">⚽ Gol</button>
+                <button class="res-btn atajado" data-res="atajado" onclick="selResultado('atajado',this)">🧤 Atajado</button>
+                <button class="res-btn afuera" data-res="afuera" onclick="selResultado('afuera',this)">↗ Afuera</button>
+                <button class="res-btn palo" data-res="palo" onclick="selResultado('palo',this)">| Palo</button>
+                <button class="res-btn bloqueo" data-res="bloqueo" onclick="selResultado('bloqueo',this)">▣ Bloqueo</button>
+              </div>
+              <div id="arqueraValWrap" class="arquera-val-wrap hidden">
+                <div class="arquera-val-label">Respuesta de la arquera</div>
+                <div class="semaforo" id="semaforoArquera">
+                  <div class="val-row"><button class="sema-btn" data-val="-2" onclick="selArqueraVal('-2',this)">−−</button><div class="sema-label">Muy mal</div></div>
+                  <div class="val-row"><button class="sema-btn" data-val="-1" onclick="selArqueraVal('-1',this)">−</button><div class="sema-label">Mal</div></div>
+                  <div class="val-row"><button class="sema-btn" data-val="0" onclick="selArqueraVal('0',this)">/</button><div class="sema-label">Normal</div></div>
+                  <div class="val-row"><button class="sema-btn" data-val="1" onclick="selArqueraVal('1',this)">+</button><div class="sema-label">Bien</div></div>
+                  <div class="val-row"><button class="sema-btn" data-val="2" onclick="selArqueraVal('2',this)">++</button><div class="sema-label">Excelente</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 8: TIEMPO -->
+        <div class="paso bloqueado" id="paso-tiempo">
+          <div class="paso-header" onclick="togglePaso('tiempo')">
+            <div class="paso-num" id="numTiempo">8</div>
+            <div class="paso-info">
+              <div class="paso-titulo" id="tituloTiempo">Tiempo</div>
+              <div class="paso-sel" id="sel-tiempo">Minuto de la acción (opcional)</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="tiempo-row">
+                <input class="tiempo-input" type="number" min="0" max="40" placeholder="0" id="inputTiempo" oninput="onTiempoInput()">
+                <span class="tiempo-hint">minuto · 2 tiempos de 20' netos</span>
+              </div>
+              <div style="margin-top:8px">
+                <button class="skip-tiempo-btn" onclick="skipTiempo()">Sin minuto →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 9 (lento): JUGADORA ANTERIOR -->
+        <div class="paso bloqueado hidden" id="paso-jugadora-ant">
+          <div class="paso-header" onclick="togglePaso('jugadora-ant')">
+            <div class="paso-num" id="numJugAnt">9</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Jugadora anterior</div>
+              <div class="paso-sel" id="sel-jugadora-ant">¿Quién habilitó? (opcional)</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="jugadoras-scroll" id="jugadorasAntScroll"></div>
+              <div style="margin-top:8px">
+                <button class="skip-tiempo-btn" onclick="skipJugAnt()">Sin jugadora anterior →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 10 (lento, solo Pase): RELEVANCIA -->
+        <div class="paso bloqueado hidden" id="paso-pase-rel">
+          <div class="paso-header" onclick="togglePaso('pase-rel')">
+            <div class="paso-num" id="numPaseRel">10</div>
+            <div class="paso-info">
+              <div class="paso-titulo">¿Fue un pase relevante?</div>
+              <div class="paso-sel" id="sel-pase-rel">Sí o No</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <div class="sino-btns">
+                <button class="sino-btn si" data-val="true" onclick="selPaseRel(true,this)">Sí, fue relevante</button>
+                <button class="sino-btn no" data-val="false" onclick="selPaseRel(false,this)">No</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASO 11 (lento): NARRACIÓN -->
+        <div class="paso bloqueado hidden" id="paso-narracion">
+          <div class="paso-header" onclick="togglePaso('narracion')">
+            <div class="paso-num" id="numNarr">11</div>
+            <div class="paso-info">
+              <div class="paso-titulo">Narración</div>
+              <div class="paso-sel" id="sel-narracion">Describí la jugada (opcional)</div>
+            </div>
+            <div class="paso-chevron">▾</div>
+          </div>
+          <div class="paso-body">
+            <div class="paso-inner">
+              <textarea class="narr-input" rows="3" id="inputNarracion" placeholder="Contexto, decisión, resultado táctico..." oninput="onNarracion(this)"></textarea>
+              <div style="margin-top:8px">
+                <button class="skip-tiempo-btn" onclick="skipNarracion()">Sin narración → Registrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /pasos -->
 
     </section>
 
@@ -356,7 +553,23 @@
   <!-- Footer registrar -->
   <div class="registrar-footer" id="registrarFooter">
     <button class="btn ghost" style="flex:0 0 auto;padding:10px 12px" onclick="openModalCambio()" title="Registrar cambio">↕ Cambio</button>
-    <button class="btn" style="flex:1" id="btnRegistrar" disabled onclick="registrarAccion()">Registrar acción</button>
+    <button class="btn secondary" style="flex:1" id="btnRegistrarSeguir" disabled onclick="registrarAccion({continuar:true})">Registrar y seguir</button>
+    <button class="btn" style="flex:1" id="btnRegistrar" disabled onclick="registrarAccion()">Registrar</button>
+  </div>
+
+  <!-- Modal: Titulares -->
+  <div class="modal-overlay" id="modalTitulares">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Titulares / en cancha</div>
+      <div id="titularesContent" style="display:grid;gap:11px"></div>
+      <div class="titulares-actions">
+        <button class="btn" type="button" onclick="guardarTitulares()">Guardar titulares</button>
+        <button class="btn secondary" type="button" onclick="usarTodoElPlantelEnCancha()">Usar todo el plantel</button>
+        <button class="btn ghost" type="button" onclick="closeModalTitulares()">Cancelar</button>
+      </div>
+      <div id="titularesStatus" class="status-line"></div>
+    </div>
   </div>
 
   <!-- Modal: Cambio de jugadora -->
@@ -364,6 +577,13 @@
     <div class="modal">
       <div class="modal-handle"></div>
       <div class="modal-title">↕ Cambio / posición / sistema</div>
+      <div class="form-row">
+        <label for="camEquipo">Equipo</label>
+        <select id="camEquipo" onchange="buildCambioSelects()">
+          <option value="propio">Propio</option>
+          <option value="rival">Rival</option>
+        </select>
+      </div>
       <div class="form-row">
         <label for="camTipo">Tipo de cambio</label>
         <select id="camTipo" onchange="onCambioTipoChange()">
@@ -422,574 +642,1121 @@
 
   <script src="../../../assets/config.js?v=20260614"></script>
   <script>
-const API_URL=API_BASE_URL;
-const apiGet=(a,p={})=>Murci.apiGet(a,p,API_URL);
-const apiPost=(p)=>Murci.apiPost(p,API_URL);
+    const API_URL = API_BASE_URL;
+    const apiGet  = (a, p={}) => Murci.apiGet(a, p, API_URL);
+    const apiPost = (p)       => Murci.apiPost(p, API_URL);
 
-const ZONA_LABELS={'i1':'Def. Izq.','i2':'D-M Izq.','i3':'Med. Izq.','i4':'M-A Izq.','i5':'Atq. Izq.','i6':'Área Izq.','c1':'Def. Centro','c2':'D-M Centro','c3':'Med. Centro','c4':'M-A Centro','c5':'Atq. Centro','c6':'Área Centro','d1':'Def. Der.','d2':'D-M Der.','d3':'Med. Der.','d4':'M-A Der.','d5':'Atq. Der.','d6':'Área Der.','arco-1':'Arco 1 (arr-izq)','arco-2':'Arco 2 (arr-cen)','arco-3':'Arco 3 (arr-der)','arco-4':'Arco 4 (med-izq)','arco-5':'Arco 5 (med-cen)','arco-6':'Arco 6 (med-der)','arco-7':'Arco 7 (ab-izq)','arco-8':'Arco 8 (ab-cen)','arco-9':'Arco 9 (ab-der)','D-Izq':'Def. Izq.','D-CIzq':'Def. C-Izq.','D-Cen':'Def. Cen.','D-CDer':'Def. C-Der.','D-Der':'Def. Der.','M-Izq':'Med. Izq.','M-CIzq':'Med. C-Izq.','M-Cen':'Med. Cen.','M-CDer':'Med. C-Der.','M-Der':'Med. Der.','A-Izq':'Atq. Izq.','A-CIzq':'Atq. C-Izq.','A-Cen':'Atq. Cen.','A-CDer':'Atq. C-Der.','A-Der':'Atq. Der.'};
-const VAL_LABELS={'-2':'−−','-1':'−','0':'/','1':'+','2':'++'};
-const VAL_CLASS={'-2':'val-mm','-1':'val-m','0':'val-n','1':'val-p','2':'val-pp'};
+    // ── Cancha 5×3 ──
+    const ZONAS_CANCHA = [
+      'D-Izq','D-CIzq','D-Cen','D-CDer','D-Der',
+      'M-Izq','M-CIzq','M-Cen','M-CDer','M-Der',
+      'A-Izq','A-CIzq','A-Cen','A-CDer','A-Der'
+    ];
 
-const state={
-  partidoId:null,partido:null,plantel:[],rivalPlantel:[],localPlantel:[],visitantePlantel:[],
-  acciones:[],titulares:{propio:[],rival:[]},
-  equipoActivo:'propio',jugadoraId:null,jugadoraNombre:null,
-  contexto:'juego_libre',accion:null,zona:null,calidad:null,
-  resultado:null,arqueraCalidad:null,asistenciaId:null,asistenciaCalidad:null,
-  esFaltaAcumulativa:null,tipoTarjeta:null,minuto:null,
-  faltasPropio:0,faltasRival:0,
-  golesPropios:0,golesRival:0,
-  asistenciaHabilitada:false,modoLento:false
-};
+    // ── Labels ──
+    const ZONA_LABELS = {
+      'D-Izq':'Def. Izq.','D-CIzq':'Def. Cizq.','D-Cen':'Def. Cen.','D-CDer':'Def. Cder.','D-Der':'Def. Der.',
+      'M-Izq':'Med. Izq.','M-CIzq':'Med. Cizq.','M-Cen':'Med. Cen.','M-CDer':'Med. Cder.','M-Der':'Med. Der.',
+      'A-Izq':'Ata. Izq.','A-CIzq':'Ata. Cizq.','A-Cen':'Ata. Cen.','A-CDer':'Ata. Cder.','A-Der':'Ata. Der.',
+      'arco-1':'Arco 1 (arr-izq)','arco-2':'Arco 2 (arr-cen)','arco-3':'Arco 3 (arr-der)',
+      'arco-4':'Arco 4 (med-izq)','arco-5':'Arco 5 (med-cen)','arco-6':'Arco 6 (med-der)',
+      'arco-7':'Arco 7 (ab-izq)','arco-8':'Arco 8 (ab-cen)','arco-9':'Arco 9 (ab-der)'
+    };
 
-document.addEventListener('DOMContentLoaded',()=>{
-  const params=new URLSearchParams(location.search);
-  state.partidoId=params.get('partido_id')||'';
-  if(!state.partidoId){document.getElementById('matchRival').textContent='Partido no especificado';return;}
-  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.dataset.view)));
-  buildCanchaConTercios();
-  buildCambioSelects();
-  loadAll();
-});
+    const VAL_LABELS = {'-2':'−−','-1':'−','0':'/','1':'+','2':'++'};
+    const VAL_CLASS  = {'-2':'val-mm','-1':'val-m','0':'val-n','1':'val-p','2':'val-pp'};
 
-async function loadAll(){
-  document.getElementById('appView').classList.add('loading');
-  try{
-    const[plantelRes,partidoRes,accionesRes]=await Promise.allSettled([
-      obtenerPlantel(),
-      apiGet('partidos_getDetalle',{id:state.partidoId}),
-      apiGet('partidos_getAcciones',{partido_id:state.partidoId})
-    ]);
-    state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
-    if(partidoRes.status==='fulfilled'){
-      state.partido=partidoRes.value;
-      state.rivalPlantel=Array.isArray(state.partido.rival_plantel)?state.partido.rival_plantel:[];
-      state.localPlantel=Array.isArray(state.partido.equipo_local_plantel)?state.partido.equipo_local_plantel:[];
-      state.visitantePlantel=Array.isArray(state.partido.equipo_visitante_plantel)?state.partido.equipo_visitante_plantel:[];
-      renderMatchBar();
+    // ── Estado ──
+    const state = {
+      partidoId: null,
+      partido: null,
+      plantel: [],
+      rivalPlantel: [],
+      localPlantel: [],
+      visitantePlantel: [],
+      acciones: [],
+      modoLento: false,
+      cancha: { propio: [], rival: [] },
+      canchaConfigurada: false,
+      titularesDraft: { propio: [], rival: [] },
+      secuenciaActual: null,
+      // Selección actual
+      equipo: null,
+      contexto: null,
+      accion: null,
+      zona: null,
+      jugadoraId: null,
+      valoracion: null,
+      resultado: null,
+      arqueraValoracion: null,
+      tiempoNeto: null,
+      jugadoraAnteriorId: null,
+      esPaseRelevante: null,
+      narracion: null,
+      // Tracking
+      golesPropios: 0,
+      golesRival: 0,
+      asistenciaHabilitada: false
+    };
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(location.search);
+      state.partidoId = params.get('partido_id') || '';
+      if (!state.partidoId) {
+        document.getElementById('matchRival').textContent = 'Partido no especificado';
+        return;
+      }
+      document.querySelectorAll('.tab-btn').forEach(btn =>
+        btn.addEventListener('click', () => showTab(btn.dataset.view))
+      );
+      document.getElementById('modoRapidoBtn').addEventListener('click', () => setModo(false));
+      document.getElementById('modoLentoBtn').addEventListener('click', () => setModo(true));
+      buildCanchaGrid();
+      buildCambioSelects();
+      loadAll();
+    });
+
+    async function loadAll() {
+      document.getElementById('appView').classList.add('loading');
+      try {
+        const [plantelRes, partidoRes, accionesRes] = await Promise.allSettled([
+          obtenerPlantel(),
+          apiGet('partidos_getDetalle', { id: state.partidoId }),
+          apiGet('partidos_getAcciones', { partido_id: state.partidoId })
+        ]);
+        state.plantel = plantelRes.status === 'fulfilled' && Array.isArray(plantelRes.value) ? plantelRes.value : [];
+        if (partidoRes.status === 'fulfilled') {
+          state.partido = partidoRes.value;
+          state.rivalPlantel = Array.isArray(state.partido.rival_plantel) ? state.partido.rival_plantel : [];
+          state.localPlantel = Array.isArray(state.partido.equipo_local_plantel) ? state.partido.equipo_local_plantel : [];
+          state.visitantePlantel = Array.isArray(state.partido.equipo_visitante_plantel) ? state.partido.equipo_visitante_plantel : [];
+          cargarEstadoCancha();
+          renderMatchBar();
+        }
+        if (accionesRes.status === 'fulfilled' && Array.isArray(accionesRes.value)) {
+          state.acciones = accionesRes.value;
+          recalcScore();
+        }
+        renderHistorial();
+        renderStats();
+        buildCambioSelects();
+        // Iniciar flujo
+        resetFlujo();
+        if (!state.canchaConfigurada) setTimeout(() => openModalTitulares(false), 250);
+      } catch(e) {
+        alert('Error al cargar: ' + e.message);
+      } finally {
+        document.getElementById('appView').classList.remove('loading');
+      }
     }
-    if(accionesRes.status==='fulfilled'&&Array.isArray(accionesRes.value)){
-      state.acciones=accionesRes.value;
-      recalcScore();
-      // Reconstruir contadores de faltas desde el historial
-      state.faltasPropio=state.acciones.filter(a=>a.equipo==='propio'&&a.accion==='Falta'&&a.es_falta_acumulativa).length;
-      state.faltasRival=state.acciones.filter(a=>a.equipo==='rival'&&a.accion==='Falta'&&a.es_falta_acumulativa).length;
+
+    function renderMatchBar() {
+      const p = state.partido;
+      if (!p) return;
+      const dual = p.incluye_murcielagas === false || String(p.tipo_partido || '').trim() === 'interno';
+      const local = dual ? (p.equipo_local_nombre || 'Local') : 'Las Murciélagas';
+      const rival = dual ? (p.equipo_visitante_nombre || 'Visitante') : (p.rival || 'Rival');
+      document.getElementById('matchRival').textContent = dual ? `${esc(local)} vs ${esc(rival)}` : 'vs ' + esc(rival);
+      document.getElementById('matchMeta').textContent = [p.fecha ? formatDate(p.fecha) : '', p.tipo || ''].filter(Boolean).join(' · ');
+      document.querySelector('.equipo-btn[data-eq="propio"]').textContent = esc(local);
+      document.getElementById('equipoRivalBtn').textContent = esc(rival);
+      const camEquipo = document.getElementById('camEquipo');
+      if (camEquipo) {
+        camEquipo.options[0].textContent = local;
+        camEquipo.options[1].textContent = rival;
+      }
+      document.getElementById('brandTitle').textContent = dual ? esc(local + ' vs ' + rival) : esc('vs ' + rival);
+      renderScore();
     }
-    renderHistorial();
-    renderStats();
-    buildCambioSelects();
-    renderTitulares();
-    resetFlujo();
-  }catch(e){alert('Error al cargar: '+e.message);}
-  finally{document.getElementById('appView').classList.remove('loading');}
-}
 
-function renderMatchBar(){
-  const p=state.partido;if(!p)return;
-  const dual=p.incluye_murcielagas===false||String(p.tipo_partido||'').trim()==='interno';
-  const local=dual?(p.equipo_local_nombre||'Local'):'Las Murciélagas';
-  const rival=dual?(p.equipo_visitante_nombre||'Visitante'):(p.rival||'Rival');
-  document.getElementById('matchRival').textContent=dual?`${local} vs ${rival}`:'vs '+rival;
-  document.getElementById('matchMeta').textContent=[p.fecha?formatDate(p.fecha):'',p.tipo||''].filter(Boolean).join(' · ');
-  document.getElementById('labelEquipoPropio').textContent=local;
-  document.getElementById('labelEquipoRival').textContent=rival;
-  document.getElementById('brandTitle').textContent=dual?local+' vs '+rival:'vs '+rival;
-  renderScore();
-}
-
-function recalcScore(){
-  state.golesPropios=state.acciones.filter(a=>a.equipo==='propio'&&a.resultado==='gol').length;
-  state.golesRival=state.acciones.filter(a=>a.equipo==='rival'&&a.resultado==='gol').length;
-  renderScore();
-}
-function renderScore(){document.getElementById('matchScore').textContent=`${state.golesPropios} – ${state.golesRival}`;}
-
-// ═══ TABS ═══
-function showTab(id){
-  document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
-  document.getElementById('registrarFooter').classList.toggle('hidden',id!=='registrarView');
-  if(id==='historialView')renderHistorial();
-  if(id==='statsView')renderStats();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-// ═══ CANCHA TERCIOS ═══
-function buildCanchaConTercios(){
-  const wrap=document.getElementById('canchaGrid');if(!wrap)return;
-  const tercios=[
-    {zonas:[['i1','i2'],['c1','c2'],['d1','d2']]},
-    {zonas:[['i3','i4'],['c3','c4'],['d3','d4']]},
-    {zonas:[['i5','i6'],['c5','c6'],['d5','d6']]}
-  ];
-  wrap.innerHTML='<div class="arco-el"></div>'+
-    tercios.map((t,ti)=>
-      (ti>0?'<div class="tercio-sep"></div>':'')+
-      '<div class="tercio-grid">'+t.zonas.map(row=>row.map(z=>`<button type="button" class="zona-t" data-z="${z}" onclick="selZonaRapido('${z}',this)"></button>`).join('')).join('')+'</div>'
-    ).join('')+
-    '<div class="arco-el"></div>';
-}
-
-// ═══ FLUJO RÁPIDO ═══
-function selEquipoActivo(eq){
-  state.equipoActivo=eq;
-  document.getElementById('btnEquipoPropio').className='equipo-grande-btn'+(eq==='propio'?' sel-propio':'');
-  document.getElementById('btnEquipoRival').className='equipo-grande-btn'+(eq==='rival'?' sel-rival':'');
-  const main=document.querySelector('main');
-  main.style.background=eq==='propio'?'linear-gradient(180deg,#f0faff 0%,#e7f6fd 100%)':'linear-gradient(180deg,#fff5f0 0%,#fff0e8 100%)';
-  renderJugadorasStrip();
-}
-
-function renderJugadorasStrip(){
-  const strip=document.getElementById('jugadorasStrip');if(!strip)return;
-  const esInterno=state.partido&&String(state.partido.tipo_partido||'').trim()==='interno';
-  const dual=state.partido&&(state.partido.incluye_murcielagas===false||esInterno);
-  let base;
-  if(esInterno){base=state.plantel;}
-  else if(dual){base=state.equipoActivo==='rival'?state.visitantePlantel:state.localPlantel;}
-  else{base=state.equipoActivo==='rival'?state.rivalPlantel:state.plantel;}
-  const jugadoras=(base||[]).filter(esJugadoraVisible).sort((a,b)=>Number(a.Numero_Camiseta||a.Nro_Camiseta||99)-Number(b.Numero_Camiseta||b.Nro_Camiseta||99));
-  if(!jugadoras.length){strip.innerHTML='<div style="color:var(--muted);font-size:.85rem;font-weight:700;padding:8px 0">Sin jugadoras</div>';return;}
-  strip.innerHTML=jugadoras.map(p=>{
-    const key=personaKey(p);
-    const num=p.Numero_Camiseta||p.Nro_Camiseta||'—';
-    const ap=(Murci.personName(p)||'').split(',')[0].trim().split(' ')[0];
-    const sel=state.jugadoraId===key;
-    return `<button type="button" class="titular-circulo${sel?' sel':''}" data-key="${esc(key)}" onclick="selJugadoraRapido('${esc(key)}','${esc(ap)}',this)"><div class="tc-num">${esc(String(num))}</div><div class="tc-name">${esc(ap)}</div></button>`;
-  }).join('');
-}
-
-function selJugadoraRapido(key,nombre,btn){
-  state.jugadoraId=key;
-  state.jugadoraNombre=nombre;
-  document.querySelectorAll('#jugadorasStrip .titular-circulo').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  checkAutoSaque();
-}
-
-function selContextoActivo(ctx,btn){
-  if(state.contexto===ctx){
-    state.contexto='juego_libre';
-    document.querySelectorAll('.ctx-chip').forEach(b=>b.classList.remove('sel'));
-  }else{
-    state.contexto=ctx;
-    document.querySelectorAll('.ctx-chip').forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel');
-  }
-}
-
-function selAccionRapido(accion,btn){
-  state.accion=accion;
-  state.zona=null;state.calidad=null;state.resultado=null;
-  state.arqueraCalidad=null;state.asistenciaId=null;state.asistenciaCalidad=null;
-  state.esFaltaAcumulativa=null;state.tipoTarjeta=null;state.minuto=null;
-  document.querySelectorAll('.acc-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  if(accion==='Saque')checkAutoSaque();
-  if(accion==='Tarjeta'){showSecTarjeta();return;}
-  showSec('secZona');hideSec('secCalidad');hideSec('secExtras');hideSec('secMinuto');
-  resetZonaUI();
-  document.getElementById('btnRegistrar').disabled=true;
-}
-
-function selZonaRapido(zona,btn){
-  state.zona=zona;
-  document.querySelectorAll('.zona-t').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  showSec('secCalidad');resetCalidadUI();
-}
-
-function selCalidadRapido(val,btn){
-  state.calidad=val;
-  document.querySelectorAll('#semaforoRapido .sema-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  if(state.accion==='Tiro'){showSecResTiro();}
-  else if(state.accion==='Falta'){showSecFalta();}
-  else{hideSec('secExtras');showSecMinuto();document.getElementById('btnRegistrar').disabled=false;}
-}
-
-function showSecResTiro(){
-  const sec=document.getElementById('secExtras');
-  sec.style.display='';
-  sec.innerHTML='<div class="reg-sec-label">Resultado del tiro</div><div class="res-tiro-grid"><button class="res-tiro-btn" onclick="selResTiro(\'gol\',this)">⚽ Gol</button><button class="res-tiro-btn" onclick="selResTiro(\'atajada\',this)">🧤 Atajada</button><button class="res-tiro-btn" onclick="selResTiro(\'afuera\',this)">↗ Afuera</button><button class="res-tiro-btn" onclick="selResTiro(\'palo\',this)">| Palo</button></div>';
-}
-
-function selResTiro(res,btn){
-  state.resultado=res;
-  document.querySelectorAll('.res-tiro-btn').forEach(b=>b.className='res-tiro-btn');
-  btn.classList.add('sel-'+res);
-  const sec=document.getElementById('secExtras');
-  const semaHtml=[-2,-1,0,1,2].map(v=>`<div class="val-row"><button class="sema-btn" onclick="selArqueraCalidad(${v},this,'semaArqueraGol')">${{'-2':'−−','-1':'−','0':'/','1':'+','2':'++'}[v]}</button><div class="sema-label">${{'-2':'Muy mal','-1':'Mal','0':'Normal','1':'Bien','2':'Excelente'}[v]}</div></div>`).join('');
-  const semaAtHtml=[-2,-1,0,1,2].map(v=>`<div class="val-row"><button class="sema-btn" onclick="selArqueraCalidad(${v},this,'semaArqueraAt')">${{'-2':'−−','-1':'−','0':'/','1':'+','2':'++'}[v]}</button><div class="sema-label">${{'-2':'Muy mal','-1':'Mal','0':'Normal','1':'Bien','2':'Excelente'}[v]}</div></div>`).join('');
-  if(res==='gol'){
-    const jugadoras=getJugadorasPropio().sort((a,b)=>Number(a.Numero_Camiseta||99)-Number(b.Numero_Camiseta||99));
-    const jugHtml=jugadoras.map(p=>{const key=personaKey(p);const num=p.Numero_Camiseta||'—';const ap=(Murci.personName(p)||'').split(',')[0].trim().split(' ')[0];return `<button type="button" class="titular-circulo" onclick="selAsistJugadora('${esc(key)}','${esc(ap)}',this)"><div class="tc-num">${esc(String(num))}</div><div class="tc-name">${esc(ap)}</div></button>`;}).join('');
-    sec.innerHTML+='<div style="margin-top:10px"><div style="font-size:.8rem;color:var(--muted);font-weight:700;margin-bottom:6px">¿Hubo asistencia?</div><div class="sino-rapido"><button class="sino-r" onclick="selAsistSino(true,this)">Sí</button><button class="sino-r" onclick="selAsistSino(false,this)">No</button></div><div id="asistJugGrid" class="hidden" style="margin-top:8px"><div class="reg-sec-label">¿Quién asistió?</div><div class="jugadoras-strip" id="asistJugStrip">'+jugHtml+'</div><div class="arquera-semi-wrap" id="asistCalWrap" style="display:none"><div class="arquera-semi-label">Calidad de la asistencia</div><div class="semaforo" id="semaAsist">'+[-2,-1,0,1,2].map(v=>`<div class="val-row"><button class="sema-btn" onclick="selAsistCalidad(${v},this)">${{'-2':'−−','-1':'−','0':'/','1':'+','2':'++'}[v]}</button><div class="sema-label">${{'-2':'Muy mal','-1':'Mal','0':'Normal','1':'Bien','2':'Excelente'}[v]}</div></div>`).join('')+'</div></div></div><div class="arquera-semi-wrap" style="margin-top:8px" id="arqueraGolWrap"><div class="arquera-semi-label">Intervención de la arquera rival</div><div class="semaforo" id="semaArqueraGol">'+semaHtml+'</div></div></div>';
-    showSecMinuto();document.getElementById('btnRegistrar').disabled=false;
-  }else if(res==='atajada'){
-    sec.innerHTML+=`<div class="arquera-semi-wrap" style="margin-top:8px"><div class="arquera-semi-label">Calidad de la arquera</div><div class="semaforo" id="semaArqueraAt">${semaAtHtml}</div></div>`;
-    showSecMinuto();document.getElementById('btnRegistrar').disabled=false;
-  }else{
-    showSecMinuto();document.getElementById('btnRegistrar').disabled=false;
-  }
-}
-
-function selArqueraCalidad(val,btn,semaId){
-  state.arqueraCalidad=val;
-  document.querySelectorAll(`#${semaId} .sema-btn`).forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-}
-
-function selAsistSino(si,btn){
-  document.querySelectorAll('.sino-r').forEach(b=>b.classList.remove('sel-si','sel-no'));
-  btn.classList.add(si?'sel-si':'sel-no');
-  document.getElementById('asistJugGrid').classList.toggle('hidden',!si);
-  if(!si)state.asistenciaId=null;
-}
-
-function selAsistJugadora(key,nombre,btn){
-  state.asistenciaId=key;
-  document.querySelectorAll('#asistJugStrip .titular-circulo').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  document.getElementById('asistCalWrap').style.display='';
-}
-
-function selAsistCalidad(val,btn){
-  state.asistenciaCalidad=val;
-  document.querySelectorAll('#semaAsist .sema-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-}
-
-function showSecFalta(){
-  const sec=document.getElementById('secExtras');
-  sec.style.display='';
-  sec.innerHTML='<div class="reg-sec-label">¿Es acumulativa?</div><div class="sino-rapido"><button class="sino-r" onclick="selFaltaAcum(true,this)">Sí, acumulativa</button><button class="sino-r" onclick="selFaltaAcum(false,this)">No</button></div><div id="faltaCounterBox"></div>';
-  showSecMinuto();document.getElementById('btnRegistrar').disabled=false;
-}
-
-function selFaltaAcum(es,btn){
-  state.esFaltaAcumulativa=es;
-  document.querySelectorAll('.sino-r').forEach(b=>b.classList.remove('sel-si','sel-no'));
-  btn.classList.add(es?'sel-si':'sel-no');
-  const box=document.getElementById('faltaCounterBox');
-  if(!es){box.innerHTML='';return;}
-  const previaN=(state.equipoActivo==='propio'?state.faltasPropio:state.faltasRival)+1;
-  const eqLabel=state.equipoActivo==='propio'?(state.partido?.equipo_local_nombre||'Las Murciélagas'):(state.partido?.rival||state.partido?.equipo_visitante_nombre||'Rival');
-  let banner='';
-  if(previaN===3)banner='<div class="falta-banner av3">⚠️ 3ª falta — la cuarta habilita libre directo</div>';
-  else if(previaN===4)banner='<div class="falta-banner av4">🚨 4ª falta — la siguiente es DOBLE PENAL (8m)</div>';
-  else if(previaN>=5)banner=`<div class="falta-banner penal">🔴 DOBLE PENAL — Falta N° ${previaN}</div>`;
-  box.innerHTML=`<div class="falta-box"><div class="falta-num-big">Falta N° ${previaN}</div><div style="font-size:.82rem;color:var(--muted)">${esc(eqLabel)}</div>${banner}</div>`;
-}
-
-function showSecTarjeta(){
-  showSec('secExtras');hideSec('secZona');hideSec('secCalidad');
-  document.getElementById('secExtras').innerHTML='<div class="reg-sec-label">Tipo de tarjeta</div><div class="tipo-tarjeta-btns"><button class="tipo-tarjeta-btn" onclick="selTipoTarjeta(\'amarilla\',this)">🟨 Amarilla</button><button class="tipo-tarjeta-btn" onclick="selTipoTarjeta(\'roja\',this)">🟥 Roja</button></div>';
-  showSecMinuto();document.getElementById('btnRegistrar').disabled=false;
-}
-
-function selTipoTarjeta(tipo,btn){
-  state.tipoTarjeta=tipo;
-  document.querySelectorAll('.tipo-tarjeta-btn').forEach(b=>b.className='tipo-tarjeta-btn');
-  btn.classList.add('sel-'+(tipo==='amarilla'?'am':'roja'));
-}
-
-function checkAutoSaque(){
-  if(state.accion!=='Saque')return;
-  const esInterno=state.partido&&String(state.partido.tipo_partido||'').trim()==='interno';
-  const base=esInterno?state.plantel:(state.equipoActivo==='rival'?state.rivalPlantel:state.plantel);
-  const arquera=(base||[]).filter(esJugadoraVisible).find(esArquera);
-  if(arquera){
-    state.jugadoraId=personaKey(arquera);
-    state.jugadoraNombre=(Murci.personName(arquera)||'').split(',')[0].trim().split(' ')[0];
-    document.querySelectorAll('#jugadorasStrip .titular-circulo').forEach(b=>{b.classList.toggle('sel',b.dataset.key===state.jugadoraId);});
-  }
-}
-
-function getJugadorasPropio(){
-  return(state.plantel||[]).filter(esJugadoraVisible);
-}
-
-function showSec(id){const el=document.getElementById(id);if(el)el.style.display='';}
-function hideSec(id){const el=document.getElementById(id);if(el)el.style.display='none';}
-
-function showSecMinuto(){
-  showSec('secMinuto');
-  document.getElementById('inputMinuto').value='';
-  state.minuto=null;
-}
-
-function onMinutoInput(){
-  const v=document.getElementById('inputMinuto').value;
-  state.minuto=v!==''?Number(v):null;
-}
-
-function skipMinuto(){
-  state.minuto=null;
-  document.getElementById('inputMinuto').value='';
-}
-
-function resetZonaUI(){document.querySelectorAll('.zona-t').forEach(b=>b.classList.remove('sel'));}
-function resetCalidadUI(){document.querySelectorAll('#semaforoRapido .sema-btn').forEach(b=>b.classList.remove('sel'));}
-
-function resetFlujo(){
-  state.contexto='juego_libre';state.accion=null;state.zona=null;state.calidad=null;
-  state.resultado=null;state.arqueraCalidad=null;state.asistenciaId=null;
-  state.asistenciaCalidad=null;state.esFaltaAcumulativa=null;state.tipoTarjeta=null;state.minuto=null;
-  document.querySelectorAll('.acc-btn').forEach(b=>b.classList.remove('sel'));
-  document.querySelectorAll('.ctx-chip').forEach(b=>b.classList.remove('sel'));
-  hideSec('secZona');hideSec('secCalidad');hideSec('secExtras');hideSec('secMinuto');
-  document.getElementById('btnRegistrar').disabled=true;
-  renderJugadorasStrip();
-}
-
-// ═══ HELPERS PERSONA ═══
-function personaKey(p){if(p&&typeof p==='object')return Murci.personaRef(p)||String(p.DNI||p.dni||'');return String(p||'');}
-function nombrePersona(p){return Murci.personName(p)||'';}
-function esJugadoraVisible(p){const tipo=String(p.Tipo_Integrante||p.tipo_integrante||'').trim().toLowerCase();return tipo==='jugadora'||tipo==='arquera';}
-function esArquera(p){const tipo=String(p.Tipo_Integrante||'').toLowerCase();return tipo==='arquera'||tipo.includes('arquera')||tipo.includes('porter')||tipo.includes('gk');}
-
-function equipoLabel(eq){
-  const dual=state.partido&&(state.partido.incluye_murcielagas===false||String(state.partido.tipo_partido||'').trim()==='interno');
-  if(dual)return eq==='rival'?(state.partido.equipo_visitante_nombre||'Visitante'):(state.partido.equipo_local_nombre||'Local');
-  return eq==='rival'?(state.partido?.rival||'Rival'):'Las Murciélagas';
-}
-
-function equipoIdActual(){
-  const dual=state.partido&&(state.partido.incluye_murcielagas===false||String(state.partido.tipo_partido||'').trim()==='interno');
-  if(dual)return state.equipoActivo==='rival'?(state.partido.equipo_visitante_id||''):(state.partido.equipo_local_id||'');
-  return state.equipoActivo==='rival'?(state.partido?.rival_id||''):'';
-}
-
-// ═══ RENDER JUGADORAS (compatibilidad) ═══
-function renderJugadoras(scrollId,excluirId){
-  const scroll=document.getElementById(scrollId);if(!scroll)return;
-  const esInterno=state.partido&&String(state.partido.tipo_partido||'').trim()==='interno';
-  const dual=state.partido&&(state.partido.incluye_murcielagas===false||esInterno);
-  let base;
-  if(esInterno){base=state.plantel;}
-  else if(dual){base=state.equipoActivo==='rival'?state.visitantePlantel:state.localPlantel;}
-  else{base=state.equipoActivo==='rival'?state.rivalPlantel:state.plantel;}
-  let jugadoras=(base||[]).filter(p=>esJugadoraVisible(p));
-  if(!jugadoras.length){scroll.innerHTML='<div style="color:var(--muted);font-size:.86rem;font-weight:700;padding:4px 0">Sin jugadoras en el plantel</div>';return;}
-  scroll.innerHTML=jugadoras.filter(p=>personaKey(p)!==excluirId).sort((a,b)=>Number(a.Numero_Camiseta||a.Nro_Camiseta||99)-Number(b.Numero_Camiseta||b.Nro_Camiseta||99)).map(p=>{
-    const key=personaKey(p);const num=p.Numero_Camiseta||p.Nro_Camiseta||'—';const nombre=(Murci.personName(p)||'').split(',')[0].split(' ')[0];
-    return `<div class="jugadora-card" data-key="${esc(key)}" onclick="selJugadoraRapido('${esc(key)}','${esc(nombre)}',this)"><div class="jc-num">${esc(String(num))}</div><div class="jc-name">${esc(nombre)}</div></div>`;
-  }).join('');
-}
-
-// ═══ TITULARES ═══
-function renderTitulares(){
-  const esInterno=state.partido&&String(state.partido.tipo_partido||'').trim()==='interno';
-  const dual=state.partido&&(state.partido.incluye_murcielagas===false||esInterno);
-  const labelPropio=dual?(state.partido.equipo_local_nombre||'Local'):'Las Murciélagas';
-  const labelRival=dual?(state.partido.equipo_visitante_nombre||'Visitante'):(state.partido?.rival||'Rival');
-  const plantelPropio=state.plantel.filter(esJugadoraVisible);
-  const plantelRival=esInterno?state.plantel.filter(esJugadoraVisible):(dual?state.visitantePlantel:state.rivalPlantel).filter(esJugadoraVisible);
-  document.getElementById('titularesLabelPropio').textContent=labelPropio;
-  document.getElementById('titularesGridPropio').innerHTML=buildTitularesGrid(plantelPropio,'propio');
-  const rivalSection=document.getElementById('titularesRivalSection');
-  if(plantelRival.length){
-    rivalSection.classList.remove('hidden');
-    document.getElementById('titularesLabelRival').textContent=labelRival;
-    document.getElementById('titularesGridRival').innerHTML=buildTitularesGrid(plantelRival,'rival');
-  }else{rivalSection.classList.add('hidden');}
-  updateTitularesResumen();
-}
-
-function buildTitularesGrid(plantel,equipo){
-  return plantel.slice().sort((a,b)=>Number(a.Numero_Camiseta||a.Nro_Camiseta||99)-Number(b.Numero_Camiseta||b.Nro_Camiseta||99)).map(p=>{
-    const key=personaKey(p);const num=p.Numero_Camiseta||p.Nro_Camiseta||'—';
-    const apellido=(Murci.personName(p)||'').split(',')[0].trim().split(' ')[0];
-    const sel=state.titulares[equipo].includes(key);
-    return `<button type="button" class="titular-circulo${sel?' sel':''}" data-key="${esc(key)}" onclick="toggleTitular('${equipo}','${esc(key)}',this)"><div class="tc-num">${esc(String(num))}</div><div class="tc-name">${esc(apellido)}</div></button>`;
-  }).join('');
-}
-
-function toggleTitular(equipo,key,btn){
-  const arr=state.titulares[equipo];const idx=arr.indexOf(key);
-  if(idx>=0)arr.splice(idx,1);else arr.push(key);
-  btn.classList.toggle('sel',arr.includes(key));updateTitularesResumen();
-}
-
-function updateTitularesResumen(){
-  const el=document.getElementById('titularesResumen');if(!el)return;
-  const tot=state.titulares.propio.length+state.titulares.rival.length;
-  el.textContent=tot>0?`${tot} seleccionada${tot!==1?'s':''}`:'No definidos';
-}
-
-function toggleTitulares(){document.getElementById('titularesBody').classList.toggle('hidden');}
-
-// ═══ REGISTRAR ═══
-async function registrarAccion(){
-  const btn=document.getElementById('btnRegistrar');
-  if(!state.accion||!state.equipoActivo){alert('Seleccioná el equipo y la acción.');return;}
-  // Para Tarjeta: calidad no es requerida
-  if(state.accion!=='Tarjeta'&&state.calidad===null){alert('Seleccioná la calidad de ejecución.');return;}
-  btn.disabled=true;
-  const numFaltaActual=state.esFaltaAcumulativa?(state.equipoActivo==='propio'?state.faltasPropio+1:state.faltasRival+1):null;
-  const payload={
-    action:'partidos_registrarAccion',
-    partido_id:state.partidoId,
-    equipo:state.equipoActivo,
-    equipo_id:equipoIdActual(),
-    tipo_partido:state.partido?.tipo||'',
-    contexto:state.contexto||'juego_libre',
-    accion:state.accion,
-    zona:state.zona||'',
-    jugadora_id:state.jugadoraId||'',
-    valoracion:state.calidad!==null?state.calidad:'',
-    resultado:state.resultado||'',
-    arquera_valoracion:state.arqueraCalidad!==null?state.arqueraCalidad:'',
-    es_pase_relevante:'',
-    tiempo_neto:state.minuto!==null?state.minuto:'',
-    jugadora_anterior_id:'',
-    narracion:'',
-    tipo_tarjeta:state.tipoTarjeta||'',
-    es_falta_acumulativa:state.esFaltaAcumulativa||false,
-    numero_falta:numFaltaActual,
-    asistencia_id:state.asistenciaId||'',
-    asistencia_calidad:state.asistenciaCalidad!==null?state.asistenciaCalidad:''
-  };
-  try{
-    const res=await apiPost(payload);
-    const nueva={id:res.id,...payload};delete nueva.action;
-    state.acciones.push(nueva);
-    recalcScore();
-    // Commit contador faltas
-    if(state.esFaltaAcumulativa===true){
-      if(state.equipoActivo==='propio')state.faltasPropio++;else state.faltasRival++;
+    function recalcScore() {
+      state.golesPropios = state.acciones.filter(a => a.equipo === 'propio' && a.resultado === 'gol').length;
+      state.golesRival   = state.acciones.filter(a => a.equipo === 'rival'  && a.resultado === 'gol').length;
+      renderScore();
     }
-    const fueGol=state.resultado==='gol';
-    const yaRegistroAsistencia=state.asistenciaId!==null;
-    const golMsg=fueGol?('Gol'+(state.jugadoraNombre?' de '+state.jugadoraNombre:'')+(state.asistenciaId?' (asist. '+state.asistenciaCalidad+')':'')):null;
-    resetFlujo();
-    showToast(golMsg||'✓ Acción registrada');
-    if(fueGol&&!yaRegistroAsistencia){
-      setTimeout(()=>document.getElementById('golModal').classList.add('open'),400);
+
+    function renderScore() {
+      document.getElementById('matchScore').textContent = `${state.golesPropios} – ${state.golesRival}`;
     }
-  }catch(e){alert('Error al registrar: '+e.message);btn.disabled=false;}
-}
 
-// ═══ ASISTENCIA POST GOL ═══
-function iniciarAsistencia(){
-  closeGolModal();
-  state.asistenciaHabilitada=false;
-  resetFlujo();
-  setTimeout(()=>{
-    selEquipoActivo('propio');
-    setTimeout(()=>{
-      const btnAsist=document.querySelector('.acc-btn[onclick*="Asistencia"]');
-      if(btnAsist)selAccionRapido('Asistencia',btnAsist);
-    },50);
-  },50);
-}
+    // ═══ TABS ═══
+    function showTab(id) {
+      document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === id));
+      document.getElementById('registrarFooter').classList.toggle('hidden', id !== 'registrarView');
+      if (id === 'historialView') renderHistorial();
+      if (id === 'statsView') renderStats();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-function closeGolModal(){document.getElementById('golModal').classList.remove('open');}
+    // ═══ MODO ═══
+    function setModo(lento) {
+      state.modoLento = lento;
+      document.getElementById('modoRapidoBtn').classList.toggle('active', !lento);
+      document.getElementById('modoLentoBtn').classList.toggle('active', lento);
+      // Pase: en rápido = "Pase relevante", en lento = "Pase"
+      document.getElementById('btnPaseRapido').classList.toggle('hidden', lento);
+      document.getElementById('btnPaseLento').classList.toggle('hidden', !lento);
+      // Pasos extras de modo lento
+      ['paso-jugadora-ant', 'paso-pase-rel', 'paso-narracion'].forEach(id => {
+        document.getElementById(id).classList.toggle('hidden', !lento);
+      });
+      resetFlujo();
+    }
 
-// ═══ CAMBIO ═══
-function openModalCambio(){document.getElementById('modalCambio').classList.add('open');}
-function closeModalCambio(){document.getElementById('modalCambio').classList.remove('open');}
+    // ═══ CANCHA ═══
+    function buildCanchaGrid() {
+      const grid = document.getElementById('canchaGrid');
+      grid.innerHTML = '';
+      ZONAS_CANCHA.forEach(z => {
+        const btn = document.createElement('button');
+        btn.className = 'cancha-zona';
+        btn.dataset.zona = z;
+        btn.type = 'button';
+        btn.onclick = () => selZona(z, btn);
+        grid.appendChild(btn);
+      });
+    }
 
-function onCambioTipoChange(){
-  const tipo=document.getElementById('camTipo').value;
-  document.getElementById('cambioJugadoraFields').classList.toggle('hidden',tipo!=='jugadora');
-  document.getElementById('cambioPosicionFields').classList.toggle('hidden',tipo!=='posicion');
-  document.getElementById('cambioSistemaFields').classList.toggle('hidden',tipo!=='sistema');
-}
+    // ═══ PASOS ═══
+    function togglePaso(id) {
+      const el = document.getElementById('paso-' + id);
+      if (!el || el.classList.contains('bloqueado')) return;
+      el.classList.toggle('activo');
+    }
 
-function buildCambioSelects(){
-  const jugadoras=state.plantel.filter(esJugadoraVisible);
-  const opts='<option value="">— Seleccioná —</option>'+jugadoras.map(p=>{
-    const key=personaKey(p);const num=p.Numero_Camiseta||'—';const nombre=nombrePersona(p);
-    return `<option value="${esc(key)}">${esc(num)} – ${esc(nombre)}</option>`;
-  }).join('');
-  ['camSale','camEntra','camJugPos'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});
-}
+    function activarPaso(id) {
+      const el = document.getElementById('paso-' + id);
+      if (!el) return;
+      document.querySelectorAll('.paso.activo').forEach(p => p.classList.remove('activo'));
+      el.classList.remove('bloqueado');
+      el.classList.add('activo');
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+    }
 
-async function registrarCambio(){
-  const st=document.getElementById('cambioStatus');
-  const tipo=document.getElementById('camTipo').value;
-  const minuto=document.getElementById('camMinuto').value;
-  let desc='';
-  if(tipo==='jugadora'){const sale=document.getElementById('camSale');const entra=document.getElementById('camEntra');desc=`Cambio: sale ${sale.selectedOptions[0]?.text||'—'}, entra ${entra.selectedOptions[0]?.text||'—'}`;}
-  else if(tipo==='posicion'){const jug=document.getElementById('camJugPos').selectedOptions[0]?.text||'—';const pos=document.getElementById('camNuevaPosicion').value.trim();desc=`Posición: ${jug} → ${pos}`;}
-  else{const sis=document.getElementById('camSistema').value.trim();desc=`Sistema: ${sis}`;}
-  st.textContent='Guardando...';st.className='status-line';
-  try{
-    await apiPost({action:'partidos_agregarMomento',id:state.partidoId,partido_id:state.partidoId,tipo:'cambio',tiempo:minuto||null,descripcion:desc});
-    st.textContent='✓ Cambio registrado';st.className='status-line ok';
-    setTimeout(closeModalCambio,900);
-  }catch(e){st.textContent='Error: '+e.message;st.className='status-line error';}
-}
+    function completarPaso(id, resumen) {
+      const el = document.getElementById('paso-' + id);
+      if (!el) return;
+      el.classList.remove('activo');
+      el.classList.add('completado');
+      const selEl = document.getElementById('sel-' + id);
+      if (selEl && resumen) selEl.textContent = resumen;
+    }
 
-// ═══ HISTORIAL ═══
-function renderHistorial(){
-  const cont=document.getElementById('historialBody');
-  const count=document.getElementById('historialCount');
-  const acc=[...state.acciones].reverse();
-  count.textContent=`${acc.length} acción${acc.length!==1?'es':''}`;
-  if(!acc.length){cont.innerHTML='<div class="empty">Sin acciones registradas.</div>';return;}
-  cont.innerHTML=acc.map(a=>{
-    const jugNombre=resolveNombre(a.jugadora_id)||a.jugadora_id||'—';
-    const valClass=VAL_CLASS[String(a.valoracion)]||'val-n';
-    const valLabel=VAL_LABELS[String(a.valoracion)]||'/';
-    const tiempo=a.tiempo_neto!=null?`${a.tiempo_neto}'`:'';
-    const badgeEq=a.equipo==='propio'?'<span class="badge info" style="font-size:.65rem">P</span>':'<span class="badge" style="font-size:.65rem">R</span>';
-    return `<div class="accion-row">${badgeEq}<span class="accion-tipo">${esc(a.accion||'—')}</span><span class="accion-jugadora">${esc(jugNombre)}</span>${a.resultado?`<span class="badge ${resBadge(a.resultado)}" style="font-size:.65rem">${esc(a.resultado)}</span>`:''}<span class="accion-val ${valClass}">${valLabel}</span><span class="accion-tiempo">${esc(tiempo)}</span><button class="btn small danger" style="flex-shrink:0;padding:5px 8px;font-size:.72rem" onclick="eliminarAccion('${esc(a.id)}')">×</button></div>`;
-  }).join('');
-}
+    function bloquearPasosDesde(id) {
+      const orden = ['equipo','contexto','accion','zona','jugadora','valoracion','resultado','tiempo','jugadora-ant','pase-rel','narracion'];
+      const idx = orden.indexOf(id);
+      if (idx === -1) return;
+      orden.slice(idx).forEach(pid => {
+        const el = document.getElementById('paso-' + pid);
+        if (!el) return;
+        el.classList.remove('activo', 'completado');
+        el.classList.add('bloqueado');
+      });
+    }
 
-async function eliminarAccion(id){
-  if(!confirm('¿Eliminar esta acción?'))return;
-  try{
-    await apiPost({action:'partidos_eliminarAccion',id});
-    state.acciones=state.acciones.filter(a=>String(a.id)!==String(id));
-    recalcScore();renderHistorial();renderStats();
-  }catch(e){alert('Error: '+e.message);}
-}
+    // ═══ SELECCIONES ═══
+    function selEquipo(eq, btn) {
+      state.equipo = eq;
+      state.asistenciaHabilitada = false;
+      document.querySelectorAll('.equipo-btn').forEach(b => b.classList.toggle('sel', b.dataset.eq === eq));
+      completarPaso('equipo', equipoLabel(eq));
+      bloquearPasosDesde('contexto');
+      activarPaso('contexto');
+    }
 
-// ═══ STATS ═══
-function renderStats(){
-  const acc=state.acciones;
-  document.getElementById('stTotal').textContent=acc.filter(a=>a.equipo==='propio').length;
-  document.getElementById('stRival').textContent=acc.filter(a=>a.equipo==='rival').length;
-  document.getElementById('stGoles').textContent=acc.filter(a=>a.resultado==='gol').length;
-  document.getElementById('stTiros').textContent=acc.filter(a=>a.accion==='Tiro').length;
-  const porJugadora={};
-  acc.filter(a=>a.equipo==='propio'&&a.jugadora_id).forEach(a=>{
-    const k=a.jugadora_id;
-    if(!porJugadora[k])porJugadora[k]={nombre:resolveNombre(k)||k,total:0,vals:[]};
-    porJugadora[k].total++;
-    if(a.valoracion!==null&&a.valoracion!==undefined)porJugadora[k].vals.push(Number(a.valoracion));
-  });
-  const rows=Object.values(porJugadora).sort((a,b)=>b.total-a.total);
-  const contJ=document.getElementById('statsJugadoras');
-  if(!rows.length){contJ.innerHTML='<div class="empty">Sin datos.</div>';}
-  else contJ.innerHTML=rows.map(r=>{const avg=r.vals.length?(r.vals.reduce((s,v)=>s+v,0)/r.vals.length).toFixed(1):'—';return `<div class="stat-row"><div class="stat-nombre">${esc(r.nombre)}</div><div class="stat-nums">${r.total} acción${r.total!==1?'es':''} · promedio ${avg}</div></div>`;}).join('');
-  const porTipo={};
-  acc.forEach(a=>{const t=a.accion||'—';porTipo[t]=(porTipo[t]||0)+1;});
-  const tipoRows=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
-  const contT=document.getElementById('statsTipos');
-  if(!tipoRows.length){contT.innerHTML='<div class="empty">Sin datos.</div>';}
-  else contT.innerHTML=tipoRows.map(([tipo,n])=>`<div class="stat-row"><div class="stat-nombre">${esc(tipo)}</div><div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.round(n/acc.length*100)}%"></div></div><div class="stat-nums">${n}</div></div>`).join('');
-}
+    function selContexto(ctx, btn) {
+      state.contexto = ctx;
+      const ctxLabels = { juego_libre:'Juego libre', corner:'Córner', tiro_libre:'Tiro libre', penal:'Penal', doble_penal:'Doble penal / 8m' };
+      document.querySelectorAll('.contexto-btn').forEach(b => b.classList.toggle('sel', b.dataset.ctx === ctx));
+      completarPaso('contexto', ctxLabels[ctx] || ctx);
+      bloquearPasosDesde('accion');
+      activarPaso('accion');
+    }
 
-// ═══ HELPERS ═══
-function resolveNombre(id){
-  if(!id)return'';
-  const p=(state.plantel||[]).concat(state.rivalPlantel||[],state.localPlantel||[],state.visitantePlantel||[]).find(x=>personaKey(x)===String(id));
-  return p?nombrePersona(p):'';
-}
-function resBadge(r){return{gol:'ok',atajado:'danger',atajada:'danger',afuera:'warn',palo:''}[r]||'';}
-function formatDate(d){if(!d)return'';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(d);}
-function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
-function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),350);},2000);}
+    function selAccion(accion, btn) {
+      state.accion = accion;
+      state.zona = null;
+      state.jugadoraId = null;
+      state.valoracion = null;
+      state.resultado = null;
+      state.arqueraValoracion = null;
+      document.querySelectorAll('.accion-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      completarPaso('accion', accion);
+      // Zona: cancha vs arco
+      const esArco = ['penal','doble_penal'].includes(state.contexto) || accion === 'Atajada de arquera';
+      document.getElementById('zonaCancha').classList.toggle('hidden', esArco);
+      document.getElementById('zonaArco').classList.toggle('hidden', !esArco);
+      // Resultado: solo Tiro
+      const esTiro = accion === 'Tiro';
+      document.getElementById('paso-resultado').classList.toggle('hidden', !esTiro);
+      // Jugadora anterior y pase rel: modo lento
+      document.getElementById('paso-jugadora-ant').classList.toggle('hidden', !state.modoLento);
+      document.getElementById('paso-pase-rel').classList.toggle('hidden', !(state.modoLento && accion === 'Pase'));
+      document.getElementById('paso-narracion').classList.toggle('hidden', !state.modoLento);
+      bloquearPasosDesde('zona');
+      activarPaso('zona');
+    }
 
-// ── Cerrar modales al tocar overlay ──
-document.getElementById('modalCambio').addEventListener('click',function(e){if(e.target===this)closeModalCambio();});
-document.getElementById('golModal').addEventListener('click',function(e){if(e.target===this)closeGolModal();});
+    function selZona(zona, btn) {
+      state.zona = zona;
+      // Limpiar selección previa en la grilla activa
+      document.querySelectorAll('.cancha-zona, .arco-zona').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      completarPaso('zona', ZONA_LABELS[zona] || zona);
+      // Jugadora
+      const accion = state.accion;
+      if (accion === 'Saque' || accion === 'Atajada de arquera') {
+        // Auto-asignar arquera
+        const arquera = getArqueraEquipoActual();
+        state.jugadoraId = arquera ? personaKey(arquera) : null;
+        document.getElementById('jugadoraBody').innerHTML = `<div class="auto-assign-msg">🧤 Asignada automáticamente: ${arquera ? nombrePersonaCorto(arquera) : 'Sin arquera en el plantel'}</div>`;
+        completarPaso('jugadora', arquera ? nombrePersonaCorto(arquera) : '—');
+        bloquearPasosDesde('valoracion');
+        activarPaso('valoracion');
+      } else if (state.equipo === 'rival' && !hayJugadorasRival()) {
+        state.jugadoraId = null;
+        completarPaso('jugadora', 'Rival (sin jugadora cargada)');
+        bloquearPasosDesde('valoracion');
+        activarPaso('valoracion');
+      } else if (puedeAutoContinuarJugadora()) {
+        const p = getJugadorasEquipoActual().find(j => String(personaKey(j)) === String(state.secuenciaActual.jugadoraId));
+        state.jugadoraId = state.secuenciaActual.jugadoraId;
+        completarPaso('jugadora', p ? nombrePersonaCorto(p) : state.jugadoraId);
+        bloquearPasosDesde('valoracion');
+        activarPaso('valoracion');
+      } else {
+        renderJugadoras('jugadorasScroll', null);
+        bloquearPasosDesde('jugadora');
+        activarPaso('jugadora');
+      }
+    }
+
+    function selJugadora(id, nombre, btn, scrollId) {
+      state.jugadoraId = id;
+      document.querySelectorAll(`#${scrollId} .jugadora-card`).forEach(c => c.classList.remove('sel'));
+      btn.classList.add('sel');
+      completarPaso('jugadora', nombre);
+      bloquearPasosDesde('valoracion');
+      activarPaso('valoracion');
+    }
+
+    function selVal(val, btn) {
+      state.valoracion = Number(val);
+      document.querySelectorAll('#semaforoVal .sema-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      completarPaso('valoracion', VAL_LABELS[val]);
+      // Siguiente paso
+      if (state.accion === 'Tiro') {
+        bloquearPasosDesde('resultado');
+        document.getElementById('paso-resultado').classList.remove('hidden');
+        activarPaso('resultado');
+      } else {
+        siguientePasoPostValoracion();
+      }
+    }
+
+    function selResultado(res, btn) {
+      state.resultado = res;
+      document.querySelectorAll('.res-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      const resLabels = { gol:'Gol', atajado:'Atajado', afuera:'Afuera', palo:'Palo', bloqueo:'Bloqueo' };
+      completarPaso('resultado', resLabels[res] || res);
+      // Arquera valoración
+      const showArq = (res === 'gol' || res === 'atajado');
+      document.getElementById('arqueraValWrap').classList.toggle('hidden', !showArq);
+      if (!showArq) state.arqueraValoracion = null;
+      // Si gol: habilitar asistencia
+      if (res === 'gol') {
+        state.asistenciaHabilitada = true;
+        document.getElementById('btnAsistencia').classList.remove('disabled-btn');
+        if (!showArq) {
+          siguientePasoPostResultado();
+        }
+      } else {
+        state.asistenciaHabilitada = false;
+        document.getElementById('btnAsistencia').classList.add('disabled-btn');
+        if (!showArq) siguientePasoPostResultado();
+      }
+    }
+
+    function selArqueraVal(val, btn) {
+      state.arqueraValoracion = Number(val);
+      document.querySelectorAll('#semaforoArquera .sema-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      siguientePasoPostResultado();
+    }
+
+    function siguientePasoPostValoracion() {
+      const mostrarTiempo = state.modoLento || esClave();
+      if (mostrarTiempo) {
+        bloquearPasosDesde('tiempo');
+        document.getElementById('inputTiempo').value = '';
+        state.tiempoNeto = null;
+        actualizarNumeroPasos();
+        activarPaso('tiempo');
+      } else {
+        state.tiempoNeto = null;
+        habilitarRegistrar();
+      }
+    }
+
+    function siguientePasoPostResultado() {
+      const mostrarTiempo = state.modoLento || esClave();
+      if (mostrarTiempo) {
+        bloquearPasosDesde('tiempo');
+        document.getElementById('inputTiempo').value = '';
+        state.tiempoNeto = null;
+        actualizarNumeroPasos();
+        activarPaso('tiempo');
+      } else {
+        state.tiempoNeto = null;
+        if (state.modoLento) {
+          avanzarModoLento();
+        } else {
+          habilitarRegistrar();
+        }
+      }
+    }
+
+    function onTiempoInput() {
+      const v = document.getElementById('inputTiempo').value;
+      state.tiempoNeto = v !== '' ? Number(v) : null;
+      document.getElementById('sel-tiempo').textContent = v ? `Minuto ${v}'` : 'Minuto (opcional)';
+      if (v !== '') {
+        completarPaso('tiempo', `Minuto ${v}'`);
+        if (state.modoLento) avanzarModoLento(); else habilitarRegistrar();
+      }
+    }
+
+    function skipTiempo() {
+      state.tiempoNeto = null;
+      completarPaso('tiempo', 'Sin minuto');
+      if (state.modoLento) avanzarModoLento(); else habilitarRegistrar();
+    }
+
+    function avanzarModoLento() {
+      actualizarNumeroPasos();
+      if (!document.getElementById('paso-jugadora-ant').classList.contains('hidden')) {
+        renderJugadoras('jugadorasAntScroll', state.jugadoraId);
+        bloquearPasosDesde('jugadora-ant');
+        activarPaso('jugadora-ant');
+      } else if (!document.getElementById('paso-pase-rel').classList.contains('hidden')) {
+        bloquearPasosDesde('pase-rel');
+        activarPaso('pase-rel');
+      } else if (!document.getElementById('paso-narracion').classList.contains('hidden')) {
+        bloquearPasosDesde('narracion');
+        activarPaso('narracion');
+      } else {
+        habilitarRegistrar();
+      }
+    }
+
+    function selJugadoraAnt(id, nombre, btn) {
+      state.jugadoraAnteriorId = id;
+      document.querySelectorAll('#jugadorasAntScroll .jugadora-card').forEach(c => c.classList.remove('sel'));
+      btn.classList.add('sel');
+      completarPaso('jugadora-ant', nombre);
+      actualizarNumeroPasos();
+      if (!document.getElementById('paso-pase-rel').classList.contains('hidden')) {
+        bloquearPasosDesde('pase-rel');
+        activarPaso('pase-rel');
+      } else if (!document.getElementById('paso-narracion').classList.contains('hidden')) {
+        bloquearPasosDesde('narracion');
+        activarPaso('narracion');
+      } else {
+        habilitarRegistrar();
+      }
+    }
+
+    function skipJugAnt() {
+      state.jugadoraAnteriorId = null;
+      completarPaso('jugadora-ant', 'Sin jugadora anterior');
+      actualizarNumeroPasos();
+      if (!document.getElementById('paso-pase-rel').classList.contains('hidden')) {
+        bloquearPasosDesde('pase-rel');
+        activarPaso('pase-rel');
+      } else if (!document.getElementById('paso-narracion').classList.contains('hidden')) {
+        bloquearPasosDesde('narracion');
+        activarPaso('narracion');
+      } else {
+        habilitarRegistrar();
+      }
+    }
+
+    function selPaseRel(val, btn) {
+      state.esPaseRelevante = val;
+      document.querySelectorAll('.sino-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      completarPaso('pase-rel', val ? 'Sí, relevante' : 'No relevante');
+      actualizarNumeroPasos();
+      if (!document.getElementById('paso-narracion').classList.contains('hidden')) {
+        bloquearPasosDesde('narracion');
+        activarPaso('narracion');
+      } else {
+        habilitarRegistrar();
+      }
+    }
+
+    function onNarracion(el) {
+      state.narracion = el.value.trim();
+      const v = state.narracion;
+      document.getElementById('sel-narracion').textContent = v ? v.slice(0,40) + (v.length>40?'…':'') : 'Sin narración';
+    }
+
+    function skipNarracion() {
+      state.narracion = '';
+      completarPaso('narracion', 'Sin narración');
+      habilitarRegistrar();
+    }
+
+    function habilitarRegistrar() {
+      document.getElementById('btnRegistrar').disabled = false;
+      const seguir = document.getElementById('btnRegistrarSeguir');
+      if (seguir) seguir.disabled = false;
+    }
+
+    function puedeAutoContinuarJugadora() {
+      return !!(state.secuenciaActual &&
+        String(state.secuenciaActual.equipo || '') === String(state.equipo || '') &&
+        state.secuenciaActual.jugadoraId &&
+        !['Saque', 'Atajada de arquera'].includes(String(state.accion || '')));
+    }
+
+    function generarSecuenciaId() {
+      return `seq-${state.partidoId || 'partido'}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+    }
+
+    function accionCierraSecuencia(accion) {
+      return ['Pase', 'Pase relevante', 'Asistencia'].includes(String(accion || ''));
+    }
+
+    function getSecuenciaParaAccion() {
+      const jugadoraId = String(state.jugadoraId || '');
+      const equipo = String(state.equipo || '');
+      const actual = state.secuenciaActual;
+      const continua = actual &&
+        String(actual.equipo || '') === equipo &&
+        String(actual.jugadoraId || '') === jugadoraId &&
+        !actual.cerrada;
+      if (!continua) {
+        state.secuenciaActual = {
+          id: generarSecuenciaId(),
+          equipo,
+          jugadoraId,
+          orden: 0,
+          cerrada: false
+        };
+      }
+      state.secuenciaActual.orden += 1;
+      return {
+        id: state.secuenciaActual.id,
+        orden: state.secuenciaActual.orden
+      };
+    }
+
+    function cerrarSecuenciaSiCorresponde(accion) {
+      if (accionCierraSecuencia(accion)) state.secuenciaActual = null;
+    }
+
+    function esClave() {
+      const ac = state.accion || '';
+      const res = state.resultado;
+      return ac === 'Falta' || ac === 'Tarjeta' || (ac === 'Tiro' && res === 'gol') ||
+             ['penal','doble_penal'].includes(state.contexto);
+    }
+
+    // ═══ TITULARES / EN CANCHA ═══
+    function canchaStorageKey() {
+      return 'mrcl_partido_cancha_' + String(state.partidoId || '');
+    }
+
+    function cargarEstadoCancha() {
+      state.cancha = { propio: [], rival: [] };
+      state.canchaConfigurada = false;
+      const remoto = state.partido && state.partido.estado_cancha;
+      if (remoto && typeof remoto === 'object') {
+        const propio = Array.isArray(remoto.propio) ? remoto.propio.map(String).filter(Boolean) : [];
+        const rival = Array.isArray(remoto.rival) ? remoto.rival.map(String).filter(Boolean) : [];
+        if (propio.length || rival.length) {
+          state.cancha = { propio, rival };
+          state.canchaConfigurada = true;
+          localStorage.setItem(canchaStorageKey(), JSON.stringify(state.cancha));
+          return;
+        }
+      }
+      try {
+        const raw = localStorage.getItem(canchaStorageKey());
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const propio = Array.isArray(parsed?.propio) ? parsed.propio.map(String).filter(Boolean) : [];
+        const rival = Array.isArray(parsed?.rival) ? parsed.rival.map(String).filter(Boolean) : [];
+        state.cancha = { propio, rival };
+        state.canchaConfigurada = !!(propio.length || rival.length);
+      } catch (_) {
+        state.cancha = { propio: [], rival: [] };
+        state.canchaConfigurada = false;
+      }
+    }
+
+    function guardarEstadoCancha() {
+      localStorage.setItem(canchaStorageKey(), JSON.stringify(state.cancha));
+      state.canchaConfigurada = !!((state.cancha.propio || []).length || (state.cancha.rival || []).length);
+      apiPost({
+        action: 'partidos_guardarEstadoCancha',
+        id: state.partidoId,
+        partido_id: state.partidoId,
+        estado_cancha: state.cancha
+      }).catch(err => console.warn('[partidos] no se pudo persistir estado en cancha', err));
+    }
+
+    function equipoCanchaLabel(eq) {
+      return equipoLabel(eq);
+    }
+
+    function ordenarJugadoras(jugadoras) {
+      return [...(jugadoras || [])].sort((a,b) => {
+        const na = Number(a.Numero_Camiseta || a.Nro_Camiseta || 99);
+        const nb = Number(b.Numero_Camiseta || b.Nro_Camiseta || 99);
+        return na - nb;
+      });
+    }
+
+    function getTodasJugadorasEquipo(eq) {
+      const dual = state.partido && (state.partido.incluye_murcielagas === false || String(state.partido.tipo_partido || '').trim() === 'interno');
+      const base = dual
+        ? (eq === 'rival' ? state.visitantePlantel : state.localPlantel)
+        : (eq === 'rival' ? state.rivalPlantel : state.plantel);
+      return ordenarJugadoras((base || []).filter(p => esJugadoraVisible(p)));
+    }
+
+    function elegirTitularesDefault(jugadoras) {
+      return ordenarJugadoras(jugadoras).slice(0, Math.min(5, jugadoras.length)).map(personaKey).filter(Boolean);
+    }
+
+    function openModalTitulares(manual) {
+      const equipos = ['propio', 'rival'];
+      state.titularesDraft = {
+        propio: state.canchaConfigurada ? [...(state.cancha.propio || [])] : elegirTitularesDefault(getTodasJugadorasEquipo('propio')),
+        rival: state.canchaConfigurada ? [...(state.cancha.rival || [])] : elegirTitularesDefault(getTodasJugadorasEquipo('rival'))
+      };
+      renderTitularesModal();
+      const st = document.getElementById('titularesStatus');
+      if (st) {
+        st.textContent = manual ? '' : 'Seleccioná titulares para filtrar el registro.';
+        st.className = 'status-line';
+      }
+      document.getElementById('modalTitulares').classList.add('open');
+    }
+
+    function closeModalTitulares() {
+      document.getElementById('modalTitulares').classList.remove('open');
+    }
+
+    function renderTitularesModal() {
+      const cont = document.getElementById('titularesContent');
+      if (!cont) return;
+      cont.innerHTML = ['propio', 'rival'].map(eq => {
+        const jugadoras = getTodasJugadorasEquipo(eq);
+        if (!jugadoras.length && eq === 'rival') return '';
+        const selected = new Set((state.titularesDraft[eq] || []).map(String));
+        const count = selected.size;
+        return `<section class="titulares-section">
+          <div class="titulares-head">
+            <div class="titulares-title">${esc(equipoCanchaLabel(eq))}</div>
+            <span class="badge info">${count} en cancha</span>
+          </div>
+          ${jugadoras.length ? `<div class="titulares-grid">${jugadoras.map(p => {
+            const key = personaKey(p);
+            const num = p.Numero_Camiseta || p.Nro_Camiseta || '—';
+            const nombre = nombrePersonaCorto(p);
+            return `<button class="titular-btn${selected.has(String(key)) ? ' sel' : ''}" type="button" data-eq="${esc(eq)}" data-key="${esc(key)}" onclick="toggleTitular(this)">
+              <span class="titular-num">${esc(String(num))}</span>${esc(nombre)}
+            </button>`;
+          }).join('')}</div>` : '<div class="empty">Sin plantel cargado.</div>'}
+        </section>`;
+      }).filter(Boolean).join('');
+    }
+
+    function toggleTitular(btn) {
+      const eq = btn.dataset.eq;
+      const key = String(btn.dataset.key || '');
+      if (!eq || !key) return;
+      const set = new Set((state.titularesDraft[eq] || []).map(String));
+      if (set.has(key)) set.delete(key); else set.add(key);
+      state.titularesDraft[eq] = [...set];
+      renderTitularesModal();
+    }
+
+    function guardarTitulares() {
+      state.cancha = {
+        propio: [...new Set((state.titularesDraft.propio || []).map(String).filter(Boolean))],
+        rival: [...new Set((state.titularesDraft.rival || []).map(String).filter(Boolean))]
+      };
+      guardarEstadoCancha();
+      closeModalTitulares();
+      buildCambioSelects();
+      resetFlujo();
+      showToast('Titulares actualizadas');
+    }
+
+    function usarTodoElPlantelEnCancha() {
+      state.cancha = {
+        propio: getTodasJugadorasEquipo('propio').map(personaKey).filter(Boolean),
+        rival: getTodasJugadorasEquipo('rival').map(personaKey).filter(Boolean)
+      };
+      guardarEstadoCancha();
+      closeModalTitulares();
+      buildCambioSelects();
+      resetFlujo();
+      showToast('Plantel habilitado');
+    }
+
+    function getJugadorasEnCancha(eq) {
+      const jugadoras = getTodasJugadorasEquipo(eq);
+      if (!state.canchaConfigurada) return jugadoras;
+      const ids = new Set((state.cancha[eq] || []).map(String));
+      const filtradas = jugadoras.filter(p => ids.has(String(personaKey(p))));
+      return filtradas.length ? filtradas : jugadoras;
+    }
+
+    // ═══ RENDER JUGADORAS ═══
+    function renderJugadoras(scrollId, excluirId) {
+      const scroll = document.getElementById(scrollId);
+      if (!scroll) return;
+      let jugadoras = getJugadorasEquipoActual();
+      if (!jugadoras.length) {
+        scroll.innerHTML = '<div style="color:var(--muted);font-size:.86rem;font-weight:700;padding:4px 0">Sin jugadoras en el plantel</div>';
+        return;
+      }
+      scroll.innerHTML = jugadoras
+        .filter(p => personaKey(p) !== excluirId)
+        .sort((a,b) => {
+          const na = Number(a.Numero_Camiseta || a.Nro_Camiseta || 99);
+          const nb = Number(b.Numero_Camiseta || b.Nro_Camiseta || 99);
+          return na - nb;
+        })
+        .map(p => {
+          const key = personaKey(p);
+          const num = p.Numero_Camiseta || p.Nro_Camiseta || '—';
+          const nombre = nombrePersonaCorto(p);
+          const isTarget = scrollId === 'jugadorasScroll';
+          const onclick = isTarget
+            ? `selJugadora('${esc(key)}','${esc(nombre)}',this,'${scrollId}')`
+            : `selJugadoraAnt('${esc(key)}','${esc(nombre)}',this)`;
+          return `<div class="jugadora-card" data-key="${esc(key)}" onclick="${onclick}">
+            <div class="jc-num">${esc(String(num))}</div>
+            <div class="jc-name">${esc(nombre)}</div>
+          </div>`;
+        }).join('');
+    }
+
+    function esJugadoraVisible(p) {
+      const tipo = String(p.Tipo_Integrante || p.tipo_integrante || '').trim().toLowerCase();
+      return tipo === 'jugadora' || tipo === 'arquera';
+    }
+
+    function esArquera(p) {
+      const tipo = String(p.Tipo_Integrante || '').toLowerCase();
+      return tipo === 'arquera' || tipo.includes('arquera') || tipo.includes('porter') || tipo.includes('gk');
+    }
+
+    function getArqueraEquipoActual() {
+      const eq = state.equipo || 'propio';
+      return getJugadorasEnCancha(eq).find(p => esArquera(p)) || getTodasJugadorasEquipo(eq).find(p => esArquera(p));
+    }
+
+    function getJugadorasEquipoActual() {
+      return getJugadorasEnCancha(state.equipo || 'propio');
+    }
+
+    function hayJugadorasRival() { return getJugadorasEquipoActual().length > 0; }
+
+    function equipoLabel(eq) {
+      const dual = state.partido && (state.partido.incluye_murcielagas === false || String(state.partido.tipo_partido || '').trim() === 'interno');
+      if (dual) return eq === 'rival' ? (state.partido.equipo_visitante_nombre || 'Visitante') : (state.partido.equipo_local_nombre || 'Local');
+      return eq === 'rival' ? (state.partido?.rival || 'Rival') : 'Las Murciélagas';
+    }
+
+    function equipoIdActual() {
+      const dual = state.partido && (state.partido.incluye_murcielagas === false || String(state.partido.tipo_partido || '').trim() === 'interno');
+      if (dual) return state.equipo === 'rival' ? (state.partido.equipo_visitante_id || '') : (state.partido.equipo_local_id || '');
+      return state.equipo === 'rival' ? (state.partido?.rival_id || '') : '';
+    }
+
+    function personaKey(p) {
+      if (p && typeof p === 'object') return Murci.personaRef(p) || String(p.DNI || p.dni || '');
+      return String(p || '');
+    }
+
+    function nombrePersona(p) { return Murci.personName(p) || ''; }
+    function nombrePersonaCorto(p) { return Murci.personShortName ? Murci.personShortName(p) : nombrePersona(p); }
+
+    // ═══ REGISTRAR ═══
+    async function registrarAccion(options = {}) {
+      const continuar = !!options.continuar;
+      const btn = document.getElementById('btnRegistrar');
+      const btnSeguir = document.getElementById('btnRegistrarSeguir');
+      if (!state.accion || state.valoracion === null || !state.equipo) {
+        alert('Completá los pasos obligatorios.');
+        return;
+      }
+      btn.disabled = true;
+      if (btnSeguir) btnSeguir.disabled = true;
+      const prev = {
+        equipo: state.equipo,
+        contexto: state.contexto || 'juego_libre',
+        jugadoraId: state.jugadoraId,
+        accion: state.accion
+      };
+      const secuencia = getSecuenciaParaAccion();
+      const payload = {
+        action: 'partidos_registrarAccion',
+        partido_id: state.partidoId,
+        secuencia_id: secuencia.id,
+        secuencia_orden: secuencia.orden,
+        equipo: state.equipo,
+        equipo_id: equipoIdActual(),
+        tipo_partido: state.partido?.tipo || '',
+        contexto: state.contexto || 'juego_libre',
+        accion: state.accion,
+        zona: state.zona || '',
+        jugadora_id: state.jugadoraId || '',
+        valoracion: state.valoracion,
+        resultado: state.resultado || '',
+        arquera_valoracion: state.arqueraValoracion !== null ? state.arqueraValoracion : '',
+        es_pase_relevante: state.esPaseRelevante !== null ? state.esPaseRelevante : '',
+        tiempo_neto: state.tiempoNeto !== null ? state.tiempoNeto : '',
+        jugadora_anterior_id: state.jugadoraAnteriorId || '',
+        narracion: state.narracion || '',
+        observacion_tactica: state.narracion || ''
+      };
+      try {
+        const res = await apiPost(payload);
+        const nueva = { id: res.id, ...payload };
+        delete nueva.action;
+        state.acciones.push(nueva);
+        recalcScore();
+        const fueGol = state.resultado === 'gol' && state.equipo === 'propio';
+        cerrarSecuenciaSiCorresponde(state.accion);
+        resetFlujo();
+        if (continuar && state.secuenciaActual && !accionCierraSecuencia(prev.accion)) {
+          prepararContinuacionSecuencia(prev);
+        }
+        showToast('✓ Acción registrada');
+        if (fueGol) {
+          setTimeout(() => document.getElementById('golModal').classList.add('open'), 400);
+        }
+      } catch(e) {
+        if (state.secuenciaActual && state.secuenciaActual.id === secuencia.id) {
+          state.secuenciaActual.orden = Math.max(0, Number(state.secuenciaActual.orden || 1) - 1);
+          if (state.secuenciaActual.orden === 0) state.secuenciaActual = null;
+        }
+        alert('Error al registrar: ' + e.message);
+        btn.disabled = false;
+        if (btnSeguir) btnSeguir.disabled = false;
+      }
+    }
+
+    function prepararContinuacionSecuencia(prev) {
+      setTimeout(() => {
+        const eqBtn = document.querySelector(`.equipo-btn[data-eq="${prev.equipo}"]`);
+        if (!eqBtn) return;
+        selEquipo(prev.equipo, eqBtn);
+        setTimeout(() => {
+          const ctxBtn = document.querySelector(`.contexto-btn[data-ctx="${prev.contexto}"]`) || document.querySelector('.contexto-btn[data-ctx="juego_libre"]');
+          if (!ctxBtn) return;
+          selContexto(ctxBtn.dataset.ctx || 'juego_libre', ctxBtn);
+        }, 40);
+      }, 40);
+    }
+
+    function resetFlujo() {
+      // Limpiar estado de selección
+      state.equipo = null;
+      state.contexto = null;
+      state.accion = null;
+      state.zona = null;
+      state.jugadoraId = null;
+      state.valoracion = null;
+      state.resultado = null;
+      state.arqueraValoracion = null;
+      state.tiempoNeto = null;
+      state.jugadoraAnteriorId = null;
+      state.esPaseRelevante = null;
+      state.narracion = null;
+      // Reset UI
+      document.querySelectorAll('.paso').forEach((el, i) => {
+        el.classList.remove('activo', 'completado');
+        el.classList.add('bloqueado');
+      });
+      document.getElementById('paso-equipo').classList.remove('bloqueado');
+      document.getElementById('paso-equipo').classList.add('activo');
+      document.querySelectorAll('.equipo-btn,.contexto-btn,.accion-btn,.cancha-zona,.arco-zona,.jugadora-card,.sema-btn,.res-btn,.sino-btn').forEach(b => b.classList.remove('sel'));
+      document.getElementById('inputTiempo').value = '';
+      if (document.getElementById('inputNarracion')) document.getElementById('inputNarracion').value = '';
+      document.getElementById('arqueraValWrap').classList.add('hidden');
+      document.getElementById('btnRegistrar').disabled = true;
+      const btnSeguir = document.getElementById('btnRegistrarSeguir');
+      if (btnSeguir) btnSeguir.disabled = true;
+      // Sels
+      ['equipo','contexto','accion','zona','jugadora','valoracion','resultado','tiempo','jugadora-ant','pase-rel','narracion'].forEach(id => {
+        const el = document.getElementById('sel-' + id);
+        if (el) el.textContent = {
+          equipo:'Propio o rival', contexto:'¿Cómo se originó?', accion:'¿Qué ocurrió?', zona:'¿Dónde ocurrió?',
+          jugadora:'¿Quién ejecutó?', valoracion:'¿Cómo salió?', resultado:'¿Qué pasó?',
+          tiempo:'Minuto (opcional)', 'jugadora-ant':'¿Quién habilitó? (opcional)',
+          'pase-rel':'Sí o No', narracion:'Describí la jugada (opcional)'
+        }[id] || '';
+      });
+      // Estado asistencia
+      if (!state.asistenciaHabilitada) {
+        document.getElementById('btnAsistencia').classList.add('disabled-btn');
+      }
+    }
+
+    // ═══ ASISTENCIA POST GOL ═══
+    function iniciarAsistencia() {
+      closeGolModal();
+      state.asistenciaHabilitada = false;
+      document.getElementById('btnAsistencia').classList.remove('disabled-btn');
+      // Pre-seleccionar equipo = propio, contexto = juego_libre, acción = Asistencia
+      resetFlujo();
+      setTimeout(() => {
+        selEquipo('propio', document.querySelector('.equipo-btn[data-eq="propio"]'));
+        setTimeout(() => {
+          selContexto('juego_libre', document.querySelector('.contexto-btn[data-ctx="juego_libre"]'));
+          setTimeout(() => {
+            const btnAsist = document.getElementById('btnAsistencia');
+            btnAsist.classList.remove('disabled-btn');
+            selAccion('Asistencia', btnAsist);
+          }, 50);
+        }, 50);
+      }, 50);
+    }
+
+    function closeGolModal() {
+      document.getElementById('golModal').classList.remove('open');
+    }
+
+    // ═══ CAMBIO ═══
+    function openModalCambio() {
+      const camEquipo = document.getElementById('camEquipo');
+      if (camEquipo) camEquipo.value = state.equipo || 'propio';
+      buildCambioSelects();
+      document.getElementById('modalCambio').classList.add('open');
+    }
+    function closeModalCambio() { document.getElementById('modalCambio').classList.remove('open'); }
+
+    function onCambioTipoChange() {
+      const tipo = document.getElementById('camTipo').value;
+      document.getElementById('cambioJugadoraFields').classList.toggle('hidden', tipo !== 'jugadora');
+      document.getElementById('cambioPosicionFields').classList.toggle('hidden', tipo !== 'posicion');
+      document.getElementById('cambioSistemaFields').classList.toggle('hidden', tipo !== 'sistema');
+      buildCambioSelects();
+    }
+
+    function buildCambioSelects() {
+      const eq = document.getElementById('camEquipo')?.value || state.equipo || 'propio';
+      const tipo = document.getElementById('camTipo')?.value || 'jugadora';
+      const todas = getTodasJugadorasEquipo(eq);
+      const enCancha = getJugadorasEnCancha(eq);
+      const canchaIds = new Set(enCancha.map(p => String(personaKey(p))));
+      const salientes = tipo === 'jugadora' ? enCancha : enCancha;
+      const entrantes = state.canchaConfigurada ? todas.filter(p => !canchaIds.has(String(personaKey(p)))) : todas;
+      const optionHtml = (jugadoras) => '<option value="">— Seleccioná —</option>' + jugadoras.map(p => {
+        const key = personaKey(p);
+        const num = p.Numero_Camiseta || p.Nro_Camiseta || '—';
+        const nombre = nombrePersonaCorto(p);
+        return `<option value="${esc(key)}">${esc(num)} – ${esc(nombre)}</option>`;
+      }).join('');
+      const sale = document.getElementById('camSale');
+      const entra = document.getElementById('camEntra');
+      const pos = document.getElementById('camJugPos');
+      if (sale) sale.innerHTML = optionHtml(salientes);
+      if (entra) entra.innerHTML = optionHtml(entrantes);
+      if (pos) pos.innerHTML = optionHtml(enCancha);
+    }
+
+    async function registrarCambio() {
+      const st = document.getElementById('cambioStatus');
+      const tipo = document.getElementById('camTipo').value;
+      const equipoCambio = document.getElementById('camEquipo')?.value || state.equipo || 'propio';
+      const minuto = document.getElementById('camMinuto').value;
+      let desc = '';
+      if (tipo === 'jugadora') {
+        const sale = document.getElementById('camSale');
+        const entra = document.getElementById('camEntra');
+        if (!sale.value || !entra.value) {
+          st.textContent = 'Seleccioná quién sale y quién entra.';
+          st.className = 'status-line error';
+          return;
+        }
+        desc = `Cambio: sale ${sale.selectedOptions[0]?.text||'—'}, entra ${entra.selectedOptions[0]?.text||'—'}`;
+      } else if (tipo === 'posicion') {
+        const jug = document.getElementById('camJugPos').selectedOptions[0]?.text || '—';
+        const pos = document.getElementById('camNuevaPosicion').value.trim();
+        desc = `Posición: ${jug} → ${pos}`;
+      } else {
+        const sis = document.getElementById('camSistema').value.trim();
+        desc = `Sistema: ${sis}`;
+      }
+      st.textContent = 'Guardando...'; st.className = 'status-line';
+      try {
+        await apiPost({
+          action: 'partidos_agregarMomento',
+          id: state.partidoId,
+          partido_id: state.partidoId,
+          tipo: 'cambio',
+          tiempo: minuto || null,
+          descripcion: desc
+        });
+        if (tipo === 'jugadora') aplicarCambioJugadora(equipoCambio);
+        st.textContent = '✓ Cambio registrado'; st.className = 'status-line ok';
+        buildCambioSelects();
+        resetFlujo();
+        setTimeout(closeModalCambio, 900);
+      } catch(e) {
+        st.textContent = 'Error: ' + e.message; st.className = 'status-line error';
+      }
+    }
+
+    function aplicarCambioJugadora(eq) {
+      const saleId = String(document.getElementById('camSale')?.value || '');
+      const entraId = String(document.getElementById('camEntra')?.value || '');
+      if (!saleId || !entraId) return;
+      const actual = state.canchaConfigurada
+        ? [...(state.cancha[eq] || [])].map(String)
+        : getTodasJugadorasEquipo(eq).map(personaKey).map(String).filter(Boolean);
+      const next = actual.filter(id => id !== saleId);
+      if (!next.includes(entraId)) next.push(entraId);
+      state.cancha[eq] = next;
+      guardarEstadoCancha();
+    }
+
+    // ═══ HISTORIAL ═══
+    function renderHistorial() {
+      const cont = document.getElementById('historialBody');
+      const count = document.getElementById('historialCount');
+      const acc = [...state.acciones].reverse();
+      count.textContent = `${acc.length} acción${acc.length !== 1 ? 'es' : ''}`;
+      if (!acc.length) { cont.innerHTML = '<div class="empty">Sin acciones registradas.</div>'; return; }
+      cont.innerHTML = acc.map(a => {
+        const jugNombre = resolveNombre(a.jugadora_id) || a.jugadora_id || '—';
+        const valClass = VAL_CLASS[String(a.valoracion)] || 'val-n';
+        const valLabel = VAL_LABELS[String(a.valoracion)] || '/';
+        const tiempo = a.tiempo_neto != null ? `${a.tiempo_neto}'` : '';
+        const badgeEq = a.equipo === 'propio' ? '<span class="badge info" style="font-size:.65rem">P</span>' : '<span class="badge" style="font-size:.65rem">R</span>';
+        const seqBadge = a.secuencia_orden ? `<span class="badge" style="font-size:.65rem">S${esc(a.secuencia_orden)}</span>` : '';
+        return `<div class="accion-row">
+          ${badgeEq}
+          ${seqBadge}
+          <span class="accion-tipo">${esc(a.accion||'—')}</span>
+          <span class="accion-jugadora">${esc(jugNombre)}</span>
+          ${a.resultado ? `<span class="badge ${resBadge(a.resultado)}" style="font-size:.65rem">${esc(a.resultado)}</span>` : ''}
+          <span class="accion-val ${valClass}">${valLabel}</span>
+          <span class="accion-tiempo">${esc(tiempo)}</span>
+          <button class="btn small danger" style="flex-shrink:0;padding:5px 8px;font-size:.72rem" onclick="eliminarAccion('${esc(a.id)}')">×</button>
+        </div>`;
+      }).join('');
+    }
+
+    async function eliminarAccion(id) {
+      if (!confirm('¿Eliminar esta acción?')) return;
+      try {
+        await apiPost({ action: 'partidos_eliminarAccion', id });
+        state.acciones = state.acciones.filter(a => String(a.id) !== String(id));
+        recalcScore();
+        renderHistorial();
+        renderStats();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ═══ STATS ═══
+    function renderStats() {
+      const acc = state.acciones;
+      document.getElementById('stTotal').textContent = acc.filter(a => a.equipo === 'propio').length;
+      document.getElementById('stRival').textContent = acc.filter(a => a.equipo === 'rival').length;
+      document.getElementById('stGoles').textContent = acc.filter(a => a.resultado === 'gol').length;
+      document.getElementById('stTiros').textContent = acc.filter(a => a.accion === 'Tiro').length;
+      // Por jugadora
+      const porJugadora = {};
+      acc.filter(a => a.equipo === 'propio' && a.jugadora_id).forEach(a => {
+        const k = a.jugadora_id;
+        if (!porJugadora[k]) porJugadora[k] = { nombre: resolveNombre(k)||k, total:0, vals:[] };
+        porJugadora[k].total++;
+        if (a.valoracion !== null && a.valoracion !== undefined) porJugadora[k].vals.push(Number(a.valoracion));
+      });
+      const rows = Object.values(porJugadora).sort((a,b) => b.total - a.total);
+      const contJ = document.getElementById('statsJugadoras');
+      if (!rows.length) { contJ.innerHTML = '<div class="empty">Sin datos.</div>'; }
+      else contJ.innerHTML = rows.map(r => {
+        const avg = r.vals.length ? (r.vals.reduce((s,v) => s+v,0)/r.vals.length).toFixed(1) : '—';
+        return `<div class="stat-row">
+          <div class="stat-nombre">${esc(r.nombre)}</div>
+          <div class="stat-nums">${r.total} acción${r.total!==1?'es':''} · promedio ${avg}</div>
+        </div>`;
+      }).join('');
+      // Por tipo
+      const porTipo = {};
+      acc.forEach(a => { const t = a.accion||'—'; porTipo[t]=(porTipo[t]||0)+1; });
+      const tipoRows = Object.entries(porTipo).sort((a,b) => b[1]-a[1]);
+      const contT = document.getElementById('statsTipos');
+      if (!tipoRows.length) { contT.innerHTML = '<div class="empty">Sin datos.</div>'; }
+      else contT.innerHTML = tipoRows.map(([tipo, n]) => `<div class="stat-row">
+        <div class="stat-nombre">${esc(tipo)}</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.round(n/acc.length*100)}%"></div></div>
+        <div class="stat-nums">${n}</div>
+      </div>`).join('');
+    }
+
+    // ═══ NUMEROS DE PASO ═══
+    function actualizarNumeroPasos() {
+      const visibles = ['equipo','contexto','accion','zona','jugadora','valoracion','resultado','tiempo','jugadora-ant','pase-rel','narracion'];
+      let n = 1;
+      visibles.forEach(id => {
+        const el = document.getElementById('paso-' + id);
+        if (!el || el.classList.contains('hidden')) return;
+        const numEl = el.querySelector('.paso-num') || document.getElementById('num' + id.replace('-','').replace(/(^\w)/, c => c.toUpperCase()));
+        if (numEl) numEl.textContent = n;
+        n++;
+      });
+    }
+
+    // ═══ HELPERS ═══
+    function resolveNombre(id) {
+      if (!id) return '';
+      const p = (state.plantel || []).concat(state.rivalPlantel || [], state.localPlantel || [], state.visitantePlantel || []).find(x => personaKey(x) === String(id));
+      return p ? nombrePersonaCorto(p) : '';
+    }
+
+    function resBadge(r) { return {gol:'ok',atajado:'danger',afuera:'warn',palo:'',bloqueo:'info'}[r]||''; }
+
+    function formatDate(d) {
+      if (!d) return '';
+      const p = String(d).split('-');
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+    }
+
+    function esc(v) {
+      return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 350); }, 2000);
+    }
+
+    // ── Cerrar modales al tocar overlay ──
+    document.getElementById('modalTitulares').addEventListener('click', function(e) { if (e.target === this) closeModalTitulares(); });
+    document.getElementById('modalCambio').addEventListener('click', function(e) { if (e.target === this) closeModalCambio(); });
+    document.getElementById('golModal').addEventListener('click', function(e) { if (e.target === this) closeGolModal(); });
   </script>
 </body>
 </html>
