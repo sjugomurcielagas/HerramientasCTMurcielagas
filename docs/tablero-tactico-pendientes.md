@@ -1,4 +1,4 @@
-# Tablero táctico — fixes pendientes
+# Tablero táctico — fixes de auditoría (cerrados al 2026-07-10)
 
 Auditoría realizada: 2026-07-08  
 Archivo afectado: `tactica/index.html`  
