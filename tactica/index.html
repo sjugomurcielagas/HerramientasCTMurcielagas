@@ -806,6 +806,7 @@ let arrowMode=false,arrowFrom=null;
 let annotMode=null; // null | 'freedraw' | 'text'
 let annotDrawing=false,annotPath=[],annotColor='#4a9fd4';
 let selectedAnnotIdx=null;
+let _activeTextInput=null;
 let _phaseLabelHits=[]; // [{idx, type:'arrow'|'annot', x, y, w, h, arrowOrAnnotRef}]
 let currentTeam='A';
 let counterA=1,counterB=1;
@@ -1165,6 +1166,7 @@ function setActivePhase(delta){
 // ANOTACIONES
 // =============================================
 function toggleAnnotMode(mode){
+  closeTextInputIfOpen();
   if(annotMode===mode){
     annotMode=null;
     updateAnnotButtons();
@@ -1236,6 +1238,9 @@ function deleteSelectedAnnot(){
   draw();
   status('Anotación eliminada');
 }
+function closeTextInputIfOpen(){
+  if(_activeTextInput){_activeTextInput.remove();_activeTextInput=null;}
+}
 function openTextInput(x,y){
   // Calcular posición en pantalla
   const rect=canvas.getBoundingClientRect();
@@ -1259,6 +1264,7 @@ function openTextInput(x,y){
   inp.style.left=Math.min(window.innerWidth-140,Math.max(4,sx-6))+'px';
   inp.style.top=Math.min(window.innerHeight-50,Math.max(4,sy-20))+'px';
   document.body.appendChild(inp);
+  _activeTextInput=inp;
   inp.focus();
   let committed=false;
   function commit(){
@@ -1266,6 +1272,7 @@ function openTextInput(x,y){
     committed=true;
     const txt=inp.value.trim();
     inp.remove();
+    _activeTextInput=null;
     if(!txt) return;
     saveHistory();
     annotations.push({
@@ -1280,7 +1287,7 @@ function openTextInput(x,y){
     draw();
     status('Texto agregado');
   }
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){committed=true;inp.remove();}});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){committed=true;inp.remove();_activeTextInput=null;}});
   inp.addEventListener('blur',commit);
 }
 
@@ -1420,6 +1427,7 @@ function setDrawMode(m){
   toast(h[m],2500);
 }
 function toggleArrowMode(){
+  closeTextInputIfOpen();
   arrowMode=!arrowMode;arrowFrom=null;
   curveStep=0;curveP1=null;curveP2=null;freeDrawing=false;freePath=[];
   if(arrowMode&&annotMode){annotMode=null;annotDrawing=false;annotPath=[];updateAnnotButtons();}
@@ -1785,6 +1793,7 @@ function exportJSON(){
   const categoria=document.getElementById('save-category-select')?.value||getExerciseCategoryValue(currentExerciseMeta)||'';
   const categoriaOtro=document.getElementById('save-category-other')?.value.trim()||currentExerciseMeta?.categoria_otro||currentExerciseMeta?.category_other||'';
   const descripcion=document.getElementById('save-description')?.value.trim()||getExerciseDescription(currentExerciseMeta)||'';
+  const _clone=v=>JSON.parse(JSON.stringify(v));
   const data={
     meta:{
       app:'Tablero Táctico FADEC',
@@ -1797,7 +1806,7 @@ function exportJSON(){
       hora,
       equipo:'Las Murciélagas'
     },
-    players,arrows,annotations,balls,currentBallId,manualPhaseBreaks,currentPhase,phaseView,counterA,counterB,placedEntityIds:[...placedEntityIds]
+    players:_clone(players),arrows:_clone(arrows),annotations:_clone(annotations),balls:_clone(balls),currentBallId,manualPhaseBreaks:_clone(manualPhaseBreaks),currentPhase,phaseView,activePhase,counterA,counterB,placedEntityIds:[...placedEntityIds]
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1820,6 +1829,8 @@ function importJSON(event){
       manualPhaseBreaks=data.manualPhaseBreaks||[];
       currentPhase=data.currentPhase||1;
       phaseView=data.phaseView||'all';
+      activePhase=data.activePhase||1;
+      const _iapl=document.getElementById('active-phase-label');if(_iapl)_iapl.textContent='F'+activePhase;
       counterA=data.counterA||1;counterB=data.counterB||1;
       normalizeBoardState(data);ensureDefaultBall();updatePhaseBadge();draw();
       // Mostrar metadata si existe
