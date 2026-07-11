@@ -1,9 +1,25 @@
 {
+  "name": "herramientasctmurcielagas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "service-worker.js",
   "scripts": {
     "lh": "node scripts/run-lighthouse.mjs",
     "lh:all": "node scripts/run-lighthouse.mjs all",
     "lh:reportes": "node scripts/run-lighthouse.mjs reportes/"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjugomurcielagas/HerramientasCTMurcielagas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sjugomurcielagas/HerramientasCTMurcielagas/issues"
+  },
+  "homepage": "https://github.com/sjugomurcielagas/HerramientasCTMurcielagas#readme",
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "chrome-launcher": "^1.2.1",
