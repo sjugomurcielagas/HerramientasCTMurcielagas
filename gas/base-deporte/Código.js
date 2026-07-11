@@ -2421,6 +2421,7 @@ function doPost(e) {
   break;
 
       case 'partidos_registrarAccion':   result = partidos_registrarAccion(payload); break;
+      case 'partidos_registrarAccionesBatch': result = partidos_registrarAccionesBatch(payload); break;
       case 'partidos_getAcciones':       result = partidos_getAcciones(payload); break;
       case 'partidos_getAccionesResumen': result = partidos_getAccionesResumen(payload); break;
       case 'partidos_eliminarAccion':    result = partidos_eliminarAccion(payload); break;
@@ -3802,7 +3803,7 @@ function calcularImpactoJugadoras_(p) {
 //   jugadora_anterior_id | narracion
 
 var ACCIONES_HEADERS_ = [
-  'id', 'partido_id', 'timestamp_registro', 'equipo', 'tipo_partido',
+  'id', 'local_id', 'partido_id', 'timestamp_registro', 'equipo', 'tipo_partido',
   'contexto', 'accion', 'zona', 'jugadora_id', 'valoracion',
   'resultado', 'arquera_valoracion', 'es_pase_relevante', 'tiempo_neto',
   'jugadora_anterior_id', 'narracion', 'equipo_id',
@@ -3834,39 +3835,75 @@ function partidos_getOrCreateAccionesSheet_() {
 }
 
 function partidos_registrarAccion(p) {
-  if (!p.partido_id) throw new Error('partido_id es requerido');
-  if (!p.accion) throw new Error('accion es requerido');
+  p = p || {};
+  var data = _partidosRegistrarAccionesBatchData_({
+    partido_id: p.partido_id,
+    acciones: [p]
+  });
+  var item = data && data.items && data.items[0];
+  if (!item || !item.ok) throw new Error(item && item.error ? item.error : 'No se pudo registrar la acción');
+  return ok(true, { id: item.id, local_id: item.local_id || p.local_id || '' });
+}
 
+function partidos_registrarAccionesBatch(p) {
+  return ok(true, _partidosRegistrarAccionesBatchData_(p));
+}
+
+function _partidosRegistrarAccionesBatchData_(p) {
+  p = p || {};
+  var partidoId = String(p.partido_id || '').trim();
+  if (!partidoId) throw new Error('partido_id es requerido');
+  var acciones = Array.isArray(p.acciones) ? p.acciones : [];
+  if (!acciones.length) throw new Error('acciones es requerido');
   const sheet = partidos_getOrCreateAccionesSheet_();
-  const id = newId();
+  var items = [];
+  var appended = 0;
+  acciones.forEach(function(accion) {
+    accion = accion || {};
+    var localId = String(accion.local_id || '').trim();
+    try {
+      if (!accion.accion) throw new Error('accion es requerido');
+      var id = newId();
+      appendObjectRow_(sheet, _partidosAccionRow_(accion, partidoId, id, localId), ACCIONES_HEADERS_);
+      items.push({ local_id: localId, id: id, ok: true });
+      appended++;
+    } catch (err) {
+      items.push({
+        local_id: localId,
+        ok: false,
+        error: err && err.message ? err.message : String(err)
+      });
+    }
+  });
+  if (appended > 0) equipos_recalcularStatsPorPartido_(partidoId);
+  return { items: items };
+}
 
-	  appendObjectRow_(sheet, {
-	    id: id,
-	    partido_id: p.partido_id,
-	    timestamp_registro: new Date().toISOString(),
-	    equipo: p.equipo || 'propio',
-	    tipo_partido: p.tipo_partido || '',
-	    contexto: p.contexto || 'juego_libre',
-	    accion: p.accion,
-	    zona: p.zona || '',
-	    jugadora_id: p.jugadora_id || '',
-	    valoracion: (p.valoracion !== undefined && p.valoracion !== null && p.valoracion !== '') ? Number(p.valoracion) : '',
-	    resultado: p.resultado || '',
-	    arquera_valoracion: (p.arquera_valoracion !== undefined && p.arquera_valoracion !== null && p.arquera_valoracion !== '') ? Number(p.arquera_valoracion) : '',
-	    es_pase_relevante: (p.es_pase_relevante !== undefined && p.es_pase_relevante !== null && p.es_pase_relevante !== '') ? String(p.es_pase_relevante) : '',
-	    tiempo_neto: (p.tiempo_neto !== undefined && p.tiempo_neto !== null && p.tiempo_neto !== '') ? Number(p.tiempo_neto) : '',
-		    jugadora_anterior_id: p.jugadora_anterior_id || '',
-		    narracion: p.narracion || '',
-		    equipo_id: p.equipo_id || '',
-		    secuencia_id: p.secuencia_id || '',
-		    secuencia_orden: (p.secuencia_orden !== undefined && p.secuencia_orden !== null && p.secuencia_orden !== '') ? Number(p.secuencia_orden) : '',
-		    observacion_tactica: p.observacion_tactica || ''
-		  }, ACCIONES_HEADERS_);
-
-	  equipos_recalcularStatsPorPartido_(p.partido_id);
-
-	  return ok(true, { id });
-	}
+function _partidosAccionRow_(p, partidoId, id, localId) {
+  return {
+    id: id,
+    local_id: localId || '',
+    partido_id: partidoId,
+    timestamp_registro: p.timestamp_registro || new Date().toISOString(),
+    equipo: p.equipo || 'propio',
+    tipo_partido: p.tipo_partido || '',
+    contexto: p.contexto || 'juego_libre',
+    accion: p.accion,
+    zona: p.zona || '',
+    jugadora_id: p.jugadora_id || '',
+    valoracion: (p.valoracion !== undefined && p.valoracion !== null && p.valoracion !== '') ? Number(p.valoracion) : '',
+    resultado: p.resultado || '',
+    arquera_valoracion: (p.arquera_valoracion !== undefined && p.arquera_valoracion !== null && p.arquera_valoracion !== '') ? Number(p.arquera_valoracion) : '',
+    es_pase_relevante: (p.es_pase_relevante !== undefined && p.es_pase_relevante !== null && p.es_pase_relevante !== '') ? String(p.es_pase_relevante) : '',
+    tiempo_neto: (p.tiempo_neto !== undefined && p.tiempo_neto !== null && p.tiempo_neto !== '') ? Number(p.tiempo_neto) : '',
+    jugadora_anterior_id: p.jugadora_anterior_id || '',
+    narracion: p.narracion || '',
+    equipo_id: p.equipo_id || '',
+    secuencia_id: p.secuencia_id || '',
+    secuencia_orden: (p.secuencia_orden !== undefined && p.secuencia_orden !== null && p.secuencia_orden !== '') ? Number(p.secuencia_orden) : '',
+    observacion_tactica: p.observacion_tactica || ''
+  };
+}
 
 function partidos_getAcciones(p) {
   if (!p.partido_id) throw new Error('partido_id es requerido');

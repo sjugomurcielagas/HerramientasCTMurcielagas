@@ -20,6 +20,8 @@
     .match-info{min-width:0}.match-rival{font-size:.8rem;color:rgba(255,255,255,.6);font-weight:700;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}.match-meta{font-size:.72rem;color:rgba(255,255,255,.42);margin-top:1px}
     .match-score{font-family:"Barlow Condensed",sans-serif;font-size:2.2rem;font-weight:700;line-height:1;color:#fff;flex-shrink:0}
     .live-badge{background:var(--danger);color:#fff;font-size:.7rem;font-weight:800;padding:3px 8px;border-radius:999px;flex-shrink:0;animation:pulse-live 2s infinite}
+    .sync-badge{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:.7rem;font-weight:800;padding:3px 8px;border-radius:999px;flex-shrink:0;cursor:pointer;white-space:nowrap}
+    .sync-badge.ok{background:rgba(4,120,87,.86);border-color:rgba(255,255,255,.18)}.sync-badge.warn{background:rgba(180,83,9,.92)}.sync-badge.error{background:rgba(185,28,28,.92)}
     @keyframes pulse-live{0%,100%{opacity:1}50%{opacity:.6}}
     /* Tabs */
     .tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;position:sticky;top:57px;z-index:40;background:linear-gradient(180deg,rgba(248,252,255,1) 0%,rgba(248,252,255,.92) 100%);border-bottom:1px solid var(--borde);max-width:640px;margin:0 auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
@@ -151,7 +153,7 @@
     .registrar-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-top:1px solid var(--borde);padding:10px 14px 16px;display:flex;gap:8px;z-index:30;max-width:640px;margin:0 auto}
 
     /* ── HISTORIAL ── */
-    .accion-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--borde)}.accion-row:last-child{border-bottom:none}
+    .accion-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--borde)}.accion-row:last-child{border-bottom:none}.accion-row.pending{background:#fffbeb;margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:10px}.accion-row.error{background:#fef2f2;margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:10px}
     .accion-tipo{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;min-width:68px;letter-spacing:.03em}
     .accion-jugadora{font-size:.88rem;font-weight:800;color:var(--azul-950);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .accion-val{font-size:.9rem;font-weight:800;min-width:22px;text-align:center}
@@ -219,6 +221,7 @@
       <div class="match-meta" id="matchMeta"></div>
     </div>
     <div class="match-score" id="matchScore">0 – 0</div>
+    <button class="sync-badge ok" id="syncStatus" type="button" onclick="retrySyncQueue()">Todo guardado</button>
     <div class="live-badge">EN VIVO</div>
   </div>
 
@@ -675,6 +678,8 @@
       localPlantel: [],
       visitantePlantel: [],
       acciones: [],
+      syncTimer: null,
+      syncing: false,
       modoLento: false,
       cancha: { propio: [], rival: [] },
       canchaConfigurada: false,
@@ -718,6 +723,11 @@
     });
 
     async function loadAll() {
+      document.getElementById('matchRival').textContent = 'Cargando partido...';
+      hydrateLocalQueue();
+      renderHistorial();
+      renderStats();
+      renderSyncStatus();
       document.getElementById('appView').classList.add('loading');
       try {
         const [plantelRes, partidoRes, accionesRes] = await Promise.allSettled([
@@ -735,7 +745,7 @@
           renderMatchBar();
         }
         if (accionesRes.status === 'fulfilled' && Array.isArray(accionesRes.value)) {
-          state.acciones = accionesRes.value;
+          state.acciones = mergeAcciones(accionesRes.value, getQueuedActions());
           recalcScore();
         }
         renderHistorial();
@@ -744,6 +754,7 @@
         // Iniciar flujo
         resetFlujo();
         if (!state.canchaConfigurada) setTimeout(() => openModalTitulares(false), 250);
+        scheduleSyncQueue();
       } catch(e) {
         alert('Error al cargar: ' + e.message);
       } finally {
@@ -778,6 +789,89 @@
 
     function renderScore() {
       document.getElementById('matchScore').textContent = `${state.golesPropios} – ${state.golesRival}`;
+    }
+
+    function queueKey() {
+      return `mrcl_partido_acciones_queue_${state.partidoId}`;
+    }
+
+    function createLocalId() {
+      return `local-${state.partidoId || 'partido'}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    }
+
+    function loadQueue() {
+      try {
+        const rows = JSON.parse(localStorage.getItem(queueKey()) || '[]');
+        return Array.isArray(rows) ? rows.map(a => ({
+          ...a,
+          sync_status: a.sync_status === 'syncing' ? 'pending' : (a.sync_status || 'pending')
+        })) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function saveQueue(rows) {
+      const clean = (rows || []).filter(a => a && a.local_id && a.sync_status !== 'synced');
+      localStorage.setItem(queueKey(), JSON.stringify(clean));
+      renderSyncStatus();
+    }
+
+    function getQueuedActions() {
+      return loadQueue();
+    }
+
+    function hydrateLocalQueue() {
+      state.acciones = mergeAcciones(state.acciones || [], getQueuedActions());
+      recalcScore();
+    }
+
+    function mergeAcciones(serverRows, localRows) {
+      const out = [];
+      const seenIds = new Set();
+      const seenLocal = new Set();
+      (serverRows || []).forEach(a => {
+        if (!a) return;
+        const id = String(a.id || '');
+        const localId = String(a.local_id || '');
+        if (id && seenIds.has(id)) return;
+        if (localId && seenLocal.has(localId)) return;
+        if (id) seenIds.add(id);
+        if (localId) seenLocal.add(localId);
+        out.push({ ...a, sync_status: 'synced' });
+      });
+      (localRows || []).forEach(a => {
+        if (!a) return;
+        const id = String(a.id || '');
+        const localId = String(a.local_id || '');
+        if ((id && seenIds.has(id)) || (localId && seenLocal.has(localId))) return;
+        if (id) seenIds.add(id);
+        if (localId) seenLocal.add(localId);
+        out.push(a);
+      });
+      return out;
+    }
+
+    function renderSyncStatus() {
+      const el = document.getElementById('syncStatus');
+      if (!el) return;
+      const queue = loadQueue();
+      const errors = queue.filter(a => a.sync_status === 'error').length;
+      const syncing = state.syncing || queue.some(a => a.sync_status === 'syncing');
+      el.classList.remove('ok', 'warn', 'error');
+      if (errors) {
+        el.textContent = `${errors} error${errors !== 1 ? 'es' : ''}`;
+        el.classList.add('error');
+      } else if (syncing) {
+        el.textContent = 'Sincronizando...';
+        el.classList.add('warn');
+      } else if (queue.length) {
+        el.textContent = `${queue.length} pendiente${queue.length !== 1 ? 's' : ''}`;
+        el.classList.add('warn');
+      } else {
+        el.textContent = 'Todo guardado';
+        el.classList.add('ok');
+      }
     }
 
     // ═══ TABS ═══
@@ -1401,7 +1495,7 @@
       const btn = document.getElementById('btnRegistrar');
       const btnSeguir = document.getElementById('btnRegistrarSeguir');
       if (!state.accion || state.valoracion === null || !state.equipo) {
-        alert('Completá los pasos obligatorios.');
+        showToast('Completá los pasos obligatorios.');
         return;
       }
       btn.disabled = true;
@@ -1414,7 +1508,6 @@
       };
       const secuencia = getSecuenciaParaAccion();
       const payload = {
-        action: 'partidos_registrarAccion',
         partido_id: state.partidoId,
         secuencia_id: secuencia.id,
         secuencia_orden: secuencia.orden,
@@ -1434,31 +1527,111 @@
         narracion: state.narracion || '',
         observacion_tactica: state.narracion || ''
       };
-      try {
-        const res = await apiPost(payload);
-        const nueva = { id: res.id, ...payload };
-        delete nueva.action;
-        state.acciones.push(nueva);
-        recalcScore();
-        const fueGol = state.resultado === 'gol' && state.equipo === 'propio';
-        cerrarSecuenciaSiCorresponde(state.accion);
-        resetFlujo();
-        if (continuar && state.secuenciaActual && !accionCierraSecuencia(prev.accion)) {
-          prepararContinuacionSecuencia(prev);
-        }
-        showToast('✓ Acción registrada');
-        if (fueGol) {
-          setTimeout(() => document.getElementById('golModal').classList.add('open'), 400);
-        }
-      } catch(e) {
-        if (state.secuenciaActual && state.secuenciaActual.id === secuencia.id) {
-          state.secuenciaActual.orden = Math.max(0, Number(state.secuenciaActual.orden || 1) - 1);
-          if (state.secuenciaActual.orden === 0) state.secuenciaActual = null;
-        }
-        alert('Error al registrar: ' + e.message);
-        btn.disabled = false;
-        if (btnSeguir) btnSeguir.disabled = false;
+      const local = {
+        ...payload,
+        local_id: createLocalId(),
+        timestamp_registro: new Date().toISOString(),
+        sync_status: 'pending'
+      };
+      const queue = loadQueue();
+      queue.push(local);
+      saveQueue(queue);
+      state.acciones.push(local);
+      recalcScore();
+      renderHistorial();
+      renderStats();
+      const fueGol = state.resultado === 'gol' && state.equipo === 'propio';
+      cerrarSecuenciaSiCorresponde(state.accion);
+      resetFlujo();
+      if (continuar && state.secuenciaActual && !accionCierraSecuencia(prev.accion)) {
+        prepararContinuacionSecuencia(prev);
       }
+      showToast('Acción pendiente de guardado');
+      if (fueGol) {
+        setTimeout(() => document.getElementById('golModal').classList.add('open'), 400);
+      }
+      scheduleSyncQueue();
+    }
+
+    function scheduleSyncQueue(delay = 250) {
+      clearTimeout(state.syncTimer);
+      state.syncTimer = setTimeout(syncQueue, delay);
+    }
+
+    function retrySyncQueue() {
+      const queue = loadQueue().map(a => a.sync_status === 'error' ? { ...a, sync_status: 'pending', sync_error: '' } : a);
+      saveQueue(queue);
+      const byLocal = new Map(queue.map(a => [String(a.local_id || ''), a]));
+      state.acciones = state.acciones.map(a => {
+        const queued = byLocal.get(String(a.local_id || ''));
+        return queued ? { ...a, sync_status: queued.sync_status, sync_error: queued.sync_error || '' } : a;
+      });
+      renderHistorial();
+      renderStats();
+      scheduleSyncQueue(20);
+    }
+
+    async function syncQueue() {
+      if (state.syncing) return;
+      let queue = loadQueue();
+      const pending = queue.filter(a => a.sync_status === 'pending' || a.sync_status === 'error');
+      if (!pending.length) {
+        renderSyncStatus();
+        return;
+      }
+      state.syncing = true;
+      queue = queue.map(a => pending.some(p => p.local_id === a.local_id) ? { ...a, sync_status: 'syncing', sync_error: '' } : a);
+      saveQueue(queue);
+      state.acciones = state.acciones.map(a => a.local_id && pending.some(p => p.local_id === a.local_id) ? { ...a, sync_status: 'syncing', sync_error: '' } : a);
+      renderHistorial();
+      try {
+        const res = await apiPost({
+          action: 'partidos_registrarAccionesBatch',
+          partido_id: state.partidoId,
+          acciones: pending.map(toBatchPayload)
+        });
+        const items = Array.isArray(res.items) ? res.items : [];
+        const byLocal = new Map(items.map(item => [String(item.local_id || ''), item]));
+        queue = loadQueue();
+        const nextQueue = [];
+        queue.forEach(a => {
+          const item = byLocal.get(String(a.local_id || ''));
+          if (item && item.ok) {
+            state.acciones = state.acciones.map(row => String(row.local_id || '') === String(a.local_id)
+              ? { ...row, id: item.id, sync_status: 'synced', sync_error: '' }
+              : row);
+            return;
+          }
+          if (pending.some(p => p.local_id === a.local_id)) {
+            const msg = item && item.error ? item.error : 'No se pudo sincronizar';
+            const failed = { ...a, sync_status: 'error', sync_error: msg };
+            nextQueue.push(failed);
+            state.acciones = state.acciones.map(row => String(row.local_id || '') === String(a.local_id) ? failed : row);
+            return;
+          }
+          nextQueue.push(a);
+        });
+        saveQueue(nextQueue);
+        renderHistorial();
+        renderStats();
+      } catch(e) {
+        const msg = e && e.message ? e.message : String(e);
+        queue = loadQueue().map(a => pending.some(p => p.local_id === a.local_id) ? { ...a, sync_status: 'error', sync_error: msg } : a);
+        saveQueue(queue);
+        state.acciones = state.acciones.map(a => a.local_id && pending.some(p => p.local_id === a.local_id) ? { ...a, sync_status: 'error', sync_error: msg } : a);
+        renderHistorial();
+      } finally {
+        state.syncing = false;
+        renderSyncStatus();
+      }
+    }
+
+    function toBatchPayload(a) {
+      const copy = { ...a };
+      delete copy.id;
+      delete copy.sync_status;
+      delete copy.sync_error;
+      return copy;
     }
 
     function prepararContinuacionSecuencia(prev) {
@@ -1651,7 +1824,10 @@
         const tiempo = a.tiempo_neto != null ? `${a.tiempo_neto}'` : '';
         const badgeEq = a.equipo === 'propio' ? '<span class="badge info" style="font-size:.65rem">P</span>' : '<span class="badge" style="font-size:.65rem">R</span>';
         const seqBadge = a.secuencia_orden ? `<span class="badge" style="font-size:.65rem">S${esc(a.secuencia_orden)}</span>` : '';
-        return `<div class="accion-row">
+        const status = syncBadge(a);
+        const rowClass = a.sync_status === 'error' ? ' error' : (a.sync_status && a.sync_status !== 'synced' ? ' pending' : '');
+        const deleteId = esc(a.id || a.local_id || '');
+        return `<div class="accion-row${rowClass}" title="${esc(a.sync_error || '')}">
           ${badgeEq}
           ${seqBadge}
           <span class="accion-tipo">${esc(a.accion||'—')}</span>
@@ -1659,20 +1835,31 @@
           ${a.resultado ? `<span class="badge ${resBadge(a.resultado)}" style="font-size:.65rem">${esc(a.resultado)}</span>` : ''}
           <span class="accion-val ${valClass}">${valLabel}</span>
           <span class="accion-tiempo">${esc(tiempo)}</span>
-          <button class="btn small danger" style="flex-shrink:0;padding:5px 8px;font-size:.72rem" onclick="eliminarAccion('${esc(a.id)}')">×</button>
+          ${status}
+          <button class="btn small danger" style="flex-shrink:0;padding:5px 8px;font-size:.72rem" onclick="eliminarAccion('${deleteId}')">×</button>
         </div>`;
       }).join('');
     }
 
     async function eliminarAccion(id) {
       if (!confirm('¿Eliminar esta acción?')) return;
+      const local = state.acciones.find(a => String(a.local_id || '') === String(id) && !a.id);
+      if (local) {
+        const queue = loadQueue().filter(a => String(a.local_id || '') !== String(id));
+        saveQueue(queue);
+        state.acciones = state.acciones.filter(a => String(a.local_id || '') !== String(id));
+        recalcScore();
+        renderHistorial();
+        renderStats();
+        return;
+      }
       try {
         await apiPost({ action: 'partidos_eliminarAccion', id });
         state.acciones = state.acciones.filter(a => String(a.id) !== String(id));
         recalcScore();
         renderHistorial();
         renderStats();
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) { showToast('Error: ' + e.message); }
     }
 
     // ═══ STATS ═══
@@ -1734,6 +1921,13 @@
     }
 
     function resBadge(r) { return {gol:'ok',atajado:'danger',afuera:'warn',palo:'',bloqueo:'info'}[r]||''; }
+
+    function syncBadge(a) {
+      if (!a || !a.sync_status || a.sync_status === 'synced') return '';
+      if (a.sync_status === 'syncing') return '<span class="badge warn" style="font-size:.65rem">Sincronizando</span>';
+      if (a.sync_status === 'error') return '<button class="btn small ghost" style="flex-shrink:0;padding:5px 8px;font-size:.72rem" onclick="retrySyncQueue()">Reintentar</button>';
+      return '<span class="badge warn" style="font-size:.65rem">Pendiente</span>';
+    }
 
     function formatDate(d) {
       if (!d) return '';

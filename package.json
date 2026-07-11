@@ -6,7 +6,8 @@
   "scripts": {
     "lh": "node scripts/run-lighthouse.mjs",
     "lh:all": "node scripts/run-lighthouse.mjs all",
-    "lh:reportes": "node scripts/run-lighthouse.mjs reportes/"
+    "lh:reportes": "node scripts/run-lighthouse.mjs reportes/",
+    "verify:partidos-actions": "node scripts/verify-partidos-actions.mjs"
   },
   "repository": {
     "type": "git",

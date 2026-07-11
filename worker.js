@@ -48,6 +48,10 @@ const DEPORTES_PREFIXES = [
   'testeos_'
 ];
 
+const DEPORTES_ACTIONS = [
+  'partidos_registrarAccionesBatch'
+];
+
 const ANTIDOPING_PREFIXES = [
   'antidoping_'
 ];
@@ -115,7 +119,7 @@ export default {
         targetResponse = await handleSiteAction(action, payload);
       } else if (action in BASE_ACTION_MAP) {
         targetResponse = await handleBaseAction(action, payload);
-      } else if (DEPORTES_PREFIXES.some(prefix => action.startsWith(prefix))) {
+      } else if (DEPORTES_ACTIONS.includes(action) || DEPORTES_PREFIXES.some(prefix => action.startsWith(prefix))) {
         targetResponse = await handleDeportesAction(action, payload);
       } else if (ANTIDOPING_PREFIXES.some(prefix => action.startsWith(prefix))) {
         targetResponse = await handleAntidopingAction(action, payload);
