@@ -154,6 +154,7 @@ const UI_DEPLOYED_AT = 'partidos-internos';
   Murci.apiGetCached = async function apiGetCached(action, params = {}, options = {}, apiUrl = API_BASE_URL) {
     const ttlMs = Number(options.ttlMs || 0);
     const forceRefresh = !!options.forceRefresh;
+    const staleOnError = !!options.staleOnError;
     const cacheKey = options.cacheKey || `${apiUrl}|${action}|${JSON.stringify(params || {})}`;
 
     if (!forceRefresh) {
@@ -164,6 +165,13 @@ const UI_DEPLOYED_AT = 'partidos-internos';
 
     const promise = Murci.apiGet(action, params, apiUrl)
       .then(data => Murci.cacheSet(cacheKey, data))
+      .catch(error => {
+        if (staleOnError) {
+          const stale = Murci.cacheGet(cacheKey, 0);
+          if (stale !== null) return stale;
+        }
+        throw error;
+      })
       .finally(() => {
         delete pendingGets[cacheKey];
       });
@@ -253,9 +261,15 @@ const UI_DEPLOYED_AT = 'partidos-internos';
         const data = await Murci.apiGet('site_getPlantel', {}, API_BASE_URL);
         const rawList = Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : [];
         plantelCache = rawList.map(normalizarPlantelItem_);
+        Murci.cacheSet(`${API_BASE_URL}|site_getPlantel|{}`, plantelCache);
       } catch (error) {
-        console.error('[Murci] No se pudo obtener el plantel can\u00f3nico desde site_getPlantel.', error);
-        plantelCache = []; 
+        const stale = Murci.cacheGet(`${API_BASE_URL}|site_getPlantel|{}`, 0);
+        if (Array.isArray(stale)) {
+          plantelCache = stale.map(normalizarPlantelItem_);
+        } else {
+          console.error('[Murci] No se pudo obtener el plantel can\u00f3nico desde site_getPlantel.', error);
+          plantelCache = [];
+        }
       } finally {
         plantelPromise = null;
       }

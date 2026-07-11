@@ -2400,6 +2400,7 @@ function doPost(e) {
       case 'penales_editarSesion':       result = penales_editarSesion(payload); break;
       case 'penales_getPenales':         result = penales_getPenales(payload); break;
       case 'penales_registrarPenal':     result = penales_registrarPenal(payload); break;
+      case 'penales_editarPenal':        result = penales_editarPenal(payload); break;
       case 'penales_eliminarPenal':      result = penales_eliminarPenal(payload); break;
 
       // ── PARTIDOS ──
@@ -2421,6 +2422,7 @@ function doPost(e) {
 
       case 'partidos_registrarAccion':   result = partidos_registrarAccion(payload); break;
       case 'partidos_getAcciones':       result = partidos_getAcciones(payload); break;
+      case 'partidos_getAccionesResumen': result = partidos_getAccionesResumen(payload); break;
       case 'partidos_eliminarAccion':    result = partidos_eliminarAccion(payload); break;
       case 'partidos_actualizarAccion':  result = partidos_actualizarAccion(payload); break;
 
@@ -2876,9 +2878,50 @@ function penales_registrarPenal(p) {
     zona: p.zona || '',
     potencia: p.potencia || '',
     resultado: p.resultado || '',
+    arquera_calidad: p.arquera_calidad !== undefined ? p.arquera_calidad : '',
     timestamp: new Date().toISOString()
-  }, ['id', 'sesionId', 'jugadora', 'arquera', 'zona', 'potencia', 'resultado', 'timestamp']);
+  }, ['id', 'sesionId', 'jugadora', 'arquera', 'zona', 'potencia', 'resultado', 'timestamp', 'arquera_calidad']);
   return ok(true, { id });
+}
+
+function penales_editarPenal(p) {
+  if (!p.id) throw new Error('id es requerido');
+  const sheet = getSheet(SHEETS.penales);
+  const row = findRowIndex(sheet, 'id', p.id);
+  if (row === -1) throw new Error('Penal no encontrado');
+
+  const sesionId = _primerValorNoVacio_(p.sesionId, p.sesion_id, p.sesionID);
+  const jugadora = _primerValorNoVacio_(p.jugadora_persona_id, p.jugadoraPersonaId, p.jugadora, p.jugadora_dni, p.jugadoraDNI);
+  const arquera = _primerValorNoVacio_(p.arquera_persona_id, p.arqueraPersonaId, p.arquera, p.arquera_dni, p.arqueraDNI);
+
+  ['sesionId', 'sesion_id', 'jugadora', 'jugadora_dni', 'jugadora_persona_id', 'arquera', 'arquera_dni', 'arquera_persona_id', 'zona', 'potencia', 'resultado', 'arquera_calidad', 'updated_at'].forEach(function(col) {
+    ensureColumn_(sheet, col);
+  });
+
+  if (sesionId) {
+    setCell(sheet, row, 'sesionId', sesionId);
+    setCell(sheet, row, 'sesion_id', sesionId);
+  }
+  if (jugadora) {
+    setCell(sheet, row, 'jugadora', jugadora);
+    setCell(sheet, row, 'jugadora_dni', jugadora);
+    setCell(sheet, row, 'jugadora_persona_id', jugadora);
+  }
+  if (arquera) {
+    setCell(sheet, row, 'arquera', arquera);
+    setCell(sheet, row, 'arquera_dni', arquera);
+    setCell(sheet, row, 'arquera_persona_id', arquera);
+  }
+  ['zona', 'potencia', 'resultado', 'arquera_calidad'].forEach(function(f) {
+    if (p[f] !== undefined) setCell(sheet, row, f, p[f]);
+  });
+  setCell(sheet, row, 'updated_at', new Date().toISOString());
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const record = {};
+  headers.forEach(function(h, i) { record[h] = values[i]; });
+  return ok(true, { id: p.id, penal: _normalizarPenalBackend_(record, _mapaNombresPlantelPenales_()) });
 }
 
 function _normalizarPenalBackend_(row, nombres) {
@@ -3841,6 +3884,102 @@ function partidos_getAcciones(p) {
 	    }));
 
   return ok(true, rows);
+}
+
+function partidos_getAccionesResumen(p) {
+  p = p || {};
+  const partidoId = String(p.partido_id || p.id || '').trim();
+  const sheet = partidos_getOrCreateAccionesSheet_();
+  const rows = sheetToObjects(sheet)
+    .filter(function(r) { return !partidoId || String(r.partido_id) === partidoId; })
+    .map(_normalizarAccionPartido_);
+
+  const resumen = {
+    total: rows.length,
+    propio: _resumenAccionesEquipo_(rows.filter(function(a) { return a.equipo === 'propio'; })),
+    rival: _resumenAccionesEquipo_(rows.filter(function(a) { return a.equipo === 'rival'; })),
+    por_partido: _resumirAccionesPorCampo_(rows, 'partido_id'),
+    por_accion: _resumirAccionesPorCampo_(rows, 'accion'),
+    por_contexto: _resumirAccionesPorCampo_(rows, 'contexto'),
+    por_zona: _resumirAccionesPorCampo_(rows, 'zona'),
+    por_jugadora: _resumirAccionesPorCampo_(rows.filter(function(a) { return a.equipo === 'propio'; }), 'jugadora_id', true)
+  };
+  return ok(true, resumen);
+}
+
+function _normalizarAccionPartido_(r) {
+  return {
+    ...r,
+    partido_id: String(r.partido_id || '').trim(),
+    equipo: String(r.equipo || '').trim() || 'propio',
+    contexto: String(r.contexto || '').trim() || 'juego_libre',
+    accion: String(r.accion || '').trim() || 'Sin acción',
+    zona: String(r.zona || '').trim(),
+    jugadora_id: String(r.jugadora_id || '').trim(),
+    valoracion: (r.valoracion !== '' && r.valoracion !== undefined) ? Number(r.valoracion) : null,
+    resultado: String(r.resultado || '').trim(),
+    arquera_valoracion: (r.arquera_valoracion !== '' && r.arquera_valoracion !== undefined) ? Number(r.arquera_valoracion) : null,
+    es_pase_relevante: r.es_pase_relevante === true || r.es_pase_relevante === 'true',
+    tiempo_neto: (r.tiempo_neto !== '' && r.tiempo_neto !== undefined) ? Number(r.tiempo_neto) : null
+  };
+}
+
+function _resumenAccionesEquipo_(rows) {
+  const tiros = rows.filter(function(a) { return a.accion === 'Tiro'; });
+  const goles = tiros.filter(function(a) { return a.resultado === 'gol'; }).length;
+  const atajados = tiros.filter(function(a) { return a.resultado === 'atajado'; }).length;
+  const fuera = tiros.filter(function(a) { return a.resultado === 'afuera'; }).length;
+  const palos = tiros.filter(function(a) { return a.resultado === 'palo'; }).length;
+  const bloqueos = tiros.filter(function(a) { return a.resultado === 'bloqueo'; }).length;
+  const accionesClave = rows.filter(function(a) {
+    return a.accion === 'Tiro' || a.accion === 'Aproximación' || a.accion === 'Atajada de arquera' || a.accion === 'Pase relevante' || a.es_pase_relevante;
+  }).length;
+  const valoraciones = rows.map(function(a) { return a.valoracion; }).filter(function(v) { return v !== null && Number.isFinite(v); });
+  const arqueraVals = rows.map(function(a) { return a.arquera_valoracion; }).filter(function(v) { return v !== null && Number.isFinite(v); });
+  return {
+    acciones: rows.length,
+    acciones_clave: accionesClave,
+    tiros: tiros.length,
+    goles: goles,
+    atajados: atajados,
+    afuera: fuera,
+    palos: palos,
+    bloqueos: bloqueos,
+    aproximaciones: rows.filter(function(a) { return a.accion === 'Aproximación'; }).length,
+    recuperaciones: rows.filter(function(a) { return a.accion === 'Recuperación'; }).length,
+    perdidas: rows.filter(function(a) { return a.accion === 'Pérdida'; }).length,
+    faltas: rows.filter(function(a) { return a.accion === 'Falta'; }).length,
+    atajadas_arquera: rows.filter(function(a) { return a.accion === 'Atajada de arquera'; }).length,
+    pases_relevantes: rows.filter(function(a) { return a.accion === 'Pase relevante' || a.es_pase_relevante; }).length,
+    conversion: tiros.length ? Number((goles / tiros.length).toFixed(3)) : null,
+    valoracion_promedio: valoraciones.length ? Number((valoraciones.reduce(function(s, v) { return s + v; }, 0) / valoraciones.length).toFixed(2)) : null,
+    arquera_promedio: arqueraVals.length ? Number((arqueraVals.reduce(function(s, v) { return s + v; }, 0) / arqueraVals.length).toFixed(2)) : null
+  };
+}
+
+function _resumirAccionesPorCampo_(rows, campo, incluirEquipo) {
+  const map = {};
+  rows.forEach(function(a) {
+    const key = String(a[campo] || '').trim();
+    if (!key) return;
+    if (!map[key]) map[key] = { id: key, total: 0, tiros: 0, goles: 0, aproximaciones: 0, recuperaciones: 0, perdidas: 0, valoraciones: [] };
+    const item = map[key];
+    item.total++;
+    if (a.accion === 'Tiro') item.tiros++;
+    if (a.resultado === 'gol') item.goles++;
+    if (a.accion === 'Aproximación') item.aproximaciones++;
+    if (a.accion === 'Recuperación') item.recuperaciones++;
+    if (a.accion === 'Pérdida') item.perdidas++;
+    if (incluirEquipo) item.equipo = a.equipo;
+    if (a.valoracion !== null && Number.isFinite(a.valoracion)) item.valoraciones.push(a.valoracion);
+  });
+  return Object.keys(map).map(function(k) {
+    const item = map[k];
+    const vals = item.valoraciones || [];
+    delete item.valoraciones;
+    item.valoracion_promedio = vals.length ? Number((vals.reduce(function(s, v) { return s + v; }, 0) / vals.length).toFixed(2)) : null;
+    return item;
+  }).sort(function(a, b) { return b.total - a.total; });
 }
 
 function partidos_eliminarAccion(p) {

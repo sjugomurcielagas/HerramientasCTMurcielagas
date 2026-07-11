@@ -100,6 +100,15 @@
     .penal-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde)}.penal-row:last-child{border-bottom:none}
     .penal-info{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-width:0;font-size:.9rem}
     .penal-jugadora{font-weight:800;color:var(--azul-950)}.penal-vs{color:var(--muted);font-size:.8rem}.penal-arquera{color:var(--azul-800)}
+    .penal-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(6,23,47,.42);display:flex;align-items:flex-start;justify-content:center;padding:72px 14px 28px;overflow:auto}
+    .modal-panel{width:min(680px,100%);background:var(--card);border:1px solid var(--borde);border-radius:var(--radius);box-shadow:0 24px 70px rgba(6,23,47,.24);overflow:hidden}
+    .modal-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:13px 15px;border-bottom:1px solid var(--borde)}
+    .modal-head h2{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;color:var(--azul-950);margin:0;line-height:1}
+    .modal-body{padding:14px 15px}.modal-grid{display:grid;gap:11px}
+    @media(min-width:680px){.modal-grid{grid-template-columns:1fr 1fr}}
 
     /* Session cards */
     .sesion-card{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--borde)}.sesion-card:last-child{border-bottom:none}
@@ -396,6 +405,24 @@
 
       <!-- TAB: ESTADÍSTICAS -->
       <section id="statsView" class="app-section hidden">
+        <div class="panel" style="margin-bottom:13px">
+          <div class="panel-head"><h2>Alcance</h2><span id="statsScopeBadge" class="badge info">Totales</span></div>
+          <div class="panel-body">
+            <div class="split">
+              <div class="form-row">
+                <label for="statsScopeSelect">Ver estadísticas</label>
+                <select id="statsScopeSelect">
+                  <option value="totales">Totales</option>
+                  <option value="sesion">Por sesión</option>
+                </select>
+              </div>
+              <div class="form-row hidden" id="statsSesionWrap">
+                <label for="statsSesionSelect">Sesión</label>
+                <select id="statsSesionSelect"><option value="">— Seleccioná una sesión —</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="split" style="margin-bottom:13px">
           <div class="panel">
             <div class="panel-head"><h2>Por jugadora</h2><span class="badge info" style="font-size:.74rem">Efectividad</span></div>
@@ -424,20 +451,92 @@
           <div class="panel-head"><h2>Cruce jugadora × arquera</h2></div>
           <div class="panel-body" id="statsCruces"><div class="empty">Sin datos.</div></div>
         </div>
-        <div class="footer-note">Estadísticas calculadas sobre todos los penales registrados.</div>
+        <div class="footer-note" id="statsFooterNote">Estadísticas calculadas sobre todos los penales registrados.</div>
       </section>
     </section>
   </main>
+
+  <div id="editarPenalModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editarPenalTitle">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2 id="editarPenalTitle">Editar penal</h2>
+        <button class="btn ghost small" type="button" data-close-edit>Cancelar</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="form-row">
+            <label for="editSesionSelect">Sesión</label>
+            <select id="editSesionSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="editJugadoraSelect">Jugadora</label>
+            <select id="editJugadoraSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="editArqueraSelect">Arquera</label>
+            <select id="editArqueraSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="editZonaSelect">Zona</label>
+            <select id="editZonaSelect">
+              <option value="">— Zona —</option>
+              <option value="1">Z1</option><option value="2">Z2</option><option value="3">Z3</option>
+              <option value="4">Z4</option><option value="5">Z5</option><option value="6">Z6</option>
+              <option value="7">Z7</option><option value="8">Z8</option><option value="9">Z9</option>
+              <option value="palo-izq">Palo izq.</option><option value="travesano">Travesaño</option><option value="palo-der">Palo der.</option>
+              <option value="fuera-izq">Fuera izq.</option><option value="fuera-arr">Fuera arriba</option><option value="fuera-der">Fuera der.</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="editResultadoSelect">Resultado</label>
+            <select id="editResultadoSelect">
+              <option value="">— Resultado —</option>
+              <option value="gol">Gol</option>
+              <option value="atajado">Atajado</option>
+              <option value="afuera">Afuera</option>
+              <option value="palo">Palo</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="editPotenciaSelect">Potencia</label>
+            <select id="editPotenciaSelect">
+              <option value="">— Potencia —</option>
+              <option value="fuerte">Fuerte</option>
+              <option value="medio">Medio</option>
+              <option value="debil">Débil</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="editArqueraCalidadSelect">Intervención de arquera</label>
+            <select id="editArqueraCalidadSelect">
+              <option value="">— Sin dato —</option>
+              <option value="-2">Muy mal</option>
+              <option value="-1">Mal</option>
+              <option value="0">Normal</option>
+              <option value="1">Bien</option>
+              <option value="2">Excelente</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button id="guardarEditPenalBtn" class="btn" type="button">Guardar cambios</button>
+          <button class="btn ghost" type="button" data-close-edit>Cancelar</button>
+        </div>
+        <div id="editarPenalStatus" class="status-line"></div>
+      </div>
+    </div>
+  </div>
 
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false,role_fallback_when_no_tipo:true};
     const LAST_ARQUERA_KEY='penales_last_arquera_dni';
-    const state={plantel:[],partidos:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null,arqueraCalidad:null};
+    const state={plantel:[],partidos:[],sesiones:[],penales:[],penalesPorSesion:new Map(),sesionActualId:null,zona:null,resultado:null,potencia:null,arqueraCalidad:null,editPenalId:null,statsScope:'totales',statsSesionId:null};
     const MAX_PENALES_RENDER=120;
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
+    const apiGetCached=(action,params={},ttlMs=10*60*1000,options={})=>Murci.apiGetCached(action,params,{ttlMs,staleOnError:true,...options},API_URL);
     const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -456,7 +555,12 @@
       document.getElementById('arqueraCalidadBtns').addEventListener('click',e=>{const b=e.target.closest('[data-ac]');if(b)setArqueraCalidad(Number(b.dataset.ac),b)});
       document.getElementById('registrarBtn').addEventListener('click',registrarPenal);
       document.getElementById('refreshPenalesBtn').addEventListener('click',actualizarPenales);
-      document.getElementById('listaPenalesBody').addEventListener('click',e=>{const b=e.target.closest('[data-delete-penal]');if(b)eliminarPenal(b.dataset.deletePenal)});
+      document.getElementById('listaPenalesBody').addEventListener('click',e=>{const edit=e.target.closest('[data-edit-penal]');if(edit){abrirEditarPenal(edit.dataset.editPenal);return}const b=e.target.closest('[data-delete-penal]');if(b)eliminarPenal(b.dataset.deletePenal)});
+      document.querySelectorAll('[data-close-edit]').forEach(btn=>btn.addEventListener('click',cerrarEditarPenal));
+      document.getElementById('guardarEditPenalBtn').addEventListener('click',guardarEditarPenal);
+      document.getElementById('editarPenalModal').addEventListener('click',e=>{if(e.target.id==='editarPenalModal')cerrarEditarPenal()});
+      document.getElementById('statsScopeSelect').addEventListener('change',onStatsScopeChange);
+      document.getElementById('statsSesionSelect').addEventListener('change',e=>{state.statsSesionId=e.target.value||null;renderStats()});
       document.getElementById('nsFecha').valueAsDate=new Date();
       window.addEventListener('hashchange',applySesionHashFromLocation);
       loadAll();
@@ -468,8 +572,8 @@
       try{
         const [plantelRes,partidosRes,sesionesRes]=await Promise.allSettled([
           obtenerPlantel(),
-          apiGet('partidos_getPartidos'),
-          apiGet('penales_getSesiones')
+          apiGetCached('partidos_getPartidos',{},30*60*1000),
+          apiGetCached('penales_getSesiones',{},30*60*1000)
         ]);
         state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
         state.partidos=partidosRes.status==='fulfilled'&&Array.isArray(partidosRes.value)?partidosRes.value.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))):[];
@@ -488,11 +592,12 @@
 
     async function loadPenalesEnSegundoPlano(){
       try{
-        const penales=await apiGet('penales_getPenales');
+        const penales=await apiGetCached('penales_getPenales',{},10*60*1000);
         state.penales=mergePenalesServidor(penales);
         rebuildPenalesIndex();
         renderListaPenales();
         renderSesiones();
+        renderStats();
       }catch(err){
         document.getElementById('listaPenalesBody').innerHTML=`<div class="empty">No se pudieron cargar penales: ${esc(err.message)}</div>`;
       }
@@ -506,13 +611,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
     async function loadAndRenderStats(){
-      try{const penales=await apiGet('penales_getPenales');state.penales=mergePenalesServidor(penales);rebuildPenalesIndex();renderListaPenales()}catch(e){}
+      try{const penales=await apiGetCached('penales_getPenales',{},10*60*1000);state.penales=mergePenalesServidor(penales);rebuildPenalesIndex();renderListaPenales();renderSesiones()}catch(e){}
       renderStats();
     }
     async function actualizarPenales(){
       const btn=document.getElementById('refreshPenalesBtn');
       btn.disabled=true;btn.textContent='...';
-      try{const penales=await apiGet('penales_getPenales');state.penales=mergePenalesServidor(penales);rebuildPenalesIndex();renderListaPenales();renderSesiones()}catch(e){alert('Error al actualizar: '+e.message)}
+      try{const penales=await apiGetCached('penales_getPenales',{},10*60*1000,{forceRefresh:true});state.penales=mergePenalesServidor(penales);rebuildPenalesIndex();renderListaPenales();renderSesiones();renderStats()}catch(e){alert('Error al actualizar: '+e.message)}
       finally{btn.disabled=false;btn.textContent='Actualizar'}
     }
 
@@ -521,11 +626,12 @@
       const selected=state.sesionActualId;
       btn.disabled=true;btn.textContent='...';
       try{
-        const sesiones=await apiGet('penales_getSesiones');
+        const sesiones=await apiGetCached('penales_getSesiones',{},30*60*1000,{forceRefresh:true});
         state.sesiones=Array.isArray(sesiones)?sesiones.sort((a,b)=>String(a.fecha)>String(b.fecha)?1:-1):[];
         if(selected&&!state.sesiones.some(s=>String(s.id)===String(selected)))state.sesionActualId=null;
         applySesionHashFromLocation();
         renderSesionSelector();
+        renderStatsSesionSelector();
         renderSesiones();
         renderListaPenales();
         renderSesionAccessState();
@@ -539,6 +645,8 @@
       const arqueras=state.plantel.filter(esArquera).sort((a,b)=>nombrePersona(a).localeCompare(nombrePersona(b),'es'));
       document.getElementById('jugadoraSelect').innerHTML='<option value="">— Jugadora —</option>'+jugadoras.map(toOpt).join('');
       document.getElementById('arqueraSelect').innerHTML='<option value="">— Arquera —</option>'+arqueras.map(toOpt).join('');
+      document.getElementById('editJugadoraSelect').innerHTML='<option value="">— Jugadora —</option>'+jugadoras.map(toOpt).join('');
+      document.getElementById('editArqueraSelect').innerHTML='<option value="">— Arquera —</option>'+arqueras.map(toOpt).join('');
       restoreLastArquera();
       checkRegistrarBtn();
     }
@@ -604,7 +712,23 @@
       const sel=document.getElementById('sesionSelect');
       sel.innerHTML='<option value="">— Sin sesión activa —</option>'+
         state.sesiones.slice().reverse().map(s=>`<option value="${esc(String(s.id))}" ${String(s.id)===String(state.sesionActualId)?'selected':''}>${esc(sesionLabel(s))}</option>`).join('');
+      const editSel=document.getElementById('editSesionSelect');
+      if(editSel)editSel.innerHTML='<option value="">— Sesión —</option>'+state.sesiones.slice().reverse().map(s=>`<option value="${esc(String(s.id))}">${esc(sesionLabel(s))}</option>`).join('');
+      renderStatsSesionSelector();
       renderSesionAccessState();
+    }
+
+    function renderStatsSesionSelector(){
+      const sel=document.getElementById('statsSesionSelect');
+      if(!sel)return;
+      const prev=state.statsSesionId||sel.value||state.sesionActualId||'';
+      sel.innerHTML='<option value="">— Seleccioná una sesión —</option>'+state.sesiones.slice().reverse().map(s=>`<option value="${esc(String(s.id))}">${esc(sesionLabel(s))}</option>`).join('');
+      if(prev&&state.sesiones.some(s=>String(s.id)===String(prev))){
+        sel.value=String(prev);
+        state.statsSesionId=String(prev);
+      }else if(state.statsScope==='sesion'){
+        state.statsSesionId=null;
+      }
     }
 
     function renderSesionAccessState(){
@@ -792,6 +916,90 @@
       }catch(err){alert('Error al eliminar: '+err.message)}
     }
 
+    function abrirEditarPenal(id){
+      const penal=state.penales.find(p=>String(p.id)===String(id));
+      if(!penal)return;
+      state.editPenalId=String(id);
+      const modal=document.getElementById('editarPenalModal');
+      document.getElementById('editarPenalStatus').textContent='';
+      document.getElementById('editarPenalStatus').className='status-line';
+      ensureSelectOption(document.getElementById('editSesionSelect'),String(penal.sesionId||''),sesionLabel(state.sesiones.find(s=>String(s.id)===String(penal.sesionId))||{nombre:penal.sesionId||'Sesión histórica'}));
+      ensureSelectOption(document.getElementById('editJugadoraSelect'),String(penal.jugadora_dni||penal.jugadora||''),nombreMostrado(penal.jugadora_nombre,penal.jugadora_dni||penal.jugadora,'Jugadora histórica'));
+      ensureSelectOption(document.getElementById('editArqueraSelect'),String(penal.arquera_dni||penal.arquera||''),nombreMostrado(penal.arquera_nombre,penal.arquera_dni||penal.arquera,'Arquera histórica'));
+      document.getElementById('editSesionSelect').value=String(penal.sesionId||'');
+      document.getElementById('editJugadoraSelect').value=String(penal.jugadora_dni||penal.jugadora||'');
+      document.getElementById('editArqueraSelect').value=String(penal.arquera_dni||penal.arquera||'');
+      document.getElementById('editZonaSelect').value=String(penal.zona||'');
+      document.getElementById('editResultadoSelect').value=String(penal.resultado||'');
+      document.getElementById('editPotenciaSelect').value=String(penal.potencia||'');
+      document.getElementById('editArqueraCalidadSelect').value=penal.arquera_calidad!==undefined&&penal.arquera_calidad!==null?String(penal.arquera_calidad):'';
+      modal.classList.remove('hidden');
+      document.getElementById('editSesionSelect').focus();
+    }
+
+    function ensureSelectOption(sel,value,label){
+      if(!sel||!value)return;
+      if([...sel.options].some(o=>String(o.value)===String(value)))return;
+      const opt=document.createElement('option');
+      opt.value=value;
+      opt.textContent=label||value;
+      sel.appendChild(opt);
+    }
+
+    function cerrarEditarPenal(){
+      state.editPenalId=null;
+      document.getElementById('editarPenalModal').classList.add('hidden');
+    }
+
+    async function guardarEditarPenal(){
+      const id=state.editPenalId;
+      const original=state.penales.find(p=>String(p.id)===String(id));
+      if(!id||!original)return;
+      const status=document.getElementById('editarPenalStatus');
+      const btn=document.getElementById('guardarEditPenalBtn');
+      const sSel=document.getElementById('editSesionSelect');
+      const jSel=document.getElementById('editJugadoraSelect');
+      const aSel=document.getElementById('editArqueraSelect');
+      const sesionId=sSel.value||'';
+      const jugadora=jSel.value||'';
+      const arquera=aSel.value||'';
+      const zona=document.getElementById('editZonaSelect').value||'';
+      const resultado=document.getElementById('editResultadoSelect').value||'';
+      const potencia=document.getElementById('editPotenciaSelect').value||'';
+      const arqueraCalidad=document.getElementById('editArqueraCalidadSelect').value;
+      if(!sesionId||!jugadora||!arquera||!zona||!resultado||!potencia){
+        status.textContent='Completá sesión, jugadora, arquera, zona, resultado y potencia.';
+        status.className='status-line error';
+        return;
+      }
+      const payload={action:'penales_editarPenal',id,sesionId,sesion_id:sesionId,jugadora,jugadora_dni:jugadora,jugadora_persona_id:jugadora,arquera,arquera_dni:arquera,arquera_persona_id:arquera,zona,resultado,potencia,arquera_calidad:arqueraCalidad};
+      const editado=normalizePenalRecord({...original,...payload,jugadora_nombre:jSel.selectedOptions[0]?.text||resolveNombre(jugadora),arquera_nombre:aSel.selectedOptions[0]?.text||resolveNombre(arquera),local_pending:true});
+      state.penales=state.penales.map(p=>String(p.id)===String(id)?editado:p);
+      rebuildPenalesIndex();
+      renderListaPenales();
+      renderSesiones();
+      renderStats();
+      status.textContent='Guardando...';status.className='status-line';btn.disabled=true;
+      try{
+        const result=await apiPost(payload);
+        const serverRecord=result&&result.penal?normalizePenalRecord(result.penal):normalizePenalRecord({...editado,local_pending:false});
+        serverRecord.local_pending=false;
+        state.penales=state.penales.map(p=>String(p.id)===String(id)?serverRecord:p);
+        rebuildPenalesIndex();
+        renderListaPenales();
+        renderSesiones();
+        renderStats();
+        cerrarEditarPenal();
+      }catch(err){
+        state.penales=state.penales.map(p=>String(p.id)===String(id)?original:p);
+        rebuildPenalesIndex();
+        renderListaPenales();
+        renderSesiones();
+        renderStats();
+        status.textContent='Error: '+err.message;status.className='status-line error';
+      }finally{btn.disabled=false}
+    }
+
     function renderListaPenales(){
       const cont=document.getElementById('listaPenalesBody');
       const sum=document.getElementById('sesionSummary');
@@ -815,7 +1023,7 @@
           ${p.potencia?`<span class="badge ${potBadge(p.potencia)}">${potLabel(p.potencia)}</span>`:''}
           ${p.arquera_calidad!=null&&p.arquera_calidad!==''?`<span class="badge" title="Intervención arquera">${arqueraCalLabel(Number(p.arquera_calidad))}</span>`:''}
         </div>
-        ${p.local_pending?'<span class="badge warn">Guardando</span>':`<button class="btn small danger" type="button" data-delete-penal="${esc(String(p.id))}">×</button>`}
+        ${p.local_pending?'<span class="badge warn">Guardando</span>':`<div class="penal-actions"><button class="btn small ghost" type="button" data-edit-penal="${esc(String(p.id))}">Editar</button><button class="btn small danger" type="button" data-delete-penal="${esc(String(p.id))}">×</button></div>`}
       </div>`).join('');
       if(sp.length>MAX_PENALES_RENDER){
         cont.insertAdjacentHTML('beforeend',`<div class="empty">Mostrando los últimos ${MAX_PENALES_RENDER} penales de ${sp.length}. El resto sigue contado en estadísticas.</div>`);
@@ -902,8 +1110,34 @@
     }
 
     /* ===== ESTADÍSTICAS ===== */
+    function onStatsScopeChange(){
+      state.statsScope=document.getElementById('statsScopeSelect').value||'totales';
+      if(state.statsScope==='sesion'&&!state.statsSesionId){
+        state.statsSesionId=state.sesionActualId||state.sesiones.slice().reverse()[0]?.id||null;
+        renderStatsSesionSelector();
+      }
+      renderStats();
+    }
+
+    function penalesParaStats(){
+      if(state.statsScope!=='sesion')return state.penales;
+      if(!state.statsSesionId)return [];
+      return state.penales.filter(p=>String(p.sesionId)===String(state.statsSesionId));
+    }
+
     function renderStats(){
-      const penales=state.penales;
+      const penales=penalesParaStats();
+      const scopeSel=document.getElementById('statsScopeSelect');
+      const sesionWrap=document.getElementById('statsSesionWrap');
+      const badge=document.getElementById('statsScopeBadge');
+      const footer=document.getElementById('statsFooterNote');
+      if(scopeSel)scopeSel.value=state.statsScope;
+      if(sesionWrap)sesionWrap.classList.toggle('hidden',state.statsScope!=='sesion');
+      const sesion=state.sesiones.find(s=>String(s.id)===String(state.statsSesionId));
+      if(badge)badge.textContent=state.statsScope==='sesion'?(sesion?sesion.nombre:'Por sesión'):'Totales';
+      if(footer)footer.textContent=state.statsScope==='sesion'
+        ?`Estadísticas calculadas sobre ${sesion?`la sesión ${sesion.nombre}`:'la sesión seleccionada'}.`
+        :'Estadísticas calculadas sobre todos los penales registrados.';
       if(!penales.length){
         ['statsJugadoras','statsArqueras','statsZonas','statsCruces','statsEvolucion','statsPotencia'].forEach(id=>{document.getElementById(id).innerHTML='<div class="empty">Sin datos suficientes.</div>'});
         return;
@@ -1118,16 +1352,18 @@
     function normalizePenalRecord(p){
       if(!p)return p;
       const sesionId=firstNonEmpty(p.sesionId,p.sesion_id,p.sesionID,p.sesionid);
-      const jugadoraDni=firstNonEmpty(p.jugadora_dni,p.jugadora,p.jugadoraDNI,p.Jugadora);
-      const arqueraDni=firstNonEmpty(p.arquera_dni,p.arquera,p.arqueraDNI,p.Arquera);
+      const jugadoraDni=firstNonEmpty(p.jugadora_persona_id,p.jugadoraPersonaId,p.jugadora_dni,p.jugadora,p.jugadoraDNI,p.Jugadora);
+      const arqueraDni=firstNonEmpty(p.arquera_persona_id,p.arqueraPersonaId,p.arquera_dni,p.arquera,p.arqueraDNI,p.Arquera);
       return {
         ...p,
         sesionId,
         sesion_id: sesionId,
         jugadora_dni: jugadoraDni,
+        jugadora_persona_id: jugadoraDni,
         jugadora_nombre: firstNonEmpty(p.jugadora_nombre,p.jugadoraNombre,resolveNombre(jugadoraDni)),
         jugadora: jugadoraDni,
         arquera_dni: arqueraDni,
+        arquera_persona_id: arqueraDni,
         arquera_nombre: firstNonEmpty(p.arquera_nombre,p.arqueraNombre,resolveNombre(arqueraDni)),
         arquera: arqueraDni,
         zona:p.zona??'',

@@ -1884,15 +1884,26 @@ function resolvedPos(idx, upTo){
 }
 
 function findTokenAtPoint(x,y){
-  // Devuelve el índice del token (jugador no-ghost) más cercano al punto dado,
-  // usando radio del token + 10px como área de detección.
+  // Devuelve el índice del jugador no-ghost más cercano al punto dado.
+  // Para encadenar acciones, prioriza su posición efectiva (último destino)
+  // y no solo su ubicación inicial en el tablero.
   // Retorna -1 si no hay ninguno.
+  for(let i=players.length-1;i>=0;i--){
+    const p=players[i];
+    if(p.ghost)continue;
+    const ep=resolvedPos(i);
+    if(Math.hypot(x-ep.x, y-ep.y)<=p.r+12)return i;
+  }
   for(let i=players.length-1;i>=0;i--){
     const p=players[i];
     if(p.ghost)continue;
     if(Math.hypot(x-p.x,y-p.y)<=p.r+10)return i;
   }
   return -1;
+}
+
+function arrowIsMovement(a){
+  return !!a&&(MOVER_TYPES.has(a.type)||DRIBBLE_TYPES.has(a.type));
 }
 
 function getPlayerAt(x,y){
@@ -1928,6 +1939,25 @@ function addGhost(type,origin,x,y){
 }
 function removePlayer(idx){
   saveHistory();const p=players[idx];
+  if(p?.ghost){
+    const endpoint={x:p.x,y:p.y};
+    arrows=arrows
+      .filter(a=>a.from!==idx)
+      .map(a=>{
+        if(a.to===idx&&arrowIsMovement(a)){
+          const copy={...a,to:null,toX:endpoint.x,toY:endpoint.y,hideGhost:true};
+          delete copy.to;
+          return copy;
+        }
+        return {...a};
+      });
+    arrows=arrows
+      .filter(a=>a.to!==idx)
+      .map(a=>({...a,from:a.from>idx?a.from-1:a.from,to:a.to!=null?(a.to>idx?a.to-1:a.to):a.to}));
+    players.splice(idx,1);if(arrowFrom===idx)arrowFrom=null;
+    draw();toast('Fantasma ocultado');
+    return;
+  }
   if(p.murIdx!=null)placedMur.delete(p.murIdx);
   if(p.entityId)placedEntityIds.delete(p.entityId);
   arrows=arrows.filter(a=>a.from!==idx&&a.to!==idx);
@@ -2467,7 +2497,7 @@ function draw(animOverride){
       drawCurveArrow(cx1,cy1,a.cx,a.cy,a.x2,a.y2,color,dash,a.type);
       mx=(cx1+a.cx+a.x2)/3;my=(cy1+a.cy+a.y2)/3;
       // Jugador fantasma en destino final
-      if(cfp&&(MOVER_TYPES.has(a.type)||DRIBBLE_TYPES.has(a.type))&&players[a.from]) drawPlayerGhost(players[a.from],a.x2,a.y2);
+      if(cfp&&arrowIsMovement(a)&&!a.hideGhost&&players[a.from]) drawPlayerGhost(players[a.from],a.x2,a.y2);
     } else if(a.kind==='free'){
       const ffp=a.from!=null?resolvedPos(a.from,ai):null;
       if(a.path&&a.path.length>1){
@@ -2475,7 +2505,7 @@ function draw(animOverride){
           drawFreeArrowFromPlayer(ffp.x,ffp.y,a.path,color,dash,a.type);
           // Jugador fantasma en destino final
           const last=a.path[a.path.length-1];
-          if((MOVER_TYPES.has(a.type)||DRIBBLE_TYPES.has(a.type))&&players[a.from]) drawPlayerGhost(players[a.from],last.x,last.y);
+          if(arrowIsMovement(a)&&!a.hideGhost&&players[a.from]) drawPlayerGhost(players[a.from],last.x,last.y);
         } else {
           drawFreeArrow(a.path,color,dash,a.type);
         }
@@ -2493,13 +2523,13 @@ function draw(animOverride){
         drawArrow(fpCoords.x+(tp.x-fpCoords.x)*r/dist,fpCoords.y+(tp.y-fpCoords.y)*r/dist,tp.x,tp.y,color,dash,a.type);
         mx=(fpCoords.x+tp.x)/2;my=(fpCoords.y+tp.y)/2;
         // Fantasma en destino si es carrera (jugador se mueve)
-        if(!pos&&(MOVER_TYPES.has(a.type)||DRIBBLE_TYPES.has(a.type))&&players[a.from])
+        if(!pos&&arrowIsMovement(a)&&!a.hideGhost&&players[a.from])
           drawPlayerGhost(players[a.from],tp.x,tp.y);
       } else if(a.toX!=null){
         drawArrow(fpCoords.x,fpCoords.y,a.toX,a.toY,color,dash,a.type);
         mx=(fpCoords.x+a.toX)/2;my=(fpCoords.y+a.toY)/2;
         // Fantasma en destino si es carrera a punto libre
-        if(!pos&&(MOVER_TYPES.has(a.type)||DRIBBLE_TYPES.has(a.type))&&players[a.from])
+        if(!pos&&arrowIsMovement(a)&&!a.hideGhost&&players[a.from])
           drawPlayerGhost(players[a.from],a.toX,a.toY);
       }
     }

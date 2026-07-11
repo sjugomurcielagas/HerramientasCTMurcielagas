@@ -413,10 +413,11 @@
   <script src="../../assets/config.js?v=20260525021325"></script>
   <script>
     const API_URL=API_BASE_URL;
-    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],concentraciones:[],fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null},propioAsignacion:{}};
+    const state={plantel:[],plantelActivo:[],equipos:[],partidos:[],sesionesPenales:[],concentraciones:[],accionesResumen:null,fichaId:null,modo:'rapido',modoPartido:'rival',tipoMomento:null,nuevoScore:{goles_propios:0,goles_rival:0,tiros_propios:0,tiros_rival:0,corners_propios:0,corners_rival:0,faltas_propias:0,faltas_rival:0},editScore:{},editGoleadoras:[],editTipoCompetencia:'',editTipoCompetenciaOtro:'',internoAsignacion:{},internoEquipos:{local:null,visitante:null},propioAsignacion:{}};
     const STAT_IDS={tiros_propios:'vTirosP',tiros_rival:'vTirosR',corners_propios:'vCornersP',corners_rival:'vCornersR',faltas_propias:'vFaltasP',faltas_rival:'vFaltasR'};
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
+    const apiGetCached=(action,params={},ttlMs=10*60*1000,options={})=>Murci.apiGetCached(action,params,{ttlMs,staleOnError:true,...options},API_URL);
     const apiPost=(payload)=>Murci.apiPost(payload,API_URL);
 
     document.addEventListener('DOMContentLoaded',()=>{
@@ -511,7 +512,7 @@
     async function loadAll(){
       const app=document.getElementById('appView');app.classList.add('loading');
       try{
-        const [plantelRes,equiposRes,partidosRes,sesionesRes,concRes]=await Promise.allSettled([obtenerPlantel(),apiGet('equipos_getEquipos'),apiGet('partidos_getPartidos'),apiGet('penales_getSesiones'),Murci.apiGetCached('concentraciones_getConcentraciones',{},{ttlMs:5*60*1000},API_URL)]);
+        const [plantelRes,equiposRes,partidosRes,sesionesRes,concRes]=await Promise.allSettled([obtenerPlantel(),apiGetCached('equipos_getEquipos',{},30*60*1000),apiGetCached('partidos_getPartidos',{},30*60*1000),apiGetCached('penales_getSesiones',{},30*60*1000),Murci.apiGetCached('concentraciones_getConcentraciones',{},{ttlMs:5*60*1000,staleOnError:true},API_URL)]);
         state.plantel=plantelRes.status==='fulfilled'&&Array.isArray(plantelRes.value)?plantelRes.value:[];
         state.plantelActivo=state.plantel.filter(p=>p&&p.activo!==false&&p.inactivo!==true);
         state.equipos=equiposRes.status==='fulfilled'&&Array.isArray(equiposRes.value)?equiposRes.value:[];
@@ -532,8 +533,21 @@
       document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
-      if(id==='statsView')renderStats();
+      if(id==='statsView')loadAndRenderStats();
       window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    async function loadAndRenderStats(){
+      renderStats();
+      try{
+        state.accionesResumen=await apiGetCached('partidos_getAccionesResumen',{},10*60*1000);
+        renderStats();
+      }catch(e){
+        if(!state.accionesResumen){
+          const cont=document.getElementById('statsContent');
+          cont.insertAdjacentHTML('afterbegin',`<div class="empty" style="margin-bottom:13px">No se pudieron cargar las estadísticas de acciones: ${esc(e.message)}</div>`);
+        }
+      }
     }
 
     function setModo(m){
@@ -933,9 +947,12 @@
       document.getElementById('fichaContent').innerHTML='<div style="padding:20px 0"><div class="empty">Cargando...</div></div>';
       showView('fichaView');
       try{
-        const det=await apiGet('partidos_getDetalle',{id});
+        const det=await apiGetCached('partidos_getDetalle',{id},30*60*1000);
         renderFicha(p,det||{});
-      }catch(e){document.getElementById('fichaContent').innerHTML=`<div class="empty" style="margin:10px 0">Error al cargar: ${esc(e.message)}</div>`}
+      }catch(e){
+        renderFicha(p,p||{});
+        document.getElementById('fichaContent').insertAdjacentHTML('afterbegin',`<div class="empty" style="margin:10px 0">No se pudo actualizar desde el servidor. Mostrando la última información disponible.</div>`);
+      }
     }
 
     function renderFicha(p,det){
@@ -1381,6 +1398,8 @@
       const maxDerr=ps.filter(p=>calcRes(p)==='derrota').sort((a,b)=>(b.goles_rival-b.goles_propios)-(a.goles_rival-a.goles_propios))[0];
 
       cont.innerHTML=`
+        ${renderAccionesStats()}
+
         <div class="stat-card-grid">
           <div class="stat-card"><div class="sc-val">${total}</div><div class="sc-label">Jugados</div></div>
           <div class="stat-card"><div class="sc-val" style="color:#15803d">${v}</div><div class="sc-label">Victorias</div></div>
@@ -1433,6 +1452,94 @@
           </div>
         </div>
         <div class="footer-note">Estadísticas sobre ${total} partido${total!==1?'s':''} registrados.</div>`;
+    }
+
+    function renderAccionesStats(){
+      const r=state.accionesResumen;
+      if(!r||!r.total){
+        return `<div class="panel" style="margin-bottom:13px">
+          <div class="panel-head"><h2>Rendimiento por acciones</h2><span class="badge info">Registro en vivo</span></div>
+          <div class="panel-body"><div class="empty">Todavía no hay acciones registradas para analizar ocasiones, intervenciones o secuencias.</div></div>
+        </div>`;
+      }
+      const propio=r.propio||{};
+      const rival=r.rival||{};
+      const partidosConAcciones=(r.por_partido||[]).length||1;
+      const conv=propio.conversion!==null&&propio.conversion!==undefined?Math.round(propio.conversion*100):null;
+      const convR=rival.conversion!==null&&rival.conversion!==undefined?Math.round(rival.conversion*100):null;
+      const accionesClavePropias=Number(propio.acciones_clave||0);
+      const accionesClaveRival=Number(rival.acciones_clave||0);
+      const balanceClave=accionesClavePropias-accionesClaveRival;
+      const jugadoras=(r.por_jugadora||[]).slice(0,7);
+      const contextos=(r.por_contexto||[]).slice(0,6);
+      const acciones=(r.por_accion||[]).slice(0,7);
+      return `
+        <div class="panel" style="margin-bottom:13px">
+          <div class="panel-head"><h2>Rendimiento por acciones</h2><span class="badge info">${r.total} acción${r.total!==1?'es':''}</span></div>
+          <div class="panel-body">
+            <div class="stat-card-grid">
+              <div class="stat-card"><div class="sc-val">${accionesClavePropias}</div><div class="sc-label">Acciones clave propias</div></div>
+              <div class="stat-card"><div class="sc-val">${propio.tiros||0}</div><div class="sc-label">Tiros registrados</div></div>
+              <div class="stat-card"><div class="sc-val">${conv!==null?conv+'%':'—'}</div><div class="sc-label">Conversión de tiro</div></div>
+              <div class="stat-card"><div class="sc-val">${rival.atajadas_arquera||0}</div><div class="sc-label">Atajadas rivales</div></div>
+            </div>
+            <div class="split" style="margin-top:13px">
+              <div>
+                <div class="stat-row"><div class="stat-nombre">Ocasiones y aproximaciones</div><div class="stat-nums">${propio.aproximaciones||0} aproximaciones · ${(accionesClavePropias/partidosConAcciones).toFixed(1)} acciones clave/partido</div></div>
+                <div class="stat-row"><div class="stat-nombre">Respuesta defensiva</div><div class="stat-nums">${propio.recuperaciones||0} recuperaciones · ${propio.atajadas_arquera||0} atajadas/intervenciones</div></div>
+                <div class="stat-row"><div class="stat-nombre">Riesgo y pérdidas</div><div class="stat-nums">${propio.perdidas||0} pérdidas · ${propio.faltas||0} faltas</div></div>
+                <div class="stat-row"><div class="stat-nombre">Balance de acciones clave</div><div class="stat-nums"><strong style="color:${balanceClave>=0?'var(--ok)':'var(--danger)'}">${balanceClave>=0?'+':''}${balanceClave}</strong> vs rival · conversión rival ${convR!==null?convR+'%':'—'}</div></div>
+              </div>
+              <div>
+                <div class="stat-row"><div class="stat-nombre">Balón parado</div><div class="stat-nums">${sumContextos(r,['corner','tiro_libre','penal','doble_penal'])} acciones</div></div>
+                <div class="stat-row"><div class="stat-nombre">Pases relevantes</div><div class="stat-nums">${propio.pases_relevantes||0} propios</div></div>
+                <div class="stat-row"><div class="stat-nombre">Calidad promedio</div><div class="stat-nums">${formatAvg(propio.valoracion_promedio)} ejecución · ${formatAvg(propio.arquera_promedio)} arquera</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="split" style="margin-bottom:13px">
+          <div class="panel"><div class="panel-head"><h2>Participación individual</h2></div><div class="panel-body">
+            ${jugadoras.length?jugadoras.map(j=>`<div class="stat-row">
+              <div class="stat-nombre">${esc(resolvePersonaNombre(j.id))}</div>
+              <div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.min(100,Math.round(j.total/(jugadoras[0].total||1)*100))}%"></div></div>
+              <div class="stat-nums">${j.total} acciones · ${j.tiros||0} tiros · ${j.recuperaciones||0} recuperaciones · prom. ${formatAvg(j.valoracion_promedio)}</div>
+            </div>`).join(''):'<div class="empty">Sin acciones propias con jugadora.</div>'}
+          </div></div>
+          <div class="panel"><div class="panel-head"><h2>Patrones de juego</h2></div><div class="panel-body">
+            ${contextos.length?contextos.map(c=>`<div class="stat-row">
+              <div class="stat-nombre">${esc(contextoLabel(c.id))}</div>
+              <div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.min(100,Math.round(c.total/(contextos[0].total||1)*100))}%"></div></div>
+              <div class="stat-nums">${c.total} acciones · ${c.tiros||0} tiros · ${c.goles||0} goles</div>
+            </div>`).join(''):'<div class="empty">Sin contextos cargados.</div>'}
+          </div></div>
+        </div>
+
+        <div class="panel" style="margin-bottom:13px">
+          <div class="panel-head"><h2>Mapa de acciones</h2><span class="badge info">Tipos más frecuentes</span></div>
+          <div class="panel-body">
+            ${acciones.length?acciones.map(a=>`<div class="stat-row">
+              <div class="stat-nombre">${esc(a.id)}</div>
+              <div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.min(100,Math.round(a.total/(acciones[0].total||1)*100))}%"></div></div>
+              <div class="stat-nums">${a.total} · ${a.tiros||0} tiros · ${a.goles||0} goles</div>
+            </div>`).join(''):'<div class="empty">Sin acciones.</div>'}
+          </div>
+        </div>`;
+    }
+
+    function sumContextos(resumen,ids){
+      const set=new Set(ids);
+      return (resumen.por_contexto||[]).filter(c=>set.has(c.id)).reduce((s,c)=>s+(c.total||0),0);
+    }
+    function contextoLabel(id){
+      return {juego_libre:'Juego libre',corner:'Córner',tiro_libre:'Tiro libre',penal:'Penal',doble_penal:'Doble penal / 8m'}[id]||id||'Sin contexto';
+    }
+    function formatAvg(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))?Number(v).toFixed(2):'—'}
+    function resolvePersonaNombre(id){
+      const key=String(id||'');
+      const p=(state.plantel||[]).find(x=>personaKey(x)===key);
+      return p?nombrar(p):key;
     }
 
     function renderPropioPlantelSelector(){const cont=document.getElementById('propioRoster');if(!cont)return;const jugadoras=(state.plantelActivo||[]).filter(p=>['Jugadora','Arquera'].includes(String(p.Tipo_Integrante||'').trim())).sort((a,b)=>Number(a.Numero_Camiseta||a.Nro_Camiseta||99)-Number(b.Numero_Camiseta||b.Nro_Camiseta||99));if(!jugadoras.length){cont.innerHTML='<div class="empty">Sin jugadoras activas en el plantel.</div>';return;}cont.innerHTML='<div class="propio-chip-grid">'+jugadoras.map(p=>{const key=personaKey(p);const excluida=state.propioAsignacion[key]===false;const num=p.Numero_Camiseta||p.Nro_Camiseta||'';const nombre=nombrePersona(p)||key;const label=(num?num+' · ':'')+nombre;return`<button type="button" class="propio-chip${excluida?' excluido':''}" data-key="${esc(key)}" onclick="onPropioChipClick(this)">${esc(label)}</button>`;}).join('')+'</div>';}
