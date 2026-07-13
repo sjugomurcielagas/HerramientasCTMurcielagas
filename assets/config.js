@@ -1,6 +1,6 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
-const UI_VERSION = '2026.06.14.1';
-const UI_DEPLOYED_AT = 'partidos-internos';
+const UI_VERSION = '2026.07.13.1';
+const UI_DEPLOYED_AT = 'cumpleanios-semana';
 
 (function ensureFreshUiVersion(global) {
   if (!global.document || !global.location || !global.fetch) return;
@@ -445,6 +445,49 @@ const UI_DEPLOYED_AT = 'partidos-internos';
     ].some(term => text.includes(term));
   }
 
+  const WEEKDAY_NAMES_ = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+  function getWeekBirthdays_(plantel) {
+    if (!Array.isArray(plantel) || !plantel.length) return [];
+
+    const now = new Date();
+    const monday = startOfCurrentWeek_(now);
+    const todayIndex = (now.getDay() + 6) % 7;
+
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      weekDays.push(d);
+    }
+
+    const results = [];
+    plantel.forEach(persona => {
+      if (persona?.activo === false || persona?.inactivo === true) return;
+      const birth = parseAlertDate_(persona?.Fecha_Nac || persona?.fecha_nac || persona?.fechaNacimiento);
+      if (!birth) return;
+
+      const dayIndex = weekDays.findIndex(d => d.getMonth() === birth.getMonth() && d.getDate() === birth.getDate());
+      if (dayIndex === -1) return;
+
+      const detail = dayIndex === todayIndex
+        ? 'Cumple hoy'
+        : dayIndex < todayIndex
+          ? `Cumplió el ${WEEKDAY_NAMES_[dayIndex]}`
+          : `Cumple el ${WEEKDAY_NAMES_[dayIndex]}`;
+
+      results.push({
+        name: Murci.personName(persona),
+        detail,
+        dayIndex,
+        href: './base-datos/',
+        label: 'Ver ficha'
+      });
+    });
+
+    return results.sort((a, b) => a.dayIndex - b.dayIndex);
+  }
+
   function isHomeReportablePlayer_(persona) {
     if (!persona) return false;
     if (persona.activo === false || persona.inactivo === true) return false;
@@ -526,6 +569,9 @@ const UI_DEPLOYED_AT = 'partidos-internos';
         }));
     }
 
+    const birthdayAlerts = getWeekBirthdays_(plantel);
+
+    if (birthdayAlerts.length) sections.push({ key: 'cumpleanios', title: 'Cumpleaños de la semana', items: birthdayAlerts });
     if (documentAlerts.length) sections.push({ key: 'documentos', title: 'Documentos', items: documentAlerts });
     if (tueAlerts.length) sections.push({ key: 'tues', title: 'TUEs', items: tueAlerts });
     if (cargaAlerts.length) sections.push({ key: 'carga', title: 'Carga sin registrar', items: cargaAlerts });
