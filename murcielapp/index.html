@@ -78,8 +78,8 @@
     th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--borde); }
     th { background: #edf6fb; color: var(--azul); }
     .step-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-    .step-actions #next-step { grid-column: 1 / -1; }
     .step-actions .btn { min-width: 0; padding-inline: 7px; }
+    #next-step:focus { outline: 3px solid #ab5500; outline-offset: 3px; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
       .identity { margin-left: 0; text-align: left; }
@@ -137,8 +137,7 @@
           <h3 id="step-heading" tabindex="-1"></h3>
           <div id="step-content"></div>
           <div class="step-actions" style="margin-top:18px">
-            <button class="btn secondary" id="previous-step" type="button">Anterior</button>
-            <button class="btn secondary" id="repeat-step" type="button">Repetir instrucciones</button>
+            <button class="btn" id="previous-step" type="button">Anterior</button>
             <button class="btn" id="next-step" type="button">Siguiente</button>
           </div>
           <button class="btn secondary" id="exit-step" type="button" style="width:100%;margin-top:12px">Elegir otro día</button>
@@ -312,7 +311,26 @@
       });
     }
 
-    function renderStep(focus = false, repeat = false) {
+    function stepAnnouncement(step) {
+      const item = step.item;
+      const parts = [byId('step-count').textContent];
+      if (step.round) parts.push(byId('round-label').textContent);
+      parts.push(item.titulo);
+      if (state.stepIndex === 0 && currentDay().indicacion) parts.push(currentDay().indicacion);
+      if (item.tipo === 'zona-media') {
+        item.ejercicios.forEach((exercise, index) => parts.push(`Ejercicio ${index + 1}: ${exercise}`));
+      } else if (item.tipo === 'fuerza') {
+        if (item.principal && item.principal !== item.titulo) parts.push(item.principal);
+        item.progresion?.forEach(row => parts.push(`Serie ${row.serie}: ${row.repeticiones} repeticiones, ${row.carga}`));
+        if (item.combinado?.length) parts.push(`Se combina con: ${item.combinado.join('; ')}`);
+      } else if (item.detalle) parts.push(item.detalle);
+      if (item.tiempo) parts.push(`Tiempo: ${item.tiempo}`);
+      if (!step.round && item.series) parts.push(`Series: ${item.series}`);
+      if (item.pausa && item.pausa !== '0' && item.pausa !== 'No indicada') parts.push(`Pausa: ${item.pausa}`);
+      return parts.join('. ');
+    }
+
+    function renderStep(focus = false) {
       const atEnd = state.stepIndex >= state.steps.length;
       byId('step-view').hidden = atEnd;
       byId('end-view').hidden = !atEnd;
@@ -339,8 +357,8 @@
       renderDetails(content, item, !step.round);
       byId('previous-step').disabled = state.stepIndex === 0;
       byId('next-step').textContent = state.stepIndex === state.steps.length - 1 ? 'Llegar al final' : 'Siguiente';
-      if (focus) byId('step-heading').focus();
-      announce(repeat ? `${item.titulo}. ${content.textContent}` : `${byId('step-count').textContent}. ${byId('round-label').textContent}. ${item.titulo}`);
+      if (focus) byId('next-step').focus();
+      announce(stepAnnouncement(step));
     }
 
     function hideTrainingViews() {
@@ -437,7 +455,6 @@
     byId('previous-step').addEventListener('click', () => {
       if (state.stepIndex > 0) { state.stepIndex--; renderStep(true); }
     });
-    byId('repeat-step').addEventListener('click', () => renderStep(true, true));
     byId('next-step').addEventListener('click', () => {
       state.stepIndex++;
       renderStep(true);

@@ -26,8 +26,9 @@ dispositivos.
 - Días de la prescripción sin asignarles fechas del calendario.
 - Entrenar abre dos caminos: Ver rutina o Paso a paso. Cada uno permite elegir
   el día con botones. Ver rutina también ofrece el PDF completo.
-- Paso a paso tiene controles Anterior, Repetir y Siguiente. Los tres bloques de
-  zona media se alternan por vuelta; los de fuerza se completan de a un bloque.
+- Paso a paso tiene controles Anterior y Siguiente, con foco inicial en Siguiente.
+  Los tres bloques de zona media se alternan por vuelta; los de fuerza se
+  completan de a un bloque.
   Las progresiones se presentan como tablas semánticas.
 - Enlaces para ver o descargar el PDF original únicamente en la prueba local.
 - Los otros tres accesos del menú identificados como próximos módulos.
