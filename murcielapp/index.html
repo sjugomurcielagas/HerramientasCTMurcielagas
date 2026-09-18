@@ -42,7 +42,6 @@
     h3 { color: var(--azul); font-size: 1.18rem; line-height: 1.3; margin: 0 0 10px; }
     p { margin: 0 0 12px; }
     .panel { background: white; border: 1px solid var(--borde); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-    .notice { background: #fff8e9; border-left: 5px solid #a05b00; padding: 12px 14px; border-radius: 8px; }
     .status { color: var(--azul); font-weight: 700; }
     .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
     .choice-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
@@ -58,7 +57,6 @@
     dt { font-size: .83rem; font-weight: 700; }
     dd { margin: 0; }
     .step-count { font-weight: 700; color: var(--azul); }
-    .minor { font-size: .88rem; }
     .step-panel { border: 2px solid var(--azul); padding: 20px; }
     .step-kicker { margin: 0 0 8px; color: #305475; font-weight: 700; }
     .exercise-pair { display: grid; gap: 10px; padding: 0; margin: 12px 0; list-style: none; counter-reset: exercise; }
@@ -110,12 +108,10 @@
   <main class="wrap" id="contenido" tabindex="-1">
     <section id="entrenar-section" aria-labelledby="entrenar-title">
       <h2 id="entrenar-title" tabindex="-1">Entrenar</h2>
-      <p class="notice">Podés consultar y avanzar libremente. La app no registra cumplimiento.</p>
       <p id="load-status" class="status" role="status">Cargando rutina…</p>
       <div id="routine-app" hidden>
         <section class="panel" id="choice-view" aria-labelledby="choice-heading">
           <h3 id="choice-heading" tabindex="-1">¿Cómo querés usar la rutina?</h3>
-          <p id="routine-period"></p>
           <div class="choice-buttons">
             <button class="btn" id="full-mode" type="button">Ver rutina</button>
             <button class="btn" id="step-mode" type="button">Paso a paso</button>
@@ -123,7 +119,6 @@
         </section>
         <section class="panel" id="day-choice" aria-labelledby="day-choice-heading" hidden>
           <h3 id="day-choice-heading" tabindex="-1">Elegí un día</h3>
-          <p class="minor" style="margin-top:14px">Día 1 a Día 5 son los nombres del PDF, sin fecha asignada.</p>
           <div id="day-buttons" class="choice-buttons"></div>
           <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="width:100%;margin-top:16px">Ver PDF completo (nueva pestaña)</a>
           <button class="btn secondary" id="back-to-choice" type="button" style="width:100%;margin-top:12px">Volver a Entrenar</button>
@@ -149,7 +144,6 @@
         </section>
         <section id="end-view" class="panel" aria-labelledby="end-heading" hidden>
           <h3 id="end-heading" tabindex="-1">Llegaste al final de la rutina</h3>
-          <p>La navegación no indica si realizaste los ejercicios.</p>
           <div class="actions">
             <button class="btn" type="button" id="register-from-end">Registrar estímulo</button>
             <button class="btn secondary" type="button" id="back-to-routine">Volver a la rutina</button>
@@ -159,7 +153,7 @@
     </section>
     <section id="upcoming-section" class="panel" aria-labelledby="upcoming-title" hidden>
       <h2 id="upcoming-title" tabindex="-1"></h2>
-      <p>Este módulo todavía no está disponible en la prueba privada. No se enviaron ni guardaron datos.</p>
+      <p>Esta sección estará disponible próximamente.</p>
     </section>
     <p id="announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
   </main>
@@ -323,7 +317,7 @@
       byId('end-view').hidden = !atEnd;
       if (atEnd) {
         if (focus) byId('end-heading').focus();
-        announce('Llegaste al final de la rutina. Esto no registra entrenamiento.');
+        announce('Llegaste al final de la rutina.');
         return;
       }
       const step = state.steps[state.stepIndex];
@@ -416,7 +410,6 @@
         }
         state.routine = data;
         byId('identity').textContent = `${data.usuario || 'Usuaria de prueba'} · prueba local`;
-        byId('routine-period').textContent = data.periodo || '';
         const dayButtons = byId('day-buttons');
         data.dias.forEach((day, index) => {
           const button = document.createElement('button');
