@@ -71,6 +71,7 @@
     .block-card:first-child { border-top: 0; padding-top: 0; }
     .block-card h4 { color: var(--azul); font-size: 1.08rem; margin: 0 0 8px; }
     .section-label { margin: 10px 0 0; padding: 8px 10px; background: var(--celeste); border-radius: 8px; color: var(--azul); font-weight: 700; }
+    .day-guidance { padding: 12px 14px; background: #edf6fb; border-radius: 10px; }
     .combo { margin-top: 12px; padding: 12px; background: #edf6fb; border-radius: 10px; }
     .combo strong { display: block; color: var(--azul); }
     .combo ul { margin: 6px 0 0; padding-left: 1.2em; }
@@ -131,6 +132,7 @@
         <section id="full-view" class="panel" aria-labelledby="day-heading">
           <h3 id="day-heading" tabindex="-1"></h3>
           <p id="day-intro"></p>
+          <p id="day-guidance" class="day-guidance" hidden></p>
           <div id="routine-list"></div>
         </section>
         <section id="step-view" class="panel step-panel" aria-labelledby="step-heading" hidden>
@@ -288,6 +290,8 @@
       const day = currentDay();
       byId('day-heading').textContent = day.nombre;
       byId('day-intro').textContent = day.resumen || '';
+      byId('day-guidance').textContent = day.indicacion || '';
+      byId('day-guidance').hidden = !day.indicacion;
       const list = byId('routine-list');
       list.replaceChildren();
       day.bloques.forEach((item, index) => {
@@ -331,6 +335,12 @@
       byId('step-heading').textContent = item.titulo;
       const content = byId('step-content');
       content.replaceChildren();
+      if (state.stepIndex === 0 && currentDay().indicacion) {
+        const guidance = document.createElement('p');
+        guidance.className = 'day-guidance';
+        guidance.textContent = currentDay().indicacion;
+        content.append(guidance);
+      }
       renderDetails(content, item, !step.round);
       byId('previous-step').disabled = state.stepIndex === 0;
       byId('next-step').textContent = state.stepIndex === state.steps.length - 1 ? 'Llegar al final' : 'Siguiente';
