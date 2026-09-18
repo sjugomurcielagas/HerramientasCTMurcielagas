@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Entrenar · MurcielApp</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 18px;
+      line-height: 1.5;
+      background: #f4f9fd;
+      color: #102033;
+      --azul: #0b2f5f;
+      --celeste: #d9f1fc;
+      --borde: #afc5d7;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    [hidden] { display: none !important; }
+    button, select, a { font: inherit; }
+    button, select { min-height: 48px; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .55; }
+    :focus-visible { outline: 3px solid #ab5500; outline-offset: 3px; }
+    .skip { position: absolute; left: 12px; top: -100px; background: white; padding: 10px; z-index: 10; }
+    .skip:focus { top: 12px; }
+    header { background: white; border-bottom: 1px solid var(--borde); }
+    .wrap { width: min(100% - 32px, 760px); margin-inline: auto; }
+    .header-inner { display: flex; gap: 12px; align-items: center; padding-block: 12px; }
+    .brand { margin: 0; color: var(--azul); font-size: 1.5rem; line-height: 1.2; }
+    .subtitle { margin: 0; font-size: .85rem; }
+    .identity { margin-left: auto; font-size: .82rem; text-align: right; }
+    nav { background: white; border-bottom: 1px solid var(--borde); }
+    .nav-inner { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-block: 12px; }
+    .nav-btn { color: var(--azul); background: white; border: 2px solid var(--borde); border-radius: 12px; padding: 8px; font-weight: 700; }
+    .nav-btn[aria-current="page"] { color: white; background: var(--azul); border-color: var(--azul); }
+    main { padding-block: 20px 56px; }
+    h2 { color: var(--azul); font-size: 1.55rem; line-height: 1.25; margin: 0 0 12px; }
+    h3 { color: var(--azul); font-size: 1.18rem; line-height: 1.3; margin: 0 0 10px; }
+    p { margin: 0 0 12px; }
+    .panel { background: white; border: 1px solid var(--borde); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    .notice { background: #fff8e9; border-left: 5px solid #a05b00; padding: 12px 14px; border-radius: 8px; }
+    .status { color: var(--azul); font-weight: 700; }
+    .field { display: grid; gap: 6px; margin-bottom: 14px; }
+    label { font-weight: 700; }
+    select { width: 100%; padding: 8px 12px; border: 2px solid var(--borde); border-radius: 10px; background: white; color: #102033; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--azul); border-radius: 12px; padding: 9px 16px; background: var(--azul); color: white; font-weight: 700; text-decoration: none; text-align: center; }
+    .btn.secondary { background: white; color: var(--azul); }
+    .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 3px white, 0 0 0 2px var(--azul); }
+    .btn.secondary[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--azul); }
+    ol { padding-left: 1.45em; margin: 0; }
+    li { padding: 14px 4px; border-bottom: 1px solid var(--borde); }
+    li:last-child { border-bottom: 0; }
+    li p:last-child { margin-bottom: 0; }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 9px; margin: 12px 0 0; }
+    .meta div { background: #edf6fb; padding: 8px 10px; border-radius: 8px; }
+    dt { font-size: .83rem; font-weight: 700; }
+    dd { margin: 0; }
+    .step-count { font-weight: 700; color: var(--azul); }
+    .minor { font-size: .88rem; }
+    @media (max-width: 410px) {
+      .header-inner { flex-wrap: wrap; }
+      .identity { margin-left: 0; text-align: left; }
+      .actions > * { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+  <header>
+    <div class="wrap header-inner">
+      <div>
+        <p class="brand">MurcielApp</p>
+        <p class="subtitle">App de jugadoras · Las Murciélagas</p>
+      </div>
+      <p class="identity" id="identity">Prueba privada</p>
+    </div>
+  </header>
+  <nav aria-label="Navegación principal">
+    <div class="wrap nav-inner">
+      <button class="nav-btn" type="button" data-section="entrenar" aria-current="page">Entrenar</button>
+      <button class="nav-btn" type="button" data-section="registrar">Registrar estímulo</button>
+      <button class="nav-btn" type="button" data-section="penales">Penales</button>
+      <button class="nav-btn" type="button" data-section="perfil">Mi perfil</button>
+    </div>
+  </nav>
+  <main class="wrap" id="contenido" tabindex="-1">
+    <section id="entrenar-section" aria-labelledby="entrenar-title">
+      <h2 id="entrenar-title" tabindex="-1">Entrenar</h2>
+      <p class="notice">Esta es una prueba de consulta. Recorrer una rutina no registra si entrenaste ni mide cumplimiento.</p>
+      <p id="load-status" class="status" role="status">Cargando rutina…</p>
+      <div id="routine-app" hidden>
+        <div class="panel">
+          <p id="routine-period"></p>
+          <div class="field">
+            <label for="day-select">Elegí un día de la rutina</label>
+            <select id="day-select"></select>
+          </div>
+          <div class="actions" role="group" aria-label="Modo de consulta">
+            <button class="btn" id="full-mode" type="button" aria-pressed="true">Ver rutina</button>
+            <button class="btn secondary" id="step-mode" type="button" aria-pressed="false">Paso a paso</button>
+          </div>
+          <p class="minor" style="margin-top:14px">Los días 1 a 5 del documento no están asociados a fechas del calendario.</p>
+          <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="margin-top:8px">Abrir PDF original (nueva pestaña)</a>
+        </div>
+        <section id="full-view" class="panel" aria-labelledby="day-heading">
+          <h3 id="day-heading" tabindex="-1"></h3>
+          <p id="day-intro"></p>
+          <ol id="routine-list"></ol>
+        </section>
+        <section id="step-view" class="panel" aria-labelledby="step-heading" hidden>
+          <p id="step-count" class="step-count"></p>
+          <h3 id="step-heading" tabindex="-1"></h3>
+          <p id="step-description"></p>
+          <dl class="meta" id="step-meta"></dl>
+          <p id="step-note" class="notice" hidden></p>
+          <div class="actions">
+            <button class="btn secondary" id="previous-step" type="button">Anterior</button>
+            <button class="btn secondary" id="repeat-step" type="button">Repetir instrucciones</button>
+            <button class="btn" id="next-step" type="button">Siguiente</button>
+          </div>
+        </section>
+        <section id="end-view" class="panel" aria-labelledby="end-heading" hidden>
+          <h3 id="end-heading" tabindex="-1">Llegaste al final de la rutina</h3>
+          <p>La navegación no indica si realizaste los ejercicios.</p>
+          <div class="actions">
+            <button class="btn" type="button" id="register-from-end">Registrar estímulo</button>
+            <button class="btn secondary" type="button" id="back-to-routine">Volver a la rutina</button>
+          </div>
+        </section>
+      </div>
+    </section>
+    <section id="upcoming-section" class="panel" aria-labelledby="upcoming-title" hidden>
+      <h2 id="upcoming-title" tabindex="-1"></h2>
+      <p>Este módulo todavía no está disponible en la prueba privada. No se enviaron ni guardaron datos.</p>
+    </section>
+    <p id="announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
+  </main>
+  <style>.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
+  <script>
+    'use strict';
+    const state = { routine: null, dayIndex: 0, stepIndex: 0, mode: 'full' };
+    const byId = id => document.getElementById(id);
+    const announce = message => {
+      const target = byId('announcement');
+      target.textContent = '';
+      window.setTimeout(() => { target.textContent = message; }, 30);
+    };
+
+    function addMeta(container, label, value) {
+      if (!value) return;
+      const box = document.createElement('div');
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const detail = document.createElement('dd');
+      detail.textContent = value;
+      box.append(term, detail);
+      container.append(box);
+    }
+
+    function fillMeta(container, item) {
+      container.replaceChildren();
+      addMeta(container, 'Tiempo', item.tiempo);
+      addMeta(container, 'Series', item.series);
+      addMeta(container, 'Pausa', item.pausa);
+    }
+
+    function currentDay() { return state.routine.dias[state.dayIndex]; }
+
+    function renderFull() {
+      const day = currentDay();
+      byId('day-heading').textContent = day.nombre;
+      byId('day-intro').textContent = day.introduccion || '';
+      const list = byId('routine-list');
+      list.replaceChildren();
+      day.bloques.forEach(item => {
+        const li = document.createElement('li');
+        const title = document.createElement('h4');
+        title.textContent = item.titulo;
+        title.style.margin = '0 0 6px';
+        const description = document.createElement('p');
+        description.textContent = item.descripcion;
+        const meta = document.createElement('dl');
+        meta.className = 'meta';
+        fillMeta(meta, item);
+        li.append(title, description, meta);
+        if (item.nota) {
+          const note = document.createElement('p');
+          note.className = 'notice';
+          note.style.marginTop = '10px';
+          note.textContent = item.nota;
+          li.append(note);
+        }
+        list.append(li);
+      });
+    }
+
+    function renderStep(focus = false) {
+      const blocks = currentDay().bloques;
+      const atEnd = state.stepIndex >= blocks.length;
+      byId('step-view').hidden = atEnd;
+      byId('end-view').hidden = !atEnd;
+      if (atEnd) {
+        if (focus) byId('end-heading').focus();
+        announce('Llegaste al final de la rutina. Esto no registra entrenamiento.');
+        return;
+      }
+      const item = blocks[state.stepIndex];
+      byId('step-count').textContent = `Paso ${state.stepIndex + 1} de ${blocks.length} · ${currentDay().nombre}`;
+      byId('step-heading').textContent = item.titulo;
+      byId('step-description').textContent = item.descripcion;
+      fillMeta(byId('step-meta'), item);
+      byId('step-note').hidden = !item.nota;
+      byId('step-note').textContent = item.nota || '';
+      byId('previous-step').disabled = state.stepIndex === 0;
+      byId('next-step').textContent = state.stepIndex === blocks.length - 1 ? 'Llegar al final' : 'Siguiente';
+      if (focus) byId('step-heading').focus();
+      announce(`${byId('step-count').textContent}. ${item.titulo}. ${item.descripcion}`);
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      byId('full-view').hidden = mode !== 'full';
+      byId('step-view').hidden = mode !== 'step';
+      byId('end-view').hidden = true;
+      byId('full-mode').setAttribute('aria-pressed', String(mode === 'full'));
+      byId('step-mode').setAttribute('aria-pressed', String(mode === 'step'));
+      byId('full-mode').classList.toggle('secondary', mode !== 'full');
+      byId('step-mode').classList.toggle('secondary', mode !== 'step');
+      if (mode === 'step') {
+        state.stepIndex = 0;
+        renderStep(true);
+      } else {
+        renderFull();
+        byId('day-heading').focus();
+      }
+    }
+
+    function showSection(section) {
+      const isTraining = section === 'entrenar';
+      byId('entrenar-section').hidden = !isTraining;
+      byId('upcoming-section').hidden = isTraining;
+      document.querySelectorAll('.nav-btn').forEach(button => {
+        if (button.dataset.section === section) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+      if (isTraining) byId('entrenar-title').focus();
+      else {
+        byId('upcoming-title').textContent = {
+          registrar: 'Registrar estímulo', penales: 'Penales', perfil: 'Mi perfil'
+        }[section];
+        byId('upcoming-title').focus();
+      }
+    }
+
+    async function loadRoutine() {
+      try {
+        const response = await fetch('./private/rutina.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Rutina no disponible');
+        const data = await response.json();
+        if (!Array.isArray(data.dias) || !data.dias.length || data.dias.some(day => !Array.isArray(day.bloques))) {
+          throw new Error('Formato de rutina inválido');
+        }
+        state.routine = data;
+        byId('identity').textContent = `${data.usuario || 'Usuaria de prueba'} · prueba local`;
+        byId('routine-period').textContent = data.periodo || '';
+        const select = byId('day-select');
+        data.dias.forEach((day, index) => {
+          const option = document.createElement('option');
+          option.value = String(index);
+          option.textContent = day.nombre;
+          select.append(option);
+        });
+        byId('load-status').hidden = true;
+        byId('routine-app').hidden = false;
+        renderFull();
+      } catch (error) {
+        byId('load-status').textContent = 'No hay una rutina disponible para esta prueba. Consultá a quien preparó el enlace.';
+        console.error('No se pudo cargar la rutina local:', error);
+      }
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
+    byId('day-select').addEventListener('change', event => {
+      state.dayIndex = Number(event.target.value);
+      state.stepIndex = 0;
+      if (state.mode === 'step') renderStep(true);
+      else { renderFull(); byId('day-heading').focus(); }
+    });
+    byId('full-mode').addEventListener('click', () => setMode('full'));
+    byId('step-mode').addEventListener('click', () => setMode('step'));
+    byId('previous-step').addEventListener('click', () => {
+      if (state.stepIndex > 0) { state.stepIndex--; renderStep(true); }
+    });
+    byId('repeat-step').addEventListener('click', () => renderStep(true));
+    byId('next-step').addEventListener('click', () => {
+      state.stepIndex++;
+      renderStep(true);
+    });
+    byId('back-to-routine').addEventListener('click', () => setMode('full'));
+    byId('register-from-end').addEventListener('click', () => showSection('registrar'));
+    loadRoutine();
+  </script>
+</body>
+</html>
