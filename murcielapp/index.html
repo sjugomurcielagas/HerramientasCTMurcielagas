@@ -20,8 +20,8 @@
     * { box-sizing: border-box; }
     body { margin: 0; }
     [hidden] { display: none !important; }
-    button, select, a { font: inherit; }
-    button, select { min-height: 48px; }
+    button, a { font: inherit; }
+    button { min-height: 48px; }
     button { cursor: pointer; }
     button:disabled { cursor: default; opacity: .55; }
     :focus-visible { outline: 3px solid #ab5500; outline-offset: 3px; }
@@ -44,14 +44,11 @@
     .panel { background: white; border: 1px solid var(--borde); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
     .notice { background: #fff8e9; border-left: 5px solid #a05b00; padding: 12px 14px; border-radius: 8px; }
     .status { color: var(--azul); font-weight: 700; }
-    .field { display: grid; gap: 6px; margin-bottom: 14px; }
-    label { font-weight: 700; }
-    select { width: 100%; padding: 8px 12px; border: 2px solid var(--borde); border-radius: 10px; background: white; color: #102033; }
     .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .choice-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+    .choice-buttons .btn { min-width: 0; }
     .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--azul); border-radius: 12px; padding: 9px 16px; background: var(--azul); color: white; font-weight: 700; text-decoration: none; text-align: center; }
     .btn.secondary { background: white; color: var(--azul); }
-    .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 3px white, 0 0 0 2px var(--azul); }
-    .btn.secondary[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--azul); }
     ol { padding-left: 1.45em; margin: 0; }
     li { padding: 14px 4px; border-bottom: 1px solid var(--borde); }
     li:last-child { border-bottom: 0; }
@@ -116,24 +113,27 @@
       <p class="notice">Podés consultar y avanzar libremente. La app no registra cumplimiento.</p>
       <p id="load-status" class="status" role="status">Cargando rutina…</p>
       <div id="routine-app" hidden>
-        <div class="panel" id="full-controls">
+        <section class="panel" id="choice-view" aria-labelledby="choice-heading">
+          <h3 id="choice-heading" tabindex="-1">¿Cómo querés usar la rutina?</h3>
           <p id="routine-period"></p>
-          <div class="field">
-            <label for="day-select">Elegí un día de la rutina</label>
-            <select id="day-select"></select>
+          <div class="choice-buttons">
+            <button class="btn" id="full-mode" type="button">Ver rutina</button>
+            <button class="btn" id="step-mode" type="button">Paso a paso</button>
           </div>
-          <div class="actions" role="group" aria-label="Modo de consulta">
-            <button class="btn" id="full-mode" type="button" aria-pressed="true">Ver rutina</button>
-            <button class="btn secondary" id="step-mode" type="button" aria-pressed="false">Paso a paso</button>
-          </div>
+        </section>
+        <section class="panel" id="day-choice" aria-labelledby="day-choice-heading" hidden>
+          <h3 id="day-choice-heading" tabindex="-1">Elegí un día</h3>
           <p class="minor" style="margin-top:14px">Día 1 a Día 5 son los nombres del PDF, sin fecha asignada.</p>
-          <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="margin-top:8px">Abrir PDF original (nueva pestaña)</a>
-        </div>
-        <section id="full-view" class="panel" aria-labelledby="day-heading">
+          <div id="day-buttons" class="choice-buttons"></div>
+          <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="width:100%;margin-top:16px">Ver PDF completo (nueva pestaña)</a>
+          <button class="btn secondary" id="back-to-choice" type="button" style="width:100%;margin-top:12px">Volver a Entrenar</button>
+        </section>
+        <section id="full-view" class="panel" aria-labelledby="day-heading" hidden>
           <h3 id="day-heading" tabindex="-1"></h3>
           <p id="day-intro"></p>
           <p id="day-guidance" class="day-guidance" hidden></p>
           <div id="routine-list"></div>
+          <button class="btn secondary" id="full-other-day" type="button" style="width:100%;margin-top:18px">Elegir otro día</button>
         </section>
         <section id="step-view" class="panel step-panel" aria-labelledby="step-heading" hidden>
           <p id="step-count" class="step-count"></p>
@@ -145,7 +145,7 @@
             <button class="btn secondary" id="repeat-step" type="button">Repetir instrucciones</button>
             <button class="btn" id="next-step" type="button">Siguiente</button>
           </div>
-          <button class="btn secondary" id="exit-step" type="button" style="width:100%;margin-top:12px">Ver rutina completa</button>
+          <button class="btn secondary" id="exit-step" type="button" style="width:100%;margin-top:12px">Elegir otro día</button>
         </section>
         <section id="end-view" class="panel" aria-labelledby="end-heading" hidden>
           <h3 id="end-heading" tabindex="-1">Llegaste al final de la rutina</h3>
@@ -166,7 +166,7 @@
   <style>.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
   <script>
     'use strict';
-    const state = { routine: null, dayIndex: 0, steps: [], stepIndex: 0, mode: 'full' };
+    const state = { routine: null, dayIndex: null, steps: [], stepIndex: 0, mode: null };
     const byId = id => document.getElementById(id);
     const announce = message => {
       const target = byId('announcement');
@@ -348,23 +348,41 @@
       announce(repeat ? `${item.titulo}. ${content.textContent}` : `${byId('step-count').textContent}. ${byId('round-label').textContent}. ${item.titulo}`);
     }
 
-    function setMode(mode) {
+    function hideTrainingViews() {
+      ['choice-view', 'day-choice', 'full-view', 'step-view', 'end-view'].forEach(id => {
+        byId(id).hidden = true;
+      });
+    }
+
+    function showTrainingChoice() {
+      state.mode = null;
+      hideTrainingViews();
+      byId('choice-view').hidden = false;
+      byId('choice-heading').focus();
+    }
+
+    function chooseMode(mode) {
       state.mode = mode;
-      byId('full-controls').hidden = mode !== 'full';
-      byId('full-view').hidden = mode !== 'full';
-      byId('step-view').hidden = mode !== 'step';
-      byId('end-view').hidden = true;
-      byId('full-mode').setAttribute('aria-pressed', String(mode === 'full'));
-      byId('step-mode').setAttribute('aria-pressed', String(mode === 'step'));
-      byId('full-mode').classList.toggle('secondary', mode !== 'full');
-      byId('step-mode').classList.toggle('secondary', mode !== 'step');
-      if (mode === 'step') {
-        state.stepIndex = 0;
-        state.steps = buildSteps(currentDay());
-        renderStep(true);
-      } else {
+      hideTrainingViews();
+      byId('day-choice-heading').textContent = mode === 'full'
+        ? 'Ver rutina · elegí un día' : 'Paso a paso · elegí un día';
+      byId('pdf-link').hidden = mode !== 'full';
+      byId('day-choice').hidden = false;
+      byId('day-choice-heading').focus();
+    }
+
+    function chooseDay(index) {
+      state.dayIndex = index;
+      hideTrainingViews();
+      if (state.mode === 'full') {
+        byId('full-view').hidden = false;
         renderFull();
         byId('day-heading').focus();
+      } else {
+        state.stepIndex = 0;
+        state.steps = buildSteps(currentDay());
+        byId('step-view').hidden = false;
+        renderStep(true);
       }
     }
 
@@ -376,7 +394,10 @@
         if (button.dataset.section === section) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
       });
-      if (isTraining) byId('entrenar-title').focus();
+      if (isTraining) {
+        if (state.routine) showTrainingChoice();
+        else byId('entrenar-title').focus();
+      }
       else {
         byId('upcoming-title').textContent = {
           registrar: 'Registrar estímulo', penales: 'Penales', perfil: 'Mi perfil'
@@ -394,19 +415,19 @@
           throw new Error('Formato de rutina inválido');
         }
         state.routine = data;
-        state.steps = buildSteps(data.dias[0]);
         byId('identity').textContent = `${data.usuario || 'Usuaria de prueba'} · prueba local`;
         byId('routine-period').textContent = data.periodo || '';
-        const select = byId('day-select');
+        const dayButtons = byId('day-buttons');
         data.dias.forEach((day, index) => {
-          const option = document.createElement('option');
-          option.value = String(index);
-          option.textContent = day.nombre;
-          select.append(option);
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn secondary';
+          button.textContent = day.nombre;
+          button.addEventListener('click', () => chooseDay(index));
+          dayButtons.append(button);
         });
         byId('load-status').hidden = true;
         byId('routine-app').hidden = false;
-        renderFull();
       } catch (error) {
         byId('load-status').textContent = 'No hay una rutina disponible para esta prueba. Consultá a quien preparó el enlace.';
         console.error('No se pudo cargar la rutina local:', error);
@@ -414,15 +435,10 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
-    byId('day-select').addEventListener('change', event => {
-      state.dayIndex = Number(event.target.value);
-      state.stepIndex = 0;
-      state.steps = buildSteps(currentDay());
-      if (state.mode === 'step') renderStep(true);
-      else { renderFull(); byId('day-heading').focus(); }
-    });
-    byId('full-mode').addEventListener('click', () => setMode('full'));
-    byId('step-mode').addEventListener('click', () => setMode('step'));
+    byId('full-mode').addEventListener('click', () => chooseMode('full'));
+    byId('step-mode').addEventListener('click', () => chooseMode('step'));
+    byId('back-to-choice').addEventListener('click', showTrainingChoice);
+    byId('full-other-day').addEventListener('click', () => chooseMode('full'));
     byId('previous-step').addEventListener('click', () => {
       if (state.stepIndex > 0) { state.stepIndex--; renderStep(true); }
     });
@@ -431,8 +447,8 @@
       state.stepIndex++;
       renderStep(true);
     });
-    byId('back-to-routine').addEventListener('click', () => setMode('full'));
-    byId('exit-step').addEventListener('click', () => setMode('full'));
+    byId('back-to-routine').addEventListener('click', () => chooseDay(state.dayIndex));
+    byId('exit-step').addEventListener('click', () => chooseMode('step'));
     byId('register-from-end').addEventListener('click', () => showSection('registrar'));
     loadRoutine();
   </script>
