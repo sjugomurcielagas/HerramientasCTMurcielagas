@@ -32,7 +32,6 @@
     .header-inner { display: flex; gap: 12px; align-items: center; padding-block: 12px; }
     .brand { margin: 0; color: var(--azul); font-size: 1.5rem; line-height: 1.2; }
     .subtitle { margin: 0; font-size: .85rem; }
-    .identity { margin-left: auto; font-size: .82rem; text-align: right; }
     nav { background: white; border-bottom: 1px solid var(--borde); }
     .nav-inner { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-block: 12px; }
     .nav-btn { color: var(--azul); background: white; border: 2px solid var(--borde); border-radius: 12px; padding: 8px; font-weight: 700; }
@@ -80,7 +79,6 @@
     #next-step:focus { outline: 3px solid #ab5500; outline-offset: 3px; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
-      .identity { margin-left: 0; text-align: left; }
       .actions > * { flex: 1 1 100%; }
     }
   </style>
@@ -93,7 +91,6 @@
         <p class="brand">MurcielApp</p>
         <p class="subtitle">App de jugadoras · Las Murciélagas</p>
       </div>
-      <p class="identity" id="identity">Prueba privada</p>
     </div>
   </header>
   <nav aria-label="Navegación principal">
@@ -118,8 +115,8 @@
         <section class="panel" id="day-choice" aria-labelledby="day-choice-heading" hidden>
           <h3 id="day-choice-heading" tabindex="-1">Elegí un día</h3>
           <div id="day-buttons" class="choice-buttons"></div>
-          <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="width:100%;margin-top:16px">Ver PDF completo (nueva pestaña)</a>
-          <a id="pdf-download" class="btn secondary" href="./private/rutina-original.pdf" download="Rutina-Sep-Oct-2026.pdf" style="width:100%;margin-top:12px">Descargar PDF</a>
+          <a id="pdf-link" class="btn secondary" href="./rutina-original.pdf" target="_blank" rel="noopener" style="width:100%;margin-top:16px">Ver PDF completo (nueva pestaña)</a>
+          <a id="pdf-download" class="btn secondary" href="./rutina-original.pdf" download="Rutina-Sep-Oct-2026.pdf" style="width:100%;margin-top:12px">Descargar PDF</a>
           <button class="btn secondary" id="back-to-choice" type="button" style="width:100%;margin-top:12px">Volver a Entrenar</button>
         </section>
         <section id="full-view" class="panel" aria-labelledby="day-heading" hidden>
@@ -320,7 +317,7 @@
       byId('step-view').hidden = atEnd;
       byId('end-view').hidden = !atEnd;
       if (atEnd) {
-        if (focus) byId('end-heading').focus();
+        byId('end-heading').focus();
         announce('Llegaste al final de la rutina.');
         return;
       }
@@ -407,14 +404,13 @@
 
     async function loadRoutine() {
       try {
-        const response = await fetch('./private/rutina.json', { cache: 'no-store' });
+        const response = await fetch('./rutina.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('Rutina no disponible');
         const data = await response.json();
         if (!Array.isArray(data.dias) || !data.dias.length || data.dias.some(day => !Array.isArray(day.bloques))) {
           throw new Error('Formato de rutina inválido');
         }
         state.routine = data;
-        byId('identity').textContent = `${data.usuario || 'Usuaria de prueba'} · prueba local`;
         const dayButtons = byId('day-buttons');
         data.dias.forEach((day, index) => {
           const button = document.createElement('button');
@@ -442,7 +438,7 @@
     });
     byId('next-step').addEventListener('click', () => {
       state.stepIndex++;
-      renderStep(true);
+      renderStep(false);
     });
     byId('back-to-routine').addEventListener('click', () => chooseDay(state.dayIndex));
     byId('exit-step').addEventListener('click', () => chooseMode('step'));

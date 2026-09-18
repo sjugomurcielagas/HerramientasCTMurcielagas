@@ -1,0 +1,517 @@
+{
+  "periodo": "14 de septiembre al 25 de octubre de 2026",
+  "dias": [
+    {
+      "nombre": "Día 1",
+      "resumen": "Cinta o bici fija: 30 minutos. Luego, elongación.",
+      "indicacion": "Cinta o bici fija, según la opción disponible en gimnasio o con guía. Las velocidades de los tramos siguientes corresponden a la cinta.",
+      "bloques": [
+        {
+          "tipo": "tramo",
+          "titulo": "Entrada en calor",
+          "tiempo": "10 minutos",
+          "detalle": "Trote a 8,5 km/h",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote a 10,5 km/h",
+          "tiempo": "10 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote a 11,5 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote suave a 8,5 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Elongación",
+          "tiempo": "15 minutos",
+          "detalle": "",
+          "pausa": "0"
+        }
+      ]
+    },
+    {
+      "nombre": "Día 2",
+      "resumen": "Entrada en calor, zona media alternada, fuerza y elongación.",
+      "indicacion": "Para la entrada en calor: cinta o bici fija, según la opción disponible en gimnasio o con guía.",
+      "bloques": [
+        {
+          "tipo": "tramo",
+          "titulo": "Trote en cinta o bici fija",
+          "tiempo": "15 minutos",
+          "detalle": "",
+          "pausa": "5 minutos de elongación"
+        },
+        {
+          "tipo": "zona-media",
+          "titulo": "Bloque 1",
+          "ejercicios": [
+            "Abdominales excéntricos: 20 repeticiones con 5 kg",
+            "Superman isométrico: 30 segundos, con apoyo de rodillas y manos"
+          ],
+          "series": 4,
+          "pausa": "30 segundos"
+        },
+        {
+          "tipo": "zona-media",
+          "titulo": "Bloque 2",
+          "ejercicios": [
+            "Abdominales bisagra de piernas: 20 repeticiones",
+            "Propiocepción de rodillas en bosu unipodal: 20 segundos por lado"
+          ],
+          "series": 4,
+          "pausa": "30 segundos"
+        },
+        {
+          "tipo": "zona-media",
+          "titulo": "Bloque 3",
+          "ejercicios": [
+            "Plancha isométrica: 45 segundos",
+            "Excéntrico de isquiotibiales unipodal: 10 repeticiones por pierna con 5 kg"
+          ],
+          "series": 4,
+          "pausa": "30 segundos"
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Camilla de cuádriceps bipodal",
+          "principal": "Camilla de cuádriceps bipodal",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 12,
+              "carga": "40 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 10,
+              "carga": "50 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 8,
+              "carga": "60 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 6,
+              "carga": "70 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Elevación de hombros con banda elástica: 15 repeticiones"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Camilla de isquiotibiales bipodal",
+          "principal": "Camilla de isquiotibiales bipodal",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 12,
+              "carga": "16 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 10,
+              "carga": "20 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 8,
+              "carga": "24 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 6,
+              "carga": "28 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Elevación de hombros: 15 repeticiones"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Sentadilla con banco",
+          "principal": "Sentadilla por detrás con banco: sentarse y salir",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 10,
+              "carga": "40 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 8,
+              "carga": "50 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 6,
+              "carga": "60 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 4,
+              "carga": "70 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Salto al cajón: 6 repeticiones",
+            "Bíceps más hombros: 10 repeticiones con 10 kg"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Estocada frontal",
+          "principal": "8 repeticiones por pierna con pesas rusas, discos o mancuernas de 12 a 16 kg cada una",
+          "pausa": "1 minuto",
+          "series": 3,
+          "combinado": [
+            "Salto unipodal con desplazamiento: 6 repeticiones por pierna"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Remo sentado en máquina",
+          "principal": "Remo sentado en máquina",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 15,
+              "carga": "20 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 12,
+              "carga": "25 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 10,
+              "carga": "30 kg"
+            }
+          ],
+          "series": 3
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Elongación",
+          "tiempo": "15 minutos",
+          "detalle": "",
+          "pausa": "0"
+        }
+      ]
+    },
+    {
+      "nombre": "Día 3",
+      "resumen": "Cinta o bici fija: 25 minutos. Luego, elongación.",
+      "indicacion": "Cinta o bici fija, según la opción disponible en gimnasio o con guía. Las velocidades de los tramos siguientes corresponden a la cinta.",
+      "bloques": [
+        {
+          "tipo": "tramo",
+          "titulo": "Entrada en calor a 8,5 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote a 10,5 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote a 11,5 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote a 12 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote suave a 8,5 km/h",
+          "tiempo": "5 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Elongación",
+          "tiempo": "15 minutos",
+          "detalle": "",
+          "pausa": "0"
+        }
+      ]
+    },
+    {
+      "nombre": "Día 4",
+      "resumen": "Entrada en calor, zona media alternada, fuerza y elongación.",
+      "indicacion": "Para la entrada en calor: cinta o bici fija, según la opción disponible en gimnasio o con guía.",
+      "bloques": [
+        {
+          "tipo": "tramo",
+          "titulo": "Trote en cinta o bici fija",
+          "tiempo": "15 minutos",
+          "detalle": "",
+          "pausa": "5 minutos de elongación"
+        },
+        {
+          "tipo": "zona-media",
+          "titulo": "Bloque 1",
+          "ejercicios": [
+            "Abdominales bolita: 15 repeticiones con 5 kg",
+            "Plancha lateral con rotación de brazos: 40 segundos"
+          ],
+          "series": 4,
+          "pausa": "30 segundos"
+        },
+        {
+          "tipo": "zona-media",
+          "titulo": "Bloque 2",
+          "ejercicios": [
+            "Abdominales escaladores: 30 segundos",
+            "Propiocepción de tobillo sobre bosu unipodal: 30 segundos por lado"
+          ],
+          "series": 4,
+          "pausa": "30 segundos"
+        },
+        {
+          "tipo": "zona-media",
+          "titulo": "Bloque 3",
+          "ejercicios": [
+            "Abdominales oblicuos: 20 repeticiones con 5 kg",
+            "Elevaciones de cadera unipodal: 12 repeticiones en total con 5 kg"
+          ],
+          "series": 4,
+          "pausa": "30 segundos"
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Camilla de cuádriceps unipodal",
+          "principal": "Camilla de cuádriceps unipodal",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 12,
+              "carga": "20 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 10,
+              "carga": "25 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 8,
+              "carga": "30 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 6,
+              "carga": "35 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Rotación interna con banda elástica: 15 repeticiones"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Camilla de isquiotibiales unipodal",
+          "principal": "Camilla de isquiotibiales unipodal",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 12,
+              "carga": "6 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 10,
+              "carga": "8 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 8,
+              "carga": "12 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 6,
+              "carga": "16 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Rotación externa con banda elástica: 15 repeticiones"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Peso muerto con barra",
+          "principal": "Peso muerto con barra",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 12,
+              "carga": "40 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 10,
+              "carga": "45 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 8,
+              "carga": "50 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 6,
+              "carga": "55 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Press de hombros con mancuernas: 10 repeticiones con 10 kg"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Elevaciones de cadera con barra",
+          "principal": "Elevaciones de cadera con barra",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 12,
+              "carga": "40 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 10,
+              "carga": "50 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 8,
+              "carga": "60 kg"
+            },
+            {
+              "serie": 4,
+              "repeticiones": 8,
+              "carga": "65 kg"
+            }
+          ],
+          "series": 4,
+          "combinado": [
+            "Salto rana: 6 repeticiones por pierna",
+            "Press de hombros: 10 repeticiones con 10 kg"
+          ]
+        },
+        {
+          "tipo": "fuerza",
+          "titulo": "Pecho en banco plano con barra",
+          "principal": "Pecho en banco plano con barra",
+          "pausa": "1 minuto",
+          "progresion": [
+            {
+              "serie": 1,
+              "repeticiones": 10,
+              "carga": "25 kg"
+            },
+            {
+              "serie": 2,
+              "repeticiones": 8,
+              "carga": "30 kg"
+            },
+            {
+              "serie": 3,
+              "repeticiones": 6,
+              "carga": "35 kg"
+            }
+          ],
+          "series": 3
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Elongación",
+          "tiempo": "20 minutos",
+          "detalle": "",
+          "pausa": "No indicada"
+        }
+      ]
+    },
+    {
+      "nombre": "Día 5",
+      "resumen": "Cinta o bici fija: 30 minutos. Luego, elongación.",
+      "indicacion": "Cinta o bici fija, según la opción disponible en gimnasio o con guía. Las velocidades de los tramos siguientes corresponden a la cinta.",
+      "bloques": [
+        {
+          "tipo": "tramo",
+          "titulo": "Entrada en calor a 8,5 km/h",
+          "tiempo": "10 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote a 10 km/h",
+          "tiempo": "10 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Trote suave a 8 km/h",
+          "tiempo": "10 minutos",
+          "detalle": "",
+          "pausa": "0"
+        },
+        {
+          "tipo": "tramo",
+          "titulo": "Elongación",
+          "tiempo": "20 minutos",
+          "detalle": "",
+          "pausa": "0"
+        }
+      ]
+    }
+  ]
+}
