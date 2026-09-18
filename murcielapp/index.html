@@ -45,6 +45,7 @@
     .status { color: var(--azul); font-weight: 700; }
     .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
     .choice-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+    #choice-view .choice-buttons { margin-top: 0; }
     .choice-buttons .btn { min-width: 0; }
     .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--azul); border-radius: 12px; padding: 9px 16px; background: var(--azul); color: white; font-weight: 700; text-decoration: none; text-align: center; }
     .btn.secondary { background: white; color: var(--azul); }
@@ -110,13 +111,12 @@
       <h2 id="entrenar-title" tabindex="-1">Entrenar</h2>
       <p id="load-status" class="status" role="status">Cargando rutina…</p>
       <div id="routine-app" hidden>
-        <section class="panel" id="choice-view" aria-labelledby="choice-heading">
-          <h3 id="choice-heading" tabindex="-1">¿Cómo querés usar la rutina?</h3>
+        <div class="panel" id="choice-view">
           <div class="choice-buttons">
             <button class="btn" id="full-mode" type="button">Ver rutina</button>
             <button class="btn" id="step-mode" type="button">Paso a paso</button>
           </div>
-        </section>
+        </div>
         <section class="panel" id="day-choice" aria-labelledby="day-choice-heading" hidden>
           <h3 id="day-choice-heading" tabindex="-1">Elegí un día</h3>
           <div id="day-buttons" class="choice-buttons"></div>
@@ -352,7 +352,7 @@
       state.mode = null;
       hideTrainingViews();
       byId('choice-view').hidden = false;
-      byId('choice-heading').focus();
+      byId('full-mode').focus();
     }
 
     function chooseMode(mode) {
