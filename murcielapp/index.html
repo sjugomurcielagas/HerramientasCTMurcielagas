@@ -121,6 +121,7 @@
           <h3 id="day-choice-heading" tabindex="-1">Elegí un día</h3>
           <div id="day-buttons" class="choice-buttons"></div>
           <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="width:100%;margin-top:16px">Ver PDF completo (nueva pestaña)</a>
+          <a id="pdf-download" class="btn secondary" href="./private/rutina-original.pdf" download="Rutina-Sep-Oct-2026.pdf" style="width:100%;margin-top:12px">Descargar PDF</a>
           <button class="btn secondary" id="back-to-choice" type="button" style="width:100%;margin-top:12px">Volver a Entrenar</button>
         </section>
         <section id="full-view" class="panel" aria-labelledby="day-heading" hidden>
@@ -361,6 +362,7 @@
       byId('day-choice-heading').textContent = mode === 'full'
         ? 'Ver rutina · elegí un día' : 'Paso a paso · elegí un día';
       byId('pdf-link').hidden = mode !== 'full';
+      byId('pdf-download').hidden = mode !== 'full';
       byId('day-choice').hidden = false;
       byId('day-choice-heading').focus();
     }

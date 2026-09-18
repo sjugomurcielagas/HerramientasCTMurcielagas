@@ -29,7 +29,7 @@ dispositivos.
 - Paso a paso tiene controles Anterior, Repetir y Siguiente. Los tres bloques de
   zona media se alternan por vuelta; los de fuerza se completan de a un bloque.
   Las progresiones se presentan como tablas semánticas.
-- Enlace al PDF original únicamente en la prueba local.
+- Enlaces para ver o descargar el PDF original únicamente en la prueba local.
 - Los otros tres accesos del menú identificados como próximos módulos.
 
 La identidad local **no es una cuenta autenticada**. No se cargan ni modifican
