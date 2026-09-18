@@ -62,6 +62,27 @@
     dd { margin: 0; }
     .step-count { font-weight: 700; color: var(--azul); }
     .minor { font-size: .88rem; }
+    .step-panel { border: 2px solid var(--azul); padding: 20px; }
+    .step-kicker { margin: 0 0 8px; color: #305475; font-weight: 700; }
+    .exercise-pair { display: grid; gap: 10px; padding: 0; margin: 12px 0; list-style: none; counter-reset: exercise; }
+    .exercise-pair li { counter-increment: exercise; padding: 12px; border: 1px solid var(--borde); border-radius: 10px; background: #f4f9fd; }
+    .exercise-pair li::before { content: "Ejercicio " counter(exercise); display: block; color: var(--azul); font-size: .85rem; font-weight: 700; }
+    .block-card { padding: 16px 0; border-top: 1px solid var(--borde); }
+    .block-card:first-child { border-top: 0; padding-top: 0; }
+    .block-card h4 { color: var(--azul); font-size: 1.08rem; margin: 0 0 8px; }
+    .section-label { margin: 10px 0 0; padding: 8px 10px; background: var(--celeste); border-radius: 8px; color: var(--azul); font-weight: 700; }
+    .combo { margin-top: 12px; padding: 12px; background: #edf6fb; border-radius: 10px; }
+    .combo strong { display: block; color: var(--azul); }
+    .combo ul { margin: 6px 0 0; padding-left: 1.2em; }
+    .combo li { border: 0; padding: 3px 0; }
+    .table-wrap { max-width: 100%; overflow-x: auto; margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+    caption { text-align: left; color: var(--azul); font-weight: 700; margin-bottom: 6px; }
+    th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--borde); }
+    th { background: #edf6fb; color: var(--azul); }
+    .step-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .step-actions #next-step { grid-column: 1 / -1; }
+    .step-actions .btn { min-width: 0; padding-inline: 7px; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
       .identity { margin-left: 0; text-align: left; }
@@ -91,10 +112,10 @@
   <main class="wrap" id="contenido" tabindex="-1">
     <section id="entrenar-section" aria-labelledby="entrenar-title">
       <h2 id="entrenar-title" tabindex="-1">Entrenar</h2>
-      <p class="notice">Esta es una prueba de consulta. Recorrer una rutina no registra si entrenaste ni mide cumplimiento.</p>
+      <p class="notice">Podés consultar y avanzar libremente. La app no registra cumplimiento.</p>
       <p id="load-status" class="status" role="status">Cargando rutina…</p>
       <div id="routine-app" hidden>
-        <div class="panel">
+        <div class="panel" id="full-controls">
           <p id="routine-period"></p>
           <div class="field">
             <label for="day-select">Elegí un día de la rutina</label>
@@ -104,25 +125,25 @@
             <button class="btn" id="full-mode" type="button" aria-pressed="true">Ver rutina</button>
             <button class="btn secondary" id="step-mode" type="button" aria-pressed="false">Paso a paso</button>
           </div>
-          <p class="minor" style="margin-top:14px">Los días 1 a 5 del documento no están asociados a fechas del calendario.</p>
+          <p class="minor" style="margin-top:14px">Día 1 a Día 5 son los nombres del PDF, sin fecha asignada.</p>
           <a id="pdf-link" class="btn secondary" href="./private/rutina-original.pdf" target="_blank" rel="noopener" style="margin-top:8px">Abrir PDF original (nueva pestaña)</a>
         </div>
         <section id="full-view" class="panel" aria-labelledby="day-heading">
           <h3 id="day-heading" tabindex="-1"></h3>
           <p id="day-intro"></p>
-          <ol id="routine-list"></ol>
+          <div id="routine-list"></div>
         </section>
-        <section id="step-view" class="panel" aria-labelledby="step-heading" hidden>
+        <section id="step-view" class="panel step-panel" aria-labelledby="step-heading" hidden>
           <p id="step-count" class="step-count"></p>
+          <p id="round-label" class="step-kicker" hidden></p>
           <h3 id="step-heading" tabindex="-1"></h3>
-          <p id="step-description"></p>
-          <dl class="meta" id="step-meta"></dl>
-          <p id="step-note" class="notice" hidden></p>
-          <div class="actions">
+          <div id="step-content"></div>
+          <div class="step-actions" style="margin-top:18px">
             <button class="btn secondary" id="previous-step" type="button">Anterior</button>
             <button class="btn secondary" id="repeat-step" type="button">Repetir instrucciones</button>
             <button class="btn" id="next-step" type="button">Siguiente</button>
           </div>
+          <button class="btn secondary" id="exit-step" type="button" style="width:100%;margin-top:12px">Ver rutina completa</button>
         </section>
         <section id="end-view" class="panel" aria-labelledby="end-heading" hidden>
           <h3 id="end-heading" tabindex="-1">Llegaste al final de la rutina</h3>
@@ -143,7 +164,7 @@
   <style>.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
   <script>
     'use strict';
-    const state = { routine: null, dayIndex: 0, stepIndex: 0, mode: 'full' };
+    const state = { routine: null, dayIndex: 0, steps: [], stepIndex: 0, mode: 'full' };
     const byId = id => document.getElementById(id);
     const announce = message => {
       const target = byId('announcement');
@@ -162,46 +183,138 @@
       container.append(box);
     }
 
-    function fillMeta(container, item) {
+    function fillMeta(container, item, includeSeries = true) {
       container.replaceChildren();
       addMeta(container, 'Tiempo', item.tiempo);
-      addMeta(container, 'Series', item.series);
-      addMeta(container, 'Pausa', item.pausa);
+      if (includeSeries) addMeta(container, 'Series', item.series);
+      if (item.pausa && item.pausa !== '0' && item.pausa !== 'No indicada') addMeta(container, 'Pausa', item.pausa);
     }
 
     function currentDay() { return state.routine.dias[state.dayIndex]; }
 
+    function renderDetails(container, item, includeSeries = true) {
+      if (item.tipo === 'zona-media') {
+        const pair = document.createElement('ol');
+        pair.className = 'exercise-pair';
+        item.ejercicios.forEach(exercise => {
+          const li = document.createElement('li');
+          li.textContent = exercise;
+          pair.append(li);
+        });
+        container.append(pair);
+      } else if (item.tipo === 'fuerza') {
+        if (item.principal && item.principal !== item.titulo) {
+          const principal = document.createElement('p');
+          principal.textContent = item.principal;
+          container.append(principal);
+        }
+        if (item.progresion) {
+          const wrap = document.createElement('div');
+          wrap.className = 'table-wrap';
+          const table = document.createElement('table');
+          const caption = document.createElement('caption');
+          caption.textContent = `Progresión de ${item.titulo.toLowerCase()}`;
+          const head = document.createElement('thead');
+          const headRow = document.createElement('tr');
+          ['Serie', 'Repeticiones', 'Carga'].forEach(label => {
+            const th = document.createElement('th');
+            th.scope = 'col';
+            th.textContent = label;
+            headRow.append(th);
+          });
+          head.append(headRow);
+          const body = document.createElement('tbody');
+          item.progresion.forEach(row => {
+            const tr = document.createElement('tr');
+            [row.serie, row.repeticiones, row.carga].forEach((value, column) => {
+              const cell = document.createElement(column === 0 ? 'th' : 'td');
+              if (column === 0) cell.scope = 'row';
+              cell.textContent = String(value);
+              tr.append(cell);
+            });
+            body.append(tr);
+          });
+          table.append(caption, head, body);
+          wrap.append(table);
+          container.append(wrap);
+        }
+        if (item.combinado?.length) {
+          const combo = document.createElement('div');
+          combo.className = 'combo';
+          const label = document.createElement('strong');
+          label.textContent = 'Se combina con';
+          const list = document.createElement('ul');
+          item.combinado.forEach(exercise => {
+            const li = document.createElement('li');
+            li.textContent = exercise;
+            list.append(li);
+          });
+          combo.append(label, list);
+          container.append(combo);
+        }
+      } else if (item.detalle) {
+        const detail = document.createElement('p');
+        detail.textContent = item.detalle;
+        container.append(detail);
+      }
+      const meta = document.createElement('dl');
+      meta.className = 'meta';
+      fillMeta(meta, item, includeSeries);
+      if (meta.children.length) container.append(meta);
+    }
+
+    function buildSteps(day) {
+      const steps = [];
+      for (let index = 0; index < day.bloques.length;) {
+        if (day.bloques[index].tipo !== 'zona-media') {
+          steps.push({ item: day.bloques[index] });
+          index++;
+          continue;
+        }
+        const group = [];
+        while (index < day.bloques.length && day.bloques[index].tipo === 'zona-media') {
+          group.push(day.bloques[index]);
+          index++;
+        }
+        const rounds = group[0].series;
+        for (let round = 1; round <= rounds; round++) {
+          group.forEach((item, position) => steps.push({ item, round, rounds, position: position + 1, groupLength: group.length }));
+        }
+      }
+      return steps;
+    }
+
     function renderFull() {
       const day = currentDay();
       byId('day-heading').textContent = day.nombre;
-      byId('day-intro').textContent = day.introduccion || '';
+      byId('day-intro').textContent = day.resumen || '';
       const list = byId('routine-list');
       list.replaceChildren();
-      day.bloques.forEach(item => {
-        const li = document.createElement('li');
+      day.bloques.forEach((item, index) => {
+        if (item.tipo === 'zona-media' && day.bloques[index - 1]?.tipo !== 'zona-media') {
+          const label = document.createElement('p');
+          label.className = 'section-label';
+          label.textContent = `Zona media: ${item.series} vueltas. En cada vuelta, seguí los bloques 1, 2 y 3 en orden.`;
+          list.append(label);
+        }
+        if (item.tipo === 'fuerza' && day.bloques[index - 1]?.tipo === 'zona-media') {
+          const label = document.createElement('p');
+          label.className = 'section-label';
+          label.textContent = 'Fuerza: hacé todas las series de un bloque antes de pasar al siguiente.';
+          list.append(label);
+        }
+        const article = document.createElement('article');
+        article.className = 'block-card';
         const title = document.createElement('h4');
         title.textContent = item.titulo;
-        title.style.margin = '0 0 6px';
-        const description = document.createElement('p');
-        description.textContent = item.descripcion;
-        const meta = document.createElement('dl');
-        meta.className = 'meta';
-        fillMeta(meta, item);
-        li.append(title, description, meta);
-        if (item.nota) {
-          const note = document.createElement('p');
-          note.className = 'notice';
-          note.style.marginTop = '10px';
-          note.textContent = item.nota;
-          li.append(note);
-        }
-        list.append(li);
+        article.append(title);
+        renderDetails(article, item);
+        list.append(article);
       });
     }
 
-    function renderStep(focus = false) {
-      const blocks = currentDay().bloques;
-      const atEnd = state.stepIndex >= blocks.length;
+    function renderStep(focus = false, repeat = false) {
+      const atEnd = state.stepIndex >= state.steps.length;
       byId('step-view').hidden = atEnd;
       byId('end-view').hidden = !atEnd;
       if (atEnd) {
@@ -209,21 +322,25 @@
         announce('Llegaste al final de la rutina. Esto no registra entrenamiento.');
         return;
       }
-      const item = blocks[state.stepIndex];
-      byId('step-count').textContent = `Paso ${state.stepIndex + 1} de ${blocks.length} · ${currentDay().nombre}`;
+      const step = state.steps[state.stepIndex];
+      const item = step.item;
+      byId('step-count').textContent = `${currentDay().nombre} · indicación ${state.stepIndex + 1} de ${state.steps.length}`;
+      byId('round-label').hidden = !step.round;
+      byId('round-label').textContent = step.round
+        ? `Zona media · vuelta ${step.round} de ${step.rounds} · bloque ${step.position} de ${step.groupLength}` : '';
       byId('step-heading').textContent = item.titulo;
-      byId('step-description').textContent = item.descripcion;
-      fillMeta(byId('step-meta'), item);
-      byId('step-note').hidden = !item.nota;
-      byId('step-note').textContent = item.nota || '';
+      const content = byId('step-content');
+      content.replaceChildren();
+      renderDetails(content, item, !step.round);
       byId('previous-step').disabled = state.stepIndex === 0;
-      byId('next-step').textContent = state.stepIndex === blocks.length - 1 ? 'Llegar al final' : 'Siguiente';
+      byId('next-step').textContent = state.stepIndex === state.steps.length - 1 ? 'Llegar al final' : 'Siguiente';
       if (focus) byId('step-heading').focus();
-      announce(`${byId('step-count').textContent}. ${item.titulo}. ${item.descripcion}`);
+      announce(repeat ? `${item.titulo}. ${content.textContent}` : `${byId('step-count').textContent}. ${byId('round-label').textContent}. ${item.titulo}`);
     }
 
     function setMode(mode) {
       state.mode = mode;
+      byId('full-controls').hidden = mode !== 'full';
       byId('full-view').hidden = mode !== 'full';
       byId('step-view').hidden = mode !== 'step';
       byId('end-view').hidden = true;
@@ -233,6 +350,7 @@
       byId('step-mode').classList.toggle('secondary', mode !== 'step');
       if (mode === 'step') {
         state.stepIndex = 0;
+        state.steps = buildSteps(currentDay());
         renderStep(true);
       } else {
         renderFull();
@@ -266,6 +384,7 @@
           throw new Error('Formato de rutina inválido');
         }
         state.routine = data;
+        state.steps = buildSteps(data.dias[0]);
         byId('identity').textContent = `${data.usuario || 'Usuaria de prueba'} · prueba local`;
         byId('routine-period').textContent = data.periodo || '';
         const select = byId('day-select');
@@ -288,6 +407,7 @@
     byId('day-select').addEventListener('change', event => {
       state.dayIndex = Number(event.target.value);
       state.stepIndex = 0;
+      state.steps = buildSteps(currentDay());
       if (state.mode === 'step') renderStep(true);
       else { renderFull(); byId('day-heading').focus(); }
     });
@@ -296,12 +416,13 @@
     byId('previous-step').addEventListener('click', () => {
       if (state.stepIndex > 0) { state.stepIndex--; renderStep(true); }
     });
-    byId('repeat-step').addEventListener('click', () => renderStep(true));
+    byId('repeat-step').addEventListener('click', () => renderStep(true, true));
     byId('next-step').addEventListener('click', () => {
       state.stepIndex++;
       renderStep(true);
     });
     byId('back-to-routine').addEventListener('click', () => setMode('full'));
+    byId('exit-step').addEventListener('click', () => setMode('full'));
     byId('register-from-end').addEventListener('click', () => showSection('registrar'));
     loadRoutine();
   </script>
