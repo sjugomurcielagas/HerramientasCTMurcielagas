@@ -66,7 +66,6 @@
     .block-card { padding: 16px 0; border-top: 1px solid var(--borde); }
     .block-card:first-child { border-top: 0; padding-top: 0; }
     .block-card h4 { color: var(--azul); font-size: 1.08rem; margin: 0 0 8px; }
-    .section-label { margin: 10px 0 0; padding: 8px 10px; background: var(--celeste); border-radius: 8px; color: var(--azul); font-weight: 700; }
     .day-guidance { padding: 12px 14px; background: #edf6fb; border-radius: 10px; }
     .combo { margin-top: 12px; padding: 12px; background: #edf6fb; border-radius: 10px; }
     .combo strong { display: block; color: var(--azul); }
@@ -74,7 +73,6 @@
     .combo li { border: 0; padding: 3px 0; }
     .table-wrap { max-width: 100%; overflow-x: auto; margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-    caption { text-align: left; color: var(--azul); font-weight: 700; margin-bottom: 6px; }
     th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--borde); }
     th { background: #edf6fb; color: var(--azul); }
     .step-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -126,7 +124,6 @@
         </section>
         <section id="full-view" class="panel" aria-labelledby="day-heading" hidden>
           <h3 id="day-heading" tabindex="-1"></h3>
-          <p id="day-intro"></p>
           <p id="day-guidance" class="day-guidance" hidden></p>
           <div id="routine-list"></div>
           <button class="btn secondary" id="full-other-day" type="button" style="width:100%;margin-top:18px">Elegir otro día</button>
@@ -209,7 +206,8 @@
           wrap.className = 'table-wrap';
           const table = document.createElement('table');
           const caption = document.createElement('caption');
-          caption.textContent = `Progresión de ${item.titulo.toLowerCase()}`;
+          caption.className = 'visually-hidden';
+          caption.textContent = `Series de ${item.titulo.toLowerCase()}`;
           const head = document.createElement('thead');
           const headRow = document.createElement('tr');
           ['Serie', 'Repeticiones', 'Carga'].forEach(label => {
@@ -283,24 +281,11 @@
     function renderFull() {
       const day = currentDay();
       byId('day-heading').textContent = day.nombre;
-      byId('day-intro').textContent = day.resumen || '';
       byId('day-guidance').textContent = day.indicacion || '';
       byId('day-guidance').hidden = !day.indicacion;
       const list = byId('routine-list');
       list.replaceChildren();
-      day.bloques.forEach((item, index) => {
-        if (item.tipo === 'zona-media' && day.bloques[index - 1]?.tipo !== 'zona-media') {
-          const label = document.createElement('p');
-          label.className = 'section-label';
-          label.textContent = `Zona media: ${item.series} vueltas. En cada vuelta, seguí los bloques 1, 2 y 3 en orden.`;
-          list.append(label);
-        }
-        if (item.tipo === 'fuerza' && day.bloques[index - 1]?.tipo === 'zona-media') {
-          const label = document.createElement('p');
-          label.className = 'section-label';
-          label.textContent = 'Fuerza: hacé todas las series de un bloque antes de pasar al siguiente.';
-          list.append(label);
-        }
+      day.bloques.forEach(item => {
         const article = document.createElement('article');
         article.className = 'block-card';
         const title = document.createElement('h4');
