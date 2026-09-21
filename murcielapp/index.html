@@ -153,6 +153,18 @@
     .preference input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--action-outline); }
     .preference input:checked + span { font-weight: 700; }
     .access-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .form-label { display: block; color: var(--heading); font-weight: 700; margin: 0 0 8px; }
+    .form-input { display: block; width: 100%; min-height: 48px; border: 2px solid var(--borde); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; padding: 8px 10px; }
+    .form-row { margin-bottom: 18px; }
+    .duration-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .intensity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+    .number-option { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border: 1px solid var(--borde); border-radius: 10px; cursor: pointer; }
+    .number-option input { width: 20px; height: 20px; margin: 0; accent-color: var(--action-outline); }
+    .number-option input:checked + span { font-weight: 700; }
+    .summary-list { margin: 0 0 18px; }
+    .summary-list div { padding: 9px 0; border-bottom: 1px solid var(--borde); }
+    .summary-list dt { color: var(--heading); }
+    .validation-error { font-weight: 700; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
       .actions > * { flex: 1 1 100%; }
@@ -230,6 +242,50 @@
     <section id="upcoming-section" class="panel" aria-labelledby="upcoming-title" hidden>
       <h2 id="upcoming-title" tabindex="-1"></h2>
       <p>Esta sección estará disponible próximamente.</p>
+    </section>
+    <section id="register-section" aria-labelledby="register-title" hidden>
+      <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
+      <p>Prueba del formulario. Los datos todavía no se guardan.</p>
+      <div id="register-form-view" class="panel">
+        <form id="stimulus-form">
+          <fieldset>
+            <legend>Tipo de estímulo</legend>
+            <label class="preference"><input type="radio" name="stimulusType" value="fisico" required><span>Físico</span></label>
+            <label class="preference"><input type="radio" name="stimulusType" value="tecnico"><span>Técnico-táctico</span></label>
+            <label class="preference"><input type="radio" name="stimulusType" value="otros"><span>Otros</span></label>
+          </fieldset>
+          <div class="form-row">
+            <label class="form-label" for="stimulus-date">Fecha del estímulo</label>
+            <input class="form-input" id="stimulus-date" name="stimulusDate" type="date" required>
+          </div>
+          <fieldset>
+            <legend>Duración</legend>
+            <div class="duration-grid">
+              <div>
+                <label class="form-label" for="stimulus-hours">Horas</label>
+                <input class="form-input" id="stimulus-hours" name="hours" type="number" inputmode="numeric" min="0" step="1" value="0" required>
+              </div>
+              <div>
+                <label class="form-label" for="stimulus-minutes">Minutos</label>
+                <input class="form-input" id="stimulus-minutes" name="minutes" type="number" inputmode="numeric" min="0" max="59" step="1" value="0" required>
+              </div>
+            </div>
+            <p id="duration-error" class="validation-error" role="alert" hidden>Ingresá una duración mayor que cero.</p>
+          </fieldset>
+          <fieldset id="intensity-fieldset" hidden>
+            <legend>Intensidad</legend>
+            <p>¿Qué tan intenso fue el entrenamiento completo?</p>
+            <div id="intensity-options" class="intensity-grid"></div>
+          </fieldset>
+          <button class="btn" type="submit">Revisar datos</button>
+        </form>
+      </div>
+      <section id="register-summary-view" class="panel" aria-labelledby="register-summary-title" hidden>
+        <h3 id="register-summary-title" tabindex="-1">Revisá tu registro</h3>
+        <dl id="register-summary" class="summary-list"></dl>
+        <p>Estos datos todavía no se guardaron.</p>
+        <button class="btn secondary" id="edit-stimulus" type="button">Volver y modificar</button>
+      </section>
     </section>
     <section id="accessibility-section" class="panel" aria-labelledby="accessibility-title" hidden>
       <h2 id="accessibility-title" tabindex="-1">Accesibilidad</h2>
@@ -518,14 +574,87 @@
       }
     }
 
+    function localDate(date = new Date()) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function updateStimulusType() {
+      const selected = byId('stimulus-form').elements.stimulusType.value;
+      const needsIntensity = selected === 'fisico' || selected === 'tecnico';
+      byId('intensity-fieldset').hidden = !needsIntensity;
+      byId('intensity-options').querySelectorAll('input').forEach(input => {
+        input.disabled = !needsIntensity;
+        input.required = needsIntensity;
+      });
+    }
+
+    function clearDurationError() {
+      byId('duration-error').hidden = true;
+      byId('stimulus-hours').removeAttribute('aria-describedby');
+      byId('stimulus-minutes').removeAttribute('aria-describedby');
+    }
+
+    function showRegisterForm() {
+      byId('register-summary-view').hidden = true;
+      byId('register-form-view').hidden = false;
+      byId('register-title').focus();
+    }
+
+    function startRegisterFromRoutine() {
+      byId('stimulus-form').reset();
+      byId('stimulus-date').value = localDate();
+      byId('stimulus-form').elements.stimulusType.value = 'fisico';
+      clearDurationError();
+      updateStimulusType();
+      showSection('registrar');
+    }
+
+    function formatDuration(hours, minutes) {
+      const parts = [];
+      if (hours) parts.push(`${hours} ${hours === 1 ? 'hora' : 'horas'}`);
+      if (minutes) parts.push(`${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`);
+      return parts.join(' ');
+    }
+
+    function showRegisterSummary(event) {
+      event.preventDefault();
+      const hours = Number(byId('stimulus-hours').value);
+      const minutes = Number(byId('stimulus-minutes').value);
+      if (hours * 60 + minutes === 0) {
+        byId('duration-error').hidden = false;
+        byId('stimulus-hours').setAttribute('aria-describedby', 'duration-error');
+        byId('stimulus-minutes').setAttribute('aria-describedby', 'duration-error');
+        byId('stimulus-hours').focus();
+        return;
+      }
+      clearDurationError();
+      const form = byId('stimulus-form');
+      const type = form.elements.stimulusType.value;
+      const summary = byId('register-summary');
+      summary.replaceChildren();
+      addMeta(summary, 'Tipo', { fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[type]);
+      addMeta(summary, 'Fecha', new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+        .format(new Date(`${byId('stimulus-date').value}T12:00:00`)));
+      addMeta(summary, 'Duración', formatDuration(hours, minutes));
+      if (type !== 'otros') addMeta(summary, 'Intensidad percibida', `${form.elements.intensity.value} de 10`);
+      byId('register-form-view').hidden = true;
+      byId('register-summary-view').hidden = false;
+      byId('register-summary-title').focus();
+    }
+
     function showSection(section) {
       state.section = section;
       state.accessibilityOpen = false;
       byId('accessibility-section').hidden = true;
       byId('accessibility-open').setAttribute('aria-expanded', 'false');
       const isTraining = section === 'entrenar';
+      const isRegister = section === 'registrar';
       byId('entrenar-section').hidden = !isTraining;
-      byId('upcoming-section').hidden = isTraining;
+      byId('register-section').hidden = !isRegister;
+      byId('upcoming-section').hidden = isTraining || isRegister;
       document.querySelectorAll('.nav-btn').forEach(button => {
         if (button.dataset.section === section) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
@@ -534,9 +663,14 @@
         if (state.routine) showTrainingChoice();
         else byId('entrenar-title').focus();
       }
-      else {
+      else if (isRegister) {
+        byId('stimulus-date').max = localDate();
+        if (!byId('stimulus-date').value) byId('stimulus-date').value = localDate();
+        updateStimulusType();
+        showRegisterForm();
+      } else {
         byId('upcoming-title').textContent = {
-          registrar: 'Registrar estímulo', penales: 'Penales', perfil: 'Mi perfil'
+          penales: 'Penales', perfil: 'Mi perfil'
         }[section];
         byId('upcoming-title').focus();
       }
@@ -545,6 +679,7 @@
     function openAccessibility() {
       state.accessibilityOpen = true;
       byId('entrenar-section').hidden = true;
+      byId('register-section').hidden = true;
       byId('upcoming-section').hidden = true;
       byId('accessibility-section').hidden = false;
       byId('accessibility-open').setAttribute('aria-expanded', 'true');
@@ -557,7 +692,8 @@
       byId('accessibility-section').hidden = true;
       byId('accessibility-open').setAttribute('aria-expanded', 'false');
       byId('entrenar-section').hidden = state.section !== 'entrenar';
-      byId('upcoming-section').hidden = state.section === 'entrenar';
+      byId('register-section').hidden = state.section !== 'registrar';
+      byId('upcoming-section').hidden = state.section === 'entrenar' || state.section === 'registrar';
       document.querySelector(`.nav-btn[data-section="${state.section}"]`).setAttribute('aria-current', 'page');
       byId('accessibility-open').focus();
     }
@@ -589,6 +725,26 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
+    for (let value = 0; value <= 10; value++) {
+      const label = document.createElement('label');
+      label.className = 'number-option';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'intensity';
+      input.value = String(value);
+      input.setAttribute('aria-label', `${value} de 10`);
+      const text = document.createElement('span');
+      text.textContent = String(value);
+      label.append(input, text);
+      byId('intensity-options').append(label);
+    }
+    byId('stimulus-form').addEventListener('change', event => {
+      if (event.target.name === 'stimulusType') updateStimulusType();
+    });
+    byId('stimulus-hours').addEventListener('input', clearDurationError);
+    byId('stimulus-minutes').addEventListener('input', clearDurationError);
+    byId('stimulus-form').addEventListener('submit', showRegisterSummary);
+    byId('edit-stimulus').addEventListener('click', showRegisterForm);
     byId('accessibility-open').addEventListener('click', openAccessibility);
     byId('close-accessibility').addEventListener('click', closeAccessibility);
     byId('accessibility-form').addEventListener('change', savePreferences);
@@ -610,7 +766,7 @@
     });
     byId('back-to-routine').addEventListener('click', () => chooseDay(state.dayIndex));
     byId('exit-step').addEventListener('click', () => chooseMode('step'));
-    byId('register-from-end').addEventListener('click', () => showSection('registrar'));
+    byId('register-from-end').addEventListener('click', startRegisterFromRoutine);
     loadRoutine();
   </script>
 </body>

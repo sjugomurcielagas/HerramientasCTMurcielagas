@@ -1,9 +1,10 @@
-# MurcielApp · prueba pública de Entrenar
+# MurcielApp · prueba pública de Entrenar y Registrar estímulo
 
 Esta carpeta contiene la primera prueba funcional de la experiencia para
 jugadoras. Permite consultar una rutina real por día o recorrerla paso a paso.
-No registra ejecución, cumplimiento ni estímulos, y no consume APIs de
-Herramientas CT.
+Permite probar el formulario de Registrar estímulo hasta la revisión de datos.
+Todavía no envía ni guarda registros, no infiere ejecución o cumplimiento y no
+consume APIs de Herramientas CT.
 
 La rutina estructurada fue revisada manualmente contra el PDF antes de su
 publicación. La aplicación carga `rutina.json` y permite ver o descargar
@@ -19,15 +20,20 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
 - Los tres bloques de zona media se alternan por vuelta.
 - Los bloques de fuerza se recorren completos, con sus progresiones y ejercicios
   combinados juntos.
-- Los otros tres accesos del menú quedan identificados como próximos módulos.
+- Registrar estímulo permite elegir Físico, Técnico-táctico u Otros, declarar una
+  fecha anterior, ingresar duración en horas y minutos y revisar los datos.
+  Físico y Técnico-táctico piden sRPE de 0 a 10; Otros no lo pide. Desde el
+  final de Paso a paso, Físico aparece preseleccionado sin registrar ejecución.
+- Penales y Mi perfil quedan identificados como próximos módulos.
 - Accesibilidad permite elegir contraste nativo, oscuro o claro; texto nativo o
   grande; y destacar acciones en naranja. Cada ajuste es independiente, se
   aplica al instante y se guarda solo en este navegador. Restablecer ajustes
   devuelve los tres valores iniciales. El panel usa radios HTML nativos y
   queda separado de los cuatro accesos principales.
 
-Esta versión no crea cuentas ni carga datos personales. El acceso individual y
-el registro de datos reales requieren autenticación y autorización en el servidor.
+Esta versión no crea cuentas ni carga datos personales. El acceso individual,
+el envío del formulario y Mi semana requieren autenticación, autorización y
+persistencia en el servidor.
 
 ## Comprobaciones antes de ampliar el alcance
 
