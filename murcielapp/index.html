@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <title>Entrenar · MurcielApp</title>
   <style>
     :root {
@@ -11,12 +11,81 @@
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 18px;
       line-height: 1.5;
-      background: #f4f9fd;
-      color: #102033;
+      background: var(--page-bg);
+      color: var(--text);
       --azul: #0b2f5f;
       --celeste: #d9f1fc;
       --borde: #afc5d7;
+      --page-bg: #f4f9fd;
+      --surface: white;
+      --text: #102033;
+      --heading: #0b2f5f;
+      --soft-bg: #edf6fb;
+      --pair-bg: #f4f9fd;
+      --kicker: #305475;
+      --action-bg: #0b2f5f;
+      --action-text: white;
+      --action-outline: #0b2f5f;
+      --action-quiet-bg: white;
+      --action-quiet-text: #0b2f5f;
+      --nav-border: #afc5d7;
+      --step-border: #0b2f5f;
+      --focus: #ab5500;
     }
+    :root[data-contrast="dark"] {
+      color-scheme: dark;
+      --page-bg: #000;
+      --surface: #000;
+      --text: #fff;
+      --heading: #fff;
+      --borde: #fff;
+      --soft-bg: #171717;
+      --pair-bg: #101010;
+      --kicker: #fff;
+      --action-bg: #fff;
+      --action-text: #000;
+      --action-outline: #fff;
+      --action-quiet-bg: #000;
+      --action-quiet-text: #fff;
+      --nav-border: #fff;
+      --step-border: #fff;
+      --focus: #fff;
+    }
+    :root[data-contrast="light"] {
+      --page-bg: #fff;
+      --surface: #fff;
+      --text: #000;
+      --heading: #000;
+      --borde: #000;
+      --soft-bg: #f4f4f4;
+      --pair-bg: #fff;
+      --kicker: #000;
+      --action-bg: #000;
+      --action-text: #fff;
+      --action-outline: #000;
+      --action-quiet-bg: #fff;
+      --action-quiet-text: #000;
+      --nav-border: #000;
+      --step-border: #000;
+      --focus: #000;
+    }
+    :root[data-highlight="yes"] {
+      --action-bg: #a94200;
+      --action-text: #fff;
+      --action-outline: #a94200;
+      --action-quiet-text: #a94200;
+      --nav-border: #a94200;
+      --focus: #000;
+    }
+    :root[data-contrast="dark"][data-highlight="yes"] {
+      --action-bg: #ffad33;
+      --action-text: #000;
+      --action-outline: #ffad33;
+      --action-quiet-text: #ffad33;
+      --nav-border: #ffad33;
+      --focus: #fff;
+    }
+    :root[data-text-size="large"] { font-size: 22.5px; }
     * { box-sizing: border-box; }
     body { margin: 0; }
     [hidden] { display: none !important; }
@@ -24,62 +93,74 @@
     button { min-height: 48px; }
     button { cursor: pointer; }
     button:disabled { cursor: default; opacity: .55; }
-    :focus-visible { outline: 3px solid #ab5500; outline-offset: 3px; }
-    .skip { position: absolute; left: 12px; top: -100px; background: white; padding: 10px; z-index: 10; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .skip { position: absolute; left: 12px; top: -100px; background: var(--surface); color: var(--text); padding: 10px; z-index: 10; }
     .skip:focus { top: 12px; }
-    header { background: white; border-bottom: 1px solid var(--borde); }
+    header { background: var(--surface); border-bottom: 1px solid var(--borde); }
     .wrap { width: min(100% - 32px, 760px); margin-inline: auto; }
-    .header-inner { display: flex; gap: 12px; align-items: center; padding-block: 12px; }
-    .brand { margin: 0; color: var(--azul); font-size: 1.5rem; line-height: 1.2; }
+    .header-inner { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding-block: 12px; }
+    .brand { margin: 0; color: var(--heading); font-size: 1.5rem; line-height: 1.2; }
     .subtitle { margin: 0; font-size: .85rem; }
-    nav { background: white; border-bottom: 1px solid var(--borde); }
+    nav { background: var(--surface); border-bottom: 1px solid var(--borde); }
     .nav-inner { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-block: 12px; }
-    .nav-btn { color: var(--azul); background: white; border: 2px solid var(--borde); border-radius: 12px; padding: 8px; font-weight: 700; }
-    .nav-btn[aria-current="page"] { color: white; background: var(--azul); border-color: var(--azul); }
+    .nav-btn { color: var(--action-quiet-text); background: var(--action-quiet-bg); border: 2px solid var(--nav-border); border-radius: 12px; padding: 8px; font-weight: 700; }
+    .nav-btn[aria-current="page"] { color: var(--action-text); background: var(--action-bg); border-color: var(--action-outline); }
     main { padding-block: 20px 56px; }
-    h2 { color: var(--azul); font-size: 1.55rem; line-height: 1.25; margin: 0 0 12px; }
-    h3 { color: var(--azul); font-size: 1.18rem; line-height: 1.3; margin: 0 0 10px; }
+    h2 { color: var(--heading); font-size: 1.55rem; line-height: 1.25; margin: 0 0 12px; }
+    h3 { color: var(--heading); font-size: 1.18rem; line-height: 1.3; margin: 0 0 10px; }
     p { margin: 0 0 12px; }
-    .panel { background: white; border: 1px solid var(--borde); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-    .status { color: var(--azul); font-weight: 700; }
+    .panel { background: var(--surface); border: 1px solid var(--borde); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    .status { color: var(--heading); font-weight: 700; }
     .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
     .choice-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
     #choice-view .choice-buttons { margin-top: 0; }
     .choice-buttons .btn { min-width: 0; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--azul); border-radius: 12px; padding: 9px 16px; background: var(--azul); color: white; font-weight: 700; text-decoration: none; text-align: center; }
-    .btn.secondary { background: white; color: var(--azul); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--action-outline); border-radius: 12px; padding: 9px 16px; background: var(--action-bg); color: var(--action-text); font-weight: 700; text-decoration: none; text-align: center; }
+    .btn.secondary { background: var(--action-quiet-bg); color: var(--action-quiet-text); }
+    .header-access { flex-shrink: 0; }
     ol { padding-left: 1.45em; margin: 0; }
     li { padding: 14px 4px; border-bottom: 1px solid var(--borde); }
     li:last-child { border-bottom: 0; }
     li p:last-child { margin-bottom: 0; }
     .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 9px; margin: 12px 0 0; }
-    .meta div { background: #edf6fb; padding: 8px 10px; border-radius: 8px; }
+    .meta div { background: var(--soft-bg); padding: 8px 10px; border-radius: 8px; }
     dt { font-size: .83rem; font-weight: 700; }
     dd { margin: 0; }
-    .step-count { font-weight: 700; color: var(--azul); }
-    .step-panel { border: 2px solid var(--azul); padding: 20px; }
-    .step-kicker { margin: 0 0 8px; color: #305475; font-weight: 700; }
+    .step-count { font-weight: 700; color: var(--heading); }
+    .step-panel { border: 2px solid var(--step-border); padding: 20px; }
+    .step-kicker { margin: 0 0 8px; color: var(--kicker); font-weight: 700; }
     .exercise-pair { display: grid; gap: 10px; padding: 0; margin: 12px 0; list-style: none; counter-reset: exercise; }
-    .exercise-pair li { counter-increment: exercise; padding: 12px; border: 1px solid var(--borde); border-radius: 10px; background: #f4f9fd; }
-    .exercise-pair li::before { content: "Ejercicio " counter(exercise); display: block; color: var(--azul); font-size: .85rem; font-weight: 700; }
+    .exercise-pair li { counter-increment: exercise; padding: 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--pair-bg); }
+    .exercise-pair li::before { content: "Ejercicio " counter(exercise); display: block; color: var(--heading); font-size: .85rem; font-weight: 700; }
     .block-card { padding: 16px 0; border-top: 1px solid var(--borde); }
     .block-card:first-child { border-top: 0; padding-top: 0; }
-    .block-card h4 { color: var(--azul); font-size: 1.08rem; margin: 0 0 8px; }
-    .day-guidance { padding: 12px 14px; background: #edf6fb; border-radius: 10px; }
-    .combo { margin-top: 12px; padding: 12px; background: #edf6fb; border-radius: 10px; }
-    .combo strong { display: block; color: var(--azul); }
+    .block-card h4 { color: var(--heading); font-size: 1.08rem; margin: 0 0 8px; }
+    .day-guidance { padding: 12px 14px; background: var(--soft-bg); border-radius: 10px; }
+    .combo { margin-top: 12px; padding: 12px; background: var(--soft-bg); border-radius: 10px; }
+    .combo strong { display: block; color: var(--heading); }
     .combo ul { margin: 6px 0 0; padding-left: 1.2em; }
     .combo li { border: 0; padding: 3px 0; }
     .table-wrap { max-width: 100%; overflow-x: auto; margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; font-size: .95rem; }
     th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--borde); }
-    th { background: #edf6fb; color: var(--azul); }
+    th { background: var(--soft-bg); color: var(--heading); }
     .step-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .step-actions .btn { min-width: 0; padding-inline: 7px; }
-    #next-step:focus { outline: 3px solid #ab5500; outline-offset: 3px; }
+    #next-step:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
+    fieldset { min-width: 0; border: 1px solid var(--borde); border-radius: 12px; margin: 0 0 18px; padding: 10px 14px 14px; }
+    legend { color: var(--heading); font-weight: 700; padding-inline: 4px; }
+    .preference { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 7px 4px; cursor: pointer; }
+    .preference input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--action-outline); }
+    .preference input:checked + span { font-weight: 700; }
+    .access-actions { display: flex; flex-wrap: wrap; gap: 10px; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
       .actions > * { flex: 1 1 100%; }
+    }
+    @media (max-width: 480px) {
+      :root[data-text-size="large"] .nav-inner,
+      :root[data-text-size="large"] .choice-buttons,
+      :root[data-text-size="large"] .step-actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -91,6 +172,7 @@
         <p class="brand">MurcielApp</p>
         <p class="subtitle">App de jugadoras · Las Murciélagas</p>
       </div>
+      <button class="btn secondary header-access" id="accessibility-open" type="button" aria-controls="accessibility-section" aria-expanded="false">Accesibilidad</button>
     </div>
   </header>
   <nav aria-label="Navegación principal">
@@ -149,13 +231,67 @@
       <h2 id="upcoming-title" tabindex="-1"></h2>
       <p>Esta sección estará disponible próximamente.</p>
     </section>
+    <section id="accessibility-section" class="panel" aria-labelledby="accessibility-title" hidden>
+      <h2 id="accessibility-title" tabindex="-1">Accesibilidad</h2>
+      <form id="accessibility-form">
+        <fieldset>
+          <legend>Contraste</legend>
+          <label class="preference"><input type="radio" name="contrast" value="native" checked><span>Nativo</span></label>
+          <label class="preference"><input type="radio" name="contrast" value="dark"><span>Alto contraste oscuro</span></label>
+          <label class="preference"><input type="radio" name="contrast" value="light"><span>Alto contraste claro</span></label>
+        </fieldset>
+        <fieldset>
+          <legend>Tamaño de texto</legend>
+          <label class="preference"><input type="radio" name="textSize" value="native" checked><span>Nativo</span></label>
+          <label class="preference"><input type="radio" name="textSize" value="large"><span>Grande</span></label>
+        </fieldset>
+        <fieldset>
+          <legend>Destacar botones</legend>
+          <label class="preference"><input type="radio" name="highlight" value="no" checked><span>No</span></label>
+          <label class="preference"><input type="radio" name="highlight" value="yes"><span>Sí</span></label>
+        </fieldset>
+        <div class="access-actions">
+          <button class="btn secondary" id="reset-accessibility" type="button">Restablecer ajustes</button>
+          <button class="btn" id="close-accessibility" type="button">Volver</button>
+        </div>
+      </form>
+    </section>
     <p id="announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
   </main>
   <style>.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
   <script>
     'use strict';
-    const state = { routine: null, dayIndex: null, steps: [], stepIndex: 0, mode: null };
+    const state = { routine: null, dayIndex: null, steps: [], stepIndex: 0, mode: null, section: 'entrenar', accessibilityOpen: false };
     const byId = id => document.getElementById(id);
+    const preferenceKey = 'murcielapp.accessibility.v1';
+    const preferenceDefaults = { contrast: 'native', textSize: 'native', highlight: 'no' };
+    const preferenceValues = { contrast: ['native', 'dark', 'light'], textSize: ['native', 'large'], highlight: ['no', 'yes'] };
+    function readPreferences() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
+        return Object.fromEntries(Object.entries(preferenceDefaults).map(([name, fallback]) =>
+          [name, preferenceValues[name].includes(saved[name]) ? saved[name] : fallback]));
+      } catch { return { ...preferenceDefaults }; }
+    }
+    function applyPreferences(preferences) {
+      const root = document.documentElement;
+      if (preferences.contrast === 'native') delete root.dataset.contrast;
+      else root.dataset.contrast = preferences.contrast;
+      if (preferences.textSize === 'native') delete root.dataset.textSize;
+      else root.dataset.textSize = preferences.textSize;
+      if (preferences.highlight === 'no') delete root.dataset.highlight;
+      else root.dataset.highlight = preferences.highlight;
+      for (const [name, value] of Object.entries(preferences)) {
+        byId('accessibility-form').elements[name].value = value;
+      }
+    }
+    function savePreferences() {
+      const form = byId('accessibility-form');
+      const preferences = Object.fromEntries(Object.keys(preferenceDefaults).map(name => [name, form.elements[name].value]));
+      applyPreferences(preferences);
+      try { localStorage.setItem(preferenceKey, JSON.stringify(preferences)); } catch { /* La preferencia sigue activa durante esta visita. */ }
+    }
+    applyPreferences(readPreferences());
     const announce = message => {
       const target = byId('announcement');
       target.textContent = '';
@@ -383,6 +519,10 @@
     }
 
     function showSection(section) {
+      state.section = section;
+      state.accessibilityOpen = false;
+      byId('accessibility-section').hidden = true;
+      byId('accessibility-open').setAttribute('aria-expanded', 'false');
       const isTraining = section === 'entrenar';
       byId('entrenar-section').hidden = !isTraining;
       byId('upcoming-section').hidden = isTraining;
@@ -400,6 +540,26 @@
         }[section];
         byId('upcoming-title').focus();
       }
+    }
+
+    function openAccessibility() {
+      state.accessibilityOpen = true;
+      byId('entrenar-section').hidden = true;
+      byId('upcoming-section').hidden = true;
+      byId('accessibility-section').hidden = false;
+      byId('accessibility-open').setAttribute('aria-expanded', 'true');
+      document.querySelectorAll('.nav-btn').forEach(button => button.removeAttribute('aria-current'));
+      byId('accessibility-title').focus();
+    }
+
+    function closeAccessibility() {
+      state.accessibilityOpen = false;
+      byId('accessibility-section').hidden = true;
+      byId('accessibility-open').setAttribute('aria-expanded', 'false');
+      byId('entrenar-section').hidden = state.section !== 'entrenar';
+      byId('upcoming-section').hidden = state.section === 'entrenar';
+      document.querySelector(`.nav-btn[data-section="${state.section}"]`).setAttribute('aria-current', 'page');
+      byId('accessibility-open').focus();
     }
 
     async function loadRoutine() {
@@ -429,6 +589,14 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
+    byId('accessibility-open').addEventListener('click', openAccessibility);
+    byId('close-accessibility').addEventListener('click', closeAccessibility);
+    byId('accessibility-form').addEventListener('change', savePreferences);
+    byId('reset-accessibility').addEventListener('click', () => {
+      applyPreferences(preferenceDefaults);
+      try { localStorage.removeItem(preferenceKey); } catch { /* La preferencia vuelve al valor inicial durante esta visita. */ }
+      announce('Ajustes restablecidos.');
+    });
     byId('full-mode').addEventListener('click', () => chooseMode('full'));
     byId('step-mode').addEventListener('click', () => chooseMode('step'));
     byId('back-to-choice').addEventListener('click', showTrainingChoice);

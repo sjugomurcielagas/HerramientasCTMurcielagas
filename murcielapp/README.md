@@ -20,6 +20,11 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
 - Los bloques de fuerza se recorren completos, con sus progresiones y ejercicios
   combinados juntos.
 - Los otros tres accesos del menú quedan identificados como próximos módulos.
+- Accesibilidad permite elegir contraste nativo, oscuro o claro; texto nativo o
+  grande; y destacar acciones en naranja. Cada ajuste es independiente, se
+  aplica al instante y se guarda solo en este navegador. Restablecer ajustes
+  devuelve los tres valores iniciales. El panel usa radios HTML nativos y
+  queda separado de los cuatro accesos principales.
 
 Esta versión no crea cuentas ni carga datos personales. El acceso individual y
 el registro de datos reales requieren autenticación y autorización en el servidor.
@@ -29,3 +34,5 @@ el registro de datos reales requieren autenticación y autorización en el servi
 Recorrer Día 1 a Día 5, confirmar cada bloque frente al PDF y probar la tarea
 principal con Android TalkBack e iOS VoiceOver. Registrar el dispositivo, versión
 del sistema, lector usado, tarea, resultado y observaciones de cada prueba.
+Probar especialmente el anuncio de los radios, el cambio de contraste mientras
+está activo el lector y el uso con zoom del sistema.
