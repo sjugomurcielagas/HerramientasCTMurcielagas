@@ -165,6 +165,13 @@
     .summary-list div { padding: 9px 0; border-bottom: 1px solid var(--borde); }
     .summary-list dt { color: var(--heading); }
     .validation-error { font-weight: 700; }
+    .srpe-guide { margin-bottom: 12px; }
+    .srpe-details { margin-bottom: 16px; }
+    .srpe-details summary { cursor: pointer; min-height: 48px; border: 2px solid var(--action-outline); border-radius: 10px; background: var(--action-quiet-bg); color: var(--action-quiet-text); font-weight: 700; padding: 8px 12px; }
+    .srpe-details[open] summary { margin-bottom: 12px; }
+    .srpe-details ul { margin: 0 0 8px; padding-left: 1.4em; }
+    .srpe-details li { padding: 4px 0; border: 0; }
+    .srpe-details a { color: var(--action-quiet-text); text-decoration: underline; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
       .actions > * { flex: 1 1 100%; }
@@ -245,7 +252,7 @@
     </section>
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
-      <p>Prueba del formulario. Los datos todavía no se guardan.</p>
+      <p>Prueba del registro. Los datos no se guardan.</p>
       <div id="register-form-view" class="panel">
         <form id="stimulus-form">
           <fieldset>
@@ -275,6 +282,23 @@
           <fieldset id="intensity-fieldset" hidden>
             <legend>Intensidad</legend>
             <p>¿Qué tan intenso fue el entrenamiento completo?</p>
+            <p class="srpe-guide">Referencia rápida: 0 descanso · 3 moderado · 5 duro · 7 muy duro · 10 máximo.</p>
+            <details class="srpe-details">
+              <summary>Ver explicación de la escala</summary>
+              <p>Elegí un número pensando en el entrenamiento completo, no solo en el momento más intenso.</p>
+              <ul>
+                <li>0: descanso</li>
+                <li>1: muy, muy suave</li>
+                <li>2: suave</li>
+                <li>3: moderado</li>
+                <li>4: algo duro</li>
+                <li>5: duro</li>
+                <li>7: muy duro</li>
+                <li>10: máximo</li>
+              </ul>
+              <p>6, 8 y 9 son valores intermedios de la escala.</p>
+              <p>Referencia: <a href="https://pubmed.ncbi.nlm.nih.gov/11708692/" target="_blank" rel="noopener">Foster y colaboradores, 2001 (nueva pestaña)</a>.</p>
+            </details>
             <div id="intensity-options" class="intensity-grid"></div>
           </fieldset>
           <button class="btn" type="submit">Revisar datos</button>
@@ -283,8 +307,16 @@
       <section id="register-summary-view" class="panel" aria-labelledby="register-summary-title" hidden>
         <h3 id="register-summary-title" tabindex="-1">Revisá tu registro</h3>
         <dl id="register-summary" class="summary-list"></dl>
-        <p>Estos datos todavía no se guardaron.</p>
-        <button class="btn secondary" id="edit-stimulus" type="button">Volver y modificar</button>
+        <p id="register-test-note">Esta prueba no guarda ni envía datos.</p>
+        <div class="actions">
+          <button class="btn" id="finish-register-trial" type="button" aria-describedby="register-test-note">Registrar (prueba)</button>
+          <button class="btn secondary" id="edit-stimulus" type="button">Volver y modificar</button>
+        </div>
+      </section>
+      <section id="register-done-view" class="panel" aria-labelledby="register-done-title" hidden>
+        <h3 id="register-done-title" tabindex="-1">Prueba completada</h3>
+        <p>Terminaste el recorrido. No se guardó ni envió ningún estímulo.</p>
+        <button class="btn" id="new-register-trial" type="button">Cargar otro estímulo</button>
       </section>
     </section>
     <section id="accessibility-section" class="panel" aria-labelledby="accessibility-title" hidden>
@@ -599,8 +631,17 @@
 
     function showRegisterForm() {
       byId('register-summary-view').hidden = true;
+      byId('register-done-view').hidden = true;
       byId('register-form-view').hidden = false;
       byId('register-title').focus();
+    }
+
+    function startNewRegisterTrial() {
+      byId('stimulus-form').reset();
+      byId('stimulus-date').value = localDate();
+      clearDurationError();
+      updateStimulusType();
+      showRegisterForm();
     }
 
     function startRegisterFromRoutine() {
@@ -732,7 +773,8 @@
       input.type = 'radio';
       input.name = 'intensity';
       input.value = String(value);
-      input.setAttribute('aria-label', `${value} de 10`);
+      const anchor = { 0: 'descanso', 1: 'muy, muy suave', 2: 'suave', 3: 'moderado', 4: 'algo duro', 5: 'duro', 7: 'muy duro', 10: 'máximo' }[value];
+      input.setAttribute('aria-label', `${value} de 10${anchor ? `, ${anchor}` : ''}`);
       const text = document.createElement('span');
       text.textContent = String(value);
       label.append(input, text);
@@ -745,6 +787,12 @@
     byId('stimulus-minutes').addEventListener('input', clearDurationError);
     byId('stimulus-form').addEventListener('submit', showRegisterSummary);
     byId('edit-stimulus').addEventListener('click', showRegisterForm);
+    byId('finish-register-trial').addEventListener('click', () => {
+      byId('register-summary-view').hidden = true;
+      byId('register-done-view').hidden = false;
+      byId('register-done-title').focus();
+    });
+    byId('new-register-trial').addEventListener('click', startNewRegisterTrial);
     byId('accessibility-open').addEventListener('click', openAccessibility);
     byId('close-accessibility').addEventListener('click', closeAccessibility);
     byId('accessibility-form').addEventListener('change', savePreferences);

@@ -24,6 +24,9 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   fecha anterior, ingresar duración en horas y minutos y revisar los datos.
   Físico y Técnico-táctico piden sRPE de 0 a 10; Otros no lo pide. Desde el
   final de Paso a paso, Físico aparece preseleccionado sin registrar ejecución.
+  La escala sRPE tiene referencias rápidas y una explicación opcional basada en
+  Foster y colaboradores (2001): https://pubmed.ncbi.nlm.nih.gov/11708692/.
+  Registrar (prueba) completa el recorrido sin guardar ni enviar datos.
 - Penales y Mi perfil quedan identificados como próximos módulos.
 - Accesibilidad permite elegir contraste nativo, oscuro o claro; texto nativo o
   grande; y destacar acciones en naranja. Cada ajuste es independiente, se
