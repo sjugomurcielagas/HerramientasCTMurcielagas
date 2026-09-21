@@ -26,6 +26,9 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   final de Paso a paso, Físico aparece preseleccionado sin registrar ejecución.
   La escala sRPE tiene referencias rápidas y una explicación opcional basada en
   Foster y colaboradores (2001): https://pubmed.ncbi.nlm.nih.gov/11708692/.
+  La explicación está disponible antes de elegir un tipo y se oculta para Otros.
+  Las casillas de horas y minutos empiezan vacías; alcanza con completar una.
+  Siguiente lleva a la revisión de datos.
   Registrar (prueba) completa el recorrido sin guardar ni enviar datos.
 - Penales y Mi perfil quedan identificados como próximos módulos.
 - Accesibilidad permite elegir contraste nativo, oscuro o claro; texto nativo o
