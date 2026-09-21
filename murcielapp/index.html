@@ -262,6 +262,18 @@
             <label class="preference"><input type="radio" name="stimulusType" value="tecnico"><span>Técnico-táctico</span></label>
             <label class="preference"><input type="radio" name="stimulusType" value="otros"><span>Otros</span></label>
           </fieldset>
+          <fieldset id="other-subtype-fieldset" hidden>
+            <legend>¿Qué actividad fue?</legend>
+            <label class="preference"><input type="radio" name="otherSubtype" value="psicologia" checked><span>Psicología</span></label>
+            <label class="preference"><input type="radio" name="otherSubtype" value="nutricion"><span>Nutrición</span></label>
+            <label class="preference"><input type="radio" name="otherSubtype" value="kinesiologia"><span>Kinesiología</span></label>
+            <label class="preference"><input type="radio" name="otherSubtype" value="consulta-medica"><span>Consulta médica</span></label>
+            <label class="preference"><input type="radio" name="otherSubtype" value="otro"><span>Otro</span></label>
+            <div id="other-subtype-detail" class="form-row" hidden>
+              <label class="form-label" for="other-subtype-text">¿Cuál?</label>
+              <input class="form-input" id="other-subtype-text" name="otherSubtypeText" type="text" maxlength="80">
+            </div>
+          </fieldset>
           <div class="form-row">
             <label class="form-label" for="stimulus-date">Fecha del estímulo</label>
             <input class="form-input" id="stimulus-date" name="stimulusDate" type="date" required>
@@ -619,12 +631,28 @@
     function updateStimulusType() {
       const selected = byId('stimulus-form').elements.stimulusType.value;
       const needsIntensity = selected === 'fisico' || selected === 'tecnico';
+      const needsSubtype = selected === 'otros';
+      byId('other-subtype-fieldset').hidden = !needsSubtype;
+      byId('other-subtype-fieldset').querySelectorAll('input[type="radio"]').forEach(input => {
+        input.disabled = !needsSubtype;
+        input.required = needsSubtype;
+      });
+      updateOtherSubtype();
       byId('srpe-help').hidden = selected === 'otros';
       byId('intensity-fieldset').hidden = !needsIntensity;
       byId('intensity-options').querySelectorAll('input').forEach(input => {
         input.disabled = !needsIntensity;
         input.required = needsIntensity;
       });
+    }
+
+    function updateOtherSubtype() {
+      const form = byId('stimulus-form');
+      const needsDetail = form.elements.stimulusType.value === 'otros' && form.elements.otherSubtype.value === 'otro';
+      byId('other-subtype-detail').hidden = !needsDetail;
+      byId('other-subtype-text').disabled = !needsDetail;
+      byId('other-subtype-text').required = needsDetail;
+      if (!needsDetail) byId('other-subtype-text').setCustomValidity('');
     }
 
     function clearDurationError() {
@@ -666,6 +694,13 @@
 
     function showRegisterSummary(event) {
       event.preventDefault();
+      const form = byId('stimulus-form');
+      const type = form.elements.stimulusType.value;
+      if (type === 'otros' && form.elements.otherSubtype.value === 'otro' && !byId('other-subtype-text').value.trim()) {
+        byId('other-subtype-text').setCustomValidity('Indicá qué actividad fue.');
+        byId('other-subtype-text').reportValidity();
+        return;
+      }
       const hours = Number(byId('stimulus-hours').value);
       const minutes = Number(byId('stimulus-minutes').value);
       if (hours * 60 + minutes === 0) {
@@ -676,11 +711,14 @@
         return;
       }
       clearDurationError();
-      const form = byId('stimulus-form');
-      const type = form.elements.stimulusType.value;
       const summary = byId('register-summary');
       summary.replaceChildren();
       addMeta(summary, 'Tipo', { fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[type]);
+      if (type === 'otros') {
+        const subtype = form.elements.otherSubtype.value;
+        const labels = { psicologia: 'Psicología', nutricion: 'Nutrición', kinesiologia: 'Kinesiología', 'consulta-medica': 'Consulta médica' };
+        addMeta(summary, 'Actividad', subtype === 'otro' ? byId('other-subtype-text').value.trim() : labels[subtype]);
+      }
       addMeta(summary, 'Fecha', new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
         .format(new Date(`${byId('stimulus-date').value}T12:00:00`)));
       addMeta(summary, 'Duración', formatDuration(hours, minutes));
@@ -786,7 +824,9 @@
     }
     byId('stimulus-form').addEventListener('change', event => {
       if (event.target.name === 'stimulusType') updateStimulusType();
+      if (event.target.name === 'otherSubtype') updateOtherSubtype();
     });
+    byId('other-subtype-text').addEventListener('input', () => byId('other-subtype-text').setCustomValidity(''));
     byId('stimulus-hours').addEventListener('input', clearDurationError);
     byId('stimulus-minutes').addEventListener('input', clearDurationError);
     byId('stimulus-form').addEventListener('submit', showRegisterSummary);

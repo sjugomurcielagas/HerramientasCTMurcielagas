@@ -24,6 +24,8 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   fecha anterior, ingresar duración en horas y minutos y revisar los datos.
   Físico y Técnico-táctico piden sRPE de 0 a 10; Otros no lo pide. Desde el
   final de Paso a paso, Físico aparece preseleccionado sin registrar ejecución.
+  Otros muestra Psicología por defecto y permite elegir Nutrición,
+  Kinesiología, Consulta médica u Otro con una descripción breve.
   La escala sRPE tiene referencias rápidas y una explicación opcional basada en
   Foster y colaboradores (2001): https://pubmed.ncbi.nlm.nih.gov/11708692/.
   La explicación está disponible antes de elegir un tipo y se oculta para Otros.
