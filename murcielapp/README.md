@@ -30,6 +30,7 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   Foster y colaboradores (2001): https://pubmed.ncbi.nlm.nih.gov/11708692/.
   La explicación está disponible antes de elegir un tipo y se oculta para Otros.
   Las casillas de horas y minutos empiezan vacías; alcanza con completar una.
+  Los minutos pueden superar 60 y se convierten en horas y minutos al avanzar.
   Siguiente lleva a la revisión de datos.
   Registrar (prueba) completa el recorrido sin guardar ni enviar datos.
 - Penales y Mi perfil quedan identificados como próximos módulos.

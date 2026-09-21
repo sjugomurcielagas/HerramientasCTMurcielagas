@@ -287,10 +287,10 @@
               </div>
               <div>
                 <label class="form-label" for="stimulus-minutes">Minutos</label>
-                <input class="form-input" id="stimulus-minutes" name="minutes" type="number" inputmode="numeric" min="0" max="59" step="1">
+                <input class="form-input" id="stimulus-minutes" name="minutes" type="number" inputmode="numeric" min="0" step="1">
               </div>
             </div>
-            <p id="duration-error" class="validation-error" role="alert" hidden>Ingresá una duración mayor que cero.</p>
+            <p id="duration-error" class="validation-error" role="alert" hidden>Ingresá una duración válida mayor que cero.</p>
           </fieldset>
           <div id="srpe-help" class="srpe-help">
             <p class="srpe-guide">Escala de intensidad: 0 descanso · 3 moderado · 5 duro · 7 muy duro · 10 máximo.</p>
@@ -685,7 +685,9 @@
       showSection('registrar');
     }
 
-    function formatDuration(hours, minutes) {
+    function formatDuration(totalMinutes) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
       const parts = [];
       if (hours) parts.push(`${hours} ${hours === 1 ? 'hora' : 'horas'}`);
       if (minutes) parts.push(`${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`);
@@ -703,7 +705,8 @@
       }
       const hours = Number(byId('stimulus-hours').value);
       const minutes = Number(byId('stimulus-minutes').value);
-      if (hours * 60 + minutes === 0) {
+      const totalMinutes = hours * 60 + minutes;
+      if (!Number.isSafeInteger(totalMinutes) || totalMinutes <= 0) {
         byId('duration-error').hidden = false;
         byId('stimulus-hours').setAttribute('aria-describedby', 'duration-error');
         byId('stimulus-minutes').setAttribute('aria-describedby', 'duration-error');
@@ -711,6 +714,10 @@
         return;
       }
       clearDurationError();
+      const normalizedHours = Math.floor(totalMinutes / 60);
+      const normalizedMinutes = totalMinutes % 60;
+      byId('stimulus-hours').value = normalizedHours ? String(normalizedHours) : '';
+      byId('stimulus-minutes').value = normalizedMinutes ? String(normalizedMinutes) : '';
       const summary = byId('register-summary');
       summary.replaceChildren();
       addMeta(summary, 'Tipo', { fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[type]);
@@ -721,7 +728,7 @@
       }
       addMeta(summary, 'Fecha', new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
         .format(new Date(`${byId('stimulus-date').value}T12:00:00`)));
-      addMeta(summary, 'Duración', formatDuration(hours, minutes));
+      addMeta(summary, 'Duración', formatDuration(totalMinutes));
       if (type !== 'otros') addMeta(summary, 'Intensidad percibida', `${form.elements.intensity.value} de 10`);
       byId('register-form-view').hidden = true;
       byId('register-summary-view').hidden = false;
