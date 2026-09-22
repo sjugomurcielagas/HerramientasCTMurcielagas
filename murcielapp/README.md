@@ -26,11 +26,14 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   final de Paso a paso, Físico aparece preseleccionado sin registrar ejecución.
   Otros muestra Psicología por defecto y permite elegir Nutrición,
   Kinesiología, Consulta médica u Otro con una descripción breve.
-  La escala sRPE tiene referencias rápidas y una explicación opcional basada en
-  Foster y colaboradores (2001): https://pubmed.ncbi.nlm.nih.gov/11708692/.
+  El formulario sigue el orden Fecha, Tipo, Duración y sRPE. Físico aparece
+  preseleccionado para que el campo de intensidad esté disponible al ingresar.
+  La escala sRPE tiene referencias rápidas y una explicación opcional con
+  criterios concretos para aprender a elegir el valor, basada en Foster y
+  colaboradores (2001): https://pubmed.ncbi.nlm.nih.gov/11708692/.
   El resumen muestra la referencia junto al valor elegido; 6, 8 y 9 se ubican
   entre los anclajes verbales vecinos, sin atribuirles una leyenda original.
-  La explicación está disponible antes de elegir un tipo y se oculta para Otros.
+  La explicación y el campo sRPE se ocultan para Otros.
   Las casillas de horas y minutos empiezan vacías; alcanza con completar una.
   Los minutos pueden superar 60 y se convierten en horas y minutos al avanzar.
   Siguiente lleva a la revisión de datos.

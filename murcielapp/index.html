@@ -169,10 +169,11 @@
     .summary-list div { padding: 9px 0; border-bottom: 1px solid var(--borde); }
     .summary-list dt { color: var(--heading); }
     .validation-error { font-weight: 700; }
-    .srpe-guide { margin-bottom: 12px; }
+    .srpe-guide { margin-bottom: 10px; font-size: .9rem; }
     .srpe-help { margin-bottom: 18px; }
     .srpe-details { margin-bottom: 16px; }
-    .srpe-details summary { cursor: pointer; min-height: 48px; border: 2px solid var(--action-outline); border-radius: 10px; background: var(--action-quiet-bg); color: var(--action-quiet-text); font-weight: 700; padding: 8px 12px; }
+    .srpe-details { font-size: .9rem; }
+    .srpe-details summary { cursor: pointer; min-height: 48px; border: 2px solid var(--action-outline); border-radius: 10px; background: var(--action-quiet-bg); color: var(--action-quiet-text); font-size: .95rem; font-weight: 700; padding: 8px 12px; }
     .srpe-details[open] summary { margin-bottom: 12px; }
     .srpe-details ul { margin: 0 0 8px; padding-left: 1.4em; }
     .srpe-details li { padding: 4px 0; border: 0; }
@@ -267,9 +268,13 @@
       </div>
       <div id="register-form-view" class="panel">
         <form id="stimulus-form">
+          <div class="form-row">
+            <label class="form-label" for="stimulus-date">Fecha del estímulo</label>
+            <input class="form-input" id="stimulus-date" name="stimulusDate" type="date" required>
+          </div>
           <fieldset>
             <legend>Tipo de estímulo</legend>
-            <label class="preference"><input type="radio" name="stimulusType" value="fisico" required><span>Físico</span></label>
+            <label class="preference"><input type="radio" name="stimulusType" value="fisico" required checked><span>Físico</span></label>
             <label class="preference"><input type="radio" name="stimulusType" value="tecnico"><span>Técnico-táctico</span></label>
             <label class="preference"><input type="radio" name="stimulusType" value="otros"><span>Otros</span></label>
           </fieldset>
@@ -285,10 +290,6 @@
               <input class="form-input" id="other-subtype-text" name="otherSubtypeText" type="text" maxlength="80">
             </div>
           </fieldset>
-          <div class="form-row">
-            <label class="form-label" for="stimulus-date">Fecha del estímulo</label>
-            <input class="form-input" id="stimulus-date" name="stimulusDate" type="date" required>
-          </div>
           <fieldset>
             <legend>Duración</legend>
             <div class="duration-grid">
@@ -303,29 +304,29 @@
             </div>
             <p id="duration-error" class="validation-error" role="alert" hidden>Ingresá una duración válida mayor que cero.</p>
           </fieldset>
-          <div id="srpe-help" class="srpe-help">
-            <p class="srpe-guide">Escala de intensidad: 0 descanso · 3 moderado · 5 duro · 7 muy duro · 10 máximo.</p>
-            <details class="srpe-details">
-              <summary>Ver explicación de la escala</summary>
-              <p>Elegí un número pensando en el entrenamiento completo, no solo en el momento más intenso.</p>
-              <ul>
-                <li>0: descanso</li>
-                <li>1: muy, muy suave</li>
-                <li>2: suave</li>
-                <li>3: moderado</li>
-                <li>4: algo duro</li>
-                <li>5: duro</li>
-                <li>7: muy duro</li>
-                <li>10: máximo</li>
-              </ul>
-              <p>6, 8 y 9 son valores intermedios de la escala.</p>
-              <p>Referencia: <a href="https://pubmed.ncbi.nlm.nih.gov/11708692/" target="_blank" rel="noopener">Foster y colaboradores, 2001 (nueva pestaña)</a>.</p>
-            </details>
-          </div>
           <fieldset id="intensity-fieldset" hidden>
-            <legend>Intensidad</legend>
-            <p>¿Qué tan intenso fue el entrenamiento completo?</p>
+            <legend>sRPE · Intensidad percibida</legend>
+            <p>¿Qué tan intenso fue el estímulo completo?</p>
             <div id="intensity-options" class="intensity-grid"></div>
+            <div id="srpe-help" class="srpe-help">
+              <p class="srpe-guide">0 descanso · 3 moderado · 5 duro · 7 muy duro · 10 máximo</p>
+              <details class="srpe-details">
+                <summary>Cómo elegir mi sRPE</summary>
+                <p>Elegí un número al terminar, pensando en el esfuerzo de toda la sesión y no solamente en el momento más exigente.</p>
+                <p>Tomá en cuenta la respiración, el cansancio muscular y cuánto te costó sostener el trabajo. No hace falta compararte con otra jugadora: registrá cómo lo sentiste vos.</p>
+                <ul>
+                  <li>0: descanso; no hubo esfuerzo.</li>
+                  <li>1 y 2: muy suave o suave; podrías continuar sin dificultad.</li>
+                  <li>3 y 4: moderado o algo duro; sentís el trabajo, pero lo sostenés bien.</li>
+                  <li>5 y 6: duro; requiere concentración y esfuerzo para continuar.</li>
+                  <li>7 y 8: muy duro; cuesta sostener el ritmo y hablar con normalidad.</li>
+                  <li>9: casi máximo; podrías mantenerlo muy poco tiempo.</li>
+                  <li>10: esfuerzo máximo; no podrías hacer más.</li>
+                </ul>
+                <p>Si dudás entre dos valores, podés usar cualquiera de los números intermedios.</p>
+                <p>Referencia: <a href="https://pubmed.ncbi.nlm.nih.gov/11708692/" target="_blank" rel="noopener">Foster y colaboradores, 2001 (nueva pestaña)</a>.</p>
+              </details>
+            </div>
           </fieldset>
           <button class="btn" type="submit">Siguiente</button>
         </form>
