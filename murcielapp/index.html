@@ -119,6 +119,8 @@
     .btn.secondary { background: var(--action-quiet-bg); color: var(--action-quiet-text); }
     .header-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
     .header-actions .btn { flex-shrink: 0; padding-inline: 12px; }
+    .header-actions .header-icon { width: 48px; padding: 0; font-size: 1.35rem; line-height: 1; }
+    .header-actions .accessibility-icon { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
     .secondary-access { display: inline-flex; align-items: center; min-height: 48px; border: 0; padding: 8px 2px; background: transparent; color: var(--action-quiet-text); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
     ol { padding-left: 1.45em; margin: 0; }
     li { padding: 14px 4px; border-bottom: 1px solid var(--borde); }
@@ -196,8 +198,8 @@
         <p class="subtitle">App de jugadoras · Las Murciélagas</p>
       </div>
       <div class="header-actions">
-        <button class="btn secondary" id="home-button" type="button">Inicio</button>
-        <button class="btn secondary" id="accessibility-open" type="button" aria-controls="accessibility-section" aria-expanded="false">Accesibilidad</button>
+        <button class="btn secondary header-icon" id="home-button" type="button"><span aria-hidden="true">🏠</span><span class="visually-hidden">Inicio</span></button>
+        <button class="btn secondary header-icon" id="accessibility-open" type="button" aria-controls="accessibility-section" aria-expanded="false"><svg class="accessibility-icon" aria-hidden="true" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27"/><circle cx="32" cy="16" r="3" fill="currentColor" stroke="none"/><path d="M32 22v20M18 29h28M32 42 21 54M32 42l11 12"/><circle cx="18" cy="29" r="2.5" fill="currentColor" stroke="none"/><circle cx="46" cy="29" r="2.5" fill="currentColor" stroke="none"/><circle cx="21" cy="54" r="2.5" fill="currentColor" stroke="none"/><circle cx="43" cy="54" r="2.5" fill="currentColor" stroke="none"/></svg><span class="visually-hidden">Accesibilidad</span></button>
       </div>
     </div>
   </header>

@@ -39,7 +39,8 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   prueba muestra un estado vacío porque los registros todavía no se guardan.
 - Penales y Mi perfil quedan identificados como próximos módulos.
 - Inicio está siempre disponible en el encabezado y vuelve directamente a la
-  pantalla inicial de Entrenar.
+  pantalla inicial de Entrenar. Inicio y Accesibilidad usan íconos compactos en
+  pantalla, pero conservan sus nombres completos para lectores de pantalla.
 - Accesibilidad permite elegir contraste nativo, oscuro o claro; texto nativo o
   grande; y destacar acciones en naranja. Cada ajuste es independiente, se
   aplica al instante y se guarda solo en este navegador. Restablecer ajustes
