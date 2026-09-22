@@ -35,8 +35,9 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   Los minutos pueden superar 60 y se convierten en horas y minutos al avanzar.
   Siguiente lleva a la revisión de datos.
   Registrar (prueba) completa el recorrido sin guardar ni enviar datos.
-  Mi semana aparece como acceso secundario dentro de Registrar estímulo. En esta
-  prueba muestra un estado vacío porque los registros todavía no se guardan.
+  Mi semana aparece como botón secundario siempre disponible dentro de Registrar
+  estímulo. En esta prueba muestra un estado vacío porque los registros todavía
+  no se guardan.
 - Penales y Mi perfil quedan identificados como próximos módulos.
 - Inicio está siempre disponible en el encabezado y vuelve directamente a la
   pantalla inicial de Entrenar. Inicio y Accesibilidad usan íconos compactos en
