@@ -121,6 +121,7 @@
     .header-actions .btn { flex-shrink: 0; padding-inline: 12px; }
     .header-actions .header-icon { width: 48px; padding: 0; font-size: 1.35rem; line-height: 1; }
     .header-actions .accessibility-icon { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+    .register-tools { display: flex; justify-content: flex-end; margin: 0 0 12px; }
     ol { padding-left: 1.45em; margin: 0; }
     li { padding: 14px 4px; border-bottom: 1px solid var(--borde); }
     li:last-child { border-bottom: 0; }
@@ -261,7 +262,9 @@
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
       <p>Prueba del registro. Los datos no se guardan.</p>
-      <button class="btn secondary" id="open-my-week" type="button">Ver Mi semana</button>
+      <div class="register-tools">
+        <button class="btn secondary" id="open-my-week" type="button">Ver Mi semana</button>
+      </div>
       <div id="register-form-view" class="panel">
         <form id="stimulus-form">
           <fieldset>
