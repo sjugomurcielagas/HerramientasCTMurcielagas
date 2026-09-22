@@ -366,6 +366,8 @@
     'use strict';
     const state = { routine: null, dayIndex: null, steps: [], stepIndex: 0, mode: null, section: 'entrenar', accessibilityOpen: false };
     const byId = id => document.getElementById(id);
+    const srpeAnchors = { 0: 'descanso', 1: 'muy, muy suave', 2: 'suave', 3: 'moderado', 4: 'algo duro', 5: 'duro', 7: 'muy duro', 10: 'máximo' };
+    const srpeIntermediate = { 6: 'entre duro y muy duro', 8: 'entre muy duro y máximo', 9: 'entre muy duro y máximo' };
     const preferenceKey = 'murcielapp.accessibility.v1';
     const preferenceDefaults = { contrast: 'native', textSize: 'native', highlight: 'no' };
     const preferenceValues = { contrast: ['native', 'dark', 'light'], textSize: ['native', 'large'], highlight: ['no', 'yes'] };
@@ -729,7 +731,10 @@
       addMeta(summary, 'Fecha', new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
         .format(new Date(`${byId('stimulus-date').value}T12:00:00`)));
       addMeta(summary, 'Duración', formatDuration(totalMinutes));
-      if (type !== 'otros') addMeta(summary, 'Intensidad percibida', `${form.elements.intensity.value} de 10`);
+      if (type !== 'otros') {
+        const intensity = form.elements.intensity.value;
+        addMeta(summary, 'Intensidad percibida', `${intensity} de 10 · ${srpeAnchors[intensity] || srpeIntermediate[intensity]}`);
+      }
       byId('register-form-view').hidden = true;
       byId('register-summary-view').hidden = false;
       byId('register-summary-title').focus();
@@ -822,7 +827,7 @@
       input.type = 'radio';
       input.name = 'intensity';
       input.value = String(value);
-      const anchor = { 0: 'descanso', 1: 'muy, muy suave', 2: 'suave', 3: 'moderado', 4: 'algo duro', 5: 'duro', 7: 'muy duro', 10: 'máximo' }[value];
+      const anchor = srpeAnchors[value];
       input.setAttribute('aria-label', `${value} de 10${anchor ? `, ${anchor}` : ''}`);
       const text = document.createElement('span');
       text.textContent = String(value);
