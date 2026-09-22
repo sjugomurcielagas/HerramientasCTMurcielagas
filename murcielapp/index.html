@@ -117,7 +117,9 @@
     .choice-buttons .btn { min-width: 0; }
     .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--action-outline); border-radius: 12px; padding: 9px 16px; background: var(--action-bg); color: var(--action-text); font-weight: 700; text-decoration: none; text-align: center; }
     .btn.secondary { background: var(--action-quiet-bg); color: var(--action-quiet-text); }
-    .header-access { flex-shrink: 0; }
+    .header-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .header-actions .btn { flex-shrink: 0; padding-inline: 12px; }
+    .secondary-access { display: inline-flex; align-items: center; min-height: 48px; border: 0; padding: 8px 2px; background: transparent; color: var(--action-quiet-text); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
     ol { padding-left: 1.45em; margin: 0; }
     li { padding: 14px 4px; border-bottom: 1px solid var(--borde); }
     li:last-child { border-bottom: 0; }
@@ -175,6 +177,7 @@
     .srpe-details a { color: var(--action-quiet-text); text-decoration: underline; }
     @media (max-width: 410px) {
       .header-inner { flex-wrap: wrap; }
+      .header-actions { width: 100%; justify-content: flex-start; }
       .actions > * { flex: 1 1 100%; }
     }
     @media (max-width: 480px) {
@@ -192,7 +195,10 @@
         <p class="brand">MurcielApp</p>
         <p class="subtitle">App de jugadoras · Las Murciélagas</p>
       </div>
-      <button class="btn secondary header-access" id="accessibility-open" type="button" aria-controls="accessibility-section" aria-expanded="false">Accesibilidad</button>
+      <div class="header-actions">
+        <button class="btn secondary" id="home-button" type="button">Inicio</button>
+        <button class="btn secondary" id="accessibility-open" type="button" aria-controls="accessibility-section" aria-expanded="false">Accesibilidad</button>
+      </div>
     </div>
   </header>
   <nav aria-label="Navegación principal">
@@ -254,6 +260,7 @@
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
       <p>Prueba del registro. Los datos no se guardan.</p>
+      <button class="secondary-access" id="open-my-week" type="button">Ver Mi semana</button>
       <div id="register-form-view" class="panel">
         <form id="stimulus-form">
           <fieldset>
@@ -332,6 +339,12 @@
         <h3 id="register-done-title" tabindex="-1">Prueba completada</h3>
         <p>Terminaste el recorrido. No se guardó ni envió ningún estímulo.</p>
         <button class="btn" id="new-register-trial" type="button">Cargar otro estímulo</button>
+      </section>
+      <section id="my-week-view" class="panel" aria-labelledby="my-week-title" hidden>
+        <h3 id="my-week-title" tabindex="-1">Mi semana</h3>
+        <p>Todavía no hay registros para mostrar en esta prueba.</p>
+        <p>Cuando se habilite el guardado real, acá vas a poder consultar tus propios estímulos.</p>
+        <button class="btn secondary" id="close-my-week" type="button">Volver a Registrar estímulo</button>
       </section>
     </section>
     <section id="accessibility-section" class="panel" aria-labelledby="accessibility-title" hidden>
@@ -666,8 +679,17 @@
     function showRegisterForm() {
       byId('register-summary-view').hidden = true;
       byId('register-done-view').hidden = true;
+      byId('my-week-view').hidden = true;
       byId('register-form-view').hidden = false;
       byId('register-title').focus();
+    }
+
+    function showMyWeek() {
+      byId('register-form-view').hidden = true;
+      byId('register-summary-view').hidden = true;
+      byId('register-done-view').hidden = true;
+      byId('my-week-view').hidden = false;
+      byId('my-week-title').focus();
     }
 
     function startNewRegisterTrial() {
@@ -820,6 +842,9 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
+    byId('home-button').addEventListener('click', () => showSection('entrenar'));
+    byId('open-my-week').addEventListener('click', showMyWeek);
+    byId('close-my-week').addEventListener('click', showRegisterForm);
     for (let value = 0; value <= 10; value++) {
       const label = document.createElement('label');
       label.className = 'number-option';
