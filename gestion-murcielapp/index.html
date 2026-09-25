@@ -87,7 +87,9 @@
         const withEmail = activePlayers.filter(person => String(person.Email || person.email || '').trim()).length;
         detail.textContent = withEmail === activePlayers.length
           ? 'La lista incluye los correos. Esta comprobación no genera códigos ni envía mensajes.'
-          : `La lista incluye correo para ${withEmail} de ${activePlayers.length}. Los demás se deberán verificar en las fichas individuales antes del envío masivo. Esta comprobación no genera códigos ni envía mensajes.`;
+          : withEmail === 0
+            ? 'El listado resumido no incluye correos. La vista previa del envío masivo deberá consultar las fichas individuales. Esta comprobación no genera códigos ni envía mensajes.'
+            : `El listado incluye correo para ${withEmail} jugadoras; los demás se deberán verificar en sus fichas individuales. Esta comprobación no genera códigos ni envía mensajes.`;
       } catch (error) {
         status.textContent = 'No se pudo consultar la base.';
         detail.textContent = 'Revisá la conexión de Herramientas CT y volvé a intentar.';
