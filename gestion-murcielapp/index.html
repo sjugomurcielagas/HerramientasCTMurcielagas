@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestión de MurcielApp · Herramientas CT</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 18px; line-height: 1.5; color: #102033; background: #f4f9fd; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: #0b2f5f; }
+    a:focus-visible, button:focus-visible { outline: 3px solid #ab5500; outline-offset: 3px; }
+    .wrap { width: min(100% - 32px, 900px); margin-inline: auto; }
+    header { background: #fff; border-bottom: 1px solid #afc5d7; }
+    .header-inner { display: flex; align-items: center; gap: 14px; padding-block: 15px; }
+    .home { font-weight: 700; white-space: nowrap; }
+    h1, h2, h3 { color: #0b2f5f; line-height: 1.2; }
+    h1 { margin: 0; font-size: 1.5rem; }
+    h2 { margin: 0 0 10px; font-size: 1.3rem; }
+    h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    p { margin: 0 0 12px; }
+    main { padding-block: 24px 60px; }
+    .lead { margin-bottom: 22px; }
+    .panel { background: #fff; border: 1px solid #afc5d7; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .item { border: 1px solid #d6e3ed; border-radius: 12px; padding: 15px; }
+    .item p { margin-bottom: 0; }
+    .source { color: #305475; font-size: .9rem; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    button { min-height: 48px; border: 2px solid #0b2f5f; border-radius: 10px; background: #0b2f5f; color: #fff; padding: 8px 16px; font: inherit; font-weight: 700; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    #source-status { margin: 0; font-weight: 700; }
+    #source-detail { margin: 12px 0 0; }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .header-inner { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap header-inner"><a class="home" href="../">← Inicio</a><h1>Gestión de MurcielApp</h1></div></header>
+  <main class="wrap">
+    <p class="lead">Acá se administrarán las conexiones entre Herramientas CT y la aplicación de las jugadoras.</p>
+    <section class="panel" aria-labelledby="source-title">
+      <h2 id="source-title">Accesos del plantel</h2>
+      <p>La vista previa del envío masivo tomará a las jugadoras activas de Base de datos y consultará sus fichas para verificar los correos.</p>
+      <div class="actions"><button id="check-source" type="button">Comprobar acceso a la base</button><p id="source-status" role="status" aria-live="polite">Todavía no se comprobó la conexión.</p></div>
+      <p id="source-detail"></p>
+    </section>
+    <section class="panel" aria-labelledby="links-title">
+      <h2 id="links-title">Vínculos previstos</h2>
+      <div class="grid">
+        <div class="item"><h3>Jugadoras y correos</h3><p>Identidad y correo registrados en <a href="../base-datos/">Base de datos</a>.</p><p class="source">Para el envío masivo de códigos individuales.</p></div>
+        <div class="item"><h3>Rutinas</h3><p>Los planes cargados por la PF alimentarán Entrenar en MurcielApp.</p><p class="source">La rutina actual se publica de forma manual.</p></div>
+        <div class="item"><h3>Estímulos y Mi semana</h3><p>Los registros de cada jugadora se asociarán a su identidad y podrán consultarse en ambos espacios según los permisos.</p><p class="source">El formulario actual es una prueba sin guardado.</p></div>
+        <div class="item"><h3>Penales</h3><p>La información general y el perfil individual compartirán los datos de análisis.</p><p class="source">Integración pendiente.</p></div>
+      </div>
+    </section>
+    <p><a href="../murcielapp/">Abrir MurcielApp de jugadoras</a></p>
+  </main>
+  <script src="../assets/config.js"></script>
+  <script>
+    'use strict';
+    const checkButton = document.getElementById('check-source');
+    const status = document.getElementById('source-status');
+    const detail = document.getElementById('source-detail');
+    checkButton.addEventListener('click', async () => {
+      checkButton.disabled = true;
+      status.textContent = 'Comprobando acceso…';
+      detail.textContent = '';
+      try {
+        const response = await Promise.race([
+          Murci.apiGet('base_getPlantel'),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Tiempo de espera agotado')), 25000))
+        ]);
+        const plantel = Array.isArray(response?.plantel) ? response.plantel : Array.isArray(response) ? response : null;
+        if (!plantel || plantel.length === 0) {
+          status.textContent = 'La base respondió, pero no devolvió integrantes.';
+          detail.textContent = 'Hay que revisar la lectura del plantel antes de preparar el envío masivo.';
+          return;
+        }
+        const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const activePlayers = plantel.filter(person => {
+          const type = normalize(person.Tipo_Integrante || person.tipoIntegrante || person.tipo_integrante || person.tipo || '');
+          const active = normalize(person.Activo || person.activo || '');
+          const state = normalize(person.Estado_Plantel || person.estadoPlantel || person.estado || '');
+          return (type.includes('jugadora') || type.includes('arquera')) && active !== 'no' && !state.includes('baja') && !state.includes('inactiva');
+        });
+        status.textContent = `Se encontraron ${activePlayers.length} jugadoras activas.`;
+        const withEmail = activePlayers.filter(person => String(person.Email || person.email || '').trim()).length;
+        detail.textContent = withEmail === activePlayers.length
+          ? 'La lista incluye los correos. Esta comprobación no genera códigos ni envía mensajes.'
+          : `La lista incluye correo para ${withEmail} de ${activePlayers.length}. Los demás se deberán verificar en las fichas individuales antes del envío masivo. Esta comprobación no genera códigos ni envía mensajes.`;
+      } catch (error) {
+        status.textContent = 'No se pudo consultar la base.';
+        detail.textContent = 'Revisá la conexión de Herramientas CT y volvé a intentar.';
+      } finally {
+        checkButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
