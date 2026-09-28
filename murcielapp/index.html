@@ -250,6 +250,12 @@
           </div>
           <section id="timer-panel" class="timer-panel" aria-label="Cronómetro" hidden>
             <output id="timer-value" class="timer-value" aria-label="Tiempo transcurrido" aria-live="off">00:00</output>
+            <fieldset style="margin-top:12px">
+              <legend>Aviso cada 10 segundos</legend>
+              <label class="preference"><input type="radio" name="timerNotice" value="off" checked><span>Sin aviso</span></label>
+              <label class="preference"><input type="radio" name="timerNotice" value="voice"><span>Voz: 10, 20, 30…</span></label>
+              <label class="preference"><input type="radio" name="timerNotice" value="beep"><span>Bip</span></label>
+            </fieldset>
             <div class="actions">
               <button class="btn" id="timer-toggle" type="button">Iniciar</button>
               <button class="btn secondary" id="timer-reset" type="button">Reiniciar</button>
@@ -396,6 +402,42 @@
     const byId = id => document.getElementById(id);
     const progressKey = 'murcielapp.routine-progress.v1';
     const timer = { elapsed: 0, startedAt: null, open: false };
+    let timerNotice = 'off';
+    let lastTimerBoundary = 0;
+    let timerAudio = null;
+    try { const savedNotice = localStorage.getItem('murcielapp.timer-notice.v1'); if (['off', 'voice', 'beep'].includes(savedNotice)) timerNotice = savedNotice; } catch (_) {}
+    function timerMilliseconds() { return timer.elapsed + (timer.startedAt === null ? 0 : Math.max(0, Date.now() - timer.startedAt)); }
+    function syncTimerBoundary() { lastTimerBoundary = Math.floor(timerMilliseconds() / 10000); }
+    function prepareTimerAudio() {
+      if (timerNotice !== 'beep') return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!timerAudio && AudioContext) timerAudio = new AudioContext();
+        if (timerAudio?.state === 'suspended') timerAudio.resume().catch(() => {});
+      } catch (_) { announce('No se pudo activar el bip en este navegador.'); }
+    }
+    function notifyTimer() {
+      const boundary = Math.floor(timerMilliseconds() / 10000);
+      if (boundary <= lastTimerBoundary) return;
+      lastTimerBoundary = boundary;
+      if (timerNotice === 'voice' && 'speechSynthesis' in window) {
+        if (speechSynthesis.speaking || speechSynthesis.pending) return;
+        const utterance = new SpeechSynthesisUtterance(String(boundary * 10));
+        utterance.lang = 'es-AR';
+        speechSynthesis.speak(utterance);
+      } else if (timerNotice === 'beep' && timerAudio?.state === 'running') {
+        const oscillator = timerAudio.createOscillator();
+        const gain = timerAudio.createGain();
+        const now = timerAudio.currentTime;
+        oscillator.frequency.value = 880;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(.15, now + .01);
+        gain.gain.linearRampToValueAtTime(0, now + .15);
+        oscillator.connect(gain); gain.connect(timerAudio.destination);
+        oscillator.start(now); oscillator.stop(now + .16);
+        oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+      }
+    }
     let routineSignature = '';
     function saveRoutineProgress() {
       try {
@@ -404,7 +446,7 @@
       } catch (_) { /* El recorrido sigue funcionando si el navegador bloquea el almacenamiento. */ }
     }
     function renderTimer() {
-      const milliseconds = timer.elapsed + (timer.startedAt === null ? 0 : Math.max(0, Date.now() - timer.startedAt));
+      const milliseconds = timerMilliseconds();
       const seconds = Math.floor(milliseconds / 1000);
       const value = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
       byId('timer-value').textContent = value;
@@ -892,6 +934,7 @@
             if (state.mode === 'full') { byId('full-view').hidden = false; renderFull(); }
             else renderStep(false);
             renderTimer();
+            syncTimerBoundary();
           }
         } catch (_) { /* Un estado viejo o inválido no impide abrir la rutina. */ }
       } catch (error) {
@@ -956,14 +999,24 @@
     byId('exit-step').addEventListener('click', () => chooseMode('step'));
     byId('timer-open').addEventListener('click', () => { timer.open = !timer.open; renderTimer(); saveRoutineProgress(); });
     byId('timer-toggle').addEventListener('click', () => {
+      prepareTimerAudio();
       if (timer.startedAt === null) timer.startedAt = Date.now();
       else { timer.elapsed += Math.max(0, Date.now() - timer.startedAt); timer.startedAt = null; }
-      renderTimer(); saveRoutineProgress();
+      syncTimerBoundary(); renderTimer(); saveRoutineProgress();
     });
-    byId('timer-reset').addEventListener('click', () => { timer.elapsed = 0; timer.startedAt = null; renderTimer(); saveRoutineProgress(); });
+    byId('timer-reset').addEventListener('click', () => { timer.elapsed = 0; timer.startedAt = null; syncTimerBoundary(); renderTimer(); saveRoutineProgress(); });
+    document.querySelectorAll('input[name="timerNotice"]').forEach(input => {
+      input.checked = input.value === timerNotice;
+      if (input.value === 'voice' && !('speechSynthesis' in window)) input.disabled = true;
+      if (input.value === 'beep' && !(window.AudioContext || window.webkitAudioContext)) input.disabled = true;
+      input.addEventListener('change', () => {
+        timerNotice = input.value; syncTimerBoundary(); prepareTimerAudio();
+        try { localStorage.setItem('murcielapp.timer-notice.v1', timerNotice); } catch (_) {}
+      });
+    });
     window.addEventListener('pagehide', saveRoutineProgress);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) saveRoutineProgress(); else renderTimer(); });
-    setInterval(() => { if (timer.startedAt !== null && timer.open && !document.hidden) renderTimer(); }, 1000);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) saveRoutineProgress(); else { syncTimerBoundary(); renderTimer(); } });
+    setInterval(() => { if (timer.startedAt !== null && !document.hidden) { if (timer.open) renderTimer(); notifyTimer(); } }, 500);
     byId('register-from-end').addEventListener('click', startRegisterFromRoutine);
     loadRoutine();
   </script>

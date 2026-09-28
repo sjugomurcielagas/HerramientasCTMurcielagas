@@ -19,6 +19,11 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   Siguiente; al avanzar, el navegador conserva el foco sin reasignarlo.
   Entre ambos aparece Cronómetro, con Iniciar, Pausar, Continuar y Reiniciar.
   El tiempo continúa al cambiar de aplicación y no se anuncia cada segundo.
+  Los avisos opcionales cada 10 segundos permiten elegir Sin aviso (inicial),
+  Voz o Bip. La voz dice solo el número: 10, 20, 30. La elección se recuerda
+  en el navegador. Al volver a la app no se reproducen avisos atrasados.
+  El audio requiere la página visible; el navegador puede suspenderlo al
+  bloquear la pantalla o cambiar de aplicación, sin perder el tiempo acumulado.
   El navegador conserva el día y la indicación para recuperarlos tras una
   recarga, junto con el cronómetro. Ese estado es navegación local, no un
   registro de cumplimiento, y se descarta cuando cambia la rutina publicada.
