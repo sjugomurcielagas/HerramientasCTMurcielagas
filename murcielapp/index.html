@@ -148,7 +148,9 @@
     table { width: 100%; border-collapse: collapse; font-size: .95rem; }
     th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--borde); }
     th { background: var(--soft-bg); color: var(--heading); }
-    .step-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .step-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .timer-panel { margin-top: 14px; padding: 14px; border: 1px solid var(--borde); border-radius: 12px; }
+    .timer-value { display: block; font-size: 2rem; font-variant-numeric: tabular-nums; }
     .step-actions .btn { min-width: 0; padding-inline: 7px; }
     #next-step:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
     fieldset { min-width: 0; border: 1px solid var(--borde); border-radius: 12px; margin: 0 0 18px; padding: 10px 14px 14px; }
@@ -243,8 +245,16 @@
           <div id="step-content"></div>
           <div class="step-actions" style="margin-top:18px">
             <button class="btn" id="previous-step" type="button">Anterior</button>
+            <button class="btn secondary" id="timer-open" type="button" aria-controls="timer-panel" aria-expanded="false">Cronómetro</button>
             <button class="btn" id="next-step" type="button">Siguiente</button>
           </div>
+          <section id="timer-panel" class="timer-panel" aria-label="Cronómetro" hidden>
+            <output id="timer-value" class="timer-value" aria-label="Tiempo transcurrido" aria-live="off">00:00</output>
+            <div class="actions">
+              <button class="btn" id="timer-toggle" type="button">Iniciar</button>
+              <button class="btn secondary" id="timer-reset" type="button">Reiniciar</button>
+            </div>
+          </section>
           <button class="btn secondary" id="exit-step" type="button" style="width:100%;margin-top:12px">Elegir otro día</button>
         </section>
         <section id="end-view" class="panel" aria-labelledby="end-heading" hidden>
@@ -384,6 +394,25 @@
     'use strict';
     const state = { routine: null, dayIndex: null, steps: [], stepIndex: 0, mode: null, section: 'entrenar', accessibilityOpen: false };
     const byId = id => document.getElementById(id);
+    const progressKey = 'murcielapp.routine-progress.v1';
+    const timer = { elapsed: 0, startedAt: null, open: false };
+    let routineSignature = '';
+    function saveRoutineProgress() {
+      try {
+        if (state.dayIndex === null || !state.mode) { localStorage.removeItem(progressKey); return; }
+        localStorage.setItem(progressKey, JSON.stringify({ signature: routineSignature, mode: state.mode, dayIndex: state.dayIndex, stepIndex: state.stepIndex, timer }));
+      } catch (_) { /* El recorrido sigue funcionando si el navegador bloquea el almacenamiento. */ }
+    }
+    function renderTimer() {
+      const milliseconds = timer.elapsed + (timer.startedAt === null ? 0 : Math.max(0, Date.now() - timer.startedAt));
+      const seconds = Math.floor(milliseconds / 1000);
+      const value = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+      byId('timer-value').textContent = value;
+      byId('timer-value').setAttribute('aria-label', `Tiempo transcurrido: ${Math.floor(seconds / 60)} minutos y ${seconds % 60} segundos`);
+      byId('timer-toggle').textContent = timer.startedAt === null ? (timer.elapsed ? 'Continuar' : 'Iniciar') : 'Pausar';
+      byId('timer-panel').hidden = !timer.open;
+      byId('timer-open').setAttribute('aria-expanded', String(timer.open));
+    }
     const srpeAnchors = { 0: 'descanso', 1: 'muy, muy suave', 2: 'suave', 3: 'moderado', 4: 'algo duro', 5: 'duro', 7: 'muy duro', 10: 'máximo' };
     const srpeIntermediate = { 6: 'entre duro y muy duro', 8: 'entre muy duro y máximo', 9: 'entre muy duro y máximo' };
     const preferenceKey = 'murcielapp.accessibility.v1';
@@ -572,6 +601,7 @@
     }
 
     function renderStep(focus = false) {
+      saveRoutineProgress();
       const atEnd = state.stepIndex >= state.steps.length;
       byId('step-view').hidden = atEnd;
       byId('end-view').hidden = !atEnd;
@@ -610,6 +640,8 @@
 
     function showTrainingChoice() {
       state.mode = null;
+      state.dayIndex = null;
+      saveRoutineProgress();
       hideTrainingViews();
       byId('choice-view').hidden = false;
       byId('full-mode').focus();
@@ -617,6 +649,8 @@
 
     function chooseMode(mode) {
       state.mode = mode;
+      state.dayIndex = null;
+      saveRoutineProgress();
       hideTrainingViews();
       byId('day-choice-heading').textContent = mode === 'full'
         ? 'Ver rutina · elegí un día' : 'Paso a paso · elegí un día';
@@ -632,6 +666,7 @@
       if (state.mode === 'full') {
         byId('full-view').hidden = false;
         renderFull();
+        saveRoutineProgress();
         byId('day-heading').focus();
       } else {
         state.stepIndex = 0;
@@ -829,6 +864,7 @@
           throw new Error('Formato de rutina inválido');
         }
         state.routine = data;
+        routineSignature = String(JSON.stringify(data).split('').reduce((hash, character) => ((hash << 5) - hash + character.charCodeAt(0)) | 0, 0));
         const dayButtons = byId('day-buttons');
         data.dias.forEach((day, index) => {
           const button = document.createElement('button');
@@ -840,6 +876,24 @@
         });
         byId('load-status').hidden = true;
         byId('routine-app').hidden = false;
+        try {
+          const saved = JSON.parse(localStorage.getItem(progressKey) || 'null');
+          if (saved && saved.signature === routineSignature && ['step', 'full'].includes(saved.mode) && Number.isInteger(saved.dayIndex) && data.dias[saved.dayIndex]) {
+            state.mode = saved.mode;
+            state.dayIndex = saved.dayIndex;
+            state.steps = buildSteps(currentDay());
+            state.stepIndex = Number.isInteger(saved.stepIndex) ? Math.max(0, Math.min(saved.stepIndex, state.steps.length)) : 0;
+            if (saved.timer && Number.isFinite(saved.timer.elapsed) && saved.timer.elapsed >= 0) {
+              timer.elapsed = saved.timer.elapsed;
+              timer.startedAt = Number.isFinite(saved.timer.startedAt) && saved.timer.startedAt <= Date.now() ? saved.timer.startedAt : null;
+              timer.open = saved.timer.open === true;
+            }
+            hideTrainingViews();
+            if (state.mode === 'full') { byId('full-view').hidden = false; renderFull(); }
+            else renderStep(false);
+            renderTimer();
+          }
+        } catch (_) { /* Un estado viejo o inválido no impide abrir la rutina. */ }
       } catch (error) {
         byId('load-status').textContent = 'No hay una rutina disponible para esta prueba. Consultá a quien preparó el enlace.';
         console.error('No se pudo cargar la rutina local:', error);
@@ -900,6 +954,16 @@
     });
     byId('back-to-routine').addEventListener('click', () => chooseDay(state.dayIndex));
     byId('exit-step').addEventListener('click', () => chooseMode('step'));
+    byId('timer-open').addEventListener('click', () => { timer.open = !timer.open; renderTimer(); saveRoutineProgress(); });
+    byId('timer-toggle').addEventListener('click', () => {
+      if (timer.startedAt === null) timer.startedAt = Date.now();
+      else { timer.elapsed += Math.max(0, Date.now() - timer.startedAt); timer.startedAt = null; }
+      renderTimer(); saveRoutineProgress();
+    });
+    byId('timer-reset').addEventListener('click', () => { timer.elapsed = 0; timer.startedAt = null; renderTimer(); saveRoutineProgress(); });
+    window.addEventListener('pagehide', saveRoutineProgress);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) saveRoutineProgress(); else renderTimer(); });
+    setInterval(() => { if (timer.startedAt !== null && timer.open && !document.hidden) renderTimer(); }, 1000);
     byId('register-from-end').addEventListener('click', startRegisterFromRoutine);
     loadRoutine();
   </script>

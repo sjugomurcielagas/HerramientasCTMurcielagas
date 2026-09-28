@@ -17,6 +17,11 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
 - Ver rutina también ofrece el PDF completo.
 - Paso a paso tiene controles Anterior y Siguiente. Al entrar, el foco queda en
   Siguiente; al avanzar, el navegador conserva el foco sin reasignarlo.
+  Entre ambos aparece Cronómetro, con Iniciar, Pausar, Continuar y Reiniciar.
+  El tiempo continúa al cambiar de aplicación y no se anuncia cada segundo.
+  El navegador conserva el día y la indicación para recuperarlos tras una
+  recarga, junto con el cronómetro. Ese estado es navegación local, no un
+  registro de cumplimiento, y se descarta cuando cambia la rutina publicada.
 - Los tres bloques de zona media se alternan por vuelta.
 - Los bloques de fuerza se recorren completos, con sus progresiones y ejercicios
   combinados juntos.
