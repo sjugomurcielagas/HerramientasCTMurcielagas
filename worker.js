@@ -56,6 +56,16 @@ const ANTIDOPING_PREFIXES = [
   'antidoping_'
 ];
 
+const MURCIELAPP_ACTIONS = new Set([
+  'murcielapp_destinatarias',
+  'murcielapp_enviarCodigos',
+  'murcielapp_codigoPrueba',
+  'murcielapp_activar',
+  'murcielapp_sesion',
+  'murcielapp_registrarEstimulo',
+  'murcielapp_miSemana'
+]);
+
 const SITE_ACTIONS = [
   'site_getPlantel',
   'site_getContext',
@@ -123,6 +133,11 @@ export default {
         targetResponse = await handleDeportesAction(action, payload);
       } else if (ANTIDOPING_PREFIXES.some(prefix => action.startsWith(prefix))) {
         targetResponse = await handleAntidopingAction(action, payload);
+      } else if (MURCIELAPP_ACTIONS.has(action)) {
+        if (request.method !== 'POST') {
+          return jsonResponse({ ok: false, error: 'MurcielApp requiere POST.' }, 405);
+        }
+        targetResponse = await handleDeportesAction(action, payload);
       } else {
         return jsonResponse({
           ok: false,

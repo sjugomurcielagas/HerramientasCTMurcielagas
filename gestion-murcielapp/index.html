@@ -31,6 +31,11 @@
     button:disabled { opacity: .6; cursor: wait; }
     #source-status { margin: 0; font-weight: 700; }
     #source-detail { margin: 12px 0 0; }
+    .form-input { width: 100%; min-height: 48px; padding: 8px 12px; border: 2px solid #afc5d7; border-radius: 10px; font: inherit; }
+    .recipient { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d6e3ed; }
+    .recipient input { width: 22px; height: 22px; flex: none; margin-top: 3px; }
+    .recipient small { display: block; color: #305475; }
+    .recipient.problem small { color: #a82424; }
     @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .header-inner { flex-wrap: wrap; } }
   </style>
 </head>
@@ -44,12 +49,25 @@
       <div class="actions"><button id="check-source" type="button">Comprobar acceso a la base</button><p id="source-status" role="status" aria-live="polite">Todavía no se comprobó la conexión.</p></div>
       <p id="source-detail"></p>
     </section>
+    <section class="panel" aria-labelledby="send-title">
+      <h2 id="send-title">Vista previa de invitaciones</h2>
+      <p>Revisá las destinatarias y sus correos antes de enviar. El acceso administrativo se usa solo durante esta visita.</p>
+      <label for="admin-key"><strong>Clave administrativa de MurcielApp</strong></label>
+      <input class="form-input" id="admin-key" type="password" autocomplete="off" spellcheck="false">
+      <div class="actions" style="margin-top:12px"><button id="load-recipients" type="button">Ver destinatarias</button><button id="make-test-code" type="button">Generar código de prueba para Santiago</button><p id="recipient-status" role="status" aria-live="polite"></p></div>
+      <p id="test-code" role="status" aria-live="polite"></p>
+      <div id="recipient-preview" hidden>
+        <button id="select-all-ready" type="button" style="background:#fff;color:#0b2f5f">Seleccionar todas las listas</button>
+        <div id="recipient-list" role="group" aria-label="Destinatarias" style="margin:14px 0"></div>
+        <button id="send-codes" type="button">Enviar códigos seleccionados</button>
+      </div>
+    </section>
     <section class="panel" aria-labelledby="links-title">
       <h2 id="links-title">Vínculos previstos</h2>
       <div class="grid">
         <div class="item"><h3>Jugadoras y correos</h3><p>Identidad y correo registrados en <a href="../base-datos/">Base de datos</a>.</p><p class="source">Para el envío masivo de códigos individuales.</p></div>
         <div class="item"><h3>Rutinas</h3><p>Los planes cargados por la PF alimentarán Entrenar en MurcielApp.</p><p class="source">La rutina actual se publica de forma manual.</p></div>
-        <div class="item"><h3>Estímulos y Mi semana</h3><p>Los registros de cada jugadora se asociarán a su identidad y podrán consultarse en ambos espacios según los permisos.</p><p class="source">El formulario actual es una prueba sin guardado.</p></div>
+        <div class="item"><h3>Estímulos y Mi semana</h3><p>Cada jugadora guarda sus estímulos y consulta su semana desde MurcielApp.</p><p class="source">Los registros se asocian a su acceso personal.</p></div>
         <div class="item"><h3>Penales</h3><p>La información general y el perfil individual compartirán los datos de análisis.</p><p class="source">Integración pendiente.</p></div>
       </div>
     </section>
@@ -61,6 +79,79 @@
     const checkButton = document.getElementById('check-source');
     const status = document.getElementById('source-status');
     const detail = document.getElementById('source-detail');
+    const adminKey = document.getElementById('admin-key');
+    const recipientStatus = document.getElementById('recipient-status');
+    const recipientList = document.getElementById('recipient-list');
+    const preview = document.getElementById('recipient-preview');
+    let recipients = [];
+    document.getElementById('select-all-ready').addEventListener('click', () => {
+      recipientList.querySelectorAll('input:not(:disabled)').forEach(input => { input.checked = true; });
+    });
+    document.getElementById('make-test-code').addEventListener('click', async () => {
+      if (!adminKey.value.trim()) { recipientStatus.textContent = 'Ingresá la clave administrativa.'; adminKey.focus(); return; }
+      const button = document.getElementById('make-test-code');
+      button.disabled = true;
+      try {
+        const result = await Murci.apiPost({ action: 'murcielapp_codigoPrueba', adminKey: adminKey.value });
+        document.getElementById('test-code').textContent = `Código de prueba para Santiago: ${result.code}. Vence en 24 horas.`;
+        recipientStatus.textContent = 'Código de prueba creado. No se envió ningún correo.';
+      } catch (error) { recipientStatus.textContent = error.message || 'No se pudo generar el código.'; }
+      finally { button.disabled = false; }
+    });
+    document.getElementById('load-recipients').addEventListener('click', async () => {
+      if (!adminKey.value.trim()) { recipientStatus.textContent = 'Ingresá la clave administrativa.'; adminKey.focus(); return; }
+      const button = document.getElementById('load-recipients');
+      button.disabled = true;
+      preview.hidden = true;
+      recipientStatus.textContent = 'Consultando las fichas…';
+      try {
+        recipients = await Murci.apiPost({ action: 'murcielapp_destinatarias', adminKey: adminKey.value });
+        recipientList.replaceChildren();
+        recipients.forEach(person => {
+          const label = document.createElement('label');
+          label.className = 'recipient' + (person.problema ? ' problem' : '');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.value = person.personaId;
+          checkbox.disabled = !!person.problema || person.estado !== 'Pendiente';
+          checkbox.checked = false;
+          const body = document.createElement('span');
+          const name = document.createElement('strong');
+          name.textContent = person.nombre || 'Sin nombre';
+          const info = document.createElement('small');
+          info.textContent = [person.email || 'Sin correo', person.problema || person.estado].join(' · ');
+          body.append(name, info);
+          label.append(checkbox, body);
+          recipientList.append(label);
+        });
+        preview.hidden = false;
+        const ready = recipients.filter(person => !person.problema && person.estado === 'Pendiente').length;
+        recipientStatus.textContent = `${recipients.length} jugadoras activas · ${ready} listas para recibir código.`;
+      } catch (error) {
+        recipientStatus.textContent = error.message || 'No se pudo consultar la lista.';
+      } finally { button.disabled = false; }
+    });
+    document.getElementById('send-codes').addEventListener('click', async () => {
+      const ids = [...recipientList.querySelectorAll('input:checked')].map(input => input.value);
+      if (!ids.length) { recipientStatus.textContent = 'Seleccioná al menos una destinataria.'; return; }
+      const button = document.getElementById('send-codes');
+      button.disabled = true;
+      let sent = 0, failed = 0;
+      for (let index = 0; index < ids.length; index += 5) {
+        recipientStatus.textContent = `Enviando ${Math.min(index + 5, ids.length)} de ${ids.length}…`;
+        try {
+          const result = await Murci.apiPost({ action: 'murcielapp_enviarCodigos', adminKey: adminKey.value, personaIds: ids.slice(index, index + 5) });
+          sent += result.filter(item => item.estado === 'enviado').length;
+          failed += result.filter(item => item.estado === 'fallo_envio').length;
+        } catch (error) {
+          failed += Math.min(5, ids.length - index);
+          recipientStatus.textContent = `Envío interrumpido: ${error.message}. Se enviaron ${sent}; volvé a cargar la lista para revisar el resto.`;
+          break;
+        }
+      }
+      if (!failed) recipientStatus.textContent = `Se enviaron ${sent} códigos. Volvé a cargar la lista para revisar el estado.`;
+      button.disabled = false;
+    });
     checkButton.addEventListener('click', async () => {
       checkButton.disabled = true;
       status.textContent = 'Comprobando acceso…';

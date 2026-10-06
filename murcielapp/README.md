@@ -1,10 +1,10 @@
-# MurcielApp · prueba pública de Entrenar y Registrar estímulo
+# MurcielApp · Entrenar y Registrar estímulo
 
 Esta carpeta contiene la primera prueba funcional de la experiencia para
 jugadoras. Permite consultar una rutina real por día o recorrerla paso a paso.
-Permite probar el formulario de Registrar estímulo hasta la revisión de datos.
-Todavía no envía ni guarda registros, no infiere ejecución o cumplimiento y no
-consume APIs de Herramientas CT.
+Permite registrar estímulos con un acceso personal de un solo uso y consultar
+los registros recientes en Mi semana. El registro es una declaración de la
+jugadora; no infiere ejecución ni cumplimiento.
 
 La rutina estructurada fue revisada manualmente contra el PDF antes de su
 publicación. La aplicación carga `rutina.json` y permite ver o descargar
@@ -47,10 +47,9 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   Las casillas de horas y minutos empiezan vacías; alcanza con completar una.
   Los minutos pueden superar 60 y se convierten en horas y minutos al avanzar.
   Siguiente lleva a la revisión de datos.
-  Registrar (prueba) completa el recorrido sin guardar ni enviar datos.
+  Registrar guarda el estímulo declarado en la base, asociado a la jugadora.
   Mi semana aparece a la derecha como botón secundario siempre disponible dentro
-  de Registrar estímulo. En esta prueba muestra un estado vacío porque los
-  registros todavía no se guardan.
+  de Registrar estímulo y muestra sus registros de los últimos siete días.
 - Penales y Mi perfil quedan identificados como próximos módulos.
 - Inicio está siempre disponible en el encabezado y vuelve directamente a la
   pantalla inicial de Entrenar. Inicio y Accesibilidad usan íconos compactos en
@@ -61,9 +60,24 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   devuelve los tres valores iniciales. El panel usa radios HTML nativos y
   queda separado de los cuatro accesos principales.
 
-Esta versión no crea cuentas ni carga datos personales. El acceso individual,
-el envío del formulario y Mi semana requieren autenticación, autorización y
-persistencia en el servidor.
+## Acceso y publicación
+
+- Las jugadoras reciben por correo un código individual que vence a los siete
+  días y se usa una sola vez. La sesión se conserva en el navegador por hasta
+  180 días. La API valida la identidad antes de guardar o devolver registros.
+- Gestión de MurcielApp consulta el plantel activo y muestra una vista previa
+  con nombres, correos y estado. Ninguna destinataria aparece seleccionada al
+  abrir la lista. Los envíos se procesan en lotes de cinco.
+- Configurar `MURCIELAPP_ADMIN_KEY` como propiedad de script en el proyecto
+  Base de datos de Apps Script, con al menos 32 caracteres aleatorios. No
+  escribir la clave en el repositorio. El administrador la ingresa en Gestión
+  de MurcielApp solo durante la visita.
+- Publicar una versión nueva de la aplicación web de Apps Script con el alcance
+  `script.send_mail`. El Worker solo reenvía las acciones exactas de MurcielApp
+  por POST al módulo Base de datos.
+- El botón de prueba genera un código para Santiago sin enviar correo. Sus
+  registros se guardan bajo `TEST_SANTIAGO` y se pueden quitar después desde
+  las hojas de auditoría.
 
 ## Comprobaciones antes de ampliar el alcance
 

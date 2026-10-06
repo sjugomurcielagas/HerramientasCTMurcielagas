@@ -278,11 +278,20 @@
     </section>
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
-      <p>Prueba del registro. Los datos no se guardan.</p>
-      <div class="register-tools">
+      <section id="activation-view" class="panel" aria-labelledby="activation-title">
+        <h3 id="activation-title" tabindex="-1">Activar mi acceso</h3>
+        <p>Ingresá el código que recibiste por correo. Se usa una sola vez.</p>
+        <form id="activation-form">
+          <label class="form-label" for="activation-code">Código de activación</label>
+          <input class="form-input" id="activation-code" type="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required>
+          <button class="btn" type="submit" style="margin-top:12px">Activar</button>
+        </form>
+        <p id="activation-status" role="status" aria-live="polite"></p>
+      </section>
+      <div class="register-tools" id="register-tools" hidden>
         <button class="btn secondary" id="open-my-week" type="button">Ver Mi semana</button>
       </div>
-      <div id="register-form-view" class="panel">
+      <div id="register-form-view" class="panel" hidden>
         <form id="stimulus-form">
           <div class="form-row">
             <label class="form-label" for="stimulus-date">Fecha del estímulo</label>
@@ -350,21 +359,20 @@
       <section id="register-summary-view" class="panel" aria-labelledby="register-summary-title" hidden>
         <h3 id="register-summary-title" tabindex="-1">Revisá tu registro</h3>
         <dl id="register-summary" class="summary-list"></dl>
-        <p id="register-test-note">Esta prueba no guarda ni envía datos.</p>
+        <p id="register-save-status" role="status" aria-live="polite"></p>
         <div class="actions">
-          <button class="btn" id="finish-register-trial" type="button" aria-describedby="register-test-note">Registrar (prueba)</button>
+          <button class="btn" id="finish-register-trial" type="button">Registrar</button>
           <button class="btn secondary" id="edit-stimulus" type="button">Volver y modificar</button>
         </div>
       </section>
       <section id="register-done-view" class="panel" aria-labelledby="register-done-title" hidden>
-        <h3 id="register-done-title" tabindex="-1">Prueba completada</h3>
-        <p>Terminaste el recorrido. No se guardó ni envió ningún estímulo.</p>
+        <h3 id="register-done-title" tabindex="-1">Estímulo registrado</h3>
+        <p>Tu registro quedó guardado y podés consultarlo en Mi semana.</p>
         <button class="btn" id="new-register-trial" type="button">Cargar otro estímulo</button>
       </section>
       <section id="my-week-view" class="panel" aria-labelledby="my-week-title" hidden>
         <h3 id="my-week-title" tabindex="-1">Mi semana</h3>
-        <p>Todavía no hay registros para mostrar en esta prueba.</p>
-        <p>Cuando se habilite el guardado real, acá vas a poder consultar tus propios estímulos.</p>
+        <div id="my-week-list" role="status" aria-live="polite">Cargando tus registros…</div>
         <button class="btn secondary" id="close-my-week" type="button">Volver a Registrar estímulo</button>
       </section>
     </section>
@@ -396,9 +404,14 @@
     <p id="announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
   </main>
   <style>.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
+  <script src="../assets/config.js"></script>
   <script>
     'use strict';
     const state = { routine: null, dayIndex: null, steps: [], stepIndex: 0, mode: null, section: 'entrenar', accessibilityOpen: false };
+    const accessKey = 'murcielapp.access.v1';
+    let accessToken = '';
+    let pendingRequestId = '';
+    try { accessToken = localStorage.getItem(accessKey) || ''; } catch (_) {}
     const byId = id => document.getElementById(id);
     const progressKey = 'murcielapp.routine-progress.v1';
     const timer = { elapsed: 0, startedAt: null, open: false };
@@ -759,6 +772,9 @@
     }
 
     function showRegisterForm() {
+      if (!accessToken) { showActivation(); return; }
+      byId('activation-view').hidden = true;
+      byId('register-tools').hidden = false;
       byId('register-summary-view').hidden = true;
       byId('register-done-view').hidden = true;
       byId('my-week-view').hidden = true;
@@ -766,15 +782,69 @@
       byId('register-title').focus();
     }
 
-    function showMyWeek() {
+    function showActivation() {
+      byId('activation-view').hidden = false;
+      byId('register-tools').hidden = true;
+      ['register-form-view', 'register-summary-view', 'register-done-view', 'my-week-view'].forEach(id => { byId(id).hidden = true; });
+      byId('activation-title').focus();
+    }
+
+    async function restoreAccess() {
+      if (!accessToken) return;
+      try {
+        await Murci.apiPost({ action: 'murcielapp_sesion', token: accessToken });
+        if (state.section === 'registrar') showRegisterForm();
+      } catch (_) {
+        accessToken = '';
+        try { localStorage.removeItem(accessKey); } catch (_) {}
+        if (state.section === 'registrar') showActivation();
+      }
+    }
+
+    async function activateAccess(event) {
+      event.preventDefault();
+      const status = byId('activation-status');
+      const button = byId('activation-form').querySelector('button');
+      button.disabled = true;
+      status.textContent = 'Activando…';
+      try {
+        const result = await Murci.apiPost({ action: 'murcielapp_activar', code: byId('activation-code').value });
+        accessToken = result.token;
+        localStorage.setItem(accessKey, accessToken);
+        byId('activation-code').value = '';
+        status.textContent = '';
+        showRegisterForm();
+      } catch (error) { status.textContent = error.message || 'No se pudo activar el acceso.'; }
+      finally { button.disabled = false; }
+    }
+
+    async function showMyWeek() {
+      if (!accessToken) { showActivation(); return; }
       byId('register-form-view').hidden = true;
       byId('register-summary-view').hidden = true;
       byId('register-done-view').hidden = true;
       byId('my-week-view').hidden = false;
       byId('my-week-title').focus();
+      const list = byId('my-week-list');
+      list.replaceChildren();
+      list.textContent = 'Cargando tus registros…';
+      try {
+        const items = await Murci.apiPost({ action: 'murcielapp_miSemana', token: accessToken });
+        list.replaceChildren();
+        if (!items.length) { list.textContent = 'No hay estímulos registrados en los últimos siete días.'; return; }
+        const ul = document.createElement('ul');
+        items.forEach(item => {
+          const li = document.createElement('li');
+          const label = { fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[item.tipo] || item.tipo;
+          li.textContent = `${item.fecha} · ${label}${item.subtipo ? `, ${item.subtipo}` : ''} · ${formatDuration(Number(item.duracionMin))}${item.sRPE !== '' && item.sRPE !== null ? ` · sRPE ${item.sRPE}` : ''}`;
+          ul.append(li);
+        });
+        list.append(ul);
+      } catch (error) { list.textContent = error.message || 'No se pudieron cargar tus registros.'; }
     }
 
     function startNewRegisterTrial() {
+      pendingRequestId = '';
       byId('stimulus-form').reset();
       byId('stimulus-date').value = localDate();
       clearDurationError();
@@ -839,6 +909,8 @@
         const intensity = form.elements.intensity.value;
         addMeta(summary, 'Intensidad percibida', `${intensity} de 10 · ${srpeAnchors[intensity] || srpeIntermediate[intensity]}`);
       }
+      pendingRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      byId('register-save-status').textContent = '';
       byId('register-form-view').hidden = true;
       byId('register-summary-view').hidden = false;
       byId('register-summary-title').focus();
@@ -866,7 +938,7 @@
         byId('stimulus-date').max = localDate();
         if (!byId('stimulus-date').value) byId('stimulus-date').value = localDate();
         updateStimulusType();
-        showRegisterForm();
+        if (accessToken) showRegisterForm(); else showActivation();
       } else {
         byId('upcoming-title').textContent = {
           penales: 'Penales', perfil: 'Mi perfil'
@@ -970,10 +1042,25 @@
     byId('stimulus-minutes').addEventListener('input', clearDurationError);
     byId('stimulus-form').addEventListener('submit', showRegisterSummary);
     byId('edit-stimulus').addEventListener('click', showRegisterForm);
-    byId('finish-register-trial').addEventListener('click', () => {
-      byId('register-summary-view').hidden = true;
-      byId('register-done-view').hidden = false;
-      byId('register-done-title').focus();
+    byId('activation-form').addEventListener('submit', activateAccess);
+    byId('finish-register-trial').addEventListener('click', async () => {
+      const button = byId('finish-register-trial');
+      const form = byId('stimulus-form');
+      const type = form.elements.stimulusType.value;
+      const totalMinutes = Number(byId('stimulus-hours').value) * 60 + Number(byId('stimulus-minutes').value);
+      const subtype = type === 'otros' ? (form.elements.otherSubtype.value === 'otro' ? byId('other-subtype-text').value.trim() : ({ psicologia: 'Psicología', nutricion: 'Nutrición', kinesiologia: 'Kinesiología', 'consulta-medica': 'Consulta médica' })[form.elements.otherSubtype.value]) : '';
+      button.disabled = true;
+      byId('register-save-status').textContent = 'Guardando tu estímulo…';
+      try {
+        await Murci.apiPost({ action: 'murcielapp_registrarEstimulo', token: accessToken, requestId: pendingRequestId,
+          fecha: byId('stimulus-date').value, tipo: type, subtipo: subtype, duracionMin: totalMinutes,
+          sRPE: type === 'otros' ? null : Number(form.elements.intensity.value) });
+        byId('register-summary-view').hidden = true;
+        byId('register-done-view').hidden = false;
+        byId('register-done-title').focus();
+      } catch (error) {
+        byId('register-save-status').textContent = error.message || 'No se pudo guardar. Intentá nuevamente.';
+      } finally { button.disabled = false; }
     });
     byId('new-register-trial').addEventListener('click', startNewRegisterTrial);
     byId('accessibility-open').addEventListener('click', openAccessibility);
@@ -1018,6 +1105,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveRoutineProgress(); else { syncTimerBoundary(); renderTimer(); } });
     setInterval(() => { if (timer.startedAt !== null && !document.hidden) { if (timer.open) renderTimer(); notifyTimer(); } }, 500);
     byId('register-from-end').addEventListener('click', startRegisterFromRoutine);
+    restoreAccess();
     loadRoutine();
   </script>
 </body>

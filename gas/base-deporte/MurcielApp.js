@@ -1,0 +1,243 @@
+// MurcielApp: accesos y registros personales. Las rutinas siguen en su propia fuente.
+var MURCI_ACCESS_HEADERS_ = ['Persona_ID', 'Email', 'CodigoHash', 'CodigoVence', 'CodigoUsado', 'Enviado', 'Estado'];
+var MURCI_SESSION_HEADERS_ = ['TokenHash', 'Persona_ID', 'Vence', 'Creado'];
+var MURCI_STIMULUS_HEADERS_ = ['ID', 'Persona_ID', 'Fecha', 'Tipo', 'Subtipo', 'DuracionMin', 'sRPE', 'Creado'];
+var MURCI_APP_URL_ = 'https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/murcielapp/';
+
+function murcielapp_sheet_(name, headers) {
+  var book = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sheet = book.getSheetByName(name);
+  if (!sheet) {
+    sheet = book.insertSheet(name);
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  } else {
+    var current = sheet.getRange(1, 1, 1, headers.length).getValues()[0].map(String);
+    if (current.join('|') !== headers.join('|')) throw new Error('Columnas inesperadas en ' + name);
+  }
+  return sheet;
+}
+
+function murcielapp_rows_(sheet, headers) {
+  if (sheet.getLastRow() < 2) return [];
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues().map(function(values, index) {
+    var row = { _row: index + 2 };
+    headers.forEach(function(header, column) { row[header] = values[column]; });
+    return row;
+  });
+}
+
+function murcielapp_hash_(value) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value))
+    .map(function(byte) { return ('0' + (byte & 255).toString(16)).slice(-2); }).join('');
+}
+
+function murcielapp_admin_(payload) {
+  var expected = PropertiesService.getScriptProperties().getProperty('MURCIELAPP_ADMIN_KEY');
+  if (!expected || expected.length < 32) throw new Error('Falta configurar el acceso administrativo de MurcielApp.');
+  if (!payload || murcielapp_hash_(payload.adminKey || '') !== murcielapp_hash_(expected)) {
+    throw new Error('Acceso administrativo inválido.');
+  }
+}
+
+function murcielapp_activePlayers_() {
+  return getAllRows_().filter(function(person) {
+    var type = String(person.Tipo_Integrante || '').toLowerCase();
+    var active = String(person.Activo || '').toLowerCase();
+    var state = String(person.Estado_Plantel || '').toLowerCase();
+    return (type.indexOf('jugadora') >= 0 || type.indexOf('arquera') >= 0) &&
+      active !== 'no' && state.indexOf('baja') < 0 && state.indexOf('inactiva') < 0;
+  });
+}
+
+function murcielapp_email_(value) {
+  return String(value || '').replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').trim();
+}
+
+function murcielapp_date_(value) {
+  return Object.prototype.toString.call(value) === '[object Date]' ? Utilities.formatDate(value, 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd') : String(value || '').slice(0, 10);
+}
+
+function murcielapp_destinatarias(payload) {
+  murcielapp_admin_(payload);
+  var players = murcielapp_activePlayers_();
+  var counts = {};
+  players.forEach(function(person) {
+    var email = murcielapp_email_(person.Email).toLowerCase();
+    if (email) counts[email] = (counts[email] || 0) + 1;
+  });
+  var access = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_), MURCI_ACCESS_HEADERS_);
+  var now = Date.now();
+  return players.map(function(person) {
+    var id = String(person[PERSONA_ID_COLUMN] || '').trim();
+    var email = murcielapp_email_(person.Email);
+    var latest = access.filter(function(row) { return String(row.Persona_ID) === id; }).pop();
+    var problem = !id ? 'Sin identificador' : !email ? 'Sin correo' :
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'Correo inválido' :
+      counts[email.toLowerCase()] > 1 ? 'Correo repetido' : '';
+    return {
+      personaId: id,
+      nombre: [person.Apellido, person.Nombre].filter(Boolean).join(', '),
+      email: email,
+      problema: problem,
+      estado: latest && String(latest.CodigoUsado) ? 'Activado' :
+        latest && String(latest.Estado) === 'enviado' && new Date(latest.CodigoVence).getTime() > now ? 'Código enviado' : 'Pendiente'
+    };
+  });
+}
+
+function murcielapp_enviarCodigos(payload) {
+  murcielapp_admin_(payload);
+  var ids = Array.isArray(payload.personaIds) ? payload.personaIds.map(String) : [];
+  if (!ids.length || ids.length > 5 || new Set(ids).size !== ids.length) throw new Error('Elegí entre una y cinco destinatarias por envío.');
+  var preview = murcielapp_destinatarias(payload);
+  var selected = ids.map(function(id) {
+    var person = preview.find(function(item) { return item.personaId === id; });
+    if (!person || person.problema) throw new Error('Hay una destinataria sin correo válido. Volvé a revisar la lista.');
+    return person;
+  });
+  if (MailApp.getRemainingDailyQuota() < selected.filter(function(person) { return person.estado === 'Pendiente'; }).length) {
+    throw new Error('La cuota diaria de correo es insuficiente para este envío.');
+  }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('Hay otro envío en curso. Intentá nuevamente.');
+  try {
+    var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
+    var result = [];
+    selected.forEach(function(person) {
+      var rows = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_);
+      var current = rows.filter(function(row) { return String(row.Persona_ID) === person.personaId; }).pop();
+      if (current && String(current.CodigoUsado)) {
+        result.push({ personaId: person.personaId, estado: 'ya_activado' });
+        return;
+      }
+      if (current && String(current.Estado) === 'enviado' && new Date(current.CodigoVence).getTime() > Date.now()) {
+        result.push({ personaId: person.personaId, estado: 'ya_enviado' });
+        return;
+      }
+      var raw = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 20).toUpperCase();
+      var code = raw.match(/.{1,5}/g).join('-');
+      var expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      var row = [person.personaId, person.email, murcielapp_hash_(raw), expires, '', '', 'preparado'];
+      sheet.appendRow(row);
+      var rowNo = sheet.getLastRow();
+      try {
+        MailApp.sendEmail({
+          to: person.email,
+          subject: 'Tu acceso personal a MurcielApp',
+          body: 'Hola ' + person.nombre + ',\n\nTu código personal para activar MurcielApp es: ' + code +
+            '\n\nAbrí ' + MURCI_APP_URL_ + ' e ingresalo una sola vez. Vence en 7 días. No compartas el código.\n\nLas Murciélagas'
+        });
+        sheet.getRange(rowNo, 6, 1, 2).setValues([[new Date().toISOString(), 'enviado']]);
+        result.push({ personaId: person.personaId, estado: 'enviado' });
+      } catch (error) {
+        sheet.getRange(rowNo, 7).setValue('fallo_envio');
+        result.push({ personaId: person.personaId, estado: 'fallo_envio' });
+      }
+    });
+    return result;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function murcielapp_codigoPrueba(payload) {
+  murcielapp_admin_(payload);
+  var raw = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 20).toUpperCase();
+  var code = raw.match(/.{1,5}/g).join('-');
+  murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_).appendRow([
+    'TEST_SANTIAGO', '', murcielapp_hash_(raw), new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), '', '', 'enviado'
+  ]);
+  return { code: code, expiresInHours: 24 };
+}
+
+function murcielapp_activar(payload) {
+  var code = String(payload.code || '').replace(/[^a-fA-F0-9]/g, '').toUpperCase();
+  if (!/^[A-F0-9]{20}$/.test(code)) throw new Error('Código inválido o vencido.');
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
+  try {
+    var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
+    var hash = murcielapp_hash_(code);
+    var row = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_).find(function(item) {
+      return String(item.CodigoHash) === hash && String(item.Estado) === 'enviado' &&
+        !String(item.CodigoUsado) && new Date(item.CodigoVence).getTime() > Date.now();
+    });
+    if (!row) throw new Error('Código inválido o vencido.');
+    var player = String(row.Persona_ID) === 'TEST_SANTIAGO' ? { Persona_ID: 'TEST_SANTIAGO', Nombre: 'Santiago' } : murcielapp_activePlayers_().find(function(person) {
+      return String(person[PERSONA_ID_COLUMN]) === String(row.Persona_ID) &&
+        murcielapp_email_(person.Email).toLowerCase() === murcielapp_email_(row.Email).toLowerCase();
+    });
+    if (!player) throw new Error('Este acceso ya no está disponible.');
+    var token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+    murcielapp_sheet_('MurcielApp_Sesiones', MURCI_SESSION_HEADERS_).appendRow([
+      murcielapp_hash_(token), row.Persona_ID, new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), new Date().toISOString()
+    ]);
+    sheet.getRange(row._row, 5).setValue(new Date().toISOString());
+    return { token: token, nombre: String(player.Nombre || '').trim() };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function murcielapp_persona_(payload) {
+  var token = String(payload.token || '');
+  if (!/^[A-Fa-f0-9]{64}$/.test(token)) throw new Error('Activá tu acceso para continuar.');
+  var hash = murcielapp_hash_(token);
+  var session = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Sesiones', MURCI_SESSION_HEADERS_), MURCI_SESSION_HEADERS_)
+    .find(function(row) { return String(row.TokenHash) === hash && new Date(row.Vence).getTime() > Date.now(); });
+  if (!session) throw new Error('Tu acceso venció. Pedí un código nuevo.');
+  var person = String(session.Persona_ID) === 'TEST_SANTIAGO' ? { Persona_ID: 'TEST_SANTIAGO', Nombre: 'Santiago' } : murcielapp_activePlayers_().find(function(item) {
+    return String(item[PERSONA_ID_COLUMN]) === String(session.Persona_ID);
+  });
+  if (!person) throw new Error('El acceso no está disponible.');
+  return person;
+}
+
+function murcielapp_sesion(payload) {
+  var person = murcielapp_persona_(payload);
+  return { nombre: String(person.Nombre || '').trim() };
+}
+
+function murcielapp_registrarEstimulo(payload) {
+  var person = murcielapp_persona_(payload);
+  var date = String(payload.fecha || '');
+  var type = String(payload.tipo || '');
+  var subtype = String(payload.subtipo || '').trim();
+  var duration = Number(payload.duracionMin);
+  var srpe = payload.sRPE === null || payload.sRPE === undefined ? null : Number(payload.sRPE);
+  var requestId = String(payload.requestId || '');
+  var today = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd');
+  var parsed = new Date(date + 'T12:00:00Z');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(parsed.getTime()) ||
+      Utilities.formatDate(parsed, 'GMT', 'yyyy-MM-dd') !== date || date > today) throw new Error('Fecha inválida.');
+  if (['fisico', 'tecnico', 'otros'].indexOf(type) < 0) throw new Error('Tipo inválido.');
+  if (!Number.isInteger(duration) || duration < 1 || duration > 1440) throw new Error('Duración inválida.');
+  if (type === 'otros') {
+    if (!subtype || subtype.length > 80 || srpe !== null) throw new Error('Actividad inválida.');
+  } else if (!Number.isInteger(srpe) || srpe < 0 || srpe > 10 || subtype) throw new Error('Intensidad inválida.');
+  if (!/^[A-Za-z0-9-]{8,80}$/.test(requestId)) throw new Error('Solicitud inválida.');
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
+  try {
+    var sheet = murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_);
+    var existing = murcielapp_rows_(sheet, MURCI_STIMULUS_HEADERS_).find(function(row) {
+      return String(row.ID) === requestId && String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]);
+    });
+    if (existing) return { id: requestId, yaRegistrado: true };
+    sheet.appendRow([requestId, person[PERSONA_ID_COLUMN], date, type, subtype, duration, srpe === null ? '' : srpe, new Date().toISOString()]);
+    return { id: requestId, yaRegistrado: false };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function murcielapp_miSemana(payload) {
+  var person = murcielapp_persona_(payload);
+  var today = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd');
+  var sevenDaysAgo = Utilities.formatDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd');
+  return murcielapp_rows_(murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_), MURCI_STIMULUS_HEADERS_)
+    .filter(function(row) { return String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]) && murcielapp_date_(row.Fecha) >= sevenDaysAgo && murcielapp_date_(row.Fecha) <= today; })
+    .map(function(row) { return { id: row.ID, fecha: murcielapp_date_(row.Fecha), tipo: row.Tipo, subtipo: row.Subtipo, duracionMin: row.DuracionMin, sRPE: row.sRPE }; })
+    .sort(function(a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
+}

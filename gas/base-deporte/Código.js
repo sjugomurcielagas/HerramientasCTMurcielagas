@@ -2390,9 +2390,18 @@ function doPost(e) {
     result = base_agregarColumna(payload);
     break;
 
-  case 'getAlertas':
+      case 'getAlertas':
     result = ok(true, base_getAlertas());
     break;
+
+      // ── MURCIELAPP ──
+      case 'murcielapp_destinatarias': result = ok(true, murcielapp_destinatarias(payload)); break;
+      case 'murcielapp_enviarCodigos': result = ok(true, murcielapp_enviarCodigos(payload)); break;
+      case 'murcielapp_codigoPrueba': result = ok(true, murcielapp_codigoPrueba(payload)); break;
+      case 'murcielapp_activar': result = ok(true, murcielapp_activar(payload)); break;
+      case 'murcielapp_sesion': result = ok(true, murcielapp_sesion(payload)); break;
+      case 'murcielapp_registrarEstimulo': result = ok(true, murcielapp_registrarEstimulo(payload)); break;
+      case 'murcielapp_miSemana': result = ok(true, murcielapp_miSemana(payload)); break;
 
         // ── PENALES ──
       case 'penales_getSesiones':        result = penales_getSesiones(); break;
