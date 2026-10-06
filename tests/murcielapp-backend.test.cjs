@@ -8,6 +8,7 @@ const { test } = require('node:test');
 function setup() {
   const sheets = new Map();
   const sent = [];
+  const cache = new Map();
   const players = [
     { Persona_ID: 'P1', Nombre: 'Ana', Apellido: 'Pérez', Email: '\u2060ana@example.org', Tipo_Integrante: 'Jugadora', Activo: 'Sí', Estado_Plantel: 'Activa' },
     { Persona_ID: 'P2', Nombre: 'Eva', Apellido: 'Luna', Email: 'eva@example.org', Tipo_Integrante: 'Arquera', Activo: 'Sí', Estado_Plantel: 'Activa' },
@@ -40,6 +41,7 @@ function setup() {
     getAllRows_: () => players,
     MailApp: { getRemainingDailyQuota: () => 100, sendEmail: mail => sent.push(mail) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
+    CacheService: { getScriptCache: () => ({ get: key => cache.get(key), put: (key, value) => cache.set(key, value) }) },
     Utilities: {
       DigestAlgorithm: { SHA_256: 'SHA_256' },
       computeDigest: (_, value) => [...crypto.createHash('sha256').update(value).digest()].map(x => x > 127 ? x - 256 : x),
@@ -49,7 +51,7 @@ function setup() {
   });
   const code = fs.readFileSync(path.join(__dirname, '..', 'gas', 'base-deporte', 'MurcielApp.js'), 'utf8');
   vm.runInContext(code, context);
-  return { context, sent, players };
+  return { context, sent, players, cache, sheets };
 }
 
 test('códigos individuales, activación única, registros propios y reintento idempotente', () => {
@@ -62,7 +64,7 @@ test('códigos individuales, activación única, registros propios y reintento i
   context.murcielapp_enviarCodigos({ adminKey: 'a'.repeat(40), personaIds: ['P1', 'P2'] });
   assert.equal(sent.length, 2);
   assert.equal(sent[0].to, 'ana@example.org');
-  const code = sent[0].body.match(/[A-F0-9]{5}(?:-[A-F0-9]{5}){3}/)[0];
+  const code = sent[0].body.match(/\d{4} \d{4}/)[0];
   const session = context.murcielapp_activar({ code });
   assert.equal(session.nombre, 'Ana');
   assert.throws(() => context.murcielapp_activar({ code }), /inválido o vencido/);
@@ -72,7 +74,7 @@ test('códigos individuales, activación única, registros propios y reintento i
   assert.equal(context.murcielapp_registrarEstimulo(payload).yaRegistrado, false);
   assert.equal(context.murcielapp_registrarEstimulo(payload).yaRegistrado, true);
   assert.equal(context.murcielapp_miSemana({ token: session.token }).length, 1);
-  const secondCode = sent[1].body.match(/[A-F0-9]{5}(?:-[A-F0-9]{5}){3}/)[0];
+  const secondCode = sent[1].body.match(/\d{4} \d{4}/)[0];
   const second = context.murcielapp_activar({ code: secondCode });
   assert.equal(context.murcielapp_miSemana({ token: second.token }).length, 0);
   players[0].Activo = 'No';
@@ -98,4 +100,17 @@ test('Otros se guarda sin intensidad y rechaza fechas futuras', () => {
   assert.equal(saved.subtipo, 'Psicología');
   assert.equal(saved.sRPE, '');
   assert.throws(() => context.murcielapp_registrarEstimulo({ ...entry, requestId: crypto.randomUUID(), fecha: '2099-01-01' }), /Fecha inválida/);
+});
+
+test('acepta códigos largos vigentes y limita intentos fallidos de códigos cortos', () => {
+  const { context, cache, sheets } = setup();
+  const legacy = 'A'.repeat(20);
+  context.murcielapp_codigoPrueba({ adminKey: 'a'.repeat(40) });
+  sheets.get('MurcielApp_Accesos').appendRow([
+    'TEST_SANTIAGO', '', context.murcielapp_hash_(legacy), new Date(Date.now() + 86400000).toISOString(), '', '', 'enviado',
+  ]);
+  assert.equal(context.murcielapp_activar({ code: legacy }).nombre, 'Santiago');
+  cache.set('murcielapp_activation_failures', '39');
+  assert.throws(() => context.murcielapp_activar({ code: '0000 0000' }), /inválido o vencido/);
+  assert.throws(() => context.murcielapp_activar({ code: '0000 0001' }), /Demasiados intentos/);
 });

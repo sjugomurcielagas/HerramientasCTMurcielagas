@@ -62,8 +62,10 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
 
 ## Acceso y publicación
 
-- Las jugadoras reciben por correo un código individual que vence a los siete
-  días y se usa una sola vez. La sesión se conserva en el navegador por hasta
+- Las jugadoras reciben por correo un código individual de ocho números,
+  agrupados de a cuatro, que vence a los siete días y se usa una sola vez.
+  Se limitan los intentos fallidos; los códigos largos ya emitidos siguen
+  vigentes hasta su vencimiento. La sesión se conserva en el navegador por hasta
   180 días. La API valida la identidad antes de guardar o devolver registros.
 - Gestión de MurcielApp consulta el plantel activo y muestra una vista previa
   con nombres, correos y estado. Ninguna destinataria aparece seleccionada al

@@ -32,6 +32,29 @@ function murcielapp_hash_(value) {
     .map(function(byte) { return ('0' + (byte & 255).toString(16)).slice(-2); }).join('');
 }
 
+function murcielapp_code_() {
+  var digits = '';
+  while (digits.length < 8) {
+    var uuid = Utilities.getUuid().replace(/-/g, '').toUpperCase();
+    for (var i = 0; i < uuid.length && digits.length < 8; i++) {
+      if (i !== 12 && i !== 16 && uuid.charAt(i) <= '9') digits += uuid.charAt(i);
+    }
+  }
+  return digits;
+}
+
+function murcielapp_unusedCode_(rows) {
+  for (var attempt = 0; attempt < 10; attempt++) {
+    var code = murcielapp_code_();
+    var hash = murcielapp_hash_(code);
+    if (!rows.some(function(row) {
+      return String(row.CodigoHash) === hash && !String(row.CodigoUsado) &&
+        new Date(row.CodigoVence).getTime() > Date.now();
+    })) return code;
+  }
+  throw new Error('No se pudo generar el código. Intentá nuevamente.');
+}
+
 function murcielapp_admin_(payload) {
   var expected = PropertiesService.getScriptProperties().getProperty('MURCIELAPP_ADMIN_KEY');
   if (!expected || expected.length < 32) throw new Error('Falta configurar el acceso administrativo de MurcielApp.');
@@ -115,8 +138,8 @@ function murcielapp_enviarCodigos(payload) {
         result.push({ personaId: person.personaId, estado: 'ya_enviado' });
         return;
       }
-      var raw = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 20).toUpperCase();
-      var code = raw.match(/.{1,5}/g).join('-');
+      var raw = murcielapp_unusedCode_(rows);
+      var code = raw.slice(0, 4) + ' ' + raw.slice(4);
       var expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       var row = [person.personaId, person.email, murcielapp_hash_(raw), expires, '', '', 'preparado'];
       sheet.appendRow(row);
@@ -126,7 +149,8 @@ function murcielapp_enviarCodigos(payload) {
           to: person.email,
           subject: 'Tu acceso personal a MurcielApp',
           body: 'Hola ' + person.nombre + ',\n\nTu código personal para activar MurcielApp es: ' + code +
-            '\n\nAbrí ' + MURCI_APP_URL_ + ' e ingresalo una sola vez. Vence en 7 días. No compartas el código.\n\nLas Murciélagas'
+            '\n\nSon 8 números. Podés ingresarlos juntos o con espacio. Abrí ' + MURCI_APP_URL_ +
+            ' e ingresalos una sola vez. El código vence en 7 días. No lo compartas.\n\nLas Murciélagas'
         });
         sheet.getRange(rowNo, 6, 1, 2).setValues([[new Date().toISOString(), 'enviado']]);
         result.push({ personaId: person.personaId, estado: 'enviado' });
@@ -143,27 +167,39 @@ function murcielapp_enviarCodigos(payload) {
 
 function murcielapp_codigoPrueba(payload) {
   murcielapp_admin_(payload);
-  var raw = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 20).toUpperCase();
-  var code = raw.match(/.{1,5}/g).join('-');
-  murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_).appendRow([
-    'TEST_SANTIAGO', '', murcielapp_hash_(raw), new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), '', '', 'enviado'
-  ]);
-  return { code: code, expiresInHours: 24 };
-}
-
-function murcielapp_activar(payload) {
-  var code = String(payload.code || '').replace(/[^a-fA-F0-9]/g, '').toUpperCase();
-  if (!/^[A-F0-9]{20}$/.test(code)) throw new Error('Código inválido o vencido.');
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
   try {
+    var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
+    var raw = murcielapp_unusedCode_(murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_));
+    sheet.appendRow([
+      'TEST_SANTIAGO', '', murcielapp_hash_(raw), new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), '', '', 'enviado'
+    ]);
+    return { code: raw.slice(0, 4) + ' ' + raw.slice(4), expiresInHours: 24 };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function murcielapp_activar(payload) {
+  var code = String(payload.code || '').replace(/[\s-]/g, '').toUpperCase();
+  if (!/^\d{8}$/.test(code) && !/^[A-F0-9]{20}$/.test(code)) throw new Error('Código inválido o vencido.');
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
+  try {
+    var cache = CacheService.getScriptCache();
+    var failures = Number(cache.get('murcielapp_activation_failures') || 0);
+    if (failures >= 40) throw new Error('Demasiados intentos. Probá de nuevo en 10 minutos.');
     var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
     var hash = murcielapp_hash_(code);
     var row = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_).find(function(item) {
       return String(item.CodigoHash) === hash && String(item.Estado) === 'enviado' &&
         !String(item.CodigoUsado) && new Date(item.CodigoVence).getTime() > Date.now();
     });
-    if (!row) throw new Error('Código inválido o vencido.');
+    if (!row) {
+      cache.put('murcielapp_activation_failures', String(failures + 1), 600);
+      throw new Error('Código inválido o vencido.');
+    }
     var player = String(row.Persona_ID) === 'TEST_SANTIAGO' ? { Persona_ID: 'TEST_SANTIAGO', Nombre: 'Santiago' } : murcielapp_activePlayers_().find(function(person) {
       return String(person[PERSONA_ID_COLUMN]) === String(row.Persona_ID) &&
         murcielapp_email_(person.Email).toLowerCase() === murcielapp_email_(row.Email).toLowerCase();
