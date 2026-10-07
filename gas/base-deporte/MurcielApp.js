@@ -4,6 +4,10 @@ var MURCI_SESSION_HEADERS_ = ['TokenHash', 'Persona_ID', 'Vence', 'Creado'];
 var MURCI_STIMULUS_HEADERS_ = ['ID', 'Persona_ID', 'Fecha', 'Tipo', 'Subtipo', 'DuracionMin', 'sRPE', 'Creado'];
 var MURCI_APP_URL_ = 'https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/murcielapp/';
 
+function murcielapp_verificarPermisoCorreo() {
+  return MailApp.getRemainingDailyQuota();
+}
+
 function murcielapp_sheet_(name, headers) {
   var book = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sheet = book.getSheetByName(name);
