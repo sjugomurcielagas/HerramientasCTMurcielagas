@@ -97,6 +97,26 @@ test('sesión administrativa temporal, sin guardar la clave y revocable', () => 
   assert.throws(() => context.murcielapp_destinatarias({ adminToken: next.token }), /vencido/);
 });
 
+test('recupera acceso activado con un código nuevo sin perder la sesión anterior', () => {
+  const { context, sheets, sent } = setup();
+  const auth = { adminKey: 'a'.repeat(40) };
+  context.murcielapp_enviarCodigos({ ...auth, personaIds: ['P1'] });
+  const firstCode = sent[0].body.match(/\d{4} \d{4}/)[0];
+  const firstSession = context.murcielapp_activar({ code: firstCode });
+  assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Activado');
+  assert.throws(() => context.murcielapp_reenviarCodigo({ ...auth, personaId: 'P1' }), /10 minutos/);
+  sheets.get('MurcielApp_Accesos').getRange(2, 6).setValue('2020-01-01T00:00:00.000Z');
+  const result = context.murcielapp_reenviarCodigo({ ...auth, personaId: 'P1' });
+  assert.equal(result.estado, 'enviado');
+  assert.equal(sent.length, 2);
+  assert.equal(sent[1].to, 'ana@example.org');
+  assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Código enviado');
+  const secondCode = sent[1].body.match(/\d{4} \d{4}/)[0];
+  assert.equal(context.murcielapp_activar({ code: secondCode }).nombre, 'Ana');
+  assert.equal(context.murcielapp_sesion({ token: firstSession.token }).nombre, 'Ana');
+  assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Activado');
+});
+
 test('código de Santiago queda separado del plantel y sin correo', () => {
   const { context, sent } = setup();
   const result = context.murcielapp_codigoPrueba({ adminKey: 'a'.repeat(40) });

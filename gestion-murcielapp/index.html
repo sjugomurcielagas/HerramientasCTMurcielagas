@@ -34,7 +34,9 @@
     #source-detail { margin: 12px 0 0; }
     .form-input { width: 100%; min-height: 48px; padding: 8px 12px; border: 2px solid #afc5d7; border-radius: 10px; font: inherit; }
     .recipient { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d6e3ed; }
+    .recipient-label { display: flex; align-items: flex-start; gap: 12px; flex: 1; }
     .recipient input { width: 22px; height: 22px; flex: none; margin-top: 3px; }
+    .recipient button { background: #fff; color: #0b2f5f; font-size: .9rem; }
     .recipient small { display: block; color: #305475; }
     .recipient.problem small { color: #a82424; }
     @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .header-inner { flex-wrap: wrap; } }
@@ -154,8 +156,10 @@
         recipients = await Murci.apiPost({ action: 'murcielapp_destinatarias', ...await adminAuth() });
         recipientList.replaceChildren();
         recipients.forEach(person => {
+          const row = document.createElement('div');
+          row.className = 'recipient' + (person.problema ? ' problem' : '');
           const label = document.createElement('label');
-          label.className = 'recipient' + (person.problema ? ' problem' : '');
+          label.className = 'recipient-label';
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
           checkbox.value = person.personaId;
@@ -168,7 +172,26 @@
           info.textContent = [person.email || 'Sin correo', person.problema || person.estado].join(' · ');
           body.append(name, info);
           label.append(checkbox, body);
-          recipientList.append(label);
+          row.append(label);
+          if (!person.problema && (person.estado === 'Activado' || person.estado === 'Código enviado')) {
+            const recover = document.createElement('button');
+            recover.type = 'button';
+            recover.textContent = 'Enviar nuevo código';
+            recover.setAttribute('aria-label', `Enviar nuevo código a ${person.nombre}`);
+            recover.addEventListener('click', async () => {
+              recover.disabled = true;
+              recipientStatus.textContent = `Enviando nuevo código a ${person.nombre}…`;
+              try {
+                const result = await Murci.apiPost({ action: 'murcielapp_reenviarCodigo', ...await adminAuth(), personaId: person.personaId });
+                if (result.estado !== 'enviado') throw new Error('No se pudo enviar el correo. Intentá nuevamente más tarde.');
+                person.estado = 'Código enviado';
+                info.textContent = [person.email, person.estado].join(' · ');
+                recipientStatus.textContent = `Se envió un nuevo código a ${person.nombre}.`;
+              } catch (error) { adminError(error); recover.disabled = false; }
+            });
+            row.append(recover);
+          }
+          recipientList.append(row);
         });
         preview.hidden = false;
         const ready = recipients.filter(person => !person.problema && person.estado === 'Pendiente').length;

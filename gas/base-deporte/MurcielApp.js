@@ -129,7 +129,8 @@ function murcielapp_destinatarias(payload) {
   return players.map(function(person) {
     var id = String(person[PERSONA_ID_COLUMN] || '').trim();
     var email = murcielapp_email_(person.Email);
-    var latest = access.filter(function(row) { return String(row.Persona_ID) === id; }).pop();
+    var personAccess = access.filter(function(row) { return String(row.Persona_ID) === id; });
+    var latest = personAccess[personAccess.length - 1];
     var problem = !id ? 'Sin identificador' : !email ? 'Sin correo' :
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'Correo inválido' :
       counts[email.toLowerCase()] > 1 ? 'Correo repetido' : '';
@@ -138,10 +139,32 @@ function murcielapp_destinatarias(payload) {
       nombre: [person.Apellido, person.Nombre].filter(Boolean).join(', '),
       email: email,
       problema: problem,
-      estado: latest && String(latest.CodigoUsado) ? 'Activado' :
-        latest && String(latest.Estado) === 'enviado' && new Date(latest.CodigoVence).getTime() > now ? 'Código enviado' : 'Pendiente'
+      estado: latest && String(latest.Estado) === 'enviado' && !String(latest.CodigoUsado) && new Date(latest.CodigoVence).getTime() > now ? 'Código enviado' :
+        personAccess.some(function(row) { return !!String(row.CodigoUsado); }) ? 'Activado' : 'Pendiente'
     };
   });
+}
+
+function murcielapp_sendCode_(sheet, person, rows, recovery) {
+  var raw = murcielapp_unusedCode_(rows);
+  var code = raw.slice(0, 4) + ' ' + raw.slice(4);
+  var expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  sheet.appendRow([person.personaId, person.email, murcielapp_hash_(raw), expires, '', '', 'preparado']);
+  var rowNo = sheet.getLastRow();
+  try {
+    MailApp.sendEmail({
+      to: person.email,
+      subject: recovery ? 'Nuevo código de acceso a MurcielApp' : 'Tu acceso personal a MurcielApp',
+      body: 'Hola ' + person.nombre + ',\n\nTu ' + (recovery ? 'nuevo código' : 'código personal') + ' para activar MurcielApp es: ' + code +
+        '\n\nSon 8 números. Podés ingresarlos juntos o con espacio. Abrí ' + MURCI_APP_URL_ +
+        ' e ingresalos una sola vez. El código vence en 7 días. No lo compartas.\n\nLas Murciélagas'
+    });
+    sheet.getRange(rowNo, 6, 1, 2).setValues([[new Date().toISOString(), 'enviado']]);
+    return { personaId: person.personaId, estado: 'enviado' };
+  } catch (error) {
+    sheet.getRange(rowNo, 7).setValue('fallo_envio');
+    return { personaId: person.personaId, estado: 'fallo_envio' };
+  }
 }
 
 function murcielapp_enviarCodigos(payload) {
@@ -173,28 +196,30 @@ function murcielapp_enviarCodigos(payload) {
         result.push({ personaId: person.personaId, estado: 'ya_enviado' });
         return;
       }
-      var raw = murcielapp_unusedCode_(rows);
-      var code = raw.slice(0, 4) + ' ' + raw.slice(4);
-      var expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      var row = [person.personaId, person.email, murcielapp_hash_(raw), expires, '', '', 'preparado'];
-      sheet.appendRow(row);
-      var rowNo = sheet.getLastRow();
-      try {
-        MailApp.sendEmail({
-          to: person.email,
-          subject: 'Tu acceso personal a MurcielApp',
-          body: 'Hola ' + person.nombre + ',\n\nTu código personal para activar MurcielApp es: ' + code +
-            '\n\nSon 8 números. Podés ingresarlos juntos o con espacio. Abrí ' + MURCI_APP_URL_ +
-            ' e ingresalos una sola vez. El código vence en 7 días. No lo compartas.\n\nLas Murciélagas'
-        });
-        sheet.getRange(rowNo, 6, 1, 2).setValues([[new Date().toISOString(), 'enviado']]);
-        result.push({ personaId: person.personaId, estado: 'enviado' });
-      } catch (error) {
-        sheet.getRange(rowNo, 7).setValue('fallo_envio');
-        result.push({ personaId: person.personaId, estado: 'fallo_envio' });
-      }
+      result.push(murcielapp_sendCode_(sheet, person, rows, false));
     });
     return result;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function murcielapp_reenviarCodigo(payload) {
+  murcielapp_admin_(payload);
+  var id = String(payload && payload.personaId || '').trim();
+  var person = murcielapp_destinatarias(payload).find(function(item) { return item.personaId === id; });
+  if (!person || person.problema || person.estado === 'Pendiente') throw new Error('Esta destinataria no tiene un acceso recuperable. Revisá la lista.');
+  if (MailApp.getRemainingDailyQuota() < 1) throw new Error('La cuota diaria de correo es insuficiente.');
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('Hay otro envío en curso. Intentá nuevamente.');
+  try {
+    var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
+    var rows = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_);
+    var latest = rows.filter(function(row) { return String(row.Persona_ID) === id && String(row.Estado) === 'enviado'; }).pop();
+    if (latest && new Date(latest.Enviado).getTime() > Date.now() - 10 * 60000) {
+      throw new Error('Ya se envió un código hace menos de 10 minutos. Revisá el correo antes de pedir otro.');
+    }
+    return murcielapp_sendCode_(sheet, person, rows, true);
   } finally {
     lock.releaseLock();
   }

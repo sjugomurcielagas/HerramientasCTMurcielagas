@@ -61,6 +61,7 @@ const MURCIELAPP_ACTIONS = new Set([
   'murcielapp_adminCerrarSesion',
   'murcielapp_destinatarias',
   'murcielapp_enviarCodigos',
+  'murcielapp_reenviarCodigo',
   'murcielapp_codigoPrueba',
   'murcielapp_activar',
   'murcielapp_sesion',

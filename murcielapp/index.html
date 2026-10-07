@@ -794,10 +794,14 @@
       try {
         await Murci.apiPost({ action: 'murcielapp_sesion', token: accessToken });
         if (state.section === 'registrar') showRegisterForm();
-      } catch (_) {
-        accessToken = '';
-        try { localStorage.removeItem(accessKey); } catch (_) {}
-        if (state.section === 'registrar') showActivation();
+      } catch (error) {
+        if (/Tu acceso venció|El acceso no está disponible|Activá tu acceso/.test(error.message || '')) {
+          accessToken = '';
+          try { localStorage.removeItem(accessKey); } catch (_) {}
+          if (state.section === 'registrar') showActivation();
+        } else if (state.section === 'registrar') {
+          byId('register-save-status').textContent = 'No se pudo comprobar el acceso. Revisá la conexión e intentá de nuevo.';
+        }
       }
     }
 
@@ -810,7 +814,7 @@
       try {
         const result = await Murci.apiPost({ action: 'murcielapp_activar', code: byId('activation-code').value });
         accessToken = result.token;
-        localStorage.setItem(accessKey, accessToken);
+        try { localStorage.setItem(accessKey, accessToken); } catch (_) {}
         byId('activation-code').value = '';
         status.textContent = '';
         showRegisterForm();

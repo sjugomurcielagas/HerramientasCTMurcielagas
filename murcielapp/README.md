@@ -69,7 +69,10 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   180 días. La API valida la identidad antes de guardar o devolver registros.
 - Gestión de MurcielApp consulta el plantel activo y muestra una vista previa
   con nombres, correos y estado. Ninguna destinataria aparece seleccionada al
-  abrir la lista. Los envíos se procesan en lotes de cinco.
+  abrir la lista. Los envíos se procesan en lotes de cinco. Si una jugadora ya
+  activó el código y perdió la sesión del navegador, Gestión permite enviarle
+  uno nuevo al correo registrado. Se limita el reenvío a una vez cada diez
+  minutos; las sesiones existentes y los estímulos guardados se conservan.
 - Configurar `MURCIELAPP_ADMIN_KEY` como propiedad de script en el proyecto
   Base de datos de Apps Script, con al menos 32 caracteres aleatorios. No
   escribir la clave en el repositorio. Gestión de MurcielApp la usa para crear
@@ -83,6 +86,9 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
 - El botón de prueba genera un código para Santiago sin enviar correo. Sus
   registros se guardan bajo `TEST_SANTIAGO` y se pueden quitar después desde
   las hojas de auditoría.
+- Un fallo temporal de conexión al restaurar el acceso no borra la sesión
+  guardada. Si el navegador no permite guardarla, la sesión queda disponible
+  mientras la pestaña permanezca abierta.
 
 ## Comprobaciones antes de ampliar el alcance
 
