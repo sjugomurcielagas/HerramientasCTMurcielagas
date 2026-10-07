@@ -53,8 +53,7 @@ function murcielapp_unusedCode_(rows) {
     var code = murcielapp_code_();
     var hash = murcielapp_hash_(code);
     if (!rows.some(function(row) {
-      return String(row.CodigoHash) === hash && !String(row.CodigoUsado) &&
-        new Date(row.CodigoVence).getTime() > Date.now();
+      return String(row.CodigoHash) === hash;
     })) return code;
   }
   throw new Error('No se pudo generar el código. Intentá nuevamente.');
@@ -125,7 +124,6 @@ function murcielapp_destinatarias(payload) {
     if (email) counts[email] = (counts[email] || 0) + 1;
   });
   var access = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_), MURCI_ACCESS_HEADERS_);
-  var now = Date.now();
   return players.map(function(person) {
     var id = String(person[PERSONA_ID_COLUMN] || '').trim();
     var email = murcielapp_email_(person.Email);
@@ -139,7 +137,7 @@ function murcielapp_destinatarias(payload) {
       nombre: [person.Apellido, person.Nombre].filter(Boolean).join(', '),
       email: email,
       problema: problem,
-      estado: latest && String(latest.Estado) === 'enviado' && !String(latest.CodigoUsado) && new Date(latest.CodigoVence).getTime() > now ? 'Código enviado' :
+      estado: latest && String(latest.Estado) === 'enviado' && !String(latest.CodigoUsado) ? 'Código enviado' :
         personAccess.some(function(row) { return !!String(row.CodigoUsado); }) ? 'Activado' : 'Pendiente'
     };
   });
@@ -148,16 +146,15 @@ function murcielapp_destinatarias(payload) {
 function murcielapp_sendCode_(sheet, person, rows, recovery) {
   var raw = murcielapp_unusedCode_(rows);
   var code = raw.slice(0, 4) + ' ' + raw.slice(4);
-  var expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  sheet.appendRow([person.personaId, person.email, murcielapp_hash_(raw), expires, '', '', 'preparado']);
+  sheet.appendRow([person.personaId, person.email, murcielapp_hash_(raw), '', '', '', 'preparado']);
   var rowNo = sheet.getLastRow();
   try {
     MailApp.sendEmail({
       to: person.email,
       subject: recovery ? 'Nuevo código de acceso a MurcielApp' : 'Tu acceso personal a MurcielApp',
-      body: 'Hola ' + person.nombre + ',\n\nTu ' + (recovery ? 'nuevo código' : 'código personal') + ' para activar MurcielApp es: ' + code +
+      body: 'Hola ' + person.nombre + ',\n\nTu ' + (recovery ? 'nuevo código personal' : 'código personal') + ' para entrar a MurcielApp es: ' + code +
         '\n\nSon 8 números. Podés ingresarlos juntos o con espacio. Abrí ' + MURCI_APP_URL_ +
-        ' e ingresalos una sola vez. El código vence en 7 días. No lo compartas.\n\nLas Murciélagas'
+        ' y guardá este correo: el mismo código te sirve cada vez que cambies de teléfono o navegador. No lo compartas.\n\nLas Murciélagas'
     });
     sheet.getRange(rowNo, 6, 1, 2).setValues([[new Date().toISOString(), 'enviado']]);
     return { personaId: person.personaId, estado: 'enviado' };
@@ -192,7 +189,7 @@ function murcielapp_enviarCodigos(payload) {
         result.push({ personaId: person.personaId, estado: 'ya_activado' });
         return;
       }
-      if (current && String(current.Estado) === 'enviado' && new Date(current.CodigoVence).getTime() > Date.now()) {
+      if (current && String(current.Estado) === 'enviado') {
         result.push({ personaId: person.personaId, estado: 'ya_enviado' });
         return;
       }
@@ -233,9 +230,9 @@ function murcielapp_codigoPrueba(payload) {
     var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
     var raw = murcielapp_unusedCode_(murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_));
     sheet.appendRow([
-      'TEST_SANTIAGO', '', murcielapp_hash_(raw), new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), '', '', 'enviado'
+      'TEST_SANTIAGO', '', murcielapp_hash_(raw), '', '', '', 'enviado'
     ]);
-    return { code: raw.slice(0, 4) + ' ' + raw.slice(4), expiresInHours: 24 };
+    return { code: raw.slice(0, 4) + ' ' + raw.slice(4) };
   } finally {
     lock.releaseLock();
   }
@@ -252,9 +249,10 @@ function murcielapp_activar(payload) {
     if (failures >= 40) throw new Error('Demasiados intentos. Probá de nuevo en 10 minutos.');
     var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
     var hash = murcielapp_hash_(code);
-    var row = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_).find(function(item) {
+    var rows = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_);
+    var row = rows.find(function(item) {
       return String(item.CodigoHash) === hash && String(item.Estado) === 'enviado' &&
-        !String(item.CodigoUsado) && new Date(item.CodigoVence).getTime() > Date.now();
+        rows.filter(function(other) { return String(other.Persona_ID) === String(item.Persona_ID) && String(other.Estado) === 'enviado'; }).pop()._row === item._row;
     });
     if (!row) {
       cache.put('murcielapp_activation_failures', String(failures + 1), 600);
@@ -269,7 +267,7 @@ function murcielapp_activar(payload) {
     murcielapp_sheet_('MurcielApp_Sesiones', MURCI_SESSION_HEADERS_).appendRow([
       murcielapp_hash_(token), row.Persona_ID, new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), new Date().toISOString()
     ]);
-    sheet.getRange(row._row, 5).setValue(new Date().toISOString());
+    if (!String(row.CodigoUsado)) sheet.getRange(row._row, 5).setValue(new Date().toISOString());
     return { token: token, nombre: String(player.Nombre || '').trim() };
   } finally {
     lock.releaseLock();
@@ -282,7 +280,7 @@ function murcielapp_persona_(payload) {
   var hash = murcielapp_hash_(token);
   var session = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Sesiones', MURCI_SESSION_HEADERS_), MURCI_SESSION_HEADERS_)
     .find(function(row) { return String(row.TokenHash) === hash && new Date(row.Vence).getTime() > Date.now(); });
-  if (!session) throw new Error('Tu acceso venció. Pedí un código nuevo.');
+  if (!session) throw new Error('Tu acceso venció. Volvé a ingresar tu código personal.');
   var person = String(session.Persona_ID) === 'TEST_SANTIAGO' ? { Persona_ID: 'TEST_SANTIAGO', Nombre: 'Santiago' } : murcielapp_activePlayers_().find(function(item) {
     return String(item[PERSONA_ID_COLUMN]) === String(session.Persona_ID);
   });

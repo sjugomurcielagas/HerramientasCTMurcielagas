@@ -62,17 +62,19 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
 
 ## Acceso y publicación
 
-- Las jugadoras reciben por correo un código individual de ocho números,
-  agrupados de a cuatro, que vence a los siete días y se usa una sola vez.
-  Se limitan los intentos fallidos; los códigos largos ya emitidos siguen
-  vigentes hasta su vencimiento. La sesión se conserva en el navegador por hasta
-  180 días. La API valida la identidad antes de guardar o devolver registros.
+- Las jugadoras reciben por correo un código personal de ocho números,
+  agrupados de a cuatro. El mismo código sirve para volver a entrar desde otro
+  teléfono o navegador. Los códigos ya emitidos también son reutilizables; las
+  fechas de vencimiento anteriores dejan de aplicarse. Solo sirve el último
+  código enviado a cada jugadora, y se limitan los intentos fallidos. La sesión
+  se conserva en el navegador por hasta 180 días. La API valida la identidad
+  antes de guardar o devolver registros.
 - Gestión de MurcielApp consulta el plantel activo y muestra una vista previa
   con nombres, correos y estado. Ninguna destinataria aparece seleccionada al
   abrir la lista. Los envíos se procesan en lotes de cinco. Si una jugadora ya
-  activó el código y perdió la sesión del navegador, Gestión permite enviarle
-  uno nuevo al correo registrado. Se limita el reenvío a una vez cada diez
-  minutos; las sesiones existentes y los estímulos guardados se conservan.
+  perdió su código, Gestión permite cambiarlo y enviar uno nuevo al correo
+  registrado. El anterior deja de servir. Se limita el cambio a una vez cada
+  diez minutos; las sesiones existentes y los estímulos guardados se conservan.
 - Configurar `MURCIELAPP_ADMIN_KEY` como propiedad de script en el proyecto
   Base de datos de Apps Script, con al menos 32 caracteres aleatorios. No
   escribir la clave en el repositorio. Gestión de MurcielApp la usa para crear

@@ -142,7 +142,7 @@
       button.disabled = true;
       try {
         const result = await Murci.apiPost({ action: 'murcielapp_codigoPrueba', ...await adminAuth() });
-        document.getElementById('test-code').textContent = `Código de prueba para Santiago: ${result.code}. Vence en 24 horas.`;
+        document.getElementById('test-code').textContent = `Código personal de prueba para Santiago: ${result.code}. Guardalo para volver a entrar.`;
         recipientStatus.textContent = 'Código de prueba creado. No se envió ningún correo.';
       } catch (error) { adminError(error); }
       finally { button.disabled = false; }
@@ -176,17 +176,17 @@
           if (!person.problema && (person.estado === 'Activado' || person.estado === 'Código enviado')) {
             const recover = document.createElement('button');
             recover.type = 'button';
-            recover.textContent = 'Enviar nuevo código';
-            recover.setAttribute('aria-label', `Enviar nuevo código a ${person.nombre}`);
+            recover.textContent = 'Cambiar código';
+            recover.setAttribute('aria-label', `Cambiar y enviar el código personal de ${person.nombre}`);
             recover.addEventListener('click', async () => {
               recover.disabled = true;
-              recipientStatus.textContent = `Enviando nuevo código a ${person.nombre}…`;
+              recipientStatus.textContent = `Cambiando y enviando el código personal de ${person.nombre}…`;
               try {
                 const result = await Murci.apiPost({ action: 'murcielapp_reenviarCodigo', ...await adminAuth(), personaId: person.personaId });
                 if (result.estado !== 'enviado') throw new Error('No se pudo enviar el correo. Intentá nuevamente más tarde.');
                 person.estado = 'Código enviado';
                 info.textContent = [person.email, person.estado].join(' · ');
-                recipientStatus.textContent = `Se envió un nuevo código a ${person.nombre}.`;
+                recipientStatus.textContent = `Se envió un nuevo código personal a ${person.nombre}. El anterior ya no sirve.`;
               } catch (error) { adminError(error); recover.disabled = false; }
             });
             row.append(recover);

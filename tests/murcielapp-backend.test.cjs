@@ -54,7 +54,7 @@ function setup() {
   return { context, sent, players, cache, sheets };
 }
 
-test('códigos individuales, activación única, registros propios y reintento idempotente', () => {
+test('códigos personales reutilizables, registros propios y reintento idempotente', () => {
   const { context, sent, players } = setup();
   assert.throws(() => context.murcielapp_destinatarias({ adminKey: 'incorrecta' }), /administrativo/);
   const preview = context.murcielapp_destinatarias({ adminKey: 'a'.repeat(40) });
@@ -67,7 +67,7 @@ test('códigos individuales, activación única, registros propios y reintento i
   const code = sent[0].body.match(/\d{4} \d{4}/)[0];
   const session = context.murcielapp_activar({ code });
   assert.equal(session.nombre, 'Ana');
-  assert.throws(() => context.murcielapp_activar({ code }), /inválido o vencido/);
+  assert.equal(context.murcielapp_activar({ code }).nombre, 'Ana');
   assert.equal(context.murcielapp_sesion({ token: session.token }).nombre, 'Ana');
   const date = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
   const payload = { token: session.token, requestId: crypto.randomUUID(), fecha: date, tipo: 'fisico', subtipo: '', duracionMin: 90, sRPE: 5 };
@@ -97,7 +97,7 @@ test('sesión administrativa temporal, sin guardar la clave y revocable', () => 
   assert.throws(() => context.murcielapp_destinatarias({ adminToken: next.token }), /vencido/);
 });
 
-test('recupera acceso activado con un código nuevo sin perder la sesión anterior', () => {
+test('cambiar el código invalida el anterior sin perder la sesión ni los registros', () => {
   const { context, sheets, sent } = setup();
   const auth = { adminKey: 'a'.repeat(40) };
   context.murcielapp_enviarCodigos({ ...auth, personaIds: ['P1'] });
@@ -113,6 +113,7 @@ test('recupera acceso activado con un código nuevo sin perder la sesión anteri
   assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Código enviado');
   const secondCode = sent[1].body.match(/\d{4} \d{4}/)[0];
   assert.equal(context.murcielapp_activar({ code: secondCode }).nombre, 'Ana');
+  assert.throws(() => context.murcielapp_activar({ code: firstCode }), /inválido o vencido/);
   assert.equal(context.murcielapp_sesion({ token: firstSession.token }).nombre, 'Ana');
   assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Activado');
 });
@@ -123,6 +124,15 @@ test('código de Santiago queda separado del plantel y sin correo', () => {
   assert.equal(sent.length, 0);
   const session = context.murcielapp_activar({ code: result.code });
   assert.equal(context.murcielapp_sesion({ token: session.token }).nombre, 'Santiago');
+});
+
+test('un código ya usado y vencido en la versión anterior permite volver a entrar', () => {
+  const { context, sent, sheets } = setup();
+  context.murcielapp_enviarCodigos({ adminKey: 'a'.repeat(40), personaIds: ['P1'] });
+  const code = sent[0].body.match(/\d{4} \d{4}/)[0];
+  context.murcielapp_activar({ code });
+  sheets.get('MurcielApp_Accesos').getRange(2, 4).setValue('2020-01-01T00:00:00.000Z');
+  assert.equal(context.murcielapp_activar({ code }).nombre, 'Ana');
 });
 
 test('Otros se guarda sin intensidad y rechaza fechas futuras', () => {
@@ -138,12 +148,12 @@ test('Otros se guarda sin intensidad y rechaza fechas futuras', () => {
   assert.throws(() => context.murcielapp_registrarEstimulo({ ...entry, requestId: crypto.randomUUID(), fecha: '2099-01-01' }), /Fecha inválida/);
 });
 
-test('acepta códigos largos vigentes y limita intentos fallidos de códigos cortos', () => {
+test('acepta códigos anteriores vencidos y limita intentos fallidos', () => {
   const { context, cache, sheets } = setup();
   const legacy = 'A'.repeat(20);
   context.murcielapp_codigoPrueba({ adminKey: 'a'.repeat(40) });
   sheets.get('MurcielApp_Accesos').appendRow([
-    'TEST_SANTIAGO', '', context.murcielapp_hash_(legacy), new Date(Date.now() + 86400000).toISOString(), '', '', 'enviado',
+    'TEST_SANTIAGO', '', context.murcielapp_hash_(legacy), '2020-01-01T00:00:00.000Z', '', '', 'enviado',
   ]);
   assert.equal(context.murcielapp_activar({ code: legacy }).nombre, 'Santiago');
   cache.set('murcielapp_activation_failures', '39');
