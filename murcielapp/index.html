@@ -279,12 +279,12 @@
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
       <section id="activation-view" class="panel" aria-labelledby="activation-title">
-        <h3 id="activation-title" tabindex="-1">Activar mi acceso</h3>
+        <h3 id="activation-title" tabindex="-1">Entrar con mi código</h3>
         <p id="activation-help">Ingresá los 8 números que recibiste por correo, juntos o con espacio. Guardá el código: podés volver a usarlo en otro teléfono o navegador.</p>
         <form id="activation-form">
           <label class="form-label" for="activation-code">Código personal</label>
           <input class="form-input" id="activation-code" type="text" inputmode="numeric" autocomplete="one-time-code" aria-describedby="activation-help" spellcheck="false" required>
-          <button class="btn" type="submit" style="margin-top:12px">Activar</button>
+          <button class="btn" type="submit" style="margin-top:12px">Entrar</button>
         </form>
         <p id="activation-status" role="status" aria-live="polite"></p>
       </section>
@@ -795,7 +795,7 @@
         await Murci.apiPost({ action: 'murcielapp_sesion', token: accessToken });
         if (state.section === 'registrar') showRegisterForm();
       } catch (error) {
-        if (/Tu acceso venció|El acceso no está disponible|Activá tu acceso/.test(error.message || '')) {
+        if (/Tu acceso venció|El acceso no está disponible|Ingresá tu código personal/.test(error.message || '')) {
           accessToken = '';
           try { localStorage.removeItem(accessKey); } catch (_) {}
           if (state.section === 'registrar') showActivation();

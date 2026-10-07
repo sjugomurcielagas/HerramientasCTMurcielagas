@@ -240,7 +240,7 @@ function murcielapp_codigoPrueba(payload) {
 
 function murcielapp_activar(payload) {
   var code = String(payload.code || '').replace(/[\s-]/g, '').toUpperCase();
-  if (!/^\d{8}$/.test(code) && !/^[A-F0-9]{20}$/.test(code)) throw new Error('Código inválido o vencido.');
+  if (!/^\d{8}$/.test(code) && !/^[A-F0-9]{20}$/.test(code)) throw new Error('Código no válido. Revisá el último correo que recibiste.');
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
   try {
@@ -256,7 +256,7 @@ function murcielapp_activar(payload) {
     });
     if (!row) {
       cache.put('murcielapp_activation_failures', String(failures + 1), 600);
-      throw new Error('Código inválido o vencido.');
+      throw new Error('Código no válido. Revisá el último correo que recibiste.');
     }
     var player = String(row.Persona_ID) === 'TEST_SANTIAGO' ? { Persona_ID: 'TEST_SANTIAGO', Nombre: 'Santiago' } : murcielapp_activePlayers_().find(function(person) {
       return String(person[PERSONA_ID_COLUMN]) === String(row.Persona_ID) &&
@@ -276,7 +276,7 @@ function murcielapp_activar(payload) {
 
 function murcielapp_persona_(payload) {
   var token = String(payload.token || '');
-  if (!/^[A-Fa-f0-9]{64}$/.test(token)) throw new Error('Activá tu acceso para continuar.');
+  if (!/^[A-Fa-f0-9]{64}$/.test(token)) throw new Error('Ingresá tu código personal para continuar.');
   var hash = murcielapp_hash_(token);
   var session = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Sesiones', MURCI_SESSION_HEADERS_), MURCI_SESSION_HEADERS_)
     .find(function(row) { return String(row.TokenHash) === hash && new Date(row.Vence).getTime() > Date.now(); });

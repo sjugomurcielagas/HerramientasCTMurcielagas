@@ -113,7 +113,7 @@ test('cambiar el código invalida el anterior sin perder la sesión ni los regis
   assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Código enviado');
   const secondCode = sent[1].body.match(/\d{4} \d{4}/)[0];
   assert.equal(context.murcielapp_activar({ code: secondCode }).nombre, 'Ana');
-  assert.throws(() => context.murcielapp_activar({ code: firstCode }), /inválido o vencido/);
+  assert.throws(() => context.murcielapp_activar({ code: firstCode }), /no válido/);
   assert.equal(context.murcielapp_sesion({ token: firstSession.token }).nombre, 'Ana');
   assert.equal(context.murcielapp_destinatarias(auth)[0].estado, 'Activado');
 });
@@ -157,6 +157,6 @@ test('acepta códigos anteriores vencidos y limita intentos fallidos', () => {
   ]);
   assert.equal(context.murcielapp_activar({ code: legacy }).nombre, 'Santiago');
   cache.set('murcielapp_activation_failures', '39');
-  assert.throws(() => context.murcielapp_activar({ code: '0000 0000' }), /inválido o vencido/);
+  assert.throws(() => context.murcielapp_activar({ code: '0000 0000' }), /no válido/);
   assert.throws(() => context.murcielapp_activar({ code: '0000 0001' }), /Demasiados intentos/);
 });
