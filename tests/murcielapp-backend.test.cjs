@@ -81,6 +81,22 @@ test('códigos individuales, activación única, registros propios y reintento i
   assert.throws(() => context.murcielapp_sesion({ token: session.token }), /no está disponible/);
 });
 
+test('sesión administrativa temporal, sin guardar la clave y revocable', () => {
+  const { context, sheets } = setup();
+  assert.throws(() => context.murcielapp_adminSesion({ adminKey: 'incorrecta' }), /administrativo/);
+  const { token, expiresInDays } = context.murcielapp_adminSesion({ adminKey: 'a'.repeat(40) });
+  assert.match(token, /^[a-f0-9]{64}$/i);
+  assert.equal(expiresInDays, 30);
+  const stored = sheets.get('MurcielApp_AdminSesiones').getRange(2, 1, 1, 4).getValues()[0];
+  assert.notEqual(stored[0], token);
+  assert.equal(context.murcielapp_destinatarias({ adminToken: token }).length, 2);
+  assert.deepEqual({ ...context.murcielapp_adminCerrarSesion({ adminToken: token }) }, { cerrado: true });
+  assert.throws(() => context.murcielapp_destinatarias({ adminToken: token }), /vencido/);
+  const next = context.murcielapp_adminSesion({ adminKey: 'a'.repeat(40) });
+  sheets.get('MurcielApp_AdminSesiones').getRange(3, 2).setValue('2020-01-01T00:00:00.000Z');
+  assert.throws(() => context.murcielapp_destinatarias({ adminToken: next.token }), /vencido/);
+});
+
 test('código de Santiago queda separado del plantel y sin correo', () => {
   const { context, sent } = setup();
   const result = context.murcielapp_codigoPrueba({ adminKey: 'a'.repeat(40) });

@@ -1,6 +1,7 @@
 // MurcielApp: accesos y registros personales. Las rutinas siguen en su propia fuente.
 var MURCI_ACCESS_HEADERS_ = ['Persona_ID', 'Email', 'CodigoHash', 'CodigoVence', 'CodigoUsado', 'Enviado', 'Estado'];
 var MURCI_SESSION_HEADERS_ = ['TokenHash', 'Persona_ID', 'Vence', 'Creado'];
+var MURCI_ADMIN_SESSION_HEADERS_ = ['TokenHash', 'Vence', 'Creado', 'Revocado'];
 var MURCI_STIMULUS_HEADERS_ = ['ID', 'Persona_ID', 'Fecha', 'Tipo', 'Subtipo', 'DuracionMin', 'sRPE', 'Creado'];
 var MURCI_APP_URL_ = 'https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/murcielapp/';
 
@@ -60,11 +61,41 @@ function murcielapp_unusedCode_(rows) {
 }
 
 function murcielapp_admin_(payload) {
+  var token = String(payload && payload.adminToken || '');
+  if (token) {
+    if (!/^[a-fA-F0-9]{64}$/.test(token)) throw new Error('Acceso administrativo vencido. Ingresá la clave nuevamente.');
+    var sessions = murcielapp_rows_(murcielapp_sheet_('MurcielApp_AdminSesiones', MURCI_ADMIN_SESSION_HEADERS_), MURCI_ADMIN_SESSION_HEADERS_);
+    var hash = murcielapp_hash_(token);
+    if (!sessions.some(function(row) {
+      return String(row.TokenHash) === hash && !String(row.Revocado) && new Date(row.Vence).getTime() > Date.now();
+    })) throw new Error('Acceso administrativo vencido. Ingresá la clave nuevamente.');
+    return;
+  }
   var expected = PropertiesService.getScriptProperties().getProperty('MURCIELAPP_ADMIN_KEY');
   if (!expected || expected.length < 32) throw new Error('Falta configurar el acceso administrativo de MurcielApp.');
   if (!payload || murcielapp_hash_(payload.adminKey || '') !== murcielapp_hash_(expected)) {
     throw new Error('Acceso administrativo inválido.');
   }
+}
+
+function murcielapp_adminSesion(payload) {
+  murcielapp_admin_({ adminKey: payload && payload.adminKey });
+  var token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+  var now = Date.now();
+  murcielapp_sheet_('MurcielApp_AdminSesiones', MURCI_ADMIN_SESSION_HEADERS_).appendRow([
+    murcielapp_hash_(token), new Date(now + 30 * 86400000).toISOString(), new Date(now).toISOString(), ''
+  ]);
+  return { token: token, expiresInDays: 30 };
+}
+
+function murcielapp_adminCerrarSesion(payload) {
+  if (!payload || !/^[a-fA-F0-9]{64}$/.test(String(payload.adminToken || ''))) throw new Error('Acceso administrativo vencido. Ingresá la clave nuevamente.');
+  murcielapp_admin_(payload);
+  var hash = murcielapp_hash_(payload.adminToken);
+  var sheet = murcielapp_sheet_('MurcielApp_AdminSesiones', MURCI_ADMIN_SESSION_HEADERS_);
+  var row = murcielapp_rows_(sheet, MURCI_ADMIN_SESSION_HEADERS_).find(function(item) { return String(item.TokenHash) === hash; });
+  sheet.getRange(row._row, 4).setValue(new Date().toISOString());
+  return { cerrado: true };
 }
 
 function murcielapp_activePlayers_() {

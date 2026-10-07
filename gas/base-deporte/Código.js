@@ -2395,6 +2395,8 @@ function doPost(e) {
     break;
 
       // ── MURCIELAPP ──
+      case 'murcielapp_adminSesion': result = ok(true, murcielapp_adminSesion(payload)); break;
+      case 'murcielapp_adminCerrarSesion': result = ok(true, murcielapp_adminCerrarSesion(payload)); break;
       case 'murcielapp_destinatarias': result = ok(true, murcielapp_destinatarias(payload)); break;
       case 'murcielapp_enviarCodigos': result = ok(true, murcielapp_enviarCodigos(payload)); break;
       case 'murcielapp_codigoPrueba': result = ok(true, murcielapp_codigoPrueba(payload)); break;

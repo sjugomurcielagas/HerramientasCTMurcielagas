@@ -72,8 +72,11 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   abrir la lista. Los envíos se procesan en lotes de cinco.
 - Configurar `MURCIELAPP_ADMIN_KEY` como propiedad de script en el proyecto
   Base de datos de Apps Script, con al menos 32 caracteres aleatorios. No
-  escribir la clave en el repositorio. El administrador la ingresa en Gestión
-  de MurcielApp solo durante la visita.
+  escribir la clave en el repositorio. Gestión de MurcielApp la usa para crear
+  una sesión administrativa de 30 días. La opción «Recordar este dispositivo»
+  guarda únicamente el token temporal en ese navegador; «Cerrar sesión» lo
+  revoca en el servidor y lo borra del navegador. Sin marcar la opción, la
+  sesión dura solo mientras la página siga abierta.
 - Publicar una versión nueva de la aplicación web de Apps Script con el alcance
   `script.send_mail`. El Worker solo reenvía las acciones exactas de MurcielApp
   por POST al módulo Base de datos.
