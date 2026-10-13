@@ -335,3 +335,41 @@ function murcielapp_miSemana(payload) {
     .map(function(row) { return { id: row.ID, fecha: murcielapp_date_(row.Fecha), tipo: row.Tipo, subtipo: row.Subtipo, duracionMin: row.DuracionMin, sRPE: row.sRPE }; })
     .sort(function(a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
 }
+
+function murcielapp_adminEstimulos(payload) {
+  murcielapp_admin_(payload);
+  var desde = String(payload && payload.desde || '');
+  var hasta = String(payload && payload.hasta || '');
+  function validDate(value) {
+    var parsed = new Date(value + 'T12:00:00Z');
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(parsed.getTime()) &&
+      Utilities.formatDate(parsed, 'GMT', 'yyyy-MM-dd') === value;
+  }
+  if (!validDate(desde) || !validDate(hasta) || desde > hasta ||
+      (new Date(hasta + 'T12:00:00Z').getTime() - new Date(desde + 'T12:00:00Z').getTime()) > 366 * 86400000) {
+    throw new Error('Elegí un período válido de hasta un año.');
+  }
+  var people = {};
+  getAllRows_().forEach(function(person) {
+    var id = String(person[PERSONA_ID_COLUMN] || '').trim();
+    if (id) people[id] = [person.Apellido, person.Nombre].filter(Boolean).join(', ') || id;
+  });
+  var registros = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_), MURCI_STIMULUS_HEADERS_)
+    .filter(function(row) {
+      var fecha = murcielapp_date_(row.Fecha);
+      return String(row.Persona_ID) !== 'TEST_SANTIAGO' && fecha >= desde && fecha <= hasta;
+    })
+    .map(function(row) {
+      var id = String(row.Persona_ID || '');
+      return {
+        id: String(row.ID || ''), personaId: id, jugadora: people[id] || id,
+        fecha: murcielapp_date_(row.Fecha), tipo: String(row.Tipo || ''),
+        subtipo: String(row.Subtipo || ''), duracionMin: Number(row.DuracionMin) || 0,
+        sRPE: row.sRPE === '' || row.sRPE === null ? null : Number(row.sRPE),
+        creado: String(row.Creado || '')
+      };
+    });
+  if (registros.length > 5000) throw new Error('Hay demasiados registros para este período. Elegí uno más corto.');
+  registros.sort(function(a, b) { return b.fecha.localeCompare(a.fecha) || b.creado.localeCompare(a.creado); });
+  return registros;
+}

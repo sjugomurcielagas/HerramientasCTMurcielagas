@@ -2,7 +2,7 @@
 
 Esta carpeta contiene la primera prueba funcional de la experiencia para
 jugadoras. Permite consultar una rutina real por día o recorrerla paso a paso.
-Permite registrar estímulos con un acceso personal de un solo uso y consultar
+Permite registrar estímulos con un código personal reutilizable y consultar
 los registros recientes en Mi semana. El registro es una declaración de la
 jugadora; no infiere ejecución ni cumplimiento.
 
@@ -75,6 +75,12 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   perdió su código, Gestión permite cambiarlo y enviar uno nuevo al correo
   registrado. El anterior deja de servir. Se limita el cambio a una vez cada
   diez minutos; las sesiones existentes y los estímulos guardados se conservan.
+- Gestión también consulta los estímulos registrados durante un período de
+  hasta un año, identifica a cada jugadora y permite filtrar y descargar la
+  vista como CSV. La carga interna mostrada es duración en minutos multiplicada
+  por sRPE; «Otros» no aporta carga interna. Los registros de Santiago usados
+  para pruebas no aparecen en esta consulta. La vista no interpreta días sin
+  registros como entrenamientos incumplidos.
 - Configurar `MURCIELAPP_ADMIN_KEY` como propiedad de script en el proyecto
   Base de datos de Apps Script, con al menos 32 caracteres aleatorios. No
   escribir la clave en el repositorio. Gestión de MurcielApp la usa para crear

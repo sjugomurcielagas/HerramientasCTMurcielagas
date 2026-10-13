@@ -66,7 +66,8 @@ const MURCIELAPP_ACTIONS = new Set([
   'murcielapp_activar',
   'murcielapp_sesion',
   'murcielapp_registrarEstimulo',
-  'murcielapp_miSemana'
+  'murcielapp_miSemana',
+  'murcielapp_adminEstimulos'
 ]);
 
 const SITE_ACTIONS = [

@@ -135,6 +135,25 @@ test('un código ya usado y vencido en la versión anterior permite volver a ent
   assert.equal(context.murcielapp_activar({ code }).nombre, 'Ana');
 });
 
+test('la consulta administrativa devuelve registros identificados y excluye pruebas', () => {
+  const { context, sent } = setup();
+  const adminKey = 'a'.repeat(40);
+  const code = context.murcielapp_codigoPrueba({ adminKey }).code;
+  const testToken = context.murcielapp_activar({ code }).token;
+  const today = new Date().toISOString().slice(0, 10);
+  context.murcielapp_registrarEstimulo({ token: testToken, requestId: crypto.randomUUID(), fecha: today, tipo: 'fisico', subtipo: '', duracionMin: 20, sRPE: 4 });
+  context.murcielapp_enviarCodigos({ adminKey, personaIds: ['P1'] });
+  const playerToken = context.murcielapp_activar({ code: sent[0].body.match(/\d{4} \d{4}/)[0] }).token;
+  context.murcielapp_registrarEstimulo({ token: playerToken, requestId: crypto.randomUUID(), fecha: today, tipo: 'tecnico', subtipo: '', duracionMin: 30, sRPE: 5 });
+  assert.throws(() => context.murcielapp_adminEstimulos({ desde: today, hasta: today }), /administrativo/);
+  const rows = context.murcielapp_adminEstimulos({ adminKey, desde: today, hasta: today });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].jugadora, 'Pérez, Ana');
+  assert.equal(rows[0].duracionMin, 30);
+  assert.equal(rows[0].sRPE, 5);
+  assert.throws(() => context.murcielapp_adminEstimulos({ adminKey, desde: '2026-02-30', hasta: today }), /período válido/);
+});
+
 test('Otros se guarda sin intensidad y rechaza fechas futuras', () => {
   const { context } = setup();
   const code = context.murcielapp_codigoPrueba({ adminKey: 'a'.repeat(40) }).code;
