@@ -329,9 +329,15 @@ function murcielapp_registrarEstimulo(payload) {
 function murcielapp_miSemana(payload) {
   var person = murcielapp_persona_(payload);
   var today = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd');
-  var sevenDaysAgo = Utilities.formatDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd');
+  var periodo = String(payload && payload.periodo || 'actual');
+  if (periodo !== 'actual' && periodo !== 'anterior') throw new Error('Semana no válida.');
+  var monday = new Date(today + 'T12:00:00Z');
+  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7) - (periodo === 'anterior' ? 7 : 0));
+  var desde = monday.toISOString().slice(0, 10);
+  monday.setUTCDate(monday.getUTCDate() + 6);
+  var hasta = monday.toISOString().slice(0, 10);
   return murcielapp_rows_(murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_), MURCI_STIMULUS_HEADERS_)
-    .filter(function(row) { return String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]) && murcielapp_date_(row.Fecha) >= sevenDaysAgo && murcielapp_date_(row.Fecha) <= today; })
+    .filter(function(row) { return String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]) && murcielapp_date_(row.Fecha) >= desde && murcielapp_date_(row.Fecha) <= hasta; })
     .map(function(row) { return { id: row.ID, fecha: murcielapp_date_(row.Fecha), tipo: row.Tipo, subtipo: row.Subtipo, duracionMin: row.DuracionMin, sRPE: row.sRPE }; })
     .sort(function(a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
 }

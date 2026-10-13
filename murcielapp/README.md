@@ -49,7 +49,9 @@ publicación. La aplicación carga `rutina.json` y permite ver o descargar
   Siguiente lleva a la revisión de datos.
   Registrar guarda el estímulo declarado en la base, asociado a la jugadora.
   Mi semana aparece a la derecha como botón secundario siempre disponible dentro
-  de Registrar estímulo y muestra sus registros de los últimos siete días.
+  de Registrar estímulo. Permite consultar la semana actual o la anterior,
+  completas de lunes a domingo, con un resumen por tipo y duración. Los lunes
+  abre la semana anterior. Sirve de referencia; no envía el reporte semanal.
 - Penales y Mi perfil quedan identificados como próximos módulos.
 - Inicio está siempre disponible en el encabezado y vuelve directamente a la
   pantalla inicial de Entrenar. Inicio y Accesibilidad usan íconos compactos en

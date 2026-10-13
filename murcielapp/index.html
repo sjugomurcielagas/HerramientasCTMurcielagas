@@ -372,7 +372,13 @@
       </section>
       <section id="my-week-view" class="panel" aria-labelledby="my-week-title" hidden>
         <h3 id="my-week-title" tabindex="-1">Mi semana</h3>
+        <div class="actions" role="group" aria-label="Semana para consultar">
+          <button class="btn secondary" id="my-week-current" type="button" aria-pressed="true">Esta semana</button>
+          <button class="btn secondary" id="my-week-previous" type="button" aria-pressed="false">Semana anterior</button>
+        </div>
+        <p id="my-week-period"></p>
         <div id="my-week-list" role="status" aria-live="polite">Cargando tus registros…</div>
+        <p>Mi semana muestra tus registros. No envía el reporte semanal.</p>
         <button class="btn secondary" id="close-my-week" type="button">Volver a Registrar estímulo</button>
       </section>
     </section>
@@ -822,20 +828,40 @@
       finally { button.disabled = false; }
     }
 
-    async function showMyWeek() {
+    function weekDates(periodo) {
+      const monday = new Date();
+      monday.setHours(12, 0, 0, 0);
+      monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - (periodo === 'anterior' ? 7 : 0));
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+      return `${monday.toLocaleDateString('es-AR')} al ${sunday.toLocaleDateString('es-AR')}`;
+    }
+
+    async function showMyWeek(periodo) {
       if (!accessToken) { showActivation(); return; }
+      periodo = periodo === 'anterior' ? 'anterior' : 'actual';
       byId('register-form-view').hidden = true;
       byId('register-summary-view').hidden = true;
       byId('register-done-view').hidden = true;
       byId('my-week-view').hidden = false;
       byId('my-week-title').focus();
+      byId('my-week-current').setAttribute('aria-pressed', String(periodo === 'actual'));
+      byId('my-week-previous').setAttribute('aria-pressed', String(periodo === 'anterior'));
+      byId('my-week-period').textContent = weekDates(periodo);
       const list = byId('my-week-list');
       list.replaceChildren();
       list.textContent = 'Cargando tus registros…';
       try {
-        const items = await Murci.apiPost({ action: 'murcielapp_miSemana', token: accessToken });
+        const items = await Murci.apiPost({ action: 'murcielapp_miSemana', token: accessToken, periodo });
         list.replaceChildren();
-        if (!items.length) { list.textContent = 'No hay estímulos registrados en los últimos siete días.'; return; }
+        if (!items.length) { list.textContent = 'No hay estímulos registrados en esta semana.'; return; }
+        const fisicos = items.filter(item => item.tipo === 'fisico').length;
+        const tecnicos = items.filter(item => item.tipo === 'tecnico').length;
+        const otros = items.filter(item => item.tipo === 'otros').length;
+        const minutos = items.reduce((sum, item) => sum + Number(item.duracionMin || 0), 0);
+        const summary = document.createElement('p');
+        summary.textContent = `${items.length} estímulos registrados: ${fisicos} físicos, ${tecnicos} técnico-tácticos y ${otros} otros. Duración total: ${formatDuration(minutos)}.`;
+        list.append(summary);
         const ul = document.createElement('ul');
         items.forEach(item => {
           const li = document.createElement('li');
@@ -1021,7 +1047,9 @@
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
     byId('home-button').addEventListener('click', () => showSection('entrenar'));
-    byId('open-my-week').addEventListener('click', showMyWeek);
+    byId('open-my-week').addEventListener('click', () => showMyWeek(new Date().getDay() === 1 ? 'anterior' : 'actual'));
+    byId('my-week-current').addEventListener('click', () => showMyWeek('actual'));
+    byId('my-week-previous').addEventListener('click', () => showMyWeek('anterior'));
     byId('close-my-week').addEventListener('click', showRegisterForm);
     for (let value = 0; value <= 10; value++) {
       const label = document.createElement('label');

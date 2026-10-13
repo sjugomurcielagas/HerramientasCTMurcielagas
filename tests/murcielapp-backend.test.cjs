@@ -69,7 +69,7 @@ test('códigos personales reutilizables, registros propios y reintento idempoten
   assert.equal(session.nombre, 'Ana');
   assert.equal(context.murcielapp_activar({ code }).nombre, 'Ana');
   assert.equal(context.murcielapp_sesion({ token: session.token }).nombre, 'Ana');
-  const date = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  const date = new Date().toISOString().slice(0, 10);
   const payload = { token: session.token, requestId: crypto.randomUUID(), fecha: date, tipo: 'fisico', subtipo: '', duracionMin: 90, sRPE: 5 };
   assert.equal(context.murcielapp_registrarEstimulo(payload).yaRegistrado, false);
   assert.equal(context.murcielapp_registrarEstimulo(payload).yaRegistrado, true);
@@ -79,6 +79,31 @@ test('códigos personales reutilizables, registros propios y reintento idempoten
   assert.equal(context.murcielapp_miSemana({ token: second.token }).length, 0);
   players[0].Activo = 'No';
   assert.throws(() => context.murcielapp_sesion({ token: session.token }), /no está disponible/);
+});
+
+test('Mi semana permite consultar completa la semana anterior', () => {
+  const { context, sent } = setup();
+  context.murcielapp_enviarCodigos({ adminKey: 'a'.repeat(40), personaIds: ['P1'] });
+  const session = context.murcielapp_activar({ code: sent[0].body.match(/\d{4} \d{4}/)[0] });
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date()).map(part => [part.type, part.value]));
+  const monday = new Date(`${parts.year}-${parts.month}-${parts.day}T12:00:00Z`);
+  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+  const dateAt = offset => {
+    const date = new Date(monday);
+    date.setUTCDate(date.getUTCDate() + offset);
+    return date.toISOString().slice(0, 10);
+  };
+  for (const offset of [-7, -1, 0]) {
+    context.murcielapp_registrarEstimulo({
+      token: session.token, requestId: crypto.randomUUID(), fecha: dateAt(offset),
+      tipo: 'fisico', subtipo: '', duracionMin: 60, sRPE: 4,
+    });
+  }
+  assert.equal(context.murcielapp_miSemana({ token: session.token, periodo: 'anterior' }).length, 2);
+  assert.equal(context.murcielapp_miSemana({ token: session.token, periodo: 'actual' }).length, 1);
+  assert.throws(() => context.murcielapp_miSemana({ token: session.token, periodo: 'cualquiera' }), /Semana no válida/);
 });
 
 test('sesión administrativa temporal, sin guardar la clave y revocable', () => {
