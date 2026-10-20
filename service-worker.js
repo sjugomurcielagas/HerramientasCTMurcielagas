@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ct-murcielagas-pwa-v8';
+const CACHE_NAME = 'ct-murcielagas-pwa-v9';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const RUNTIME_CACHE = `${CACHE_NAME}-runtime`;
 const APP_SHELL = [
@@ -7,7 +7,7 @@ const APP_SHELL = [
   './tactica/',
   './tactica/index.html',
   './manifest.json',
-  './assets/config.js?v=20260525021325',
+  './assets/config.js?v=20261020',
   './assets/logo-murcielagas.webp',
   './assets/fadec-logo.webp',
   './assets/pwa-icon-192.png',
@@ -44,7 +44,7 @@ function isAppsScriptRequest(request) {
 function isStaticAsset(request) {
   const url = new URL(request.url);
   if (request.mode === 'navigate') return false;
-  return ['style:', 'script:', 'image:', 'font:'].includes(`${request.destination}:`) || (url.origin === self.location.origin && request.destination !== 'document');
+  return url.origin === self.location.origin && ['style', 'script', 'image', 'font'].includes(request.destination);
 }
 
 self.addEventListener('fetch', event => {
@@ -53,18 +53,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   if (isAppsScriptRequest(request)) {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone)).catch(() => {});
-          return response;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          return cached || Response.error();
-        })
-    );
+    event.respondWith(fetch(request, { cache: 'no-store' }));
     return;
   }
 

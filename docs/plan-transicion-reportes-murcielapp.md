@@ -1,6 +1,8 @@
 # Transición de Reportes a registros diarios de MurcielApp
 
-Estado: plan de trabajo. Fecha de referencia: 13 de octubre de 2026.
+Estado: implementación preparada en rama; publicación coordinada y cotejo con la planilla real pendientes. Actualizado: 20 de octubre de 2026.
+
+Ver [implementación, comprobaciones y publicación](puesta-en-marcha-reportes-murcielapp.md). La nueva vista reutiliza el lector privado y agrega el plantel mínimo, sin copiar los registros a otra fuente. La edición y eliminación se reflejan en Reportes y Mi semana. El informe con IA de registros diarios se mantiene pendiente; los informes existentes quedan dentro del histórico.
 
 ## Decisión operativa
 
@@ -29,7 +31,7 @@ Reutilizar primero `murcielapp_adminEstimulos`, que ya lee `MurcielApp_Estimulos
 
 Comprobar: autorización obligatoria; Santiago de prueba excluido; límites de rango y volumen; fechas y nombres válidos; respuesta explícita ante errores; ningún dato sensible en URL o caché pública. Revisar paginación o agregación en servidor antes de permitir períodos mayores a los límites actuales de 366 días o 5000 filas.
 
-**Terminado cuando:** la lectura privada coincide con la hoja fuente y la vista actual de Gestión para un mismo rango, sin filas duplicadas ni jugadoras mal vinculadas.
+**Terminado cuando:** la lectura privada de Reportes coincide con la hoja fuente para un mismo rango, sin filas duplicadas ni jugadoras mal vinculadas.
 
 ### 2. Modelo semanal diario y corte histórico
 
@@ -51,7 +53,7 @@ Adaptar las plantillas semanal, periódica e individual, y el informe con IA, al
 
 ### 5. Verificación y puesta en marcha
 
-Comparar con datos reales el panel de Gestión, la hoja `MurcielApp_Estimulos` y Reportes. Probar el corte con la carga final del lunes 19 antes de considerarlo cerrado. Mantener el formulario anterior accesible solo para consultar el historial y retirar sus instrucciones de carga una vez verificada la última recepción. Confirmar que los registros de las jugadoras siguen visibles en «Mi semana».
+Comparar con datos reales la hoja `MurcielApp_Estimulos`, sus correcciones y Reportes. Probar el corte con la carga final del lunes 19 antes de considerarlo cerrado. Mantener el formulario anterior accesible solo para consultar el historial y retirar sus instrucciones de carga una vez verificada la última recepción. Confirmar que los registros de las jugadoras siguen visibles en «Mi semana».
 
 **Terminado cuando:** Reportes muestra el historial anterior, la semana de transición sin doble conteo y la nueva semana diaria; el CT puede generar y exportar un informe fiable desde una sola pantalla.
 
@@ -63,7 +65,7 @@ Comparar con datos reales el panel de Gestión, la hoja `MurcielApp_Estimulos` y
 - `gas/reportes/Código.js`: revisar la generación de informes y auditoría ligada al esquema semanal anterior.
 - `tests/`: bordes temporales, exclusión de Santiago, doble conteo, agregados y control de acceso.
 
-La pantalla actual de `gestion-murcielapp/` conserva su función de revisión administrativa. La fuente de verdad permanece en las hojas existentes; Reportes consulta y analiza, sin crear una copia persistente de los estímulos.
+La pantalla de `gestion-murcielapp/` administra accesos e invitaciones y enlaza a Reportes de entrenamiento; no duplica el análisis del CT. La fuente de verdad permanece en las hojas existentes; Reportes consulta y analiza, sin crear una copia persistente de los estímulos.
 
 ## Orden para esta transición
 

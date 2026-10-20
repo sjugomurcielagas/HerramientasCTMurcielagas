@@ -17,6 +17,9 @@ for (let i = 2; i < process.argv.length; i += 1) {
 const apiBase = args.get('api-base') || process.env.PARTIDOS_VERIFY_API_BASE || DEFAULT_API_BASE;
 const partidoId = args.get('partido-id') || process.env.PARTIDOS_VERIFY_PARTIDO_ID || '';
 const writeBatch = args.get('write-batch') === '1' || process.env.PARTIDOS_VERIFY_WRITE_BATCH === '1';
+const adminToken = process.env.PARTIDOS_VERIFY_ADMIN_TOKEN || '';
+if (!partidoId) throw new Error('Indicá --partido-id antes de consultar las acciones.');
+if (!adminToken) throw new Error('Configurá PARTIDOS_VERIFY_ADMIN_TOKEN con una sesión administrativa vigente.');
 
 function apiUrl(action, params = {}) {
   const url = new URL(apiBase);
@@ -28,19 +31,14 @@ function apiUrl(action, params = {}) {
 }
 
 async function readAction(action, params = {}) {
-  const response = await fetch(apiUrl(action, params), { headers: { Accept: 'application/json' } });
-  const data = await response.json();
-  if (!response.ok || !data.ok) {
-    throw new Error(`${action}: ${response.status} ${data.error || 'respuesta no ok'}`);
-  }
-  return data.data;
+  return postAction({ ...params, action });
 }
 
 async function postAction(payload) {
   const response = await fetch(apiBase, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ ...payload, adminToken })
   });
   const data = await response.json();
   if (!response.ok || !data.ok) {

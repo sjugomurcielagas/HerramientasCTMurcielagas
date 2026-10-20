@@ -1,6 +1,6 @@
 const API_BASE_URL = 'https://murcielagas-reportes-api.sjugomurcielagas.workers.dev';
-const UI_VERSION = '2026.07.13.1';
-const UI_DEPLOYED_AT = 'cumpleanios-semana';
+const UI_VERSION = '2026.10.20.1';
+const UI_DEPLOYED_AT = 'reportes-murcielapp';
 
 (function ensureFreshUiVersion(global) {
   if (!global.document || !global.location || !global.fetch) return;
@@ -66,6 +66,26 @@ const UI_DEPLOYED_AT = 'cumpleanios-semana';
   const Murci = global.Murci || (global.Murci = {});
   const pendingGets = {};
   const CACHE_PREFIX = 'murci_api_cache:';
+  const memoryCache = new Map();
+  const adminStorageKey = 'murcielapp.adminSession.v1';
+  let activeAdminToken = null;
+  // Retira copias privadas persistidas por versiones anteriores del cliente.
+  try {
+    Object.keys(global.localStorage).filter(key => key.startsWith(CACHE_PREFIX)).forEach(key => global.localStorage.removeItem(key));
+  } catch (_) {}
+  Murci.adminToken = function () {
+    if (activeAdminToken !== null) return activeAdminToken;
+    try { return global.localStorage.getItem(adminStorageKey) || ''; } catch (_) { return ''; }
+  };
+  Murci.useAdminSession = function (token) {
+    activeAdminToken = String(token || '');
+    memoryCache.clear();
+    plantelCache = null;
+    plantelPromise = null;
+  };
+  if (global.addEventListener) global.addEventListener('storage', event => {
+    if (event.key === adminStorageKey) Murci.useAdminSession(event.newValue || '');
+  });
   Murci.uiVersion = UI_VERSION;
 
   Murci.apiBaseUrl = API_BASE_URL;
@@ -91,36 +111,38 @@ const UI_DEPLOYED_AT = 'cumpleanios-semana';
       throw new Error(preview ? `Error del servidor: ${preview}` : 'Error del servidor: respuesta no JSON');
     }
     if (!data || !data.ok) {
+      if (/Acceso administrativo (vencido|inválido)/.test(data?.error || '')) {
+        Murci.useAdminSession('');
+        try { global.localStorage.removeItem(adminStorageKey); global.localStorage.removeItem('mrcl_auth'); global.localStorage.removeItem('mrcl_auth_ts'); } catch (_) {}
+      }
       throw new Error(data?.error || 'Error del servidor');
     }
     return Object.prototype.hasOwnProperty.call(data, 'data') ? data.data : data;
   };
 
   Murci.apiGet = async function apiGet(action, params = {}, apiUrl = API_BASE_URL) {
-    const response = await fetch(Murci.buildApiUrl(action, params, apiUrl), {
-      headers: { Accept: 'application/json' }
-    });
-    return Murci.parseApiResponse(response);
+    return Murci.apiPost({ ...params, action }, apiUrl);
   };
 
   Murci.apiPost = async function apiPost(payload, apiUrl = API_BASE_URL) {
+    const body = { ...(payload || {}) };
+    if (!String(body.action || '').startsWith('murcielapp_') && !body.adminToken) body.adminToken = Murci.adminToken();
     const response = await fetch(apiUrl, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json'
       },
-      body: JSON.stringify(payload || {})
+      body: JSON.stringify(body)
     });
     return Murci.parseApiResponse(response);
   };
 
   Murci.cacheGet = function cacheGet(key, ttlMs = 0) {
-    if (!key || !global.localStorage) return null;
+    if (!key) return null;
     try {
-      const raw = global.localStorage.getItem(CACHE_PREFIX + key);
-      if (!raw) return null;
-      const entry = JSON.parse(raw);
+      const entry = memoryCache.get(Murci.adminToken() + '|' + key);
       if (!entry || typeof entry !== 'object' || !Object.prototype.hasOwnProperty.call(entry, 'data')) return null;
       if (ttlMs > 0 && entry.ts && (Date.now() - entry.ts) > ttlMs) return null;
       return entry.data;
@@ -130,25 +152,12 @@ const UI_DEPLOYED_AT = 'cumpleanios-semana';
   };
 
   Murci.cacheSet = function cacheSet(key, data) {
-    if (!key || !global.localStorage) return data;
-    try {
-      global.localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
-        ts: Date.now(),
-        data
-      }));
-    } catch {
-      // Cache best-effort.
-    }
+    if (key) memoryCache.set(Murci.adminToken() + '|' + key, { ts: Date.now(), data });
     return data;
   };
 
   Murci.cacheRemove = function cacheRemove(key) {
-    if (!key || !global.localStorage) return;
-    try {
-      global.localStorage.removeItem(CACHE_PREFIX + key);
-    } catch {
-      // noop
-    }
+    memoryCache.delete(Murci.adminToken() + '|' + key);
   };
 
   Murci.apiGetCached = async function apiGetCached(action, params = {}, options = {}, apiUrl = API_BASE_URL) {
@@ -156,27 +165,32 @@ const UI_DEPLOYED_AT = 'cumpleanios-semana';
     const forceRefresh = !!options.forceRefresh;
     const staleOnError = !!options.staleOnError;
     const cacheKey = options.cacheKey || `${apiUrl}|${action}|${JSON.stringify(params || {})}`;
+    const authToken = Murci.adminToken();
+    const pendingKey = authToken + '|' + cacheKey;
 
     if (!forceRefresh) {
       const cached = Murci.cacheGet(cacheKey, ttlMs);
       if (cached !== null) return cached;
-      if (pendingGets[cacheKey]) return pendingGets[cacheKey];
+      if (pendingGets[pendingKey]) return pendingGets[pendingKey];
     }
 
     const promise = Murci.apiGet(action, params, apiUrl)
-      .then(data => Murci.cacheSet(cacheKey, data))
+      .then(data => {
+        if (authToken !== Murci.adminToken()) throw new Error('La sesión cambió durante la consulta. Actualizá los datos.');
+        return Murci.cacheSet(cacheKey, data);
+      })
       .catch(error => {
-        if (staleOnError) {
+        if (staleOnError && authToken === Murci.adminToken()) {
           const stale = Murci.cacheGet(cacheKey, 0);
           if (stale !== null) return stale;
         }
         throw error;
       })
       .finally(() => {
-        delete pendingGets[cacheKey];
+        delete pendingGets[pendingKey];
       });
 
-    pendingGets[cacheKey] = promise;
+    pendingGets[pendingKey] = promise;
     return promise;
   };
 
@@ -256,27 +270,15 @@ const UI_DEPLOYED_AT = 'cumpleanios-semana';
     if (Array.isArray(plantelCache)) return plantelCache;
     if (plantelPromise) return plantelPromise;
 
-    plantelPromise = (async () => {
-      try {
-        const data = await Murci.apiGet('site_getPlantel', {}, API_BASE_URL);
-        const rawList = Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : [];
-        plantelCache = rawList.map(normalizarPlantelItem_);
-        Murci.cacheSet(`${API_BASE_URL}|site_getPlantel|{}`, plantelCache);
-      } catch (error) {
-        const stale = Murci.cacheGet(`${API_BASE_URL}|site_getPlantel|{}`, 0);
-        if (Array.isArray(stale)) {
-          plantelCache = stale.map(normalizarPlantelItem_);
-        } else {
-          console.error('[Murci] No se pudo obtener el plantel can\u00f3nico desde site_getPlantel.', error);
-          plantelCache = [];
-        }
-      } finally {
-        plantelPromise = null;
-      }
-
+    const authToken = Murci.adminToken();
+    const pending = Murci.apiGet('site_getPlantel', {}, API_BASE_URL).then(data => {
+      if (authToken !== Murci.adminToken()) throw new Error('La sesión cambió durante la consulta. Actualizá los datos.');
+      const rawList = Array.isArray(data?.plantel) ? data.plantel : Array.isArray(data) ? data : null;
+      if (!rawList) throw new Error('La base no devolvió un plantel válido.');
+      plantelCache = rawList.map(normalizarPlantelItem_);
       return plantelCache;
-    })();
-
+    }).finally(() => { if (plantelPromise === pending) plantelPromise = null; });
+    plantelPromise = pending;
     return plantelPromise;
   }
 

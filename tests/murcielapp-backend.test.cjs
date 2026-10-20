@@ -73,10 +73,14 @@ test('códigos personales reutilizables, registros propios y reintento idempoten
   const payload = { token: session.token, requestId: crypto.randomUUID(), fecha: date, tipo: 'fisico', subtipo: '', duracionMin: 90, sRPE: 5 };
   assert.equal(context.murcielapp_registrarEstimulo(payload).yaRegistrado, false);
   assert.equal(context.murcielapp_registrarEstimulo(payload).yaRegistrado, true);
+  assert.throws(() => context.murcielapp_registrarEstimulo({ ...payload, duracionMin: 120 }), /otros datos/);
   assert.equal(context.murcielapp_miSemana({ token: session.token }).length, 1);
   const secondCode = sent[1].body.match(/\d{4} \d{4}/)[0];
   const second = context.murcielapp_activar({ code: secondCode });
   assert.equal(context.murcielapp_miSemana({ token: second.token }).length, 0);
+  players[0].Estado_Convocatoria = 'Baja';
+  assert.throws(() => context.murcielapp_sesion({ token: session.token }), /no está disponible/);
+  players[0].Estado_Convocatoria = '';
   players[0].Activo = 'No';
   assert.throws(() => context.murcielapp_sesion({ token: session.token }), /no está disponible/);
 });
@@ -203,4 +207,49 @@ test('acepta códigos anteriores vencidos y limita intentos fallidos', () => {
   cache.set('murcielapp_activation_failures', '39');
   assert.throws(() => context.murcielapp_activar({ code: '0000 0000' }), /no válido/);
   assert.throws(() => context.murcielapp_activar({ code: '0000 0001' }), /Demasiados intentos/);
+  assert.equal(context.murcielapp_activar({ code: legacy }).nombre, 'Santiago');
+});
+
+test('editar y eliminar corrigen los totales, conservan originales y son idempotentes', () => {
+  const { context, sheets, sent } = setup();
+  const admin = { adminKey: 'a'.repeat(40) };
+  context.murcielapp_enviarCodigos({ ...admin, personaIds: ['P1', 'P2'] });
+  const token = context.murcielapp_activar({ code: sent[0].body.match(/\d{4} \d{4}/)[0] }).token;
+  const otherToken = context.murcielapp_activar({ code: sent[1].body.match(/\d{4} \d{4}/)[0] }).token;
+  const date = new Date().toISOString().slice(0, 10);
+  const entry = { token, requestId: crypto.randomUUID(), fecha: date, tipo: 'tecnico', subtipo: '', duracionMin: 110, sRPE: 5 };
+  context.murcielapp_registrarEstimulo(entry);
+  const edit = { ...entry, id: entry.requestId, revision: 0, requestId: crypto.randomUUID(), duracionMin: 80 };
+  assert.throws(() => context.murcielapp_editarEstimulo({ ...edit, token: otherToken }), /no está disponible/);
+  assert.throws(() => context.murcielapp_editarEstimulo({ ...edit, duracionMin: -1 }), /Duración inválida/);
+  assert.equal(context.murcielapp_editarEstimulo(edit).revision, 1);
+  assert.equal(context.murcielapp_editarEstimulo(edit).yaProcesado, true);
+  assert.throws(() => context.murcielapp_editarEstimulo({ ...edit, duracionMin: 90 }), /otra corrección/);
+  assert.throws(() => context.murcielapp_editarEstimulo({ ...edit, requestId: crypto.randomUUID() }), /cambió/);
+  let rows = context.murcielapp_adminEstimulos({ ...admin, desde: date, hasta: date });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].duracionMin, 80);
+  assert.equal(rows[0].revision, 1);
+  assert.equal(sheets.get('MurcielApp_Estimulos').getRange(2, 6).getValues()[0][0], 110);
+  const deletion = { token, id: entry.requestId, revision: 1, requestId: crypto.randomUUID() };
+  assert.throws(() => context.murcielapp_eliminarEstimulo({ ...deletion, token: otherToken }), /no está disponible/);
+  assert.equal(context.murcielapp_eliminarEstimulo(deletion).revision, 2);
+  assert.equal(context.murcielapp_eliminarEstimulo(deletion).yaProcesado, true);
+  assert.equal(context.murcielapp_adminEstimulos({ ...admin, desde: date, hasta: date }).length, 0);
+  assert.equal(context.murcielapp_miSemana({ token }).length, 0);
+  // Reintentar la creación original no resucita lo eliminado.
+  assert.equal(context.murcielapp_registrarEstimulo(entry).yaRegistrado, true);
+  assert.equal(context.murcielapp_adminEstimulos({ ...admin, desde: date, hasta: date }).length, 0);
+});
+
+test('reportes usa identidad privada, excluye pruebas e incluye plantel sin registros', () => {
+  const { context } = setup();
+  const date = new Date().toISOString().slice(0, 10);
+  assert.throws(() => context.murcielapp_reporteSemanal({ desde: date, hasta: date }), /administrativo/);
+  const report = context.murcielapp_reporteSemanal({ adminKey: 'a'.repeat(40), desde: date, hasta: date });
+  assert.equal(report.plantel.length, 2);
+  assert.equal(report.plantel[0].personaId, 'P1');
+  assert.equal(report.plantel[0].email, undefined);
+  assert.equal(report.registros.length, 0);
+  assert.equal(report.corte, '2026-10-19');
 });

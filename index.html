@@ -189,7 +189,7 @@
     <div class="eyebrow">Herramientas del plantel</div>
     <h2>Las Murcielagas</h2>
     <p class="login-sub">Acceso exclusivo para el cuerpo tecnico.</p>
-    <input id="passInput" type="password" placeholder="Contrasena del equipo" autocomplete="current-password" class="login-input">
+    <input id="passInput" type="password" aria-label="Clave administrativa de MurcielApp" placeholder="Clave administrativa de MurcielApp" autocomplete="current-password" class="login-input">
     <button id="loginBtn" class="login-btn">Ingresar</button>
     <div id="loginStatus" class="login-status"></div>
   </section>
@@ -229,10 +229,10 @@
     </section>
 
     <section class="grid" aria-label="Herramientas disponibles">
-      <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento"><div><div class="tool-label">Seguimiento</div><div class="tool-title">Reportes de entrenamiento</div><p class="tool-desc">Control semanal, analisis periodicos e informes internos.</p></div></a>
+      <a class="tool-card" href="./reportes/" aria-label="Abrir reportes de entrenamiento"><div><div class="tool-label">Seguimiento</div><div class="tool-title">Reportes de entrenamiento</div><p class="tool-desc">Análisis diario y semanal del equipo y de cada jugadora, con historial e informes.</p></div></a>
       <a class="tool-card" href="./tactica/" aria-label="Abrir tablero tactico"><div><div class="tool-label">Cancha y juego</div><div class="tool-title">Tablero tactico</div><p class="tool-desc">Movimientos, acciones y organizacion tactica.</p></div></a>
       <a class="tool-card" href="./base-datos/" aria-label="Abrir base de datos del plantel"><div><div class="tool-label">Gestion del plantel</div><div class="tool-title">Base de datos</div><p class="tool-desc">Datos, documentacion, fotos y registros del plantel.</p></div></a>
-      <a class="tool-card" href="./gestion-murcielapp/" aria-label="Abrir gestión de MurcielApp"><div><div class="tool-label">Aplicación de jugadoras</div><div class="tool-title">MurcielApp</div><p class="tool-desc">Accesos del plantel y vínculos con rutinas, registros y penales.</p></div></a>
+      <a class="tool-card" href="./gestion-murcielapp/" aria-label="Abrir gestión de MurcielApp"><div><div class="tool-label">Aplicación de jugadoras</div><div class="tool-title">Gestión de MurcielApp</div><p class="tool-desc">Administración de accesos, códigos e invitaciones de las jugadoras.</p></div></a>
       <a class="tool-card" href="./concentraciones/" aria-label="Abrir concentraciones"><div><div class="tool-label">Planificacion</div><div class="tool-title">Concentraciones</div><p class="tool-desc">Planificacion, convocatoria y seguimiento de actividades por dia.</p></div></a>
       <a class="tool-card" href="./antidoping/" aria-label="Abrir modulo antidoping"><div><div class="tool-label">Salud y control</div><div class="tool-title">Antidoping</div><p class="tool-desc">Consulta de medicamentos, estado y seguimiento de TUE.</p></div></a>
       <a class="tool-card" href="./analisis/" aria-label="Abrir modulo de analisis"><div><div class="tool-label">Rendimiento</div><div class="tool-title">Analisis</div><p class="tool-desc">Penales, partidos y estadisticas de rendimiento del plantel.</p></div></a>
@@ -265,7 +265,7 @@
     const homeAlertState = { sections: [], total: 0, ready: false, loading: false, open: false };
     let swRegistration = null;
     let pendingUpdateReload = false;
-    function authValida(){if(localStorage.getItem('mrcl_auth')!=='1')return false;const ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(!ts)return false;return(Date.now()-ts)<AUTH_DAYS*24*60*60*1000}
+    function authValida(){if(localStorage.getItem('mrcl_auth')!=='1'||!/^[a-f0-9]{64}$/i.test(localStorage.getItem('murcielapp.adminSession.v1')||''))return false;const ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(!ts)return false;return(Date.now()-ts)<AUTH_DAYS*24*60*60*1000}
     function limpiarAuth(){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts')}
     function escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
     function setAppVisible(visible){document.getElementById('loginView').classList.toggle('hidden',!!visible);document.getElementById('appContent').classList.toggle('hidden',!visible);if(visible)loadHomeAlerts()}
@@ -279,7 +279,18 @@
     function showUpdateToast(){if(!updateToast)return;updateToast.classList.remove('hidden')}
     function hideUpdateToast(){if(!updateToast)return;updateToast.classList.add('hidden')}
     async function applyUpdate(){if(!swRegistration){window.location.reload();return}const waiting=swRegistration.waiting;if(waiting){pendingUpdateReload=true;hideUpdateToast();waiting.postMessage({type:'SKIP_WAITING'});return}if(swRegistration.installing){pendingUpdateReload=true;hideUpdateToast();return}window.location.reload()}
-    async function login(){const pass=document.getElementById('passInput').value.trim(),st=document.getElementById('loginStatus');if(!pass)return;st.textContent='Verificando...';st.className='login-status';try{const ok=Murci&&Murci.apiPost?await Murci.apiPost({action:'base_verificarPassword',password:pass},API_URL):await (async()=>{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({action:'base_verificarPassword',password:pass})});const t=await r.text();let d;try{d=JSON.parse(t)}catch{throw new Error('Respuesta inesperada')}if(!d||!d.ok)throw new Error(d?.error||'Error de API');return d.data})();if(ok!==true){st.textContent='Contrasena incorrecta.';st.className='login-status error';return}localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));setAppVisible(true)}catch(err){st.textContent='Error: '+(err&&err.message?err.message:'No se pudo validar');st.className='login-status error'}}
+    async function login(){
+      const input=document.getElementById('passInput'),pass=input.value.trim(),st=document.getElementById('loginStatus');
+      if(!pass)return;
+      st.textContent='Verificando...';st.className='login-status';
+      try{
+        const session=await Murci.apiPost({action:'murcielapp_adminSesion',adminKey:pass},API_URL);
+        if(!/^[a-f0-9]{64}$/i.test(session.token||''))throw new Error('No se pudo iniciar la sesión administrativa.');
+        localStorage.setItem('murcielapp.adminSession.v1',session.token);
+        localStorage.setItem('mrcl_auth','1');localStorage.setItem('mrcl_auth_ts',String(Date.now()));
+        input.value='';setAppVisible(true);
+      }catch(err){st.textContent=err.message||'No se pudo validar el acceso.';st.className='login-status error'}
+    }
     (function(){if(authValida()){setAppVisible(true)}else{limpiarAuth()}})();
     window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;updateInstallFab()});
     window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallFab()});

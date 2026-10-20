@@ -292,6 +292,9 @@
         <button class="btn secondary" id="open-my-week" type="button">Ver Mi semana</button>
       </div>
       <div id="register-form-view" class="panel" hidden>
+        <p>Si ya cargaste este estímulo, abrí Mi semana y elegí Editar. Si lo cargaste dos veces, podés eliminar el duplicado.</p>
+        <p id="editing-notice" hidden>Estás corrigiendo un estímulo guardado. Al confirmar se actualiza ese registro.</p>
+        <button class="btn secondary" id="cancel-editing" type="button" hidden>Cancelar edición</button>
         <form id="stimulus-form">
           <div class="form-row">
             <label class="form-label" for="stimulus-date">Fecha del estímulo</label>
@@ -378,9 +381,19 @@
         </div>
         <p id="my-week-period"></p>
         <div id="my-week-list" role="status" aria-live="polite">Cargando tus registros…</div>
-        <p>Mi semana muestra tus registros. No envía el reporte semanal.</p>
+        <p>Podés editar un estímulo o eliminar uno duplicado. Registrá cada entrenamiento real: no omitas otro día para compensar una carga equivocada.</p>
         <button class="btn secondary" id="close-my-week" type="button">Volver a Registrar estímulo</button>
       </section>
+      <dialog id="delete-stimulus-dialog" aria-labelledby="delete-stimulus-title" style="max-width:32rem;padding:24px;border:2px solid currentColor;border-radius:16px;color:var(--text);background:var(--surface)">
+        <h3 id="delete-stimulus-title">¿Eliminar este estímulo?</h3>
+        <p id="delete-stimulus-description"></p>
+        <p>Dejará de aparecer en tus registros y en los totales del equipo.</p>
+        <p id="delete-stimulus-status" role="status" aria-live="polite"></p>
+        <div class="actions">
+          <button class="btn secondary" id="cancel-delete-stimulus" type="button" autofocus>Conservar estímulo</button>
+          <button class="btn" id="confirm-delete-stimulus" type="button">Eliminar estímulo</button>
+        </div>
+      </dialog>
     </section>
     <section id="accessibility-section" class="panel" aria-labelledby="accessibility-title" hidden>
       <h2 id="accessibility-title" tabindex="-1">Accesibilidad</h2>
@@ -417,6 +430,37 @@
     const accessKey = 'murcielapp.access.v1';
     let accessToken = '';
     let pendingRequestId = '';
+    let editingStimulus = null;
+    let deletingStimulus = null;
+    let myWeekPeriod = 'actual';
+    let weekRequest = 0;
+
+    function setEditingStimulus(item) {
+      editingStimulus = item;
+      byId('editing-notice').hidden = !item;
+      byId('cancel-editing').hidden = !item;
+      byId('register-title').textContent = item ? 'Editar estímulo' : 'Registrar estímulo';
+      byId('finish-register-trial').textContent = item ? 'Guardar cambios' : 'Registrar';
+    }
+
+    function editSavedStimulus(item) {
+      const form = byId('stimulus-form');
+      form.reset();
+      pendingRequestId = '';
+      setEditingStimulus(item);
+      byId('stimulus-date').value = item.fecha;
+      form.elements.stimulusType.value = item.tipo;
+      byId('stimulus-hours').value = String(Math.floor(Number(item.duracionMin) / 60));
+      byId('stimulus-minutes').value = String(Number(item.duracionMin) % 60);
+      if (item.tipo === 'otros') {
+        const subtypes = { 'Psicología': 'psicologia', 'Nutrición': 'nutricion', 'Kinesiología': 'kinesiologia', 'Consulta médica': 'consulta-medica' };
+        form.elements.otherSubtype.value = subtypes[item.subtipo] || 'otro';
+        byId('other-subtype-text').value = subtypes[item.subtipo] ? '' : item.subtipo;
+      } else form.elements.intensity.value = String(item.sRPE);
+      updateStimulusType();
+      clearDurationError();
+      showRegisterForm();
+    }
     try { accessToken = localStorage.getItem(accessKey) || ''; } catch (_) {}
     const byId = id => document.getElementById(id);
     const progressKey = 'murcielapp.routine-progress.v1';
@@ -738,10 +782,10 @@
     }
 
     function localDate(date = new Date()) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(date).map(part => [part.type, part.value]));
+      return `${parts.year}-${parts.month}-${parts.day}`;
     }
 
     function updateStimulusType() {
@@ -829,17 +873,19 @@
     }
 
     function weekDates(periodo) {
-      const monday = new Date();
-      monday.setHours(12, 0, 0, 0);
-      monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - (periodo === 'anterior' ? 7 : 0));
+      const monday = new Date(localDate() + 'T12:00:00Z');
+      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7) - (periodo === 'anterior' ? 7 : 0));
       const sunday = new Date(monday);
-      sunday.setDate(sunday.getDate() + 6);
-      return `${monday.toLocaleDateString('es-AR')} al ${sunday.toLocaleDateString('es-AR')}`;
+      sunday.setUTCDate(sunday.getUTCDate() + 6);
+      return `${monday.toLocaleDateString('es-AR', { timeZone: 'UTC' })} al ${sunday.toLocaleDateString('es-AR', { timeZone: 'UTC' })}`;
     }
 
     async function showMyWeek(periodo) {
       if (!accessToken) { showActivation(); return; }
       periodo = periodo === 'anterior' ? 'anterior' : 'actual';
+      myWeekPeriod = periodo;
+      const request = ++weekRequest;
+      setEditingStimulus(null);
       byId('register-form-view').hidden = true;
       byId('register-summary-view').hidden = true;
       byId('register-done-view').hidden = true;
@@ -853,6 +899,7 @@
       list.textContent = 'Cargando tus registros…';
       try {
         const items = await Murci.apiPost({ action: 'murcielapp_miSemana', token: accessToken, periodo });
+        if (request !== weekRequest) return;
         list.replaceChildren();
         if (!items.length) { list.textContent = 'No hay estímulos registrados en esta semana.'; return; }
         const fisicos = items.filter(item => item.tipo === 'fisico').length;
@@ -867,13 +914,30 @@
           const li = document.createElement('li');
           const label = { fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[item.tipo] || item.tipo;
           li.textContent = `${item.fecha} · ${label}${item.subtipo ? `, ${item.subtipo}` : ''} · ${formatDuration(Number(item.duracionMin))}${item.sRPE !== '' && item.sRPE !== null ? ` · sRPE ${item.sRPE}` : ''}`;
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          const edit = document.createElement('button');
+          edit.type = 'button'; edit.className = 'btn secondary'; edit.textContent = 'Editar';
+          edit.setAttribute('aria-label', `Editar ${label} del ${item.fecha}, ${item.duracionMin} minutos`);
+          edit.addEventListener('click', () => editSavedStimulus(item));
+          const remove = document.createElement('button');
+          remove.type = 'button'; remove.className = 'btn secondary'; remove.textContent = 'Eliminar';
+          remove.setAttribute('aria-label', `Eliminar ${label} del ${item.fecha}, ${item.duracionMin} minutos`);
+          remove.addEventListener('click', () => {
+            deletingStimulus = { ...item, requestId: crypto.randomUUID() };
+            byId('delete-stimulus-description').textContent = `${item.fecha} · ${label} · ${formatDuration(Number(item.duracionMin))}.`;
+            byId('delete-stimulus-status').textContent = '';
+            byId('delete-stimulus-dialog').showModal();
+          });
+          actions.append(edit, remove); li.append(actions);
           ul.append(li);
         });
         list.append(ul);
-      } catch (error) { list.textContent = error.message || 'No se pudieron cargar tus registros.'; }
+      } catch (error) { if (request === weekRequest) list.textContent = error.message || 'No se pudieron cargar tus registros.'; }
     }
 
     function startNewRegisterTrial() {
+      setEditingStimulus(null);
       pendingRequestId = '';
       byId('stimulus-form').reset();
       byId('stimulus-date').value = localDate();
@@ -883,6 +947,8 @@
     }
 
     function startRegisterFromRoutine() {
+      setEditingStimulus(null);
+      pendingRequestId = '';
       byId('stimulus-form').reset();
       byId('stimulus-date').value = localDate();
       byId('stimulus-form').elements.stimulusType.value = 'fisico';
@@ -1047,10 +1113,24 @@
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
     byId('home-button').addEventListener('click', () => showSection('entrenar'));
-    byId('open-my-week').addEventListener('click', () => showMyWeek(new Date().getDay() === 1 ? 'anterior' : 'actual'));
+    byId('open-my-week').addEventListener('click', () => showMyWeek(new Date(localDate() + 'T12:00:00Z').getUTCDay() === 1 ? 'anterior' : 'actual'));
     byId('my-week-current').addEventListener('click', () => showMyWeek('actual'));
     byId('my-week-previous').addEventListener('click', () => showMyWeek('anterior'));
     byId('close-my-week').addEventListener('click', showRegisterForm);
+    byId('cancel-editing').addEventListener('click', () => showMyWeek(myWeekPeriod));
+    byId('cancel-delete-stimulus').addEventListener('click', () => byId('delete-stimulus-dialog').close());
+    byId('confirm-delete-stimulus').addEventListener('click', async () => {
+      const button = byId('confirm-delete-stimulus');
+      button.disabled = true;
+      byId('delete-stimulus-status').textContent = 'Eliminando estímulo…';
+      try {
+        await Murci.apiPost({ action: 'murcielapp_eliminarEstimulo', token: accessToken,
+          id: deletingStimulus.id, revision: deletingStimulus.revision, requestId: deletingStimulus.requestId });
+        byId('delete-stimulus-dialog').close();
+        await showMyWeek(myWeekPeriod);
+      } catch (error) { byId('delete-stimulus-status').textContent = error.message || 'No se pudo eliminar. Intentá nuevamente.'; }
+      finally { button.disabled = false; }
+    });
     for (let value = 0; value <= 10; value++) {
       const label = document.createElement('label');
       label.className = 'number-option';
@@ -1084,9 +1164,16 @@
       button.disabled = true;
       byId('register-save-status').textContent = 'Guardando tu estímulo…';
       try {
-        await Murci.apiPost({ action: 'murcielapp_registrarEstimulo', token: accessToken, requestId: pendingRequestId,
+        await Murci.apiPost({ action: editingStimulus ? 'murcielapp_editarEstimulo' : 'murcielapp_registrarEstimulo', token: accessToken, requestId: pendingRequestId,
+          ...(editingStimulus ? { id: editingStimulus.id, revision: editingStimulus.revision } : {}),
           fecha: byId('stimulus-date').value, tipo: type, subtipo: subtype, duracionMin: totalMinutes,
           sRPE: type === 'otros' ? null : Number(form.elements.intensity.value) });
+        byId('register-done-title').textContent = editingStimulus ? 'Estímulo actualizado' : 'Estímulo registrado';
+        setEditingStimulus(null);
+        pendingRequestId = '';
+        form.reset();
+        byId('stimulus-date').value = localDate();
+        updateStimulusType();
         byId('register-summary-view').hidden = true;
         byId('register-done-view').hidden = false;
         byId('register-done-title').focus();

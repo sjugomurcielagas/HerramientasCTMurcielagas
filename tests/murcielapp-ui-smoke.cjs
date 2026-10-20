@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
-const { chromium } = require('playwright');
+const { chromium } = require('@playwright/test');
 
 const root = path.resolve(__dirname, '..');
 const server = http.createServer((request, response) => {
@@ -15,8 +15,11 @@ const server = http.createServer((request, response) => {
 
 (async () => {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const channel = process.env.PLAYWRIGHT_CHANNEL || 'msedge';
+  const browser = await chromium.launch({ ...(channel === 'chromium' ? {} : { channel }), headless: true });
   const page = await browser.newPage();
+  await page.route('https://fonts.googleapis.com/**', route => route.abort());
+  await page.route('https://fonts.gstatic.com/**', route => route.abort());
   let saved = null;
   await page.route('https://murcielagas-reportes-api.sjugomurcielagas.workers.dev/**', async route => {
     const payload = JSON.parse(route.request().postData() || '{}');
@@ -29,9 +32,9 @@ const server = http.createServer((request, response) => {
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/murcielapp/`);
     await page.getByRole('button', { name: 'Registrar estímulo', exact: true }).first().click();
-    assert.equal(await page.getByRole('heading', { name: 'Activar mi acceso' }).isVisible(), true);
-    await page.getByLabel('Código de activación').fill('AAAAA-BBBBB-CCCCC-DDDDD');
-    await page.getByRole('button', { name: 'Activar', exact: true }).click();
+    assert.equal(await page.getByRole('heading', { name: 'Entrar con mi código' }).isVisible(), true);
+    await page.getByLabel('Código personal', { exact: true }).fill('1234 5678');
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await page.getByLabel('Minutos').fill('90');
     await page.getByRole('radio', { name: /5 de 10/ }).check();
     await page.getByRole('button', { name: 'Siguiente', exact: true }).last().click();

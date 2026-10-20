@@ -5,11 +5,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,600&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>(function(){var a=localStorage.getItem('mrcl_auth'),ts=Number(localStorage.getItem('mrcl_auth_ts')||0);if(a!=='1'||!ts||(Date.now()-ts)>=30*24*60*60*1000){localStorage.removeItem('mrcl_auth');localStorage.removeItem('mrcl_auth_ts');location.replace('../index.html');}})();</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Murciélagas Analytics · Reportes de Entrenamiento</title>
+  <link rel="stylesheet" href="murcielapp.css?v=20261020">
   <style>
 :root {
   /* === Sistema de diseño estándar CT Murciélagas === */
@@ -985,8 +985,8 @@ footer {
     <header class="report-header">
       <div class="header-copy">
         <div class="eyebrow">Vista operativa</div>
-        <h1>Control semanal del cuerpo técnico</h1>
-        <p class="subtitle">Control semanal · análisis periódicos · informes internos</p>
+        <h1>Reportes de entrenamiento</h1>
+        <p class="subtitle">Análisis diario y semanal · equipo y jugadoras · historial de entrenamiento</p>
       </div>
       <aside class="status-panel" aria-label="Estado del sistema">
         <div class="status-line"><span class="status-k">Jugadoras</span><span class="status-v" id="status-players">0</span></div>
@@ -994,7 +994,47 @@ footer {
       </aside>
     </header>
 
-<main class="layout">
+<main id="daily-report" class="panel daily-report" aria-labelledby="daily-title">
+  <div class="panel-body">
+    <div class="eyebrow">Análisis diario de entrenamiento</div>
+    <h2 id="daily-title" tabindex="-1">Semana del equipo</h2>
+    <p>Consultá lo registrado por día, por semana y por jugadora. Los días sin datos no indican que no hubo entrenamiento.</p>
+    <form id="daily-auth" class="daily-controls">
+      <label for="daily-key">Clave administrativa de MurcielApp<input id="daily-key" type="password" autocomplete="current-password" required></label>
+      <label><span>Recordar acceso en este navegador</span><input id="daily-remember" type="checkbox"></label>
+      <button class="primary" type="submit">Entrar a Reportes</button>
+    </form>
+    <div class="daily-controls" id="daily-session" hidden><span>Acceso del cuerpo técnico</span><button id="daily-logout" type="button">Cerrar sesión</button></div>
+    <p id="daily-status" role="status" aria-live="polite">Ingresá para consultar los registros del equipo.</p>
+    <div id="daily-workspace" hidden>
+      <div class="daily-controls" role="group" aria-label="Navegación por semana">
+        <button id="daily-prev" type="button" aria-label="Semana anterior">← Semana anterior</button>
+        <label for="daily-week">Semana del<input id="daily-week" type="date" required></label>
+        <button id="daily-next" type="button">Semana siguiente →</button>
+        <button id="daily-current" type="button">Esta semana</button>
+      </div>
+      <div class="daily-controls">
+        <label for="daily-player">Jugadora<select id="daily-player"><option value="">Todo el equipo</option></select></label>
+        <button class="primary" id="daily-refresh" type="button">Actualizar datos</button>
+        <button id="daily-export" type="button" disabled>Exportar CSV</button>
+        <button id="daily-print" type="button" disabled>Imprimir informe</button>
+      </div>
+      <details>
+        <summary>Consultar un rango de fechas</summary>
+        <form id="daily-range" class="daily-controls">
+          <label for="daily-from">Desde<input id="daily-from" type="date" required></label>
+          <label for="daily-to">Hasta<input id="daily-to" type="date" required></label>
+          <button type="submit">Aplicar rango</button>
+        </form>
+      </details>
+      <div id="daily-output" hidden></div>
+    </div>
+    <div class="daily-controls"><button id="show-legacy" type="button" aria-expanded="false" aria-controls="legacy-report">Consultar reportes históricos hasta el 18/10/2026</button></div>
+    <p class="daily-note">Desde el 19/10/2026, los totales provienen de MurcielApp. Los registros diarios anteriores se muestran como detalle de transición y no se suman al histórico.</p>
+  </div>
+</main>
+
+<section id="legacy-report" class="layout" hidden aria-label="Reportes históricos hasta el 18 de octubre de 2026">
 
   <section class="panel controls-panel" aria-label="Herramientas del reporte">
     <details class="production-details">
@@ -1206,20 +1246,22 @@ footer {
     </div>
   </section>
 
-</main>
+</section>
 
     <footer>
       <span>Murciélagas Analytics</span>
       <span id="footer-date"></span>
     </footer>
 
-<button id="btn-audit-toggle" class="audit-toggle" title="Auditoría interna">
+<button id="btn-audit-toggle" class="audit-toggle" title="Auditoría interna" hidden>
   ⚙
 </button>
 
   </div>
 
-  <script src="../assets/config.js?v=20260525021325"></script>
+  <script src="../assets/config.js?v=20261020"></script>
+  <script src="murcielapp-model.js?v=20261020"></script>
+  <script src="murcielapp.js?v=20261020"></script>
   <script>
     const DEMO_ROWS = [];
 
@@ -1286,7 +1328,8 @@ let includedPlayers = new Set(lsGet('murcielagasIncludedPlayers', []));
 let appStarted = false;
 
 function startApp() {
-  if (appStarted) return;
+  if ($('legacy-report').hidden) return;
+  if (appStarted) { loadServerData(); return; }
   appStarted = true;
   init();
 
@@ -1727,6 +1770,10 @@ function setRows(inputRows, sourceLabel) {
     .map(mapIncomingRow)
     .filter(Boolean))
     .filter(r => !r.excluirAnalisis)
+    .filter(r => {
+      const start = getIsoWeekStartDate(r.week);
+      return start && start.toISOString().slice(0, 10) < MurciReportes.CORTE;
+    })
     .sort((a, b) => a.fecha - b.fecha);
 
   // Primera vez: incluye a todas por defecto.
