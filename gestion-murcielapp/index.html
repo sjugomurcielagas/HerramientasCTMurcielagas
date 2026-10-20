@@ -39,24 +39,13 @@
     .recipient button { background: #fff; color: #0b2f5f; font-size: .9rem; }
     .recipient small { display: block; color: #305475; }
     .recipient.problem small { color: #a82424; }
-    .report-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-block: 14px; }
-    .report-filters label { flex: 1 1 170px; font-weight: 700; }
-    .report-filters input { display: block; margin-top: 5px; }
-    .player-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
-    .player-buttons button { min-height: 42px; background: #fff; color: #0b2f5f; font-size: .9rem; }
-    .player-buttons button[aria-pressed="true"] { background: #0b2f5f; color: #fff; }
-    .report-summary { padding: 12px; background: #edf5fb; border-radius: 10px; margin-block: 12px; }
-    .table-scroll { overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; min-width: 650px; }
-    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #d6e3ed; vertical-align: top; }
-    th { color: #0b2f5f; }
     @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .header-inner { flex-wrap: wrap; } }
   </style>
 </head>
 <body>
   <header><div class="wrap header-inner"><a class="home" href="../">← Inicio</a><h1>Gestión de MurcielApp</h1></div></header>
   <main class="wrap">
-    <p class="lead">Acá se administrarán las conexiones entre Herramientas CT y la aplicación de las jugadoras.</p>
+    <p class="lead">Administrá los accesos y códigos de la aplicación de las jugadoras. Para analizar los entrenamientos, abrí Reportes de entrenamiento.</p>
     <section class="panel" aria-labelledby="source-title">
       <h2 id="source-title">Accesos del plantel</h2>
       <p>La vista previa del envío masivo tomará a las jugadoras activas de Base de datos y consultará sus fichas para verificar los correos.</p>
@@ -80,35 +69,23 @@
         <button id="send-codes" type="button">Enviar códigos seleccionados</button>
       </div>
     </section>
-    <section class="panel" aria-labelledby="records-title">
-      <h2 id="records-title">Registros de estímulos</h2>
-      <p>Consultá lo que las jugadoras registraron. Los días sin registros no indican si entrenaron o no.</p>
-      <div class="report-filters">
-        <label for="records-from">Desde<input class="form-input" id="records-from" type="date"></label>
-        <label for="records-to">Hasta<input class="form-input" id="records-to" type="date"></label>
-        <button id="load-records" type="button">Consultar registros</button>
-      </div>
-      <p id="records-status" role="status" aria-live="polite"></p>
-      <div id="records-result" hidden>
-        <h3>Jugadora</h3>
-        <div id="player-buttons" class="player-buttons" role="group" aria-label="Filtrar por jugadora"></div>
-        <div id="records-summary" class="report-summary" role="status"></div>
-        <div class="actions"><button id="export-records" type="button">Descargar CSV de esta vista</button></div>
-        <div class="table-scroll"><table><caption>Estímulos registrados en el período elegido</caption><thead><tr><th scope="col">Fecha</th><th scope="col">Jugadora</th><th scope="col">Tipo</th><th scope="col">Duración</th><th scope="col">sRPE</th><th scope="col">Carga</th></tr></thead><tbody id="records-body"></tbody></table></div>
-      </div>
+    <section class="panel" aria-labelledby="reports-title">
+      <h2 id="reports-title">Reportes de entrenamiento</h2>
+      <p>El análisis diario y semanal del equipo y de cada jugadora se consulta en Reportes de entrenamiento, junto con el historial anterior.</p>
+      <p><a href="../reportes/">Abrir Reportes de entrenamiento →</a></p>
     </section>
     <section class="panel" aria-labelledby="links-title">
       <h2 id="links-title">Vínculos previstos</h2>
       <div class="grid">
         <div class="item"><h3>Jugadoras y correos</h3><p>Identidad y correo registrados en <a href="../base-datos/">Base de datos</a>.</p><p class="source">Para el envío masivo de códigos individuales.</p></div>
         <div class="item"><h3>Rutinas</h3><p>Los planes cargados por la PF alimentarán Entrenar en MurcielApp.</p><p class="source">La rutina actual se publica de forma manual.</p></div>
-        <div class="item"><h3>Estímulos y Mi semana</h3><p>Cada jugadora guarda sus estímulos y consulta su semana desde MurcielApp.</p><p class="source">Los registros se asocian a su acceso personal y se consultan arriba.</p></div>
+        <div class="item"><h3>Estímulos y Mi semana</h3><p>Cada jugadora guarda sus estímulos y consulta su semana desde MurcielApp.</p><p class="source">Los registros se asocian a su acceso personal. El análisis del CT está en Reportes de entrenamiento.</p></div>
         <div class="item"><h3>Penales</h3><p>La información general y el perfil individual compartirán los datos de análisis.</p><p class="source">Integración pendiente.</p></div>
       </div>
     </section>
     <p><a href="../murcielapp/">Abrir MurcielApp de jugadoras</a></p>
   </main>
-  <script src="../assets/config.js"></script>
+  <script src="../assets/config.js?v=20261020"></script>
   <script>
     'use strict';
     const checkButton = document.getElementById('check-source');
@@ -162,78 +139,6 @@
     const recipientList = document.getElementById('recipient-list');
     const preview = document.getElementById('recipient-preview');
     let recipients = [];
-    const recordsStatus = document.getElementById('records-status');
-    const recordsResult = document.getElementById('records-result');
-    const playerButtons = document.getElementById('player-buttons');
-    const recordsBody = document.getElementById('records-body');
-    let records = [];
-    let selectedPlayer = '';
-    function localDate(date) {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-    document.getElementById('records-to').value = localDate(new Date());
-    document.getElementById('records-from').value = localDate(new Date(Date.now() - 29 * 86400000));
-    function visibleRecords() { return selectedPlayer ? records.filter(item => item.personaId === selectedPlayer) : records; }
-    function typeLabel(item) { return item.tipo === 'fisico' ? 'Físico' : item.tipo === 'tecnico' ? 'Técnico-táctico' : item.subtipo || 'Otros'; }
-    function renderRecords() {
-      const visible = visibleRecords();
-      const minutes = visible.reduce((sum, item) => sum + item.duracionMin, 0);
-      const load = visible.reduce((sum, item) => sum + (item.sRPE === null ? 0 : item.duracionMin * item.sRPE), 0);
-      const other = visible.filter(item => item.tipo === 'otros').length;
-      document.getElementById('records-summary').textContent = `${visible.length} estímulos registrados · ${minutes} minutos · Carga interna: ${load} (duración × sRPE) · Otros: ${other} (sin sRPE).`;
-      const exportButton = document.getElementById('export-records');
-      exportButton.disabled = !visible.length;
-      recordsBody.replaceChildren();
-      visible.forEach(item => {
-        const tr = document.createElement('tr');
-        [item.fecha, item.jugadora, typeLabel(item), `${item.duracionMin} min`, item.sRPE === null ? '—' : String(item.sRPE), item.sRPE === null ? '—' : String(item.duracionMin * item.sRPE)].forEach(value => {
-          const td = document.createElement('td'); td.textContent = value; tr.append(td);
-        });
-        recordsBody.append(tr);
-      });
-    }
-    function renderPlayerButtons() {
-      playerButtons.replaceChildren();
-      const players = [...new Map(records.map(item => [item.personaId, item.jugadora])).entries()]
-        .sort((a, b) => a[1].localeCompare(b[1], 'es'));
-      [['', 'Todas'], ...players].forEach(([id, name]) => {
-        const button = document.createElement('button');
-        button.type = 'button'; button.textContent = name; button.setAttribute('aria-pressed', String(selectedPlayer === id));
-        button.addEventListener('click', () => { selectedPlayer = id; renderPlayerButtons(); renderRecords(); });
-        playerButtons.append(button);
-      });
-    }
-    document.getElementById('load-records').addEventListener('click', async () => {
-      const button = document.getElementById('load-records');
-      button.disabled = true; recordsResult.hidden = true; recordsStatus.textContent = 'Consultando registros…';
-      try {
-        const desde = document.getElementById('records-from').value;
-        const hasta = document.getElementById('records-to').value;
-        records = await Murci.apiPost({ action: 'murcielapp_adminEstimulos', ...await adminAuth(), desde, hasta });
-        selectedPlayer = ''; renderPlayerButtons(); renderRecords(); recordsResult.hidden = false;
-        recordsStatus.textContent = `Consulta lista: ${records.length} estímulos en el período.`;
-      } catch (error) {
-        if (/Acceso administrativo vencido/.test(error.message || '')) forgetAdmin();
-        recordsStatus.textContent = error.message || 'No se pudieron consultar los registros.';
-      } finally { button.disabled = false; }
-    });
-    document.getElementById('export-records').addEventListener('click', () => {
-      const rows = visibleRecords();
-      if (!rows.length) return;
-      const quote = value => {
-        const safe = /^[=+\-@\t\r]/.test(String(value ?? '')) ? `'${value}` : String(value ?? '');
-        return `"${safe.replaceAll('"', '""')}"`;
-      };
-      const lines = [['Fecha', 'Jugadora', 'Persona_ID', 'Tipo', 'Subtipo', 'Duración (min)', 'sRPE', 'Carga interna', 'Creado', 'ID']
-        .map(quote).join(';')];
-      rows.forEach(item => lines.push([item.fecha, item.jugadora, item.personaId, item.tipo, item.subtipo,
-        item.duracionMin, item.sRPE ?? '', item.sRPE === null ? '' : item.duracionMin * item.sRPE, item.creado, item.id].map(quote).join(';')));
-      const blob = new Blob(['\uFEFF', lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url; link.download = `murcielapp-estimulos-${document.getElementById('records-from').value}-${document.getElementById('records-to').value}.csv`;
-      link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-    });
     document.getElementById('select-all-ready').addEventListener('click', () => {
       recipientList.querySelectorAll('input:not(:disabled)').forEach(input => { input.checked = true; });
     });

@@ -4,6 +4,8 @@
 
 Reportes abre con la semana del equipo, con selección de jugadora, navegación entre semanas y rango de fechas. Muestra estímulos por tipo, minutos, carga interna, detalle por día y evolución semanal si el rango abarca varias semanas. Permite exportar el detalle visible a CSV e imprimir el informe. Las jugadoras sin registros permanecen en el plantel con «Sin datos registrados».
 
+**Reportes de entrenamiento (`/reportes/`) es el único lugar de análisis del CT.** Gestión de MurcielApp queda para accesos, códigos e invitaciones; su antigua tabla de estímulos se retira y se reemplaza por un enlace a Reportes. MurcielApp de jugadoras conserva Mi semana para consultar y corregir los registros propios.
+
 El corte sigue siendo el **19/10/2026**, por fecha del entrenamiento, según Argentina. Los registros diarios anteriores aparecen como detalle de transición, sin sumarse a los totales. Los formularios semanales históricos se consultan en una sección separada, limitada a semanas entrenadas anteriores al corte. Los informes con IA existentes permanecen dentro del histórico; esta versión no envía los registros diarios nuevos a OpenAI ni genera conclusiones clínicas.
 
 En MurcielApp, Mi semana ofrece **Editar** y **Eliminar** en cada estímulo. Editar reutiliza el formulario y confirma con «Guardar cambios». Eliminar pide confirmación. No se reemplazan otros entrenamientos para compensar una carga equivocada.
@@ -17,7 +19,7 @@ Ejemplo de corrección: abrir la semana anterior, corregir el estímulo original
 - El Worker y Apps Script verifican el acceso. El Apps Script de Reportes valida la sesión contra `MurcielApp_AdminSesiones` de la base compartida. La cuenta que publica Reportes necesita acceso a esa planilla.
 - Los registros de prueba no entran en Reportes. Las jugadoras solo pueden modificar estímulos asociados a su propia sesión.
 - `MurcielApp_Estimulos` conserva sus ocho columnas y los valores originales. La nueva hoja `MurcielApp_Correcciones` se crea automáticamente con `Request_ID`, `Estimulo_ID`, `Persona_ID`, `Accion`, `Revision`, `Datos`, `Fecha`.
-- Cada corrección agrega una fila bajo bloqueo. Las lecturas de Mi semana, Gestión y Reportes aplican esas revisiones. Una eliminación retira el registro de las vistas y totales, conservando el original y su auditoría. No borrar filas de correcciones manualmente.
+- Cada corrección agrega una fila bajo bloqueo. Las lecturas de Mi semana y Reportes aplican esas revisiones. Una eliminación retira el registro de las vistas y totales, conservando el original y su auditoría. No borrar filas de correcciones manualmente.
 - Cada operación admite reintentos con el mismo identificador. La revisión evita sobrescribir cambios hechos desde otra pestaña. Una corrección inconsistente se informa como error y no se interpreta como cero entrenamiento.
 - Los datos de API se mantienen en memoria de la página. La nueva versión retira la caché anterior de localStorage y deja de cachear respuestas de Apps Script en el service worker. El token administrativo se guarda únicamente cuando se elige recordar acceso, salvo el ingreso principal del CT, que mantiene su sesión habitual de 30 días.
 - Los códigos personales válidos siguen funcionando aunque se alcance el contador global de códigos incorrectos. Esto evita el bloqueo colectivo; no reemplaza una regla de limitación de tráfico en Cloudflare para ataques sostenidos.
@@ -40,10 +42,10 @@ En el entorno donde se preparó esta rama no había configuración de autenticac
 ## Comprobación posterior a la publicación
 
 - Sin sesión: consultar fichas, modificar datos y generar informes debe fallar, incluso invocando Apps Script directamente. Los parámetros de autenticación no deben aparecer en las URLs.
-- Con sesión del CT: consultar Reportes y Gestión para el mismo rango. Comparar cantidad, minutos y carga para al menos dos jugadoras y para una sin datos. Incluir «Otros» y sRPE cero.
+- Con sesión del CT: consultar Reportes y comparar con la hoja fuente para el mismo rango. Comparar cantidad, minutos y carga para al menos dos jugadoras y para una sin datos. Incluir «Otros» y sRPE cero.
 - Comparar 12–18/10 y 19–25/10: el primer período usa el histórico; el segundo, MurcielApp. Una carga retrospectiva conserva su fecha entrenada.
 - Con el acceso de prueba de Santiago ya existente, crear un estímulo, editarlo y eliminarlo. Confirmar que no aparece en los totales del CT. No generar códigos ni enviar correos a las jugadoras para esta verificación.
-- Confirmar que Gestión también refleja las correcciones, que el CSV coincide con la vista y que cerrar sesión retira los datos de pantalla. Probar un acceso administrativo revocado.
+- Confirmar que Reportes refleja las correcciones y que el CSV coincide con la vista y que cerrar sesión retira los datos de pantalla. Probar un acceso administrativo revocado.
 - Probar acceso desde celular, teclado y lector de pantalla, incluyendo los botones de edición y el diálogo de eliminación.
 
 ## Pruebas locales

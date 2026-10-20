@@ -124,3 +124,18 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });
+
+test('Gestión administra accesos y dirige todo el análisis a Reportes de entrenamiento', async () => {
+  const { context, page, calls, errors } = await fixture();
+  try {
+    await page.goto(base + '/gestion-murcielapp/');
+    await page.getByRole('heading', { name: 'Gestión de MurcielApp', exact: true }).waitFor();
+    assert.equal(await page.locator('#load-records, #records-result, #export-records').count(), 0);
+    assert.equal(calls.filter(p => /Estimulos|reporteSemanal/.test(p.action)).length, 0);
+    await page.getByRole('link', { name: 'Abrir Reportes de entrenamiento →', exact: true }).click();
+    await page.getByRole('heading', { name: 'Reportes de entrenamiento', exact: true }).waitFor();
+    assert.match(page.url(), /\/reportes\/$/);
+    assert.equal(await page.getByRole('button', { name: 'Entrar a Reportes', exact: true }).isVisible(), true);
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
+});
