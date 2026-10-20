@@ -8,7 +8,6 @@ var CONFIG = {
   SHEET_NAME: 'Las_Murcielagas_Base_Personal',
   LOG_SHEET_NAME: 'Log_Cambios',
   DRIVE_RAIZ_ID: '1HtxDxNOxjm3xKs6N5t2SzDlp3TlXf8P1',
-  PASSWORD: '1',
 };
 
 // Compatibilidad con módulos nuevos
@@ -121,15 +120,13 @@ var CAMPOS_CRITICOS = [
 
 // ── ENTRADA WEB APP ───────────────────────────────────────────────────────────
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Murciélagas Analytics · Base de Datos')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-  // Nota: el viewport va en el <head> del Index.html, no acá.
+  return ContentService.createTextOutput('Ingresá desde Herramientas CT: https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/');
 }
 
 // ── AUTENTICACIÓN ─────────────────────────────────────────────────────────────
 function verificarPassword(pwd) {
-  return pwd === CONFIG.PASSWORD;
+  // Compatibilidad con clientes anteriores: no concede acceso ni crea sesión.
+  return false;
 }
 
 // ── ACCESO A SHEETS ───────────────────────────────────────────────────────────
@@ -1951,6 +1948,7 @@ function guardarCambios(dni, cambios, usuario) {
   var personaId = row[PERSONA_ID_COLUMN] || '';
 
   for (var campo in cambios) {
+    var valorNuevo = cambios[campo];
     // Conserva el nombre real de la columna si la hoja usa un alias histórico.
     campo = _resolveNumeroCamisetaHeader_(headers, campo);
     var colIdx = headers.indexOf(campo);
@@ -1962,7 +1960,6 @@ function guardarCambios(dni, cambios, usuario) {
     if (colIdx === -1) continue;
 
     var valorAnterior = ws.getRange(rowNum, colIdx + 1).getValue();
-    var valorNuevo    = cambios[campo];
 
     ws.getRange(rowNum, colIdx + 1).setValue(valorNuevo);
 
@@ -2340,6 +2337,8 @@ function doPost(e) {
     var action  = payload.action || '';
     var result;
 
+    if (action.indexOf('murcielapp_') !== 0) murcielapp_admin_(payload);
+
     switch (action) {
      
   // ── BASE ──
@@ -2406,6 +2405,10 @@ function doPost(e) {
       case 'murcielapp_registrarEstimulo': result = ok(true, murcielapp_registrarEstimulo(payload)); break;
       case 'murcielapp_miSemana': result = ok(true, murcielapp_miSemana(payload)); break;
       case 'murcielapp_adminEstimulos': result = ok(true, murcielapp_adminEstimulos(payload)); break;
+      case 'murcielapp_reporteSemanal': result = ok(true, murcielapp_reporteSemanal(payload)); break;
+      case 'murcielapp_editarEstimulo': result = ok(true, murcielapp_editarEstimulo(payload)); break;
+      case 'murcielapp_eliminarEstimulo': result = ok(true, murcielapp_eliminarEstimulo(payload)); break;
+      case 'murcielapp_validarAdmin': result = ok(true, murcielapp_validarAdmin(payload)); break;
 
         // ── PENALES ──
       case 'penales_getSesiones':        result = penales_getSesiones(); break;

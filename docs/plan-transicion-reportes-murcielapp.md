@@ -1,6 +1,8 @@
 # Transición de Reportes a registros diarios de MurcielApp
 
-Estado: plan de trabajo. Fecha de referencia: 13 de octubre de 2026.
+Estado: implementación preparada en rama; publicación coordinada y cotejo con la planilla real pendientes. Actualizado: 20 de octubre de 2026.
+
+Ver [implementación, comprobaciones y publicación](puesta-en-marcha-reportes-murcielapp.md). La nueva vista reutiliza el lector privado y agrega el plantel mínimo, sin copiar los registros a otra fuente. La edición y eliminación se aplican también a Gestión y Mi semana. El informe con IA de registros diarios se mantiene pendiente; los informes existentes quedan dentro del histórico.
 
 ## Decisión operativa
 

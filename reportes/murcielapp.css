@@ -1,0 +1,26 @@
+.daily-report { margin: 0 0 22px; }
+.daily-report [hidden], #legacy-report[hidden] { display: none !important; }
+#btn-audit-toggle[hidden] { display:none !important; }
+.daily-report .panel-body { padding: clamp(16px, 3vw, 28px); }
+.daily-report h2 { font-size: clamp(24px, 4vw, 34px); color: var(--azul-950); }
+.daily-report h3 { margin: 22px 0 12px; font-size: 21px; }
+.daily-report p { margin: 8px 0 14px; }
+.daily-report .daily-controls { display:flex; gap:14px; align-items:end; flex-wrap:wrap; margin:18px 0; }
+.daily-report label { display:grid; gap:5px; font-size:15px; font-weight:600; }
+.daily-report input, .daily-report select { min-height:44px; padding:9px 12px; max-width:100%; }
+.daily-report button { min-height:44px; font-size:15px; }
+.daily-report button[aria-pressed=true] { background:var(--azul-800); color:white; }
+.daily-report .daily-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:22px 0; }
+.daily-report .daily-kpi { padding:18px; border:1px solid var(--borde); border-radius:12px; background:var(--surface-3); }
+.daily-report .daily-kpi strong { display:block; font-family:var(--mono); font-size:32px; color:var(--azul-800); }
+.daily-report .daily-table { overflow-x:auto; margin:12px 0; }
+.daily-report table { width:100%; border-collapse:collapse; font-size:15px; }
+.daily-report caption { text-align:left; font-weight:700; padding:10px 0; }
+.daily-report th,.daily-report td { padding:12px; text-align:left; border-bottom:1px solid var(--borde); white-space:nowrap; }
+.daily-report th { background:var(--surface-3); color:var(--azul-800); }
+.daily-report td button { text-align:left; }
+.daily-report .daily-note { color:var(--muted); font-size:14px; }
+.daily-report :focus-visible { outline:3px solid var(--celeste); outline-offset:3px; }
+.daily-report .daily-empty { padding:20px; border:1px dashed var(--borde); border-radius:12px; }
+@media(max-width:640px) { .daily-report .daily-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .daily-controls>label { width:100%; } .daily-report .daily-controls input,.daily-report .daily-controls select { width:100%; } }
+@media print { .top-nav,.report-header,.daily-controls,#daily-auth,#daily-logout,#daily-refresh,#daily-export,#daily-print,#show-legacy,.audit-toggle { display:none!important; } .daily-report { box-shadow:none; border:0; } .daily-report .daily-table { overflow:visible; } .daily-report th,.daily-report td { padding:5px; font-size:10px; white-space:normal; } body { padding:0; background:#fff; } }

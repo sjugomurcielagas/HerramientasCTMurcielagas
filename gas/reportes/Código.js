@@ -26,12 +26,10 @@ function doGet(e) {
     const callback = e && e.parameter ? e.parameter.callback : '';
 
     if (!action) {
-      return HtmlService.createHtmlOutputFromFile('Index')
-        .setTitle('Reportes de entrenamiento · Las Murciélagas')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      return ContentService.createTextOutput('Ingresá desde Herramientas CT: https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/reportes/');
     }
 
-    return jsonResponse_(dispatchAction_(action, e && e.parameter ? e.parameter : {}), callback);
+    return jsonResponse_({ ok: false, error: 'Los reportes privados requieren POST y sesión administrativa.' });
   } catch (error) {
     return jsonResponse_({ ok: false, error: error && error.message ? error.message : String(error) }, e && e.parameter ? e.parameter.callback : '');
   }
@@ -47,6 +45,7 @@ function doPost(e) {
 }
 
 function dispatchAction_(action, payload) {
+  validarSesionCT_(payload);
   if (action === 'getClientData') {
     return {
       ok: true,
@@ -57,6 +56,7 @@ function dispatchAction_(action, payload) {
   }
 
   if (action === 'generateClientReport') {
+    limitarInformesIA_(payload.adminToken);
     const prompt = buildReportPrompt_(payload);
     const report = callOpenAI_(prompt);
     return {
@@ -68,18 +68,40 @@ function dispatchAction_(action, payload) {
   }
 
   if (action === 'generarAuditoriaDatos') {
-    return generarAuditoriaDatos();
+    return generarAuditoriaDatos(payload);
   }
 
   return { ok: false, error: 'Acción no reconocida: ' + action };
 }
 
+function validarSesionCT_(payload) {
+  var token = String(payload && payload.adminToken || '');
+  if (!/^[a-fA-F0-9]{64}$/.test(token)) throw new Error('Acceso administrativo vencido. Ingresá la clave nuevamente.');
+  var hash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token)
+    .map(function(byte) { return ('0' + (byte & 255).toString(16)).slice(-2); }).join('');
+  var sheet = SpreadsheetApp.openById('1x2RypyWJ2PDHlTjWuTLKIw8_GqCCrFE-U5QYIUpoFEg').getSheetByName('MurcielApp_AdminSesiones');
+  if (!sheet || sheet.getLastRow() < 2 || !sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues().some(function(row) {
+    return String(row[0]) === hash && !String(row[3]) && new Date(row[1]).getTime() > Date.now();
+  })) throw new Error('Acceso administrativo vencido. Ingresá la clave nuevamente.');
+}
+
+function limitarInformesIA_(token) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error('Hay un informe en preparación. Intentá nuevamente.');
+  try {
+    var cache = CacheService.getScriptCache();
+    var key = 'reportes_ia:' + String(token).slice(0, 20);
+    var now = Date.now();
+    var previous = JSON.parse(cache.get(key) || '{"inicio":0,"cantidad":0}');
+    if (now - previous.inicio >= 600000) previous = { inicio: now, cantidad: 0 };
+    if (previous.cantidad >= 5) throw new Error('Alcanzaste el límite de cinco informes en diez minutos. Intentá más tarde.');
+    previous.cantidad++;
+    cache.put(key, JSON.stringify(previous), 600);
+  } finally { lock.releaseLock(); }
+}
+
 function jsonResponse_(data, callback) {
   const json = JSON.stringify(data);
-  if (callback) {
-    return ContentService.createTextOutput(callback + '(' + json + ');')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -396,8 +418,9 @@ function extractOpenAIText_(data) {
   return '';
 }
 
-function getClientData() {
+function getClientData(payload) {
   try {
+    validarSesionCT_(payload);
     return { ok: true, source: 'google_sheets', updatedAt: new Date().toISOString(), rows: getReportRows_() };
   } catch (error) {
     return { ok: false, error: String(error && error.message ? error.message : error) };
@@ -406,6 +429,8 @@ function getClientData() {
 
 function generateClientReport(payload) {
   try {
+    validarSesionCT_(payload);
+    limitarInformesIA_(payload.adminToken);
     const report = callOpenAI_(buildReportPrompt_(payload || {}));
     return { ok: true, source: 'openai', updatedAt: new Date().toISOString(), report };
   } catch (error) {
@@ -460,7 +485,8 @@ function generarAuditoriaDatosLegacy_() {
   return { ok: true, totalIssues: conIssues.length, auditUrl: ss.getUrl() + '#gid=' + auditSheet.getSheetId(), message: 'Auditoría generada correctamente.' };
 }
 
-function generarAuditoriaDatos() {
+function generarAuditoriaDatos(payload) {
+  validarSesionCT_(payload);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const dataSheet = getSheet_(ss);
   let auditSheet = ss.getSheetByName(AUDIT_SHEET_NAME);

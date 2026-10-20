@@ -6,6 +6,10 @@ Permite registrar estímulos con un código personal reutilizable y consultar
 los registros recientes en Mi semana. El registro es una declaración de la
 jugadora; no infiere ejecución ni cumplimiento.
 
+Mi semana permite editar y eliminar estímulos propios con confirmación. Las
+correcciones conservan el original y actualizan las lecturas de Gestión y
+Reportes. Ver [puesta en marcha e integración](../docs/puesta-en-marcha-reportes-murcielapp.md).
+
 La rutina estructurada fue revisada manualmente contra el PDF antes de su
 publicación. La aplicación carga `rutina.json` y permite ver o descargar
 `rutina-original.pdf`.

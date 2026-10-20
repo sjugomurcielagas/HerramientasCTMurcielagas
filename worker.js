@@ -67,7 +67,11 @@ const MURCIELAPP_ACTIONS = new Set([
   'murcielapp_sesion',
   'murcielapp_registrarEstimulo',
   'murcielapp_miSemana',
-  'murcielapp_adminEstimulos'
+  'murcielapp_adminEstimulos',
+  'murcielapp_reporteSemanal',
+  'murcielapp_editarEstimulo',
+  'murcielapp_eliminarEstimulo',
+  'murcielapp_validarAdmin'
 ]);
 
 const SITE_ACTIONS = [
@@ -127,6 +131,18 @@ export default {
 
       let targetResponse;
 
+      // Las acciones del CT usan sesión del servidor, nunca la bandera local de login.
+      if (!MURCIELAPP_ACTIONS.has(action)) {
+        if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'El acceso del CT requiere POST y sesión administrativa.' }, 405);
+        if (!/^[a-f0-9]{64}$/i.test(String(payload.adminToken || ''))) return jsonResponse({ ok: false, error: 'Acceso administrativo vencido. Ingresá la clave nuevamente.' }, 401);
+        const authResponse = await postToAppsScript(BASE_DEPORTE_SCRIPT_URL, { action: 'murcielapp_validarAdmin', adminToken: payload.adminToken });
+        const auth = await parseJsonResponse(authResponse);
+        if (!auth || auth.ok !== true || !auth.data || auth.data.autorizado !== true) {
+          const expired = /Acceso administrativo (vencido|inválido)/.test(String(auth && auth.error || ''));
+          return jsonResponse({ ok: false, error: expired ? 'Acceso administrativo vencido. Ingresá la clave nuevamente.' : 'No se pudo comprobar la sesión. Intentá nuevamente.' }, expired ? 401 : 502);
+        }
+      }
+
       if (REPORTES_ACTIONS.includes(action)) {
         targetResponse = await handleReportesAction(action, payload);
       } else if (SITE_ACTIONS.includes(action)) {
@@ -158,13 +174,14 @@ export default {
           ok: false,
           error: 'El backend devolvió una respuesta no JSON.',
           raw: text.slice(0, 1000)
-        }, targetResponse.status || 502);
+        }, targetResponse.ok ? 502 : targetResponse.status);
       }
 
       return new Response(text, {
         status: targetResponse.status,
         headers: {
           ...corsHeaders,
+          'Cache-Control': 'no-store, private',
           'Content-Type': 'application/json;charset=utf-8'
         }
       });
@@ -185,12 +202,14 @@ export default {
 async function handleReportesAction(action, payload) {
   if (action === 'getClientData') {
     const [reportesResponse, plantelResponse] = await Promise.all([
-      fetch(REPORTES_SCRIPT_URL + '?action=getClientData'),
-      postToAppsScript(BASE_DEPORTE_SCRIPT_URL, { action: 'getPlantel' })
+      postToAppsScript(REPORTES_SCRIPT_URL, { action: 'getClientData', adminToken: payload.adminToken }),
+      postToAppsScript(BASE_DEPORTE_SCRIPT_URL, { action: 'getPlantel', adminToken: payload.adminToken })
     ]);
 
     const reportesData = await parseJsonResponse(reportesResponse);
     const plantelData = await parseJsonResponse(plantelResponse);
+
+    if (!plantelData || plantelData.ok !== true) return jsonResponse({ ok: false, error: 'No se pudo leer el plantel para vincular los reportes.' }, 502);
 
     if (!reportesData || reportesData.ok === false) {
       return jsonResponse(reportesData || { ok: false, error: 'No se pudo leer Reportes.' }, reportesResponse.status || 500);
@@ -221,13 +240,14 @@ async function handleReportesAction(action, payload) {
   if (action === 'generateClientReport') {
     return postToAppsScript(REPORTES_SCRIPT_URL, {
       action: 'generateClientReport',
+      adminToken: payload.adminToken,
       prompt: payload.prompt || ''
     });
   }
 
   if (action === 'generarAuditoriaDatos') {
     return postToAppsScript(REPORTES_SCRIPT_URL, {
-      action: 'generarAuditoriaDatos'
+      action: 'generarAuditoriaDatos', adminToken: payload.adminToken
     });
   }
 
@@ -268,17 +288,17 @@ async function handleAntidopingAction(action, payload) {
 
 async function handleSiteAction(action, payload) {
   if (action === 'site_getContext') {
-    return jsonResponse(await loadSiteContext_());
+    return jsonResponse(await loadSiteContext_(payload));
   }
 
   if (action === 'site_getAnalyticContext') {
-    return jsonResponse(await loadAnalyticContext_());
+    return jsonResponse(await loadAnalyticContext_(payload));
   }
 
   if (action === 'site_getPlantel') {
     return jsonResponse({
       ok: true,
-      plantel: await loadCanonicalPlantel_()
+      plantel: await loadCanonicalPlantel_(payload)
     });
   }
 
@@ -349,10 +369,10 @@ function normalizeDni(value) {
   return String(value || '').replace(/\D+/g, '').trim();
 }
 
-async function loadSiteContext_() {
+async function loadSiteContext_(payload = {}) {
   const [plantel, reportesResponse] = await Promise.all([
-    loadCanonicalPlantel_(),
-    handleReportesAction('getClientData', {})
+    loadCanonicalPlantel_(payload),
+    handleReportesAction('getClientData', payload)
   ]);
 
   const reportesParsed = await parseJsonResponse(reportesResponse);
@@ -373,8 +393,8 @@ async function loadSiteContext_() {
   };
 }
 
-async function loadAnalyticContext_() {
-  const siteContext = await loadSiteContext_();
+async function loadAnalyticContext_(payload = {}) {
+  const siteContext = await loadSiteContext_(payload);
   if (!siteContext || siteContext.ok === false) {
     return siteContext;
   }
@@ -385,10 +405,10 @@ async function loadAnalyticContext_() {
     : { rows: [], linkedRows: [], linkStats: {} };
 
   const [partidosResponse, penalesResponse, concentracionesResponse, tueResponse] = await Promise.all([
-    loadModuleData_('partidos_getPartidos'),
-    loadModuleData_('penales_getPenales'),
-    loadModuleData_('concentraciones_getConcentraciones'),
-    loadModuleData_('antidoping_listarTUEs')
+    loadModuleData_('partidos_getPartidos', payload),
+    loadModuleData_('penales_getPenales', payload),
+    loadModuleData_('concentraciones_getConcentraciones', payload),
+    loadModuleData_('antidoping_listarTUEs', payload)
   ]);
 
   const partidos = normalizeModuleArray_(partidosResponse);
@@ -795,8 +815,8 @@ function roundOneDecimal_(value) {
   return Math.round(Number(value || 0) * 10) / 10;
 }
 
-async function loadPersonaContext_(dni) {
-  const context = await loadSiteContext_();
+async function loadPersonaContext_(dni, payload = {}) {
+  const context = await loadSiteContext_(payload);
   if (!context || context.ok === false) {
     return context;
   }
@@ -829,7 +849,7 @@ async function loadPersonaContext_(dni) {
 }
 
 async function lookupPersonaContextFromPayload_(payload) {
-  const context = await loadSiteContext_();
+  const context = await loadSiteContext_(payload);
   if (!context || context.ok === false) return context;
 
   const plantel = Array.isArray(context.plantel) ? context.plantel : [];
@@ -878,10 +898,10 @@ async function lookupPersonaContextFromPayload_(payload) {
   };
 }
 
-async function loadCanonicalPlantel_() {
-  const response = await handleBaseAction('base_getPlantel', {});
+async function loadCanonicalPlantel_(payload = {}) {
+  const response = await handleBaseAction('base_getPlantel', { adminToken: payload.adminToken });
   const parsed = await parseJsonResponse(response);
-  if (parsed && parsed.ok === false) return [];
+  if (!parsed || parsed.ok !== true) throw new Error('No se pudo leer el plantel. Intentá nuevamente.');
   const plantel = extractResponseData(parsed);
   return Array.isArray(plantel) ? plantel : [];
 }
@@ -1025,6 +1045,7 @@ function jsonResponse(data, status = 200) {
     status,
     headers: {
       ...corsHeaders,
+      'Cache-Control': 'no-store, private',
       'Content-Type': 'application/json;charset=utf-8'
     }
   });

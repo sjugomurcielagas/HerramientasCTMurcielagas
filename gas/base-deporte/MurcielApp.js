@@ -3,6 +3,7 @@ var MURCI_ACCESS_HEADERS_ = ['Persona_ID', 'Email', 'CodigoHash', 'CodigoVence',
 var MURCI_SESSION_HEADERS_ = ['TokenHash', 'Persona_ID', 'Vence', 'Creado'];
 var MURCI_ADMIN_SESSION_HEADERS_ = ['TokenHash', 'Vence', 'Creado', 'Revocado'];
 var MURCI_STIMULUS_HEADERS_ = ['ID', 'Persona_ID', 'Fecha', 'Tipo', 'Subtipo', 'DuracionMin', 'sRPE', 'Creado'];
+var MURCI_CHANGE_HEADERS_ = ['Request_ID', 'Estimulo_ID', 'Persona_ID', 'Accion', 'Revision', 'Datos', 'Fecha'];
 var MURCI_APP_URL_ = 'https://sjugomurcielagas.github.io/HerramientasCTMurcielagas/murcielapp/';
 
 function murcielapp_verificarPermisoCorreo() {
@@ -102,8 +103,10 @@ function murcielapp_activePlayers_() {
     var type = String(person.Tipo_Integrante || '').toLowerCase();
     var active = String(person.Activo || '').toLowerCase();
     var state = String(person.Estado_Plantel || '').toLowerCase();
+    var convocatoria = String(person.Estado_Convocatoria || '').toLowerCase();
     return (type.indexOf('jugadora') >= 0 || type.indexOf('arquera') >= 0) &&
-      active !== 'no' && state.indexOf('baja') < 0 && state.indexOf('inactiva') < 0;
+      active !== 'no' && state.indexOf('baja') < 0 && state.indexOf('inactiva') < 0 &&
+      convocatoria.indexOf('baja') < 0 && convocatoria.indexOf('inactiva') < 0;
   });
 }
 
@@ -246,7 +249,6 @@ function murcielapp_activar(payload) {
   try {
     var cache = CacheService.getScriptCache();
     var failures = Number(cache.get('murcielapp_activation_failures') || 0);
-    if (failures >= 40) throw new Error('Demasiados intentos. Probá de nuevo en 10 minutos.');
     var sheet = murcielapp_sheet_('MurcielApp_Accesos', MURCI_ACCESS_HEADERS_);
     var hash = murcielapp_hash_(code);
     var rows = murcielapp_rows_(sheet, MURCI_ACCESS_HEADERS_);
@@ -255,6 +257,7 @@ function murcielapp_activar(payload) {
         rows.filter(function(other) { return String(other.Persona_ID) === String(item.Persona_ID) && String(other.Estado) === 'enviado'; }).pop()._row === item._row;
     });
     if (!row) {
+      if (failures >= 40) throw new Error('Demasiados intentos. Probá de nuevo en 10 minutos.');
       cache.put('murcielapp_activation_failures', String(failures + 1), 600);
       throw new Error('Código no válido. Revisá el último correo que recibiste.');
     }
@@ -293,8 +296,7 @@ function murcielapp_sesion(payload) {
   return { nombre: String(person.Nombre || '').trim() };
 }
 
-function murcielapp_registrarEstimulo(payload) {
-  var person = murcielapp_persona_(payload);
+function murcielapp_validarEstimulo_(payload) {
   var date = String(payload.fecha || '');
   var type = String(payload.tipo || '');
   var subtype = String(payload.subtipo || '').trim();
@@ -311,6 +313,13 @@ function murcielapp_registrarEstimulo(payload) {
     if (!subtype || subtype.length > 80 || srpe !== null) throw new Error('Actividad inválida.');
   } else if (!Number.isInteger(srpe) || srpe < 0 || srpe > 10 || subtype) throw new Error('Intensidad inválida.');
   if (!/^[A-Za-z0-9-]{8,80}$/.test(requestId)) throw new Error('Solicitud inválida.');
+  return { Fecha: date, Tipo: type, Subtipo: subtype, DuracionMin: duration, sRPE: srpe === null ? '' : srpe };
+}
+
+function murcielapp_registrarEstimulo(payload) {
+  var person = murcielapp_persona_(payload);
+  var values = murcielapp_validarEstimulo_(payload);
+  var requestId = String(payload.requestId);
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
   try {
@@ -318,13 +327,65 @@ function murcielapp_registrarEstimulo(payload) {
     var existing = murcielapp_rows_(sheet, MURCI_STIMULUS_HEADERS_).find(function(row) {
       return String(row.ID) === requestId && String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]);
     });
-    if (existing) return { id: requestId, yaRegistrado: true };
-    sheet.appendRow([requestId, person[PERSONA_ID_COLUMN], date, type, subtype, duration, srpe === null ? '' : srpe, new Date().toISOString()]);
+    if (existing) {
+      if (murcielapp_date_(existing.Fecha) !== values.Fecha || String(existing.Tipo) !== values.Tipo ||
+          String(existing.Subtipo || '') !== values.Subtipo || Number(existing.DuracionMin) !== values.DuracionMin ||
+          String(existing.sRPE) !== String(values.sRPE)) throw new Error('La solicitud ya se usó con otros datos. Revisá Mi semana antes de volver a cargar.');
+      return { id: requestId, yaRegistrado: true };
+    }
+    sheet.appendRow([requestId, person[PERSONA_ID_COLUMN], values.Fecha, values.Tipo, values.Subtipo, values.DuracionMin, values.sRPE, new Date().toISOString()]);
     return { id: requestId, yaRegistrado: false };
   } finally {
     lock.releaseLock();
   }
 }
+
+// El original se conserva. Cada corrección es una revisión auditable y atómica.
+function murcielapp_registrosVigentes_() {
+  var rows = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_), MURCI_STIMULUS_HEADERS_);
+  var byId = {};
+  rows.forEach(function(row) { row.Revision = 0; byId[String(row.Persona_ID) + ':' + String(row.ID)] = row; });
+  murcielapp_rows_(murcielapp_sheet_('MurcielApp_Correcciones', MURCI_CHANGE_HEADERS_), MURCI_CHANGE_HEADERS_).forEach(function(change) {
+    var row = byId[String(change.Persona_ID) + ':' + String(change.Estimulo_ID)];
+    if (!row) throw new Error('Hay una corrección sin registro original. Consultá al CT.');
+    if (Number(change.Revision) !== row.Revision + 1) throw new Error('Hay una corrección inconsistente. Consultá al CT.');
+    if (change.Accion === 'editar') Object.assign(row, JSON.parse(String(change.Datos)));
+    else if (change.Accion === 'eliminar') row.Eliminado = true;
+    else throw new Error('Corrección desconocida. Consultá al CT.');
+    row.Revision = Number(change.Revision);
+    row.Actualizado = String(change.Fecha);
+  });
+  return rows;
+}
+
+function murcielapp_corregirEstimulo_(payload, action) {
+  var person = murcielapp_persona_(payload);
+  var id = String(payload.id || '');
+  var requestId = String(payload.requestId || '');
+  if (!id || !/^[A-Za-z0-9-]{8,80}$/.test(requestId) || !Number.isInteger(payload.revision) || payload.revision < 0) throw new Error('Solicitud inválida.');
+  var values = action === 'editar' ? murcielapp_validarEstimulo_(payload) : {};
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('Intentá nuevamente.');
+  try {
+    var personId = String(person[PERSONA_ID_COLUMN]);
+    var sheet = murcielapp_sheet_('MurcielApp_Correcciones', MURCI_CHANGE_HEADERS_);
+    var previous = murcielapp_rows_(sheet, MURCI_CHANGE_HEADERS_).find(function(row) {
+      return String(row.Persona_ID) === personId && String(row.Request_ID) === requestId;
+    });
+    if (previous) {
+      if (String(previous.Estimulo_ID) !== id || previous.Accion !== action || String(previous.Datos) !== JSON.stringify(values)) throw new Error('La solicitud ya se usó para otra corrección.');
+      return { id: id, revision: Number(previous.Revision), yaProcesado: true };
+    }
+    var row = murcielapp_registrosVigentes_().find(function(item) { return String(item.ID) === id && String(item.Persona_ID) === personId; });
+    if (!row || row.Eliminado) throw new Error('El estímulo no está disponible. Actualizá Mi semana.');
+    if (row.Revision !== payload.revision) throw new Error('El estímulo cambió desde que lo abriste. Actualizá Mi semana antes de corregirlo.');
+    sheet.appendRow([requestId, id, personId, action, row.Revision + 1, JSON.stringify(values), new Date().toISOString()]);
+    return { id: id, revision: row.Revision + 1, yaProcesado: false };
+  } finally { lock.releaseLock(); }
+}
+
+function murcielapp_editarEstimulo(payload) { return murcielapp_corregirEstimulo_(payload, 'editar'); }
+function murcielapp_eliminarEstimulo(payload) { return murcielapp_corregirEstimulo_(payload, 'eliminar'); }
 
 function murcielapp_miSemana(payload) {
   var person = murcielapp_persona_(payload);
@@ -336,9 +397,9 @@ function murcielapp_miSemana(payload) {
   var desde = monday.toISOString().slice(0, 10);
   monday.setUTCDate(monday.getUTCDate() + 6);
   var hasta = monday.toISOString().slice(0, 10);
-  return murcielapp_rows_(murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_), MURCI_STIMULUS_HEADERS_)
-    .filter(function(row) { return String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]) && murcielapp_date_(row.Fecha) >= desde && murcielapp_date_(row.Fecha) <= hasta; })
-    .map(function(row) { return { id: row.ID, fecha: murcielapp_date_(row.Fecha), tipo: row.Tipo, subtipo: row.Subtipo, duracionMin: row.DuracionMin, sRPE: row.sRPE }; })
+  return murcielapp_registrosVigentes_()
+    .filter(function(row) { return !row.Eliminado && String(row.Persona_ID) === String(person[PERSONA_ID_COLUMN]) && murcielapp_date_(row.Fecha) >= desde && murcielapp_date_(row.Fecha) <= hasta; })
+    .map(function(row) { return { id: row.ID, revision: row.Revision, fecha: murcielapp_date_(row.Fecha), tipo: row.Tipo, subtipo: row.Subtipo, duracionMin: row.DuracionMin, sRPE: row.sRPE }; })
     .sort(function(a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
 }
 
@@ -360,10 +421,10 @@ function murcielapp_adminEstimulos(payload) {
     var id = String(person[PERSONA_ID_COLUMN] || '').trim();
     if (id) people[id] = [person.Apellido, person.Nombre].filter(Boolean).join(', ') || id;
   });
-  var registros = murcielapp_rows_(murcielapp_sheet_('MurcielApp_Estimulos', MURCI_STIMULUS_HEADERS_), MURCI_STIMULUS_HEADERS_)
+  var registros = murcielapp_registrosVigentes_()
     .filter(function(row) {
       var fecha = murcielapp_date_(row.Fecha);
-      return String(row.Persona_ID) !== 'TEST_SANTIAGO' && fecha >= desde && fecha <= hasta;
+      return !row.Eliminado && String(row.Persona_ID) !== 'TEST_SANTIAGO' && fecha >= desde && fecha <= hasta;
     })
     .map(function(row) {
       var id = String(row.Persona_ID || '');
@@ -372,10 +433,24 @@ function murcielapp_adminEstimulos(payload) {
         fecha: murcielapp_date_(row.Fecha), tipo: String(row.Tipo || ''),
         subtipo: String(row.Subtipo || ''), duracionMin: Number(row.DuracionMin) || 0,
         sRPE: row.sRPE === '' || row.sRPE === null ? null : Number(row.sRPE),
-        creado: String(row.Creado || '')
+        creado: String(row.Creado || ''), revision: row.Revision, actualizado: row.Actualizado || ''
       };
     });
   if (registros.length > 5000) throw new Error('Hay demasiados registros para este período. Elegí uno más corto.');
   registros.sort(function(a, b) { return b.fecha.localeCompare(a.fecha) || b.creado.localeCompare(a.creado); });
   return registros;
 }
+
+function murcielapp_reporteSemanal(payload) {
+  var registros = murcielapp_adminEstimulos(payload);
+  return {
+    registros: registros,
+    plantel: murcielapp_activePlayers_().map(function(person) {
+      return { personaId: String(person[PERSONA_ID_COLUMN]), nombre: [person.Apellido, person.Nombre].filter(Boolean).join(', ') };
+    }),
+    desde: String(payload.desde), hasta: String(payload.hasta), actualizado: new Date().toISOString(),
+    fuente: 'MurcielApp', corte: '2026-10-19', zonaHoraria: 'America/Argentina/Buenos_Aires'
+  };
+}
+
+function murcielapp_validarAdmin(payload) { murcielapp_admin_(payload); return { autorizado: true }; }
