@@ -1,5 +1,13 @@
 # Reportes de MurcielApp y corrección de estímulos
 
+## Estado de publicación · 20/10/2026
+
+Publicado e integrado mediante el PR #2 (merge `de9ed9724891da4cc0b2c4b17e303c22ce86e0fd`). Base/MurcielApp usa la versión 137, que reemplaza a la 136; Reportes usa la versión 40, que reemplaza a la 39. Se conservaron los dos identificadores y URLs de implementación. El Worker se publica desde main mediante su integración existente con GitHub.
+
+Comprobado en producción con la sesión administrativa existente: Reportes de entrenamiento carga los registros diarios reales, sus totales coinciden con la tabla de detalle y la vista individual abre correctamente. El histórico del 05–11/10 conserva datos y permanece separado del período diario. Gestión ya no contiene tabla, filtros ni exportación de estímulos, y enlaza a Reportes. Las consultas directas a Apps Script sin sesión y los GET del CT al Worker se rechazan. No se modificaron estímulos reales ni se enviaron correos o solicitudes a OpenAI durante la comprobación.
+
+Pruebas locales: 27 aprobadas y recorrido original de creación aprobado. La comprobación real de edición/eliminación se mantiene limitada a los recorridos con datos ficticios; la producción se verificó sin alterar registros personales. Los informes con IA de registros diarios y la protección frente a tráfico sostenido siguen pendientes.
+
 ## Qué cambia
 
 Reportes abre con la semana del equipo, con selección de jugadora, navegación entre semanas y rango de fechas. Muestra estímulos por tipo, minutos, carga interna, detalle por día y evolución semanal si el rango abarca varias semanas. Permite exportar el detalle visible a CSV e imprimir el informe. Las jugadoras sin registros permanecen en el plantel con «Sin datos registrados».
@@ -27,7 +35,7 @@ Ejemplo de corrección: abrir la semana anterior, corregir el estímulo original
 
 ## Publicación coordinada
 
-**Esta rama no debe integrarse a main hasta disponer del acceso de publicación a los dos proyectos de Apps Script y al Worker.** GitHub Pages se despliega desde main; subir solamente el frontend deja acciones desconocidas en el backend anterior. Actualizar solamente el backend endurecido interrumpe temporalmente el CT anterior. La publicación requiere una ventana breve para coordinar las tres piezas.
+**Las futuras publicaciones deben coordinar los dos proyectos de Apps Script y el Worker con el sitio.** GitHub Pages se despliega desde main; subir solamente el frontend deja acciones desconocidas en el backend anterior. Actualizar solamente el backend endurecido interrumpe temporalmente el CT anterior. La publicación requiere una ventana breve para coordinar las tres piezas.
 
 1. Guardar una copia de las hojas de estímulos y sesiones y anotar las versiones/implementaciones vigentes de ambos Apps Script y del Worker. No rotar claves ni regenerar códigos de las jugadoras.
 2. Confirmar que la clave administrativa actual existe y que puede crear una sesión. No copiarla al repositorio, al navegador de pruebas ni a la descripción del PR.
@@ -37,7 +45,7 @@ Ejemplo de corrección: abrir la semana anterior, corregir el estímulo original
 6. Integrar la rama a main y esperar la verificación y publicación de Pages. La verificación no necesita credenciales ni datos reales.
 7. Abrir el sitio con una recarga completa. Ingresar al CT con la clave administrativa de MurcielApp. Verificar la nueva UI `2026.10.20.1`; el service worker pasa a v9. Las sesiones anteriores basadas únicamente en la contraseña vieja deben volver a entrar.
 
-En el entorno donde se preparó esta rama no había configuración de autenticación de clasp ni de Wrangler. La conexión de GitHub sí permite publicar el código y la sesión de Google permite abrir el editor de Apps Script; el panel de Cloudflare quedó en su pantalla de carga incluso después de recargarlo. No se ejecutó una publicación parcial de los backends ni se comparó la planilla real con las vistas.
+La publicación se realizó desde los editores de Apps Script con la sesión de Google existente y mediante la integración de GitHub del Worker. No se configuraron credenciales nuevas de clasp o Wrangler. El bloqueo inicial de carga del panel de Cloudflare se resolvió antes de publicar.
 
 ## Comprobación posterior a la publicación
 
