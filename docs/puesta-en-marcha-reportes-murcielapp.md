@@ -22,7 +22,7 @@ Ejemplo de corrección: abrir la semana anterior, corregir el estímulo original
 
 ## Identidad y conservación de datos
 
-- Se reutilizan las sesiones administrativas de MurcielApp y la propiedad existente `MURCIELAPP_ADMIN_KEY`, de al menos 32 caracteres. La antigua contraseña compartida deja de conceder acceso.
+- El ingreso del CT crea las mismas sesiones administrativas de MurcielApp con su contraseña habitual. Por pedido de Santiago, la contraseña por defecto vuelve a ser `1`. Puede configurarse mediante `MURCIELAPP_CT_PASSWORD`; la propiedad interna `MURCIELAPP_ADMIN_KEY` se conserva separada, sin modificarla. La contraseña por sí sola no reemplaza el token en las consultas del CT.
 - Las operaciones del CT, incluyendo las lecturas, usan POST con sesión validada en el servidor. No se agregan estímulos diarios a los contextos generales del sitio.
 - El Worker y Apps Script verifican el acceso. El Apps Script de Reportes valida la sesión contra `MurcielApp_AdminSesiones` de la base compartida. La cuenta que publica Reportes necesita acceso a esa planilla.
 - Los registros de prueba no entran en Reportes. Las jugadoras solo pueden modificar estímulos asociados a su propia sesión.
@@ -38,12 +38,12 @@ Ejemplo de corrección: abrir la semana anterior, corregir el estímulo original
 **Las futuras publicaciones deben coordinar los dos proyectos de Apps Script y el Worker con el sitio.** GitHub Pages se despliega desde main; subir solamente el frontend deja acciones desconocidas en el backend anterior. Actualizar solamente el backend endurecido interrumpe temporalmente el CT anterior. La publicación requiere una ventana breve para coordinar las tres piezas.
 
 1. Guardar una copia de las hojas de estímulos y sesiones y anotar las versiones/implementaciones vigentes de ambos Apps Script y del Worker. No rotar claves ni regenerar códigos de las jugadoras.
-2. Confirmar que la clave administrativa actual existe y que puede crear una sesión. No copiarla al repositorio, al navegador de pruebas ni a la descripción del PR.
+2. Confirmar que el ingreso del CT puede crear una sesión con su contraseña configurada (`MURCIELAPP_CT_PASSWORD`, o el valor por defecto si no existe). No copiar la propiedad interna `MURCIELAPP_ADMIN_KEY` al repositorio, al navegador de pruebas ni a la descripción del PR.
 3. Publicar `gas/base-deporte/Código.js` y `gas/base-deporte/MurcielApp.js` en el proyecto indicado por su `.clasp.json`, conservando `ZZ_FADEC_override.js` y el manifiesto. Actualizar la implementación existente a una versión nueva para conservar la URL de `BASE_DEPORTE_SCRIPT_URL`.
 4. Publicar `gas/reportes/Código.js` en su proyecto e implementación existentes. Confirmar acceso de la cuenta publicadora a la planilla de sesiones. Conservar la propiedad de OpenAI existente; esta publicación no necesita una clave nueva.
 5. Publicar `worker.js` usando `wrangler.toml`, manteniendo el nombre y las URLs existentes. No se requieren bindings nuevos ni claves nuevas.
 6. Integrar la rama a main y esperar la verificación y publicación de Pages. La verificación no necesita credenciales ni datos reales.
-7. Abrir el sitio con una recarga completa. Ingresar al CT con la clave administrativa de MurcielApp. Verificar la nueva UI `2026.10.20.1`; el service worker pasa a v9. Las sesiones anteriores basadas únicamente en la contraseña vieja deben volver a entrar.
+7. Abrir el sitio con una recarga completa. Ingresar al CT con su contraseña habitual. Verificar la nueva UI `2026.10.20.1`; el service worker pasa a v9. Las sesiones anteriores basadas únicamente en la contraseña vieja deben volver a entrar para obtener un token del servidor.
 
 La publicación se realizó desde los editores de Apps Script con la sesión de Google existente y mediante la integración de GitHub del Worker. No se configuraron credenciales nuevas de clasp o Wrangler. El bloqueo inicial de carga del panel de Cloudflare se resolvió antes de publicar.
 

@@ -9,6 +9,7 @@ function setup() {
   const sheets = new Map();
   const sent = [];
   const cache = new Map();
+  const properties = new Map([['MURCIELAPP_ADMIN_KEY', 'a'.repeat(40)]]);
   const players = [
     { Persona_ID: 'P1', Nombre: 'Ana', Apellido: 'Pérez', Email: '\u2060ana@example.org', Tipo_Integrante: 'Jugadora', Activo: 'Sí', Estado_Plantel: 'Activa' },
     { Persona_ID: 'P2', Nombre: 'Eva', Apellido: 'Luna', Email: 'eva@example.org', Tipo_Integrante: 'Arquera', Activo: 'Sí', Estado_Plantel: 'Activa' },
@@ -37,7 +38,7 @@ function setup() {
     CONFIG: { SPREADSHEET_ID: 'fake' },
     PERSONA_ID_COLUMN: 'Persona_ID',
     SpreadsheetApp: { openById: () => workbook },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: () => 'a'.repeat(40) }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties.get(key) || null }) },
     getAllRows_: () => players,
     MailApp: { getRemainingDailyQuota: () => 100, sendEmail: mail => sent.push(mail) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
@@ -51,7 +52,7 @@ function setup() {
   });
   const code = fs.readFileSync(path.join(__dirname, '..', 'gas', 'base-deporte', 'MurcielApp.js'), 'utf8');
   vm.runInContext(code, context);
-  return { context, sent, players, cache, sheets };
+  return { context, sent, players, cache, sheets, properties };
 }
 
 test('códigos personales reutilizables, registros propios y reintento idempotente', () => {
@@ -113,7 +114,9 @@ test('Mi semana permite consultar completa la semana anterior', () => {
 test('sesión administrativa temporal, sin guardar la clave y revocable', () => {
   const { context, sheets } = setup();
   assert.throws(() => context.murcielapp_adminSesion({ adminKey: 'incorrecta' }), /administrativo/);
-  const { token, expiresInDays } = context.murcielapp_adminSesion({ adminKey: 'a'.repeat(40) });
+  assert.throws(() => context.murcielapp_adminSesion({}), /administrativo/);
+  assert.throws(() => context.murcielapp_adminSesion(null), /administrativo/);
+  const { token, expiresInDays } = context.murcielapp_adminSesion({ adminKey: '1' });
   assert.match(token, /^[a-f0-9]{64}$/i);
   assert.equal(expiresInDays, 30);
   const stored = sheets.get('MurcielApp_AdminSesiones').getRange(2, 1, 1, 4).getValues()[0];
@@ -121,9 +124,19 @@ test('sesión administrativa temporal, sin guardar la clave y revocable', () => 
   assert.equal(context.murcielapp_destinatarias({ adminToken: token }).length, 2);
   assert.deepEqual({ ...context.murcielapp_adminCerrarSesion({ adminToken: token }) }, { cerrado: true });
   assert.throws(() => context.murcielapp_destinatarias({ adminToken: token }), /vencido/);
-  const next = context.murcielapp_adminSesion({ adminKey: 'a'.repeat(40) });
+  const next = context.murcielapp_adminSesion({ adminKey: '1' });
   sheets.get('MurcielApp_AdminSesiones').getRange(3, 2).setValue('2020-01-01T00:00:00.000Z');
   assert.throws(() => context.murcielapp_destinatarias({ adminToken: next.token }), /vencido/);
+});
+
+test('la clave del CT se configura aparte de la clave interna de MurcielApp', () => {
+  const { context, properties } = setup();
+  properties.set('MURCIELAPP_CT_PASSWORD', 'clave-ct-de-prueba');
+  assert.throws(() => context.murcielapp_adminSesion({ adminKey: '1' }), /administrativo/);
+  assert.throws(() => context.murcielapp_adminSesion({ adminKey: 'a'.repeat(40) }), /administrativo/);
+  const { token } = context.murcielapp_adminSesion({ adminKey: 'clave-ct-de-prueba' });
+  assert.equal(context.murcielapp_destinatarias({ adminToken: token }).length, 2);
+  assert.throws(() => context.murcielapp_destinatarias({ adminKey: 'clave-ct-de-prueba' }), /administrativo/);
 });
 
 test('cambiar el código invalida el anterior sin perder la sesión ni los registros', () => {

@@ -79,7 +79,11 @@ function murcielapp_admin_(payload) {
 }
 
 function murcielapp_adminSesion(payload) {
-  murcielapp_admin_({ adminKey: payload && payload.adminKey });
+  // El ingreso del CT conserva su clave habitual; las consultas usan el token de sesión.
+  var expected = PropertiesService.getScriptProperties().getProperty('MURCIELAPP_CT_PASSWORD') || '1';
+  if (!payload || murcielapp_hash_(payload.adminKey || '') !== murcielapp_hash_(expected)) {
+    throw new Error('Acceso administrativo inválido.');
+  }
   var token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
   var now = Date.now();
   murcielapp_sheet_('MurcielApp_AdminSesiones', MURCI_ADMIN_SESSION_HEADERS_).appendRow([
