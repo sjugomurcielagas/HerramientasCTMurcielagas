@@ -7,7 +7,7 @@
     "test": "node --test tests/*.test.cjs",
     "test:unit": "node --test tests/murcielapp-backend.test.cjs tests/reportes-model.test.cjs tests/worker-auth.test.cjs tests/http-security.test.cjs tests/shared-client.test.cjs",
     "test:ui": "node --test tests/murcielapp-reportes-ui.test.cjs",
-    "test:smoke": "node tests/murcielapp-ui-smoke.cjs",
+    "test:smoke": "node tests/murcielapp-ui-smoke.cjs && node tests/murcielapp-routine-ui-smoke.cjs",
     "lh": "node scripts/run-lighthouse.mjs",
     "lh:all": "node scripts/run-lighthouse.mjs all",
     "lh:reportes": "node scripts/run-lighthouse.mjs reportes/",
