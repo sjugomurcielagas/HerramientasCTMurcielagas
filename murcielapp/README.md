@@ -14,6 +14,12 @@ La rutina estructurada fue revisada manualmente contra el PDF antes de su
 publicación. La aplicación carga `rutina.json` y permite ver o descargar
 `rutina-original.pdf`.
 
+La rutina publicada corresponde al mesociclo del 26 de octubre al 11 de
+diciembre de 2026. En el Día 1, el texto de dos tramos difiere de la columna
+«Tiempo de trabajo»; Santiago indicó seguir las duraciones escritas en cada
+tramo. La estructura de zona media conserva las vueltas alternadas definidas
+para MurcielApp.
+
 ## Alcance de esta etapa
 
 - Entrenar abre dos caminos: Ver rutina o Paso a paso.
