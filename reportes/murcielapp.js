@@ -4,7 +4,7 @@
   const $ = id => document.getElementById(id);
   const storage = 'murcielapp.adminSession.v1';
   let tableId = 0;
-  const state = { token: '', payload: null, model: null, request: 0, desde: '', hasta: '' };
+  const state = { anchor: M.today(), token: '', payload: null, model: null, request: 0, desde: '', hasta: '' };
   try { state.token = localStorage.getItem(storage) || ''; } catch (_) {}
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const type = row => ({ fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[row.tipo]);
@@ -162,16 +162,37 @@
     const button = event.target.closest('[data-daily-player]'); if (!button) return;
     $('daily-player').value = button.dataset.dailyPlayer; render(); $('daily-title').focus();
   });
+  function populatePeriods(custom = false) {
+    const unit = $('daily-view').value, year = Number(state.anchor.slice(0, 4));
+    const currentYear = Number(M.today().slice(0, 4));
+    const years = [];
+    for (let y = Math.min(currentYear - 5, year); y <= Math.max(currentYear + 1, year); y++) years.push(new Option(String(y), String(y)));
+    $('daily-year').replaceChildren(...years); $('daily-year').value = String(year);
+    const options = [], selected = M.periodRange(state.anchor, unit).desde;
+    if (unit === 'month') {
+      for (let m = 1; m <= 12; m++) {
+        const value = year + '-' + String(m).padStart(2, '0') + '-01';
+        const label = new Intl.DateTimeFormat('es-AR', {month:'long',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z'));
+        options.push(new Option(label[0].toUpperCase() + label.slice(1), value));
+      }
+    } else {
+      let value = year + '-01-01'; if (unit === 'week') value = M.monday(value);
+      for (; value <= year + '-12-31'; value = M.shift(value, unit === 'week' ? 7 : 1)) {
+        const label = unit === 'week' ? fmt(value) + ' al ' + fmt(M.shift(value, 6)) : new Intl.DateTimeFormat('es-AR', {weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z'));
+        options.push(new Option(label, value));
+      }
+    }
+    $('daily-period').replaceChildren(...options, new Option('Personalizar fechas', 'custom'));
+    $('daily-period').value = custom ? 'custom' : selected;
+    $('daily-period-title').textContent = {day:'Día',week:'Semana',month:'Mes'}[unit];
+  }
   function period() {
-    const today = M.today(), value = $('daily-period').value, unit = $('daily-view').value;
-    $('daily-dates').hidden = value !== 'custom';
-    $('daily-anchor-field').hidden = value !== 'current';
-    $('daily-period').options[0].textContent = {day:'Día seleccionado',week:'Semana seleccionada',month:'Mes seleccionado'}[unit];
-    if (value === 'current') {
-      const range = M.periodRange($('daily-anchor').value || today, unit);
+    const custom = $('daily-period').value === 'custom', unit = $('daily-view').value;
+    $('daily-dates').hidden = !custom;
+    if (!custom) {
+      const range = M.periodRange(state.anchor, unit);
       $('daily-from').value = range.desde; $('daily-to').value = range.hasta;
     }
-    if (value === 'year') { $('daily-from').value = today.slice(0, 4) + '-01-01'; $('daily-to').value = today; }
     const labels = {day:['Día anterior', 'Día siguiente'],week:['Semana anterior','Semana siguiente'],month:['Mes anterior','Mes siguiente']}[unit];
     $('daily-prev').textContent = '← ' + labels[0]; $('daily-next').textContent = labels[1] + ' →';
     $('daily-period-label').textContent = fmt($('daily-from').value) + ' al ' + fmt($('daily-to').value);
@@ -179,8 +200,8 @@
   }
   async function navigate(direction) {
     const unit = $('daily-view').value;
-    if ($('daily-period').value === 'current') {
-      $('daily-anchor').value = M.advance($('daily-anchor').value, unit, direction);
+    if ($('daily-period').value !== 'custom') {
+      state.anchor = M.advance(state.anchor, unit, direction); populatePeriods();
     } else {
       $('daily-from').value = M.advance($('daily-from').value, unit, direction);
       $('daily-to').value = M.advance($('daily-to').value, unit, direction);
@@ -190,9 +211,9 @@
   }
   $('daily-prev').addEventListener('click', () => navigate(-1));
   $('daily-next').addEventListener('click', () => navigate(1));
-  $('daily-anchor').addEventListener('change', () => { if ($('daily-anchor').value) period(); });
-  $('daily-period').addEventListener('change', period);
-  $('daily-view').addEventListener('change', () => { period(); if ($('daily-period').value === 'custom') render(); });
+  $('daily-year').addEventListener('change', () => { state.anchor = M.advance(state.anchor, 'month', (Number($('daily-year').value) - Number(state.anchor.slice(0, 4))) * 12); populatePeriods(); period(); });
+  $('daily-period').addEventListener('change', () => { if ($('daily-period').value !== 'custom') state.anchor = $('daily-period').value; period(); });
+  $('daily-view').addEventListener('change', () => { populatePeriods($('daily-period').value === 'custom'); period(); if ($('daily-period').value === 'custom') render(); });
   $('daily-type').addEventListener('change', render);
   $('daily-range').addEventListener('submit', event => { event.preventDefault(); period(); load(); });
   $('daily-export').addEventListener('click', () => {
@@ -206,5 +227,5 @@
     if (event.newValue) { state.token = event.newValue; session(); load(); }
     else { forget(); $('daily-status').textContent = 'La sesión se cerró en otra pestaña. Volvé a entrar.'; }
   });
-  $('daily-anchor').value = M.today(); setWeek(M.today()); period(); session(); if (state.token) load();
+  setWeek(M.today()); populatePeriods(); period(); session(); if (state.token) load();
 })();

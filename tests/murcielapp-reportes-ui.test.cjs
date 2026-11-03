@@ -188,6 +188,8 @@ test('Ver por inicia en semana, navega día/semana/mes y Ver reporte no descarga
     await page.locator('#daily-output:not([hidden])').waitFor();
     assert.equal(await page.locator('#daily-range select').first().getAttribute('id'), 'daily-view');
     assert.equal(await page.locator('#daily-view').inputValue(), 'week');
+    assert.equal(await page.locator('#daily-anchor').count(), 0);
+    assert.match(await page.locator('#daily-period option:checked').innerText(), /19\/10\/2026 al 25\/10\/2026/);
     const navigate = async (button, from, to) => {
       const response = page.waitForResponse(r => { try { const p = r.request().postDataJSON(); return p.action === 'murcielapp_reporteSemanal' && p.desde === from && p.hasta === to; } catch { return false; } });
       await page.getByRole('button', {name: new RegExp(button)}).click(); await response;
@@ -201,12 +203,19 @@ test('Ver por inicia en semana, navega día/semana/mes y Ver reporte no descarga
     await navigate('Día anterior', '2026-10-19', '2026-10-19');
     await navigate('Día siguiente', '2026-10-20', '2026-10-20');
     await page.locator('#daily-view').selectOption('month');
+    assert.deepEqual((await page.locator('#daily-period option').allTextContents()).slice(0, 3), ['Enero', 'Febrero', 'Marzo']);
+    assert.equal(await page.locator('#daily-period option').last().innerText(), 'Personalizar fechas');
     await navigate('Mes anterior', '2026-09-01', '2026-09-30');
     await navigate('Mes siguiente', '2026-10-01', '2026-10-31');
     await navigate('Ver reporte', '2026-10-01', '2026-10-31');
     assert.equal(downloads.length, 0);
     assert.equal(await page.locator('#daily-download').isVisible(), true);
     assert.equal(await page.locator('#daily-export').getAttribute('type'), 'button');
+    await page.locator('#daily-year').selectOption('2027');
+    await page.locator('#daily-period').selectOption({label:'Febrero'});
+    await navigate('Ver reporte', '2027-02-01', '2027-02-28');
+    await page.locator('#daily-period').selectOption('custom');
+    assert.equal(await page.locator('#daily-dates').isVisible(), true);
     assert.deepEqual(errors, []);
   } finally {await context.close();}
 });
