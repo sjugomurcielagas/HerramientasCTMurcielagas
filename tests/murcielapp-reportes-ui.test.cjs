@@ -4,6 +4,7 @@ const http = require('node:http');
 const path = require('node:path');
 const { test, before, after } = require('node:test');
 const { chromium } = require('@playwright/test');
+const M = require('../reportes/murcielapp-model.js');
 const root = path.resolve(__dirname, '..');
 let browser, server, base;
 before(async () => {
@@ -29,6 +30,7 @@ async function fixture() {
   await page.route('https://fonts.gstatic.com/**', route => route.abort());
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const rows = [{ id: 'original-1', personaId: 'P1', jugadora: 'Pérez, Ana', fecha: '2026-10-20', tipo: 'tecnico', subtipo: '', duracionMin: 110, sRPE: 5, revision: 0 }];
+  const historical = [{ fecha: '2026-09-14', jugadora: 'Pérez, Ana', persona_id: 'P1', periodoAnalisis: '2026-S37', total: 5, fisico: 3, tecnico: 2 }, { fecha: '2026-10-26', jugadora: 'Pérez, Ana', persona_id: 'P1', periodoAnalisis: '2026-S43', total: 1, fisico: 0, tecnico: 1 }];
   const calls = [];
   let failLoad = false;
   await page.route('https://murcielagas-reportes-api.sjugomurcielagas.workers.dev/**', async route => {
@@ -49,11 +51,11 @@ async function fixture() {
       assert.equal(p.adminToken, 'a'.repeat(64));
       if (failLoad) { await route.fulfill({ json: { ok: false, error: 'Servicio no disponible.' } }); return; }
       data = { corte: '2026-10-19', actualizado: '2026-10-20T18:00:00Z', registros: rows.filter(r => r.fecha >= p.desde && r.fecha <= p.hasta), plantel: [{ personaId: 'P1', nombre: 'Pérez, Ana' }, { personaId: 'P2', nombre: 'Luna, Eva' }] };
-    } else if (p.action === 'site_getContext') data = { ok: true, plantel: [], reportes: { rows: [{ fecha: '2026-09-14', jugadora: 'Pérez, Ana', persona_id: 'P1', periodoAnalisis: '2026-S37', total: 5, fisico: 3, tecnico: 2 }, { fecha: '2026-10-26', jugadora: 'Pérez, Ana', persona_id: 'P1', periodoAnalisis: '2026-S43', total: 99, fisico: 99, tecnico: 0 }] } };
+    } else if (p.action === 'site_getContext') data = {ok:true,plantel:[],reportes:{rows:historical}};
     else data = {};
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data }) });
   });
-  return { context, page, rows, calls, errors, fail: () => { failLoad = true; } };
+  return { context, page, rows, historical, calls, errors, fail: () => { failLoad = true; } };
 }
 
 test('Ana corrige 110 a 80 minutos, ve el cambio y elimina sin crear otro estímulo', async () => {
@@ -122,7 +124,7 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     await page.locator('#daily-from').fill('2026-10-12');
     await page.locator('#daily-to').fill('2026-10-18');
     await page.getByRole('button', { name: 'Ver reporte', exact: true }).click();
-    await page.getByText(/Histórico y registros diarios integrados/).waitFor();
+    await page.getByText(/Se incluyen ambos sistemas/).waitFor();
     assert.equal(await page.locator('.daily-kpis').count(), 1);
     fail();
     await page.getByRole('button', { name: 'Ver reporte', exact: true }).first().click();
@@ -194,7 +196,7 @@ test('Ver por inicia en semana, navega día/semana/mes y Ver reporte no descarga
     assert.equal(await page.locator('#daily-anchor').count(), 0);
     assert.match(await page.locator('#daily-period option:checked').innerText(), /19\/10\/2026 al 25\/10\/2026/);
     const navigate = async (button, from, to) => {
-      const response = page.waitForResponse(r => { try { const p = r.request().postDataJSON(); return p.action === 'murcielapp_reporteSemanal' && p.desde === from && p.hasta === to; } catch { return false; } });
+      const response = page.waitForResponse(r => { try { const p = r.request().postDataJSON(); return p.action === 'murcielapp_reporteSemanal' && p.desde === M.monday(from) && p.hasta === M.shift(M.monday(to), 6); } catch { return false; } });
       await page.getByRole('button', {name: new RegExp(button)}).click(); await response;
       await page.locator('#daily-output:not([hidden])').waitFor();
       assert.equal(await page.locator('#daily-from').inputValue(), from);
@@ -244,4 +246,29 @@ test('Físico más Técnico-táctico permite comparar jugadoras sin contar Otros
     assert.deepEqual((await combined.locator('td').allTextContents()).slice(1), ['2','2','2']);
     assert.deepEqual(errors, []);
   } finally {await context.close();}
+});
+
+test('muestra conciliación, detalle diario anterior al corte y CSV con complemento', async () => {
+ const {context,page,rows,historical,errors}=await fixture();
+ rows[0].fecha='2026-10-14';
+ historical.push({fecha:'2026-10-19',jugadora:'Pérez, Ana',persona_id:'P1',periodoAnalisis:'2026-S42',total:3,fisico:2,tecnico:1});
+ try {
+  await page.goto(base+'/reportes/');
+  await page.getByLabel('Clave del cuerpo técnico',{exact:true}).fill('clave-de-prueba');
+  await page.getByRole('button',{name:'Entrar a Reportes',exact:true}).click();
+  await page.locator('#daily-output:not([hidden])').waitFor();
+  await page.locator('#daily-period').selectOption('2026-10-12');
+  await page.getByRole('button',{name:'Ver reporte',exact:true}).click();
+  await page.getByText('Hay diferencias entre fuentes.',{exact:false}).waitFor();
+  assert.equal(await page.locator('.daily-kpi strong').first().innerText(),'3');
+  await page.getByText('Ver conciliación entre sistemas',{exact:true}).click();
+  assert.match(await page.locator('#daily-output').innerText(),/Total semanal informado/);
+  await page.getByText('Ver estímulos registrados',{exact:true}).click();
+  assert.match(await page.locator('#daily-output').innerText(),/14\/10\/2026/);
+  const download=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Descargar datos',exact:true}).click();
+  const stream=await (await download).createReadStream();let csv='';for await(const chunk of stream)csv+=chunk.toString();
+  assert.match(csv,/Complemento semanal conciliado/);assert.match(csv,/Total original semanal/);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
 });

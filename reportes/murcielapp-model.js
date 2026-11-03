@@ -34,15 +34,23 @@
     const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
     d.setUTCDate(Math.min(day, last)); return d.toISOString().slice(0, 10);
   }
+  function readRanges(desde, hasta) {
+    const ranges = [], end = shift(monday(hasta), 6);
+    for (let start = monday(desde); start <= end;) {
+      const limit = shift(start, 366), finish = limit < end ? limit : end;
+      ranges.push({ desde: start, hasta: finish }); start = shift(finish, 1);
+    }
+    return ranges;
+  }
   function empty() { return { cantidad: 0, minutos: 0, carga: 0, fisico: 0, tecnico: 0, otros: 0 }; }
   function sum(rows) {
     const totals = rows.reduce((s, r) => {
-      if (r.historico) { s.cantidad += r.total; s.fisico += r.fisico; s.tecnico += r.tecnico; return s; }
+      if (r.historico) { s.cantidad += r.total; s.fisico += r.fisico; s.tecnico += r.tecnico; s.otros += r.otros || 0; return s; }
       s.cantidad++; s.minutos += r.duracionMin; s[r.tipo]++;
       if (r.tipo !== 'otros') s.carga += r.duracionMin * r.sRPE;
       return s;
     }, empty());
-    return { ...totals, fisicoTecnico: totals.fisico + totals.tecnico };
+    return { ...totals, fisicoTecnico: totals.fisico + totals.tecnico, sinClasificar: Math.max(0, totals.cantidad - totals.fisico - totals.tecnico - totals.otros) };
   }
   function validate(row) {
     date(row.fecha);
@@ -67,14 +75,37 @@
     });
     const roster = new Map(payload.plantel.filter(p => p.personaId && p.personaId !== 'TEST_SANTIAGO').map(p => [p.personaId, { ...p, fueraPlantel: false }]));
     all.forEach(r => { if (!roster.has(r.personaId)) roster.set(r.personaId, { personaId: r.personaId, nombre: r.jugadora || r.personaId, fueraPlantel: true }); });
-    let rows = all.filter(r => r.fecha >= desde && r.fecha <= hasta && r.fecha >= CORTE && (!personaId || r.personaId === personaId));
-    const detalleTransicion = all.filter(r => r.fecha >= desde && r.fecha <= hasta && r.fecha < CORTE && (!personaId || r.personaId === personaId));
-    const historicos = (payload.historicos || []).filter(r => r.fecha < CORTE && r.fecha >= desde && r.fecha <= hasta && (!personaId || r.personaId === personaId));
+    const historicos = (payload.historicos || []).filter(r => r.personaId !== 'TEST_SANTIAGO').map(r => {
+      date(r.fecha);
+      for (const key of ['total', 'fisico', 'tecnico']) if (!Number.isInteger(r[key]) || r[key] < 0) throw new Error('Reporte semanal inválido.');
+      if (!r.personaId || !Number.isInteger(r.otros || 0) || (r.otros || 0) < 0) throw new Error('Reporte semanal inválido.');
+      return { ...r, historico: true, otros: r.otros || 0 };
+    });
     historicos.forEach(r => { if (!roster.has(r.personaId)) roster.set(r.personaId, { personaId: r.personaId, nombre: r.jugadora }); });
-    rows = rows.concat(historicos);
+    const groups = new Map(), conciliaciones = [], dailyByWeek = new Map();
+    all.forEach(r => { const key = r.personaId + ':' + monday(r.fecha); if (!dailyByWeek.has(key)) dailyByWeek.set(key, []); dailyByWeek.get(key).push(r); });
+    historicos.forEach(r => {
+      const key = r.personaId + ':' + monday(r.fecha);
+      if (!groups.has(key)) groups.set(key, []); groups.get(key).push(r);
+    });
+    const complementos = [];
+    groups.forEach(group => {
+      const first = group[0], week = monday(first.fecha);
+      const dailyRows = dailyByWeek.get(first.personaId + ':' + week) || [];
+      const daily = sum(dailyRows);
+      // The weekly form has no per-session dates: retain the greatest count per type,
+      // adding only the weekly excess to the daily records, never both full totals.
+      const weekly = Object.fromEntries(['total', 'fisico', 'tecnico', 'otros'].map(k => [k, Math.max(...group.map(r => Number(r[k]) || 0))]));
+      const delta = Object.fromEntries(['fisico', 'tecnico', 'otros'].map(k => [k, Math.max(0, weekly[k] - daily[k])]));
+      const extra = Math.max(0, weekly.total - daily.cantidad, delta.fisico + delta.tecnico + delta.otros);
+      if (extra) complementos.push({ ...first, id: 'semanal:' + first.personaId + ':' + week, fecha: week, total: extra, ...delta, conciliado: dailyRows.length > 0, totalFuente: weekly.total });
+      if ((dailyRows.length && (weekly.total !== daily.cantidad || ['fisico','tecnico','otros'].some(k => weekly[k] !== daily[k]))) || weekly.total < weekly.fisico + weekly.tecnico + weekly.otros) conciliaciones.push({ personaId: first.personaId, jugadora: first.jugadora, semana: week, semanal: weekly, diario: daily, complemento: extra });
+    });
+    let rows = all.concat(complementos).filter(r => r.fecha >= desde && r.fecha <= hasta && (!personaId || r.personaId === personaId));
+    const detalleTransicion = [];
     if (tipo) {
       if (!['fisico', 'tecnico', 'otros'].includes(tipo)) throw new Error('Tipo de estímulo inválido.');
-      rows = rows.filter(r => r.historico || r.tipo === tipo).map(r => r.historico ? { ...r, total: r[tipo] || 0, fisico: tipo === 'fisico' ? r.fisico : 0, tecnico: tipo === 'tecnico' ? r.tecnico : 0, otros: 0 } : r);
+      rows = rows.filter(r => r.historico || r.tipo === tipo).map(r => r.historico ? { ...r, total: r[tipo] || 0, fisico: tipo === 'fisico' ? r.fisico : 0, tecnico: tipo === 'tecnico' ? r.tecnico : 0, otros: tipo === 'otros' ? (r.otros || 0) : 0 } : r);
     }
     const players = [...roster.values()].filter(p => !personaId || personaId === p.personaId).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => {
       const records = rows.filter(r => r.personaId === p.personaId);
@@ -94,12 +125,12 @@
       meses.push({ mes: month, ...sum(rows.filter(r => r.fecha.startsWith(month))) });
       const d = date(month + '-01'); d.setUTCMonth(d.getUTCMonth() + 1); month = d.toISOString().slice(0, 7);
     }
-    return { historicos: rows.filter(r => r.historico), promedios: averages(sum(rows), semanas.length, meses.length), meses, desde, hasta, registros: rows, detalleTransicion, plantel: players, dias, semanas, total: sum(rows), actualizado: payload.actualizado };
+    return { conciliaciones: conciliaciones.filter(r => r.semana >= monday(desde) && r.semana <= hasta && (!personaId || r.personaId === personaId)), historicos: historicos.filter(r => r.fecha >= desde && r.fecha <= hasta && (!personaId || r.personaId === personaId)), promedios: averages(sum(rows), semanas.length, meses.length), meses, desde, hasta, registros: rows, detalleTransicion, plantel: players, dias, semanas, total: sum(rows), actualizado: payload.actualizado };
   }
   // Calendar buckets intersecting the selected range, including buckets without records.
   // Partial first/last weeks and months count as one; no extrapolation of missing days.
   function averages(total, weeks, months) {
-    return Object.fromEntries(['cantidad', 'fisico', 'tecnico', 'otros', 'fisicoTecnico'].map(key => [key, { semanal: total[key] / weeks, mensual: total[key] / months }]));
+    return Object.fromEntries(['cantidad', 'fisico', 'tecnico', 'otros', 'fisicoTecnico', 'sinClasificar'].map(key => [key, { semanal: total[key] / weeks, mensual: total[key] / months }]));
   }
   function csv(rows) {
     const quote = value => {
@@ -107,9 +138,9 @@
       if (/^[\s]*[=+\-@]/.test(text)) text = "'" + text;
       return '"' + text.replaceAll('"', '""') + '"';
     };
-    return '\uFEFF' + [['Fecha', 'Jugadora', 'Persona_ID', 'Tipo', 'Subtipo', 'Minutos', 'sRPE', 'Carga interna', 'ID', 'Revisión', 'Fuente', 'Estímulos'],
-      ...rows.map(r => [r.fecha, r.jugadora, r.personaId, r.tipo, r.subtipo, r.duracionMin, r.sRPE ?? '', r.historico || r.tipo === 'otros' ? '' : r.duracionMin * r.sRPE, r.id, r.revision, r.historico ? 'Histórico semanal' : 'MurcielApp', r.historico ? r.total : 1])]
+    return '\uFEFF' + [['Fecha', 'Jugadora', 'Persona_ID', 'Tipo', 'Subtipo', 'Minutos', 'sRPE', 'Carga interna', 'ID', 'Revisión', 'Fuente', 'Estímulos', 'Físico', 'Técnico-táctico', 'Otros', 'Total original semanal'],
+      ...rows.map(r => [r.fecha, r.jugadora, r.personaId, r.tipo, r.subtipo, r.duracionMin, r.sRPE ?? '', r.historico || r.tipo === 'otros' ? '' : r.duracionMin * r.sRPE, r.id, r.revision, r.historico ? (r.conciliado ? 'Complemento semanal conciliado' : 'Histórico semanal') : 'MurcielApp', r.historico ? r.total : 1, r.historico ? r.fisico : (r.tipo === 'fisico' ? 1 : 0), r.historico ? r.tecnico : (r.tipo === 'tecnico' ? 1 : 0), r.historico ? r.otros : (r.tipo === 'otros' ? 1 : 0), r.historico ? r.totalFuente : ''])]
       .map(line => line.map(quote).join(';')).join('\r\n');
   }
-  return { CORTE, ZONA, today, shift, monday, periodRange, advance, sum, build, averages, csv };
+  return { CORTE, ZONA, today, shift, monday, periodRange, advance, readRanges, sum, build, averages, csv };
 });

@@ -1,5 +1,8 @@
 # Reportes de MurcielApp y corrección de estímulos
 
+> **Actualización del 03/11/2026:** el corte del 19/10 ya no excluye ninguna fuente. Se concilia por jugadora y semana con criterio favorable: mayor cantidad por tipo, complementos semanales sin sumar dos veces los mismos totales y diferencias visibles. Los diarios del 12–18 vuelven a contar. Ver [auditoría y regla vigente](auditoria-transicion-octubre-2026.md). Las decisiones de corte y pantallas separadas que siguen abajo documentan la implementación original del 20/10, ya reemplazada.
+
+
 ## Estado de publicación · 20/10/2026
 
 Publicado e integrado mediante el PR #2 (merge `de9ed9724891da4cc0b2c4b17e303c22ce86e0fd`). Base/MurcielApp usa la versión 137, que reemplaza a la 136; Reportes usa la versión 40, que reemplaza a la 39. Se conservaron los dos identificadores y URLs de implementación. El Worker se publica desde main mediante su integración existente con GitHub.

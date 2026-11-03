@@ -7,7 +7,7 @@
   const state = { anchor: M.today(), token: '', payload: null, model: null, request: 0, desde: '', hasta: '' };
   try { state.token = localStorage.getItem(storage) || ''; } catch (_) {}
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const type = row => ({ fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[row.tipo]);
+  const type = row => ({ sinClasificar: 'Sin tipo informado', fisico: 'Físico', tecnico: 'Técnico-táctico', otros: 'Otros' }[row.tipo]);
   const fmt = value => new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value + 'T12:00:00Z'));
   const num = value => Number(value).toLocaleString('es-AR', { maximumFractionDigits: 2 });
   function session() {
@@ -49,11 +49,12 @@
     const kpis = [['Estímulos del período', total.cantidad], ['Promedio semanal', model.promedios.cantidad.semanal], ['Promedio mensual', model.promedios.cantidad.mensual]];
     let html = `<h3>${esc(individual || 'Equipo')} · ${fmt(state.desde)} al ${fmt(state.hasta)}</h3>`;
     html += `<p class="daily-note">Última actualización: ${esc(new Date(model.actualizado).toLocaleString('es-AR', { timeZone: M.ZONA }))} (Argentina).</p>`;
-    if (state.desde < M.CORTE) html += '<div class="notice">Histórico y registros diarios integrados sin duplicados. Las semanas históricas se incluyen por su lunes de inicio y se asignan a ese mes. No hay desglose diario, minutos ni sRPE históricos: minutos y carga corresponden solo a MurcielApp desde el 19/10/2026.</div>';
+    html += '<p class="daily-note">Se incluyen ambos sistemas para todas las fechas. Por jugadora y semana se conserva la mayor cantidad por tipo; el formulario semanal aporta solo lo que excede los registros diarios. Los complementos semanales se ubican en el lunes de inicio, sin inventar fechas diarias. Los minutos y la carga provienen solo de registros diarios.</p>';
+    if (model.conciliaciones.length) html += '<div class="notice">Hay diferencias entre fuentes. Se aplicó el criterio favorable a la jugadora; las cantidades conciliadas pueden requerir revisión de coincidencias.</div>';
     {
       html += `<div class="daily-kpis">${kpis.map(([label, value]) => `<div class="daily-kpi"><strong>${num(value)}</strong>${esc(label)}</div>`).join('')}</div>`;
       html += '<p class="daily-note">Promedios = cantidad del período ÷ semanas o meses calendario incluidos, también los que no tienen registros. Las semanas y meses parciales cuentan como uno. En la vista de equipo son promedios del equipo, sin dividir por jugadora.</p>';
-      html += table('Cantidades y promedios por tipo de estímulo', ['Tipo', 'Cantidad del período', 'Promedio semanal', 'Promedio mensual'], ['fisicoTecnico', 'fisico', 'tecnico', 'otros'].filter(t => !$('daily-type').value || $('daily-type').value === t).map(t => cells([t === 'fisicoTecnico' ? 'Físico + Técnico-táctico (sin Otros)' : type({tipo:t}), total[t], num(model.promedios[t].semanal), num(model.promedios[t].mensual)])));
+      html += table('Cantidades y promedios por tipo de estímulo', ['Tipo', 'Cantidad del período', 'Promedio semanal', 'Promedio mensual'], ['fisicoTecnico', 'fisico', 'tecnico', 'otros', ...(total.sinClasificar ? ['sinClasificar'] : [])].filter(t => !$('daily-type').value || $('daily-type').value === t).map(t => cells([t === 'fisicoTecnico' ? 'Físico + Técnico-táctico (sin Otros)' : type({tipo:t}), total[t], num(model.promedios[t].semanal), num(model.promedios[t].mensual)])));
       html += '<p class="daily-note">Los totales muestran lo registrado. Un día sin datos no significa que no hubo entrenamiento.</p>';
       if (!playerId) {
         html += '<p class="daily-note table-legend">F + T = Físico + Técnico-táctico, sin Otros. Total incluye Otros. / sem. y / mes son promedios.</p>';
@@ -61,11 +62,12 @@
           `<tr><td><button type="button" data-daily-player="${esc(p.personaId)}">${esc(p.nombre)}</button>${p.fueraPlantel ? '<span class="daily-note"> · fuera del plantel activo</span>' : ''}</td>` +
           [p.fisicoTecnico, num(p.fisicoTecnico / model.semanas.length), num(p.fisicoTecnico / model.meses.length), p.cantidad, num(p.cantidad / model.semanas.length), num(p.cantidad / model.meses.length), p.fisico, p.tecnico, p.otros].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>'));
       }
-      if ($('daily-view').value === 'day') html += table('Día por día', ['Día', 'Físico', 'Técnico-táctico', 'Otros', 'Minutos', 'Carga interna', 'Datos'], model.dias.filter(d => d.fecha >= M.CORTE).map(d =>
+      if ($('daily-view').value === 'day') html += table('Día por día', ['Día', 'Físico', 'Técnico-táctico', 'Otros', 'Minutos', 'Carga interna', 'Datos'], model.dias.map(d =>
         cells([fmt(d.fecha), d.fisico, d.tecnico, d.otros, num(d.minutos), num(d.carga), d.cantidad ? `${d.cantidad} ${d.cantidad === 1 ? 'registro' : 'registros'}` : 'Sin datos registrados'])));
       if ($('daily-view').value === 'week') html += table('Evolución semanal en el rango seleccionado', ['Semana desde', 'Estímulos', 'Minutos', 'Carga interna'], model.semanas.map(w => cells([fmt(w.desde), w.cantidad, num(w.minutos), num(w.carga)])));
       if ($('daily-view').value === 'month') html += table('Mes a mes', ['Mes', 'Estímulos', 'Físico', 'Técnico-táctico'], model.meses.map(m => cells([m.mes, m.cantidad, m.fisico, m.tecnico])));
-      if (model.historicos.length) html += '<details><summary>Ver registros semanales anteriores</summary>' + table('Detalle histórico semanal', ['Semana desde', 'Jugadora', 'Estímulos', 'Físico', 'Técnico-táctico'], model.historicos.map(r => cells([fmt(r.fecha), r.jugadora, r.total, r.fisico, r.tecnico]))) + '</details>';
+      if (model.conciliaciones.length) html += '<details><summary>Ver conciliación entre sistemas</summary>' + table('Conciliación por jugadora y semana', ['Jugadora', 'Semana', 'Total semanal informado', 'Total diario', 'Complemento incluido'], model.conciliaciones.map(r => cells([r.jugadora, fmt(r.semana), r.semanal.total, r.diario.cantidad, r.complemento]))) + '</details>';
+      if (model.historicos.length) html += '<details><summary>Ver formularios semanales de origen</summary>' + table('Detalle histórico semanal', ['Semana desde', 'Jugadora', 'Estímulos', 'Físico', 'Técnico-táctico'], model.historicos.map(r => cells([fmt(r.fecha), r.jugadora, r.total, r.fisico, r.tecnico]))) + '</details>';
       html += '<details><summary>Ver estímulos registrados</summary>' + records(model.registros.filter(r => !r.historico), 'Registros incluidos en los totales') + '</details>';
     }
     $('daily-output').innerHTML = html; $('daily-output').hidden = false;
@@ -90,18 +92,18 @@
       M.shift(desde, 0); M.shift(hasta, 0);
       if (desde > hasta || (new Date(hasta) - new Date(desde)) / 86400000 > 366) throw new Error('Elegí un período válido de hasta un año.');
       const [payload, context] = await Promise.all([
-        Murci.apiPost({ action: 'murcielapp_reporteSemanal', adminToken: state.token, desde, hasta }),
-        desde < M.CORTE ? Murci.apiGet('site_getContext') : Promise.resolve(null)
+        Promise.all(M.readRanges(desde, hasta).map(range => Murci.apiPost({ action: 'murcielapp_reporteSemanal', adminToken: state.token, ...range }))).then(parts => ({ ...parts[0], registros: parts.flatMap(p => p.registros) })),
+        Murci.apiGet('site_getContext')
       ]);
+      if (!context || typeof context !== 'object') throw new Error('No se pudo consultar el histórico semanal.');
       if (context) {
         if (context.ok === false) throw new Error(context.error || 'No se pudo consultar el histórico.');
         const source = context.reportes || context;
         const input = source.linkedRows?.length ? source.linkedRows : source.rows;
         if (!Array.isArray(input)) throw new Error('No se pudo consultar el histórico semanal.');
-        const key = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
         payload.historicos = applyClientTemporalRules(input.map(mapIncomingRow).filter(Boolean)).filter(r => !r.excluirAnalisis).map(r => {
-          const matches = payload.plantel.filter(p => key(p.nombre) === key(r.jugadora));
-          return { historico: true, fecha: getIsoWeekStartDate(r.week)?.toISOString().slice(0, 10), personaId: r.persona_id || (matches.length === 1 ? matches[0].personaId : 'historico:' + key(r.jugadora)), jugadora: r.jugadora, total: r.total, fisico: r.fisico, tecnico: r.tecnico };
+          const identity = resolveWeeklyIdentity(r, payload.plantel);
+          return { historico: true, fecha: getIsoWeekStartDate(r.week)?.toISOString().slice(0, 10), ...identity, total: r.total, fisico: r.fisico, tecnico: r.tecnico };
         }).filter(r => r.fecha && r.personaId !== 'TEST_SANTIAGO');
       }
       if (request !== state.request) return;

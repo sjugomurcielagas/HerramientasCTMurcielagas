@@ -189,3 +189,17 @@ function getIsoWeekStartDate(weekKey) {
 
   return new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate(), 12);
 }
+
+// Explicit aliases audited against the roster; never fuzzy-match people silently.
+function resolveWeeklyIdentity(row, roster) {
+  const key = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
+  const aliases = {
+    [key('Camus, Gianella')]: 'Camus Carricondo, Gianella María Jesús',
+    [key('Ortiz, Micaela')]: 'Ortiz, Anahí Micaela'
+  };
+  const linked = roster.find(p => row.persona_id && p.personaId === row.persona_id);
+  const expected = key(aliases[key(row.jugadora)] || row.jugadora);
+  const matches = roster.filter(p => key(p.nombre) === expected);
+  const person = linked || (matches.length === 1 ? matches[0] : null);
+  return { personaId: person?.personaId || row.persona_id || 'historico:' + key(row.jugadora), jugadora: person?.nombre || row.jugadora };
+}

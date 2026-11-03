@@ -1,5 +1,8 @@
 # Transición de Reportes a registros diarios de MurcielApp
 
+> **Actualización del 03/11/2026:** el corte del 19/10 ya no excluye ninguna fuente. Se concilia por jugadora y semana con criterio favorable: mayor cantidad por tipo, complementos semanales sin sumar dos veces los mismos totales y diferencias visibles. Los diarios del 12–18 vuelven a contar. Ver [auditoría y regla vigente](auditoria-transicion-octubre-2026.md). Las decisiones de corte y pantallas separadas que siguen abajo documentan la implementación original del 20/10, ya reemplazada.
+
+
 Estado: implementación publicada en Reportes de entrenamiento; vistas diarias, individuales e históricas verificadas en producción. Actualizado: 20 de octubre de 2026. Los informes con IA de datos diarios y el cotejo exhaustivo con la hoja fuente siguen pendientes.
 
 Ver [implementación, comprobaciones y publicación](puesta-en-marcha-reportes-murcielapp.md). La nueva vista reutiliza el lector privado y agrega el plantel mínimo, sin copiar los registros a otra fuente. La edición y eliminación se reflejan en Reportes y Mi semana. El informe con IA de registros diarios se mantiene pendiente; los informes existentes quedan dentro del histórico.
