@@ -996,8 +996,8 @@ footer {
 
 <main id="daily-report" class="panel daily-report" aria-labelledby="daily-title">
   <div class="panel-body">
-    <div class="eyebrow">Análisis diario de entrenamiento</div>
-    <h2 id="daily-title" tabindex="-1">Semana del equipo</h2>
+    <div class="eyebrow">Consulta de entrenamiento</div>
+    <h2 id="daily-title" tabindex="-1">Entrenamientos del equipo</h2>
     <p>Consultá lo registrado por día, por semana y por jugadora. Los días sin datos no indican que no hubo entrenamiento.</p>
     <form id="daily-auth" class="daily-controls">
       <label for="daily-key">Clave administrativa de MurcielApp<input id="daily-key" type="password" autocomplete="current-password" required></label>
@@ -1019,18 +1019,18 @@ footer {
         <button id="daily-export" type="button" disabled>Exportar CSV</button>
         <button id="daily-print" type="button" disabled>Imprimir informe</button>
       </div>
-      <details>
+      <details open>
         <summary>Consultar un rango de fechas</summary>
         <form id="daily-range" class="daily-controls">
           <label for="daily-from">Desde<input id="daily-from" type="date" required></label>
           <label for="daily-to">Hasta<input id="daily-to" type="date" required></label>
-          <button type="submit">Aplicar rango</button>
+          <button type="submit">Aplicar rango</button><button id="daily-since-september" type="button">Desde septiembre hasta hoy</button>
         </form>
       </details>
       <div id="daily-output" hidden></div>
     </div>
-    <div class="daily-controls"><button id="show-legacy" type="button" aria-expanded="false" aria-controls="legacy-report">Consultar reportes históricos hasta el 18/10/2026</button></div>
-    <p class="daily-note">Desde el 19/10/2026, los totales provienen de MurcielApp. Los registros diarios anteriores se muestran como detalle de transición y no se suman al histórico.</p>
+    <div class="daily-controls"><button id="show-legacy" type="button" aria-expanded="false" aria-controls="legacy-report">Análisis avanzado del histórico</button></div>
+    <p class="daily-note">Una sola consulta integra los reportes semanales hasta el 18/10/2026 y los estímulos diarios desde el 19/10/2026.</p>
   </div>
 </main>
 
@@ -1260,8 +1260,8 @@ footer {
   </div>
 
   <script src="../assets/config.js?v=20261020"></script>
-  <script src="murcielapp-model.js?v=20261020"></script>
-  <script src="murcielapp.js?v=20261020"></script>
+  <script src="murcielapp-model.js?v=20261103"></script>
+  <script src="murcielapp.js?v=20261103"></script>
   <script>
     const DEMO_ROWS = [];
 

@@ -46,25 +46,27 @@
     const model = M.build(state.payload, state.desde, state.hasta, playerId);
     state.model = model;
     const individual = playerId ? model.plantel[0]?.nombre || playerId : '';
-    $('daily-title').textContent = individual ? `Semana de ${individual}` : 'Semana del equipo';
+    $('daily-title').textContent = individual ? `Entrenamientos de ${individual}` : 'Entrenamientos del equipo';
     const total = model.total;
-    const pastOnly = state.hasta < M.CORTE;
-    const kpis = [['Estímulos', total.cantidad], ['Minutos', total.minutos], ['Carga interna (UA)', total.carga], ['Otros (sin sRPE)', total.otros]];
+    const pastOnly = false;
+    const kpis = [['Estímulos', total.cantidad], [model.historicos.length ? 'Minutos diarios disponibles' : 'Minutos', total.minutos], [model.historicos.length ? 'Carga diaria disponible (UA)' : 'Carga interna (UA)', total.carga], ['Otros (sin sRPE)', total.otros]];
     let html = `<h3>${esc(individual || 'Equipo')} · ${fmt(state.desde)} al ${fmt(state.hasta)}</h3>`;
     html += `<p class="daily-note">Fuente: MurcielApp · Actualización: ${esc(new Date(model.actualizado).toLocaleString('es-AR', { timeZone: M.ZONA }))} (Argentina).</p>`;
-    if (state.desde < M.CORTE) html += '<div class="notice">El período incluye fechas anteriores al 19/10. Consultá el histórico para sus totales. Los registros diarios de transición se muestran separados al final.</div>';
+    if (state.desde < M.CORTE) html += '<div class="notice">Histórico y registros diarios integrados sin duplicados. Las semanas históricas se incluyen por su lunes de inicio y se asignan a ese mes. No hay desglose diario, minutos ni sRPE históricos: minutos y carga corresponden solo a MurcielApp desde el 19/10/2026.</div>';
     if (!pastOnly) {
       html += `<div class="daily-kpis">${kpis.map(([label, value]) => `<div class="daily-kpi"><strong>${num(value)}</strong>${esc(label)}</div>`).join('')}</div>`;
       html += '<p class="daily-note">Carga interna = minutos × sRPE, solo en Físico y Técnico-táctico. «Otros» suma registros y minutos. No se infiere cumplimiento a partir de la ausencia de registros.</p>';
       if (!playerId) {
-        html += table('La semana de cada jugadora', ['Jugadora', 'Físico', 'Técnico-táctico', 'Otros', 'Minutos', 'Carga interna', 'Datos'], model.plantel.map(p =>
+        html += table('Totales por jugadora', ['Jugadora', 'Físico', 'Técnico-táctico', 'Otros', 'Minutos', 'Carga interna', 'Datos'], model.plantel.map(p =>
           `<tr><td><button type="button" data-daily-player="${esc(p.personaId)}">${esc(p.nombre)}</button>${p.fueraPlantel ? '<span class="daily-note"> · fuera del plantel activo</span>' : ''}</td>` +
           [p.fisico, p.tecnico, p.otros, p.minutos, p.carga, p.cantidad ? `${p.cantidad} ${p.cantidad === 1 ? 'registro' : 'registros'}` : 'Sin datos registrados'].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>'));
       }
       html += table('Día por día', ['Día', 'Físico', 'Técnico-táctico', 'Otros', 'Minutos', 'Carga interna', 'Datos'], model.dias.filter(d => d.fecha >= M.CORTE).map(d =>
         cells([fmt(d.fecha), d.fisico, d.tecnico, d.otros, num(d.minutos), num(d.carga), d.cantidad ? `${d.cantidad} ${d.cantidad === 1 ? 'registro' : 'registros'}` : 'Sin datos registrados'])));
-      if (model.semanas.length > 1) html += table('Evolución semanal en el rango seleccionado', ['Semana desde', 'Estímulos', 'Minutos', 'Carga interna'], model.semanas.filter(w => w.hasta >= M.CORTE).map(w => cells([fmt(w.desde), w.cantidad, num(w.minutos), num(w.carga)])));
-      html += '<h3>Detalle de estímulos</h3>' + records(model.registros, 'Registros incluidos en los totales');
+      if (model.semanas.length > 1) html += table('Evolución semanal en el rango seleccionado', ['Semana desde', 'Estímulos', 'Minutos', 'Carga interna'], model.semanas.map(w => cells([fmt(w.desde), w.cantidad, num(w.minutos), num(w.carga)])));
+      html += table('Mes a mes', ['Mes', 'Estímulos', 'Físico', 'Técnico-táctico'], model.meses.map(m => cells([m.mes, m.cantidad, m.fisico, m.tecnico])));
+      if (model.historicos.length) html += table('Detalle histórico semanal', ['Semana desde', 'Jugadora', 'Estímulos', 'Físico', 'Técnico-táctico'], model.historicos.map(r => cells([fmt(r.fecha), r.jugadora, r.total, r.fisico, r.tecnico])));
+      html += '<h3>Detalle de estímulos diarios</h3>' + records(model.registros.filter(r => !r.historico), 'Registros incluidos en los totales');
     }
     if (model.detalleTransicion.length) html += '<h3>Detalle de transición · sin sumar a los totales</h3>' + records(model.detalleTransicion, 'Registros diarios anteriores al 19/10/2026');
     else if (pastOnly) html += '<p class="daily-empty">Sin registros diarios para estas fechas. Los totales anteriores están en los reportes históricos.</p>';
@@ -90,7 +92,21 @@
     try {
       M.shift(desde, 0); M.shift(hasta, 0);
       if (desde > hasta || (new Date(hasta) - new Date(desde)) / 86400000 > 366) throw new Error('Elegí un período válido de hasta un año.');
-      const payload = await Murci.apiPost({ action: 'murcielapp_reporteSemanal', adminToken: state.token, desde, hasta });
+      const [payload, context] = await Promise.all([
+        Murci.apiPost({ action: 'murcielapp_reporteSemanal', adminToken: state.token, desde, hasta }),
+        desde < M.CORTE ? Murci.apiGet('site_getContext') : Promise.resolve(null)
+      ]);
+      if (context) {
+        if (context.ok === false) throw new Error(context.error || 'No se pudo consultar el histórico.');
+        const source = context.reportes || context;
+        const input = source.linkedRows?.length ? source.linkedRows : source.rows;
+        if (!Array.isArray(input)) throw new Error('No se pudo consultar el histórico semanal.');
+        const key = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
+        payload.historicos = applyClientTemporalRules(input.map(mapIncomingRow).filter(Boolean)).filter(r => !r.excluirAnalisis).map(r => {
+          const matches = payload.plantel.filter(p => key(p.nombre) === key(r.jugadora));
+          return { historico: true, fecha: getIsoWeekStartDate(r.week)?.toISOString().slice(0, 10), personaId: r.persona_id || (matches.length === 1 ? matches[0].personaId : 'historico:' + key(r.jugadora)), jugadora: r.jugadora, total: r.total, fisico: r.fisico, tecnico: r.tecnico };
+        }).filter(r => r.fecha && r.personaId !== 'TEST_SANTIAGO');
+      }
       if (request !== state.request) return;
       M.build(payload, desde, hasta);
       state.payload = payload; state.desde = desde; state.hasta = hasta;
@@ -134,6 +150,7 @@
   $('daily-next').addEventListener('click', () => { setWeek(M.shift($('daily-week').value, 7)); load(); });
   $('daily-current').addEventListener('click', () => { setWeek(M.today()); load(); });
   $('daily-range').addEventListener('submit', event => { event.preventDefault(); load(); });
+  $('daily-since-september').addEventListener('click', () => { $('daily-from').value = M.today().slice(0, 4) + '-09-01'; $('daily-to').value = M.today(); load(); });
   $('daily-print').addEventListener('click', () => window.print());
   $('daily-export').addEventListener('click', () => {
     if (!state.model) return;

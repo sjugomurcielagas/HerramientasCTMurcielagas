@@ -49,3 +49,19 @@ test('CSV coincide con los registros y neutraliza fórmulas en nombres', () => {
   assert.match(csv, /'\=HYPERLINK/);
   assert.match(csv, /MurcielApp/);
 });
+
+test('unifica septiembre y octubre sin sumar el histórico posterior al corte ni el diario anterior', () => {
+  const data = payload([entry('transition', 'P1', '2026-10-18', 'fisico', 60, 5), entry('current', 'P1', '2026-10-20', 'tecnico', 80, 5)]);
+  data.historicos = [
+    { historico: true, fecha: '2026-09-07', personaId: 'P1', jugadora: 'Ana', total: 5, fisico: 3, tecnico: 2 },
+    { historico: true, fecha: '2026-10-19', personaId: 'P1', jugadora: 'Ana', total: 99, fisico: 99, tecnico: 0 }
+  ];
+  const model = M.build(data, '2026-09-01', '2026-10-31', 'P1');
+  assert.equal(model.total.cantidad, 6);
+  assert.equal(model.total.minutos, 80);
+  assert.deepEqual(model.meses.map(m => m.cantidad), [5, 1]);
+  assert.equal(model.semanas.reduce((s, w) => s + w.cantidad, 0), 6);
+  assert.equal(model.dias.reduce((s, d) => s + d.cantidad, 0), 1);
+  assert.match(M.csv(model.registros), /Histórico semanal/);
+  assert.doesNotMatch(M.csv(model.registros), /NaN|undefined/);
+});

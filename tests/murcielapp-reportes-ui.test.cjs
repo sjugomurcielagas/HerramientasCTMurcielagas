@@ -49,7 +49,7 @@ async function fixture() {
       assert.equal(p.adminToken, 'a'.repeat(64));
       if (failLoad) { await route.fulfill({ json: { ok: false, error: 'Servicio no disponible.' } }); return; }
       data = { corte: '2026-10-19', actualizado: '2026-10-20T18:00:00Z', registros: rows.filter(r => r.fecha >= p.desde && r.fecha <= p.hasta), plantel: [{ personaId: 'P1', nombre: 'Pérez, Ana' }, { personaId: 'P2', nombre: 'Luna, Eva' }] };
-    } else if (p.action === 'site_getContext') data = { ok: true, plantel: [], reportes: { rows: [] } };
+    } else if (p.action === 'site_getContext') data = { ok: true, plantel: [], reportes: { rows: [{ fecha: '2026-09-14', jugadora: 'Pérez, Ana', persona_id: 'P1', periodoAnalisis: '2026-S37', total: 5, fisico: 3, tecnico: 2 }, { fecha: '2026-10-26', jugadora: 'Pérez, Ana', persona_id: 'P1', periodoAnalisis: '2026-S43', total: 99, fisico: 99, tecnico: 0 }] } };
     else data = {};
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data }) });
   });
@@ -102,7 +102,7 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     fs.mkdirSync(path.join(root, '.tmp'), { recursive: true });
     await page.screenshot({ path: path.join(root, '.tmp', 'reportes-equipo.png'), fullPage: true });
     await page.getByRole('button', { name: 'Pérez, Ana', exact: true }).click();
-    assert.equal(await page.getByRole('heading', { name: 'Semana de Pérez, Ana', exact: true }).isVisible(), true);
+    assert.equal(await page.getByRole('heading', { name: 'Entrenamientos de Pérez, Ana', exact: true }).isVisible(), true);
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Exportar CSV', exact: true }).click();
     const file = await download;
@@ -114,8 +114,8 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
     await page.screenshot({ path: path.join(root, '.tmp', 'reportes-jugadora-mobile.png'), fullPage: true });
     await page.getByRole('button', { name: /Semana anterior/ }).click();
-    await page.getByText(/El período incluye fechas anteriores/).waitFor();
-    assert.equal(await page.locator('.daily-kpis').count(), 0);
+    await page.getByText(/Histórico y registros diarios integrados/).waitFor();
+    assert.equal(await page.locator('.daily-kpis').count(), 1);
     fail();
     await page.getByRole('button', { name: 'Actualizar datos', exact: true }).first().click();
     await page.getByText('Servicio no disponible.', { exact: true }).waitFor();
@@ -136,6 +136,25 @@ test('Gestión administra accesos y dirige todo el análisis a Reportes de entre
     await page.getByRole('heading', { name: 'Reportes de entrenamiento', exact: true }).waitFor();
     assert.match(page.url(), /\/reportes\/$/);
     assert.equal(await page.getByRole('button', { name: 'Entrar a Reportes', exact: true }).isVisible(), true);
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
+});
+
+ test('consulta desde septiembre integra histórico y diario por jugadora, mes y CSV sin duplicar', async () => {
+  const { context, page, errors } = await fixture();
+  try {
+    await page.goto(base + '/reportes/');
+    await page.getByLabel('Clave administrativa de MurcielApp', { exact: true }).fill('clave-de-prueba');
+    await page.getByRole('button', { name: 'Entrar a Reportes', exact: true }).click();
+    await page.getByText('Datos actualizados. Los totales reflejan las correcciones y eliminaciones guardadas.', { exact: true }).waitFor();
+    await page.locator('#daily-since-september').click({timeout: 3000});
+    await page.locator('#daily-output').getByText('Detalle histórico semanal', { exact: true }).waitFor({state: 'attached'});
+    await page.locator('#daily-player').selectOption('P1');
+    assert.deepEqual(await page.locator('.daily-kpi strong').allTextContents(), ['6', '110', '550', '0']);
+    const months = page.locator('#daily-output table').filter({has: page.locator('caption', {hasText: 'Mes a mes'})});
+    assert.match(await months.innerText(), /2026-09\s+5\s+3\s+2/);
+    assert.match(await months.innerText(), /2026-10\s+1\s+0\s+1/);
+    assert.equal(await page.locator('#daily-output table').filter({has: page.locator('caption', {hasText: 'Evolución semanal'})}).count(), 1);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });
