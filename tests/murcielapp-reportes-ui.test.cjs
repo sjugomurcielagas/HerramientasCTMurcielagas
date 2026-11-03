@@ -103,6 +103,9 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     assert.deepEqual(cards, ['1', '1', '1']);
     fs.mkdirSync(path.join(root, '.tmp'), { recursive: true });
     await page.screenshot({ path: path.join(root, '.tmp', 'reportes-equipo.png'), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({path:path.join(root, '.tmp', 'reportes-equipo-mobile.png'),fullPage:true});
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('button', { name: 'Pérez, Ana', exact: true }).click();
     assert.equal(await page.getByRole('heading', { name: 'Entrenamientos de Pérez, Ana', exact: true }).isVisible(), true);
     const download = page.waitForEvent('download');
@@ -232,8 +235,8 @@ test('Físico más Técnico-táctico permite comparar jugadoras sin contar Otros
     const table = page.locator('#daily-output table').filter({has:page.locator('caption', {hasText:'Totales por jugadora'})});
     const row = table.locator('tbody tr').filter({hasText:'Pérez, Ana'});
     assert.deepEqual((await row.locator('td').allTextContents()).slice(1), ['2','2','2','7','7','7','1','1','5']);
-    await table.getByRole('button',{name:'Físico + Técnico-táctico ↕',exact:true}).click();
-    await table.getByRole('button',{name:'Físico + Técnico-táctico ↕',exact:true}).click();
+    await table.getByRole('button',{name:'F + T ↕',exact:true}).click();
+    await table.getByRole('button',{name:'F + T ↕',exact:true}).click();
     assert.match(await table.locator('tbody tr').first().innerText(), /Pérez, Ana/);
     await page.getByRole('button', {name:'Pérez, Ana',exact:true}).click();
     const summary = page.locator('#daily-output table').filter({has:page.locator('caption',{hasText:'Cantidades y promedios por tipo'})});

@@ -27,7 +27,7 @@
   }
   function table(caption, headers, rows) {
     const id = 'report-table-' + tableId++;
-    return `<div class="report-table-group"><label class="table-filter">Filtrar filas de ${esc(caption)}<input type="search" data-filter-table="${id}" placeholder="Buscar en esta tabla"></label><div class="daily-table"><table id="${id}"><caption>${esc(caption)}</caption><thead><tr>${headers.map((h, i) => `<th scope="col" aria-sort="none"><button type="button" data-sort-column="${i}">${esc(h)} ↕</button></th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div></div>`;
+    return `<div class="report-table-group"><label class="table-filter">Filtrar filas de ${esc(caption)}<input type="search" data-filter-table="${id}" placeholder="Buscar en esta tabla"></label><div class="daily-table"><table id="${id}"${caption === 'Totales por jugadora' ? ' class="player-totals"' : ''}><caption>${esc(caption)}</caption><thead><tr>${headers.map((h, i) => `<th scope="col" aria-sort="none"><button type="button" data-sort-column="${i}">${esc(h)} ↕</button></th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div></div>`;
 
   }
   function cells(values) { return '<tr>' + values.map(v => `<td>${esc(v)}</td>`).join('') + '</tr>'; }
@@ -56,7 +56,8 @@
       html += table('Cantidades y promedios por tipo de estímulo', ['Tipo', 'Cantidad del período', 'Promedio semanal', 'Promedio mensual'], ['fisicoTecnico', 'fisico', 'tecnico', 'otros'].filter(t => !$('daily-type').value || $('daily-type').value === t).map(t => cells([t === 'fisicoTecnico' ? 'Físico + Técnico-táctico (sin Otros)' : type({tipo:t}), total[t], num(model.promedios[t].semanal), num(model.promedios[t].mensual)])));
       html += '<p class="daily-note">Los totales muestran lo registrado. Un día sin datos no significa que no hubo entrenamiento.</p>';
       if (!playerId) {
-        html += table('Totales por jugadora', ['Jugadora', 'Físico + Técnico-táctico', 'Prom. semanal Físico + Técnico-táctico', 'Prom. mensual Físico + Técnico-táctico', 'Total con Otros', 'Promedio semanal con Otros', 'Promedio mensual con Otros', 'Físico', 'Técnico-táctico', 'Otros'], model.plantel.map(p =>
+        html += '<p class="daily-note table-legend">F + T = Físico + Técnico-táctico, sin Otros. Total incluye Otros. / sem. y / mes son promedios.</p>';
+        html += table('Totales por jugadora', ['Jugadora', 'F + T', 'F + T / sem.', 'F + T / mes', 'Total', 'Total / sem.', 'Total / mes', 'Físico', 'Técnico', 'Otros'], model.plantel.map(p =>
           `<tr><td><button type="button" data-daily-player="${esc(p.personaId)}">${esc(p.nombre)}</button>${p.fueraPlantel ? '<span class="daily-note"> · fuera del plantel activo</span>' : ''}</td>` +
           [p.fisicoTecnico, num(p.fisicoTecnico / model.semanas.length), num(p.fisicoTecnico / model.meses.length), p.cantidad, num(p.cantidad / model.semanas.length), num(p.cantidad / model.meses.length), p.fisico, p.tecnico, p.otros].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>'));
       }

@@ -32,3 +32,24 @@
 .daily-report .daily-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } .table-filter { margin-top:22px; max-width:380px; } .daily-report th button { border:0; background:transparent; padding:0; color:inherit; text-align:left; } th[aria-sort="ascending"] button, th[aria-sort="descending"] button { text-decoration:underline; } @media(max-width:640px) { .daily-report .daily-kpis { grid-template-columns:1fr; } }
 
 .period-navigation { justify-content:space-between; } #daily-period-label { font-weight:600; } .report-secondary { border-top:1px solid var(--borde); margin-top:24px; padding-top:16px; text-align:right; } .report-secondary button { font-size:14px; background:transparent; color:var(--muted); }
+
+/* Compact comparison tables; keep names visible while scrolling on mobile. */
+.daily-report table { font-size:13px; font-variant-numeric:tabular-nums; line-height:1.4; }
+.daily-report th,.daily-report td { padding:8px 10px; text-align:right; }
+.daily-report th { white-space:normal; vertical-align:bottom; font-size:12px; }
+.daily-report th:first-child,.daily-report td:first-child { text-align:left; }
+.daily-report th button { font-size:12px; line-height:1.35; min-height:36px; text-align:inherit; white-space:normal; }
+.daily-report td button { min-height:32px; padding:3px 0; font-size:13px; line-height:1.4; border:0; background:transparent; text-decoration:underline; text-underline-offset:3px; white-space:normal; }
+.daily-report caption { font-size:15px; }
+.daily-report .player-totals { table-layout:fixed; min-width:780px; }
+.daily-report .player-totals th:first-child { width:170px; }
+.daily-report .player-totals td:first-child { white-space:normal; }
+.daily-report .player-totals th:first-child,.daily-report .player-totals td:first-child { position:sticky; left:0; z-index:1; background:white; box-shadow:1px 0 var(--borde); }
+.daily-report .player-totals th:first-child { background:var(--surface-3); z-index:2; }
+.daily-report tbody tr:nth-child(even) { background:#f7fafc; }
+.daily-report tbody tr:hover { background:#edf5fc; }
+.daily-report .table-filter { font-size:12px; font-weight:500; max-width:280px; gap:3px; margin-top:16px; }
+.daily-report .table-filter input { font-size:13px; min-height:36px; padding:6px 10px; }
+.daily-report .daily-table { margin:8px 0 16px; }
+.daily-report .table-legend { font-size:12px; margin:18px 0 0; }
+@media(max-width:640px) { .daily-report .player-totals { min-width:740px; } .daily-report .player-totals th:first-child { width:135px; } .daily-report th,.daily-report td { padding:7px 8px; } }
