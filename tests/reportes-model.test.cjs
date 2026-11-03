@@ -65,3 +65,17 @@ test('unifica septiembre y octubre sin sumar el histórico posterior al corte ni
   assert.match(M.csv(model.registros), /Histórico semanal/);
   assert.doesNotMatch(M.csv(model.registros), /NaN|undefined/);
 });
+
+test('promedios usan todas las semanas y meses incluidos y respetan filtro por tipo', () => {
+  const data = payload([entry('a', 'P1', '2026-10-20', 'fisico', 60, 5), entry('b', 'P1', '2026-11-02', 'tecnico', 80, 5)]);
+  const model = M.build(data, '2026-10-19', '2026-11-08');
+  assert.equal(model.promedios.cantidad.semanal, 2 / 3);
+  assert.equal(model.promedios.cantidad.mensual, 1);
+  assert.equal(model.promedios.fisico.semanal, 1 / 3);
+  const filtered = M.build(data, '2026-10-19', '2026-11-08', '', 'fisico');
+  assert.equal(filtered.total.cantidad, 1);
+  assert.equal(filtered.total.tecnico, 0);
+  assert.equal(filtered.registros.length, 1);
+  const zero = M.build(payload([]), '2026-10-19', '2026-10-19');
+  assert.equal(zero.promedios.cantidad.semanal, 0);
+});

@@ -37,7 +37,7 @@
     }
     return { ...row, sRPE: row.tipo === 'otros' ? null : row.sRPE };
   }
-  function build(payload, desde, hasta, personaId = '') {
+  function build(payload, desde, hasta, personaId = '', tipo = '') {
     date(desde); date(hasta);
     if (desde > hasta) throw new Error('El inicio debe ser anterior al fin.');
     if (!payload || !Array.isArray(payload.registros) || !Array.isArray(payload.plantel)) throw new Error('Respuesta de Reportes inválida.');
@@ -56,6 +56,10 @@
     const historicos = (payload.historicos || []).filter(r => r.fecha < CORTE && r.fecha >= desde && r.fecha <= hasta && (!personaId || r.personaId === personaId));
     historicos.forEach(r => { if (!roster.has(r.personaId)) roster.set(r.personaId, { personaId: r.personaId, nombre: r.jugadora }); });
     rows = rows.concat(historicos);
+    if (tipo) {
+      if (!['fisico', 'tecnico', 'otros'].includes(tipo)) throw new Error('Tipo de estímulo inválido.');
+      rows = rows.filter(r => r.historico || r.tipo === tipo).map(r => r.historico ? { ...r, total: r[tipo] || 0, fisico: tipo === 'fisico' ? r.fisico : 0, tecnico: tipo === 'tecnico' ? r.tecnico : 0, otros: 0 } : r);
+    }
     const players = [...roster.values()].filter(p => !personaId || personaId === p.personaId).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => {
       const records = rows.filter(r => r.personaId === p.personaId);
       return { ...p, registros: records, ...sum(records) };
@@ -74,7 +78,12 @@
       meses.push({ mes: month, ...sum(rows.filter(r => r.fecha.startsWith(month))) });
       const d = date(month + '-01'); d.setUTCMonth(d.getUTCMonth() + 1); month = d.toISOString().slice(0, 7);
     }
-    return { historicos, meses, desde, hasta, registros: rows, detalleTransicion, plantel: players, dias, semanas, total: sum(rows), actualizado: payload.actualizado };
+    return { historicos: rows.filter(r => r.historico), promedios: averages(sum(rows), semanas.length, meses.length), meses, desde, hasta, registros: rows, detalleTransicion, plantel: players, dias, semanas, total: sum(rows), actualizado: payload.actualizado };
+  }
+  // Calendar buckets intersecting the selected range, including buckets without records.
+  // Partial first/last weeks and months count as one; no extrapolation of missing days.
+  function averages(total, weeks, months) {
+    return Object.fromEntries(['cantidad', 'fisico', 'tecnico', 'otros'].map(key => [key, { semanal: total[key] / weeks, mensual: total[key] / months }]));
   }
   function csv(rows) {
     const quote = value => {
@@ -86,5 +95,5 @@
       ...rows.map(r => [r.fecha, r.jugadora, r.personaId, r.tipo, r.subtipo, r.duracionMin, r.sRPE ?? '', r.historico || r.tipo === 'otros' ? '' : r.duracionMin * r.sRPE, r.id, r.revision, r.historico ? 'Histórico semanal' : 'MurcielApp', r.historico ? r.total : 1])]
       .map(line => line.map(quote).join(';')).join('\r\n');
   }
-  return { CORTE, ZONA, today, shift, monday, sum, build, csv };
+  return { CORTE, ZONA, today, shift, monday, sum, build, averages, csv };
 });
