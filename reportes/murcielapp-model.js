@@ -75,10 +75,10 @@
     });
     const roster = new Map(payload.plantel.filter(p => p.personaId && p.personaId !== 'TEST_SANTIAGO').map(p => [p.personaId, { ...p, fueraPlantel: false }]));
     all.forEach(r => { if (!roster.has(r.personaId)) roster.set(r.personaId, { personaId: r.personaId, nombre: r.jugadora || r.personaId, fueraPlantel: true }); });
-    const historicos = (payload.historicos || []).filter(r => r.personaId !== 'TEST_SANTIAGO').map(r => {
+    const historicos = (payload.historicos || []).filter(r => r.personaId !== 'TEST_SANTIAGO' && r.fecha >= monday(desde) && r.fecha <= hasta).map(r => {
       date(r.fecha);
-      for (const key of ['total', 'fisico', 'tecnico']) if (!Number.isInteger(r[key]) || r[key] < 0) throw new Error('Reporte semanal inválido.');
-      if (!r.personaId || !Number.isInteger(r.otros || 0) || (r.otros || 0) < 0) throw new Error('Reporte semanal inválido.');
+      for (const key of ['total', 'fisico', 'tecnico']) if (!Number.isFinite(r[key]) || r[key] < 0) throw new Error('Reporte semanal inválido.');
+      if (!r.personaId || !Number.isFinite(r.otros || 0) || (r.otros || 0) < 0) throw new Error('Reporte semanal inválido.');
       return { ...r, historico: true, otros: r.otros || 0 };
     });
     historicos.forEach(r => { if (!roster.has(r.personaId)) roster.set(r.personaId, { personaId: r.personaId, nombre: r.jugadora }); });

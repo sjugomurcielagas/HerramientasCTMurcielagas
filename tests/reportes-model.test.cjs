@@ -159,3 +159,11 @@ test('aliases auditados unen los nombres anteriores y no adivinan identidades', 
   assert.equal(context.resolveWeeklyIdentity({jugadora:'Ortiz, Micaela'},roster).personaId,'O');
   assert.match(context.resolveWeeklyIdentity({jugadora:'Ortiz, Otra'},roster).personaId,/^historico:/);
 });
+
+test('conserva valores fraccionarios históricos y una fila ajena al rango no bloquea la consulta', () => {
+ const data={...payload([]),historicos:[{historico:true,fecha:'2026-09-14',personaId:'P1',jugadora:'Ana',total:8,fisico:0.5,tecnico:3},{historico:true,fecha:'2026-01-19',personaId:'P1',jugadora:'Ana',total:7,fisico:1.3,tecnico:0}]};
+ const r=M.build(data,'2026-09-14','2026-09-20');
+ assert.equal(r.total.fisico,0.5);assert.equal(r.total.cantidad,8);assert.equal(r.historicos.length,1);
+ data.historicos.push({historico:true,fecha:'2026-01-12',personaId:'P1',jugadora:'Ana',total:NaN,fisico:0,tecnico:0});
+ assert.equal(M.build(data,'2026-09-14','2026-09-20').total.cantidad,8);
+});
