@@ -79,3 +79,11 @@ test('promedios usan todas las semanas y meses incluidos y respetan filtro por t
   const zero = M.build(payload([]), '2026-10-19', '2026-10-19');
   assert.equal(zero.promedios.cantidad.semanal, 0);
 });
+
+test('navegación por calendario respeta meses cortos, bisiestos y cambio de año', () => {
+  assert.deepEqual(M.periodRange('2026-11-03','week'), {desde:'2026-11-02', hasta:'2026-11-08'});
+  assert.deepEqual(M.periodRange('2028-02-15','month'), {desde:'2028-02-01', hasta:'2028-02-29'});
+  assert.equal(M.advance('2026-01-31','month',1), '2026-02-28');
+  assert.equal(M.advance('2026-12-15','month',1), '2027-01-15');
+  assert.equal(M.advance('2026-12-31','day',1), '2027-01-01');
+});

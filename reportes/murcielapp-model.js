@@ -19,6 +19,21 @@
   }
   function shift(value, days) { const d = date(value); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
   function monday(value) { const d = date(value); return shift(value, -((d.getUTCDay() + 6) % 7)); }
+  function periodRange(value, unit) {
+    date(value);
+    if (unit === 'day') return { desde: value, hasta: value };
+    if (unit === 'week') { const desde = monday(value); return { desde, hasta: shift(desde, 6) }; }
+    const desde = value.slice(0, 7) + '-01', d = date(desde);
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    return { desde, hasta: shift(d.toISOString().slice(0, 10), -1) };
+  }
+  function advance(value, unit, direction) {
+    if (unit !== 'month') return shift(value, direction * (unit === 'week' ? 7 : 1));
+    const d = date(value), day = d.getUTCDate();
+    d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + direction);
+    const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+    d.setUTCDate(Math.min(day, last)); return d.toISOString().slice(0, 10);
+  }
   function empty() { return { cantidad: 0, minutos: 0, carga: 0, fisico: 0, tecnico: 0, otros: 0 }; }
   function sum(rows) {
     return rows.reduce((s, r) => {
@@ -95,5 +110,5 @@
       ...rows.map(r => [r.fecha, r.jugadora, r.personaId, r.tipo, r.subtipo, r.duracionMin, r.sRPE ?? '', r.historico || r.tipo === 'otros' ? '' : r.duracionMin * r.sRPE, r.id, r.revision, r.historico ? 'Histórico semanal' : 'MurcielApp', r.historico ? r.total : 1])]
       .map(line => line.map(quote).join(';')).join('\r\n');
   }
-  return { CORTE, ZONA, today, shift, monday, sum, build, averages, csv };
+  return { CORTE, ZONA, today, shift, monday, periodRange, advance, sum, build, averages, csv };
 });

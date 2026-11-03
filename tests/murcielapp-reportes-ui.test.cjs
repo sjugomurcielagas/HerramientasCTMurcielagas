@@ -97,7 +97,8 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     await page.getByLabel('Clave del cuerpo técnico', { exact: true }).fill('clave-de-prueba');
     await page.getByRole('button', { name: 'Entrar a Reportes', exact: true }).click();
     await page.getByText('Datos actualizados. Los totales reflejan las correcciones y eliminaciones guardadas.', { exact: true }).waitFor();
-    assert.match(await page.locator('#daily-output').innerText(), /Sin datos registrados/);
+    assert.equal(await page.locator('#daily-view').inputValue(), 'week');
+    assert.match(await page.locator('#daily-output').innerText(), /Evolución semanal/);
     const cards = await page.locator('.daily-kpi strong').allTextContents();
     assert.deepEqual(cards, ['1', '1', '1']);
     fs.mkdirSync(path.join(root, '.tmp'), { recursive: true });
@@ -124,7 +125,7 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     await page.getByRole('button', { name: 'Ver reporte', exact: true }).first().click();
     await page.getByText('Servicio no disponible.', { exact: true }).waitFor();
     assert.equal(await page.locator('#daily-output').isHidden(), true);
-    assert.equal(await page.getByRole('button', { name: 'Descargar datos', exact: true }).isDisabled(), true);
+    assert.equal(await page.locator('#daily-export').isDisabled(), true);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });
@@ -175,4 +176,37 @@ test('Gestión administra accesos y dirige todo el análisis a Reportes de entre
     assert.equal(await page.locator('#daily-output table').filter({has: page.locator('caption', {hasText: 'Evolución semanal'})}).count(), 1);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
+});
+
+test('Ver por inicia en semana, navega día/semana/mes y Ver reporte no descarga', async () => {
+  const {context, page, calls, errors} = await fixture();
+  const downloads = []; page.on('download', d => downloads.push(d));
+  try {
+    await page.goto(base + '/reportes/');
+    await page.getByLabel('Clave del cuerpo técnico', {exact:true}).fill('clave-de-prueba');
+    await page.getByRole('button', {name:'Entrar a Reportes',exact:true}).click();
+    await page.locator('#daily-output:not([hidden])').waitFor();
+    assert.equal(await page.locator('#daily-range select').first().getAttribute('id'), 'daily-view');
+    assert.equal(await page.locator('#daily-view').inputValue(), 'week');
+    const navigate = async (button, from, to) => {
+      const response = page.waitForResponse(r => { try { const p = r.request().postDataJSON(); return p.action === 'murcielapp_reporteSemanal' && p.desde === from && p.hasta === to; } catch { return false; } });
+      await page.getByRole('button', {name: new RegExp(button)}).click(); await response;
+      await page.locator('#daily-output:not([hidden])').waitFor();
+      assert.equal(await page.locator('#daily-from').inputValue(), from);
+      assert.equal(await page.locator('#daily-to').inputValue(), to);
+    };
+    await navigate('Semana anterior', '2026-10-12', '2026-10-18');
+    await navigate('Semana siguiente', '2026-10-19', '2026-10-25');
+    await page.locator('#daily-view').selectOption('day');
+    await navigate('Día anterior', '2026-10-19', '2026-10-19');
+    await navigate('Día siguiente', '2026-10-20', '2026-10-20');
+    await page.locator('#daily-view').selectOption('month');
+    await navigate('Mes anterior', '2026-09-01', '2026-09-30');
+    await navigate('Mes siguiente', '2026-10-01', '2026-10-31');
+    await navigate('Ver reporte', '2026-10-01', '2026-10-31');
+    assert.equal(downloads.length, 0);
+    assert.equal(await page.locator('#daily-download').isVisible(), true);
+    assert.equal(await page.locator('#daily-export').getAttribute('type'), 'button');
+    assert.deepEqual(errors, []);
+  } finally {await context.close();}
 });

@@ -20,7 +20,7 @@
   function forget() {
     state.token = ''; state.payload = null; state.model = null; state.request++;
     $('daily-output').replaceChildren(); $('daily-output').hidden = true;
-    $('daily-export').disabled = true;
+    $('daily-export').disabled = true; $('daily-download').hidden = true;
     $('daily-player').replaceChildren(new Option('Todo el equipo', ''));
     try { localStorage.removeItem(storage); localStorage.removeItem('mrcl_auth'); localStorage.removeItem('mrcl_auth_ts'); } catch (_) {}
     session();
@@ -69,6 +69,7 @@
     }
     $('daily-output').innerHTML = html; $('daily-output').hidden = false;
     $('daily-export').disabled = !model.registros.length;
+    $('daily-download').hidden = false;
 
   }
   function setWeek(value) {
@@ -81,7 +82,7 @@
     const request = ++state.request;
     const desde = $('daily-from').value, hasta = $('daily-to').value;
     state.payload = null; state.model = null;
-    $('daily-output').hidden = true; $('daily-export').disabled = true;
+    $('daily-output').hidden = true; $('daily-download').hidden = true; $('daily-export').disabled = true;
     $('daily-status').textContent = 'Consultando registros de MurcielApp…';
     $('daily-refresh').disabled = true;
     try {
@@ -162,16 +163,38 @@
     $('daily-player').value = button.dataset.dailyPlayer; render(); $('daily-title').focus();
   });
   function period() {
-    const today = M.today(), value = $('daily-period').value;
+    const today = M.today(), value = $('daily-period').value, unit = $('daily-view').value;
     $('daily-dates').hidden = value !== 'custom';
-    if (value === 'week') setWeek(today);
-    if (value === 'month') { $('daily-from').value = today.slice(0, 7) + '-01'; $('daily-to').value = today; }
+    $('daily-anchor-field').hidden = value !== 'current';
+    $('daily-period').options[0].textContent = {day:'Día seleccionado',week:'Semana seleccionada',month:'Mes seleccionado'}[unit];
+    if (value === 'current') {
+      const range = M.periodRange($('daily-anchor').value || today, unit);
+      $('daily-from').value = range.desde; $('daily-to').value = range.hasta;
+    }
     if (value === 'year') { $('daily-from').value = today.slice(0, 4) + '-01-01'; $('daily-to').value = today; }
+    const labels = {day:['Día anterior', 'Día siguiente'],week:['Semana anterior','Semana siguiente'],month:['Mes anterior','Mes siguiente']}[unit];
+    $('daily-prev').textContent = '← ' + labels[0]; $('daily-next').textContent = labels[1] + ' →';
+    $('daily-period-label').textContent = fmt($('daily-from').value) + ' al ' + fmt($('daily-to').value);
+    $('daily-export').disabled = true; $('daily-download').hidden = true;
   }
+  async function navigate(direction) {
+    const unit = $('daily-view').value;
+    if ($('daily-period').value === 'current') {
+      $('daily-anchor').value = M.advance($('daily-anchor').value, unit, direction);
+    } else {
+      $('daily-from').value = M.advance($('daily-from').value, unit, direction);
+      $('daily-to').value = M.advance($('daily-to').value, unit, direction);
+      $('daily-period').value = 'custom';
+    }
+    period(); await load();
+  }
+  $('daily-prev').addEventListener('click', () => navigate(-1));
+  $('daily-next').addEventListener('click', () => navigate(1));
+  $('daily-anchor').addEventListener('change', () => { if ($('daily-anchor').value) period(); });
   $('daily-period').addEventListener('change', period);
-  $('daily-view').addEventListener('change', render);
+  $('daily-view').addEventListener('change', () => { period(); if ($('daily-period').value === 'custom') render(); });
   $('daily-type').addEventListener('change', render);
-  $('daily-range').addEventListener('submit', event => { event.preventDefault(); load(); });
+  $('daily-range').addEventListener('submit', event => { event.preventDefault(); period(); load(); });
   $('daily-export').addEventListener('click', () => {
     if (!state.model) return;
     const url = URL.createObjectURL(new Blob([M.csv(state.model.registros)], { type: 'text/csv;charset=utf-8' }));
@@ -183,5 +206,5 @@
     if (event.newValue) { state.token = event.newValue; session(); load(); }
     else { forget(); $('daily-status').textContent = 'La sesión se cerró en otra pestaña. Volvé a entrar.'; }
   });
-  setWeek(M.today()); session(); if (state.token) load();
+  $('daily-anchor').value = M.today(); setWeek(M.today()); period(); session(); if (state.token) load();
 })();

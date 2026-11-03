@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reportes de entrenamiento</title><link rel="stylesheet" href="murcielapp.css?v=20261103c"></head><body><div class="app">
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reportes de entrenamiento</title><link rel="stylesheet" href="murcielapp.css?v=20261103d"></head><body><div class="app">
     <nav class="top-nav" aria-label="Navegación principal">
       <a class="back-home" href="../" aria-label="Volver al inicio">← Inicio</a>
       <div class="module-title" aria-label="Módulo actual"><strong>Reportes</strong></div>
@@ -24,8 +24,10 @@
     <p id="daily-status" role="status" aria-live="polite">Ingresá para consultar los registros del equipo.</p>
     <div id="daily-workspace" hidden>
       <form id="daily-range" class="daily-controls">
+        <label for="daily-view">Ver por<select id="daily-view"><option value="day">Día</option><option value="week" selected>Semana</option><option value="month">Mes</option></select></label>
         <label for="daily-player">Jugadora<select id="daily-player"><option value="">Todo el equipo</option></select></label>
-        <label for="daily-period">Período<select id="daily-period"><option value="week">Esta semana</option><option value="month">Este mes</option><option value="year">Este año</option><option value="custom">Elegir fechas</option></select></label>
+        <label for="daily-period">Período<select id="daily-period"><option value="current">Semana seleccionada</option><option value="year">Este año</option><option value="custom">Elegir fechas</option></select></label>
+        <label id="daily-anchor-field" for="daily-anchor">Fecha de referencia<input id="daily-anchor" type="date" required></label>
         <div id="daily-dates" class="daily-controls" hidden>
           <label for="daily-from">Desde<input id="daily-from" type="date" required></label>
           <label for="daily-to">Hasta<input id="daily-to" type="date" required></label>
@@ -33,13 +35,11 @@
         <label for="daily-type">Tipo de estímulo<select id="daily-type"><option value="">Todos los tipos</option><option value="fisico">Físico</option><option value="tecnico">Técnico-táctico</option><option value="otros">Otros</option></select></label>
         <button class="primary" id="daily-refresh" type="submit">Ver reporte</button>
       </form>
-      <div class="daily-controls">
-        <label for="daily-view">Ver por<select id="daily-view"><option value="day">Día</option><option value="week">Semana</option><option value="month">Mes</option></select></label>
-        <button id="daily-export" type="button" disabled>Descargar datos</button>
-      </div>
+      <nav class="daily-controls period-navigation" aria-label="Navegar períodos"><button id="daily-prev" type="button">← Semana anterior</button><span id="daily-period-label" aria-live="polite"></span><button id="daily-next" type="button">Semana siguiente →</button></nav>
       <div id="daily-output" hidden></div>
+      <div id="daily-download" class="report-secondary" hidden><button id="daily-export" type="button" disabled>Descargar datos</button></div>
     </div>
 
   </div>
 </main></div>
-<script src="../assets/config.js?v=20261020"></script><script src="murcielapp-model.js?v=20261103c"></script><script src="historico.js?v=20261103c"></script><script src="murcielapp.js?v=20261103c"></script></body></html>
+<script src="../assets/config.js?v=20261020"></script><script src="murcielapp-model.js?v=20261103d"></script><script src="historico.js?v=20261103d"></script><script src="murcielapp.js?v=20261103d"></script></body></html>

@@ -30,3 +30,5 @@
 @media print { .top-nav,.report-header,.daily-controls,#daily-auth,#daily-logout,#daily-refresh,#daily-export,#daily-print,#show-legacy,.audit-toggle { display:none!important; } .daily-report { box-shadow:none; border:0; } .daily-report .daily-table { overflow:visible; } .daily-report th,.daily-report td { padding:5px; font-size:10px; white-space:normal; } body { padding:0; background:#fff; } }
 
 .daily-report .daily-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } .table-filter { margin-top:22px; max-width:380px; } .daily-report th button { border:0; background:transparent; padding:0; color:inherit; text-align:left; } th[aria-sort="ascending"] button, th[aria-sort="descending"] button { text-decoration:underline; } @media(max-width:640px) { .daily-report .daily-kpis { grid-template-columns:1fr; } }
+
+.period-navigation { justify-content:space-between; } #daily-period-label { font-weight:600; } .report-secondary { border-top:1px solid var(--borde); margin-top:24px; padding-top:16px; text-align:right; } .report-secondary button { font-size:14px; background:transparent; color:var(--muted); }
