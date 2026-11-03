@@ -53,12 +53,12 @@
     {
       html += `<div class="daily-kpis">${kpis.map(([label, value]) => `<div class="daily-kpi"><strong>${num(value)}</strong>${esc(label)}</div>`).join('')}</div>`;
       html += '<p class="daily-note">Promedios = cantidad del período ÷ semanas o meses calendario incluidos, también los que no tienen registros. Las semanas y meses parciales cuentan como uno. En la vista de equipo son promedios del equipo, sin dividir por jugadora.</p>';
-      html += table('Cantidades y promedios por tipo de estímulo', ['Tipo', 'Cantidad del período', 'Promedio semanal', 'Promedio mensual'], ['fisico', 'tecnico', 'otros'].filter(t => !$('daily-type').value || $('daily-type').value === t).map(t => cells([type({tipo:t}), total[t], num(model.promedios[t].semanal), num(model.promedios[t].mensual)])));
+      html += table('Cantidades y promedios por tipo de estímulo', ['Tipo', 'Cantidad del período', 'Promedio semanal', 'Promedio mensual'], ['fisicoTecnico', 'fisico', 'tecnico', 'otros'].filter(t => !$('daily-type').value || $('daily-type').value === t).map(t => cells([t === 'fisicoTecnico' ? 'Físico + Técnico-táctico (sin Otros)' : type({tipo:t}), total[t], num(model.promedios[t].semanal), num(model.promedios[t].mensual)])));
       html += '<p class="daily-note">Los totales muestran lo registrado. Un día sin datos no significa que no hubo entrenamiento.</p>';
       if (!playerId) {
-        html += table('Totales por jugadora', ['Jugadora', 'Total', 'Promedio semanal', 'Promedio mensual', 'Físico', 'Técnico-táctico', 'Otros'], model.plantel.map(p =>
+        html += table('Totales por jugadora', ['Jugadora', 'Físico + Técnico-táctico', 'Prom. semanal Físico + Técnico-táctico', 'Prom. mensual Físico + Técnico-táctico', 'Total con Otros', 'Promedio semanal con Otros', 'Promedio mensual con Otros', 'Físico', 'Técnico-táctico', 'Otros'], model.plantel.map(p =>
           `<tr><td><button type="button" data-daily-player="${esc(p.personaId)}">${esc(p.nombre)}</button>${p.fueraPlantel ? '<span class="daily-note"> · fuera del plantel activo</span>' : ''}</td>` +
-          [p.cantidad, num(p.cantidad / model.semanas.length), num(p.cantidad / model.meses.length), p.fisico, p.tecnico, p.otros].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>'));
+          [p.fisicoTecnico, num(p.fisicoTecnico / model.semanas.length), num(p.fisicoTecnico / model.meses.length), p.cantidad, num(p.cantidad / model.semanas.length), num(p.cantidad / model.meses.length), p.fisico, p.tecnico, p.otros].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>'));
       }
       if ($('daily-view').value === 'day') html += table('Día por día', ['Día', 'Físico', 'Técnico-táctico', 'Otros', 'Minutos', 'Carga interna', 'Datos'], model.dias.filter(d => d.fecha >= M.CORTE).map(d =>
         cells([fmt(d.fecha), d.fisico, d.tecnico, d.otros, num(d.minutos), num(d.carga), d.cantidad ? `${d.cantidad} ${d.cantidad === 1 ? 'registro' : 'registros'}` : 'Sin datos registrados'])));

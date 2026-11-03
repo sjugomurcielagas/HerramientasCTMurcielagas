@@ -164,7 +164,7 @@ test('Gestión administra accesos y dirige todo el análisis a Reportes de entre
     await teamTable.getByRole('button', {name: 'Cantidad del período ↕', exact:true}).click();
     assert.equal(await teamTable.locator('th[aria-sort="descending"]').count(), 1);
     await teamTable.getByRole('searchbox').fill('fisico');
-    assert.equal(await teamTable.locator('tbody tr:visible').count(), 1);
+    assert.equal(await teamTable.locator('tbody tr:visible').count(), 2);
     await page.locator('#daily-type').selectOption('fisico');
     assert.equal(await page.locator('.daily-kpi strong').first().innerText(), '3');
     await page.locator('#daily-type').selectOption('');
@@ -216,6 +216,29 @@ test('Ver por inicia en semana, navega día/semana/mes y Ver reporte no descarga
     await navigate('Ver reporte', '2027-02-01', '2027-02-28');
     await page.locator('#daily-period').selectOption('custom');
     assert.equal(await page.locator('#daily-dates').isVisible(), true);
+    assert.deepEqual(errors, []);
+  } finally {await context.close();}
+});
+
+test('Físico más Técnico-táctico permite comparar jugadoras sin contar Otros', async () => {
+  const { context, page, rows, errors } = await fixture();
+  rows.push({id:'physical',personaId:'P1',jugadora:'Pérez, Ana',fecha:'2026-10-20',tipo:'fisico',duracionMin:40,sRPE:4,revision:0});
+  for (let i=0; i<5; i++) rows.push({id:'other-'+i,personaId:'P1',jugadora:'Pérez, Ana',fecha:'2026-10-20',tipo:'otros',duracionMin:30,sRPE:null,revision:0});
+  try {
+    await page.goto(base + '/reportes/');
+    await page.getByLabel('Clave del cuerpo técnico', {exact:true}).fill('clave-de-prueba');
+    await page.getByRole('button', {name:'Entrar a Reportes',exact:true}).click();
+    await page.locator('#daily-output:not([hidden])').waitFor();
+    const table = page.locator('#daily-output table').filter({has:page.locator('caption', {hasText:'Totales por jugadora'})});
+    const row = table.locator('tbody tr').filter({hasText:'Pérez, Ana'});
+    assert.deepEqual((await row.locator('td').allTextContents()).slice(1), ['2','2','2','7','7','7','1','1','5']);
+    await table.getByRole('button',{name:'Físico + Técnico-táctico ↕',exact:true}).click();
+    await table.getByRole('button',{name:'Físico + Técnico-táctico ↕',exact:true}).click();
+    assert.match(await table.locator('tbody tr').first().innerText(), /Pérez, Ana/);
+    await page.getByRole('button', {name:'Pérez, Ana',exact:true}).click();
+    const summary = page.locator('#daily-output table').filter({has:page.locator('caption',{hasText:'Cantidades y promedios por tipo'})});
+    const combined = summary.locator('tbody tr').filter({hasText:'sin Otros'});
+    assert.deepEqual((await combined.locator('td').allTextContents()).slice(1), ['2','2','2']);
     assert.deepEqual(errors, []);
   } finally {await context.close();}
 });

@@ -87,3 +87,19 @@ test('navegación por calendario respeta meses cortos, bisiestos y cambio de añ
   assert.equal(M.advance('2026-12-15','month',1), '2027-01-15');
   assert.equal(M.advance('2026-12-31','day',1), '2027-01-01');
 });
+
+test('suma y promedios físico-técnicos excluyen Otros en histórico y diario', () => {
+  const data = payload([
+    entry('f','P1','2026-10-20','fisico',40,4),
+    entry('t','P1','2026-10-20','tecnico',60,5),
+    ...Array.from({length:8}, (_,i) => entry('o'+i,'P1','2026-10-20','otros',30,null))
+  ]);
+  data.historicos = [{historico:true,fecha:'2026-09-07',personaId:'P1',jugadora:'Ana',total:5,fisico:3,tecnico:2}];
+  const model = M.build(data,'2026-09-01','2026-10-31','P1');
+  assert.equal(model.total.cantidad,15);
+  assert.equal(model.total.fisicoTecnico,7);
+  assert.equal(model.plantel[0].fisicoTecnico,7);
+  assert.equal(model.promedios.fisicoTecnico.semanal,7 / model.semanas.length);
+  assert.equal(model.promedios.fisicoTecnico.mensual,3.5);
+  assert.equal(M.build(data,'2026-09-01','2026-10-31','P1','otros').total.fisicoTecnico,0);
+});

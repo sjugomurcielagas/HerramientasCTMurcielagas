@@ -36,12 +36,13 @@
   }
   function empty() { return { cantidad: 0, minutos: 0, carga: 0, fisico: 0, tecnico: 0, otros: 0 }; }
   function sum(rows) {
-    return rows.reduce((s, r) => {
+    const totals = rows.reduce((s, r) => {
       if (r.historico) { s.cantidad += r.total; s.fisico += r.fisico; s.tecnico += r.tecnico; return s; }
       s.cantidad++; s.minutos += r.duracionMin; s[r.tipo]++;
       if (r.tipo !== 'otros') s.carga += r.duracionMin * r.sRPE;
       return s;
     }, empty());
+    return { ...totals, fisicoTecnico: totals.fisico + totals.tecnico };
   }
   function validate(row) {
     date(row.fecha);
@@ -98,7 +99,7 @@
   // Calendar buckets intersecting the selected range, including buckets without records.
   // Partial first/last weeks and months count as one; no extrapolation of missing days.
   function averages(total, weeks, months) {
-    return Object.fromEntries(['cantidad', 'fisico', 'tecnico', 'otros'].map(key => [key, { semanal: total[key] / weeks, mensual: total[key] / months }]));
+    return Object.fromEntries(['cantidad', 'fisico', 'tecnico', 'otros', 'fisicoTecnico'].map(key => [key, { semanal: total[key] / weeks, mensual: total[key] / months }]));
   }
   function csv(rows) {
     const quote = value => {

@@ -39,3 +39,5 @@
 - [ ] Penales vinculados a partidos — requiere coordinación de dos sistemas backend
 - [x] Resumen exportable de concentración — botón "Ver resumen" con convocadas, asistencia y actividades; imprimible
 - [ ] Modo multi-dispositivo para registro de partido en vivo — requiere backend
+
+- [ ] **Asistente de consultas en Reportes (idea a futuro, sin fecha)** — Consultar en lenguaje natural quién registró menos estímulos en un período, cuántos estímulos físicos hizo una jugadora o comparar períodos y jugadoras. Usar los mismos datos, filtros y cálculos del reporte unificado; mostrar resultado, período y enlace al reporte. Pedir aclaración si falta el período o la identidad es ambigua. Distinguir estímulos registrados de entrenamiento realizado. Evaluar primero preguntas frecuentes y después chat libre, una vez estabilizados los reportes.
