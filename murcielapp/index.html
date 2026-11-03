@@ -283,6 +283,11 @@
         </div>
       </div>
     </section>
+    <section id="penales-section" class="panel" aria-labelledby="penales-title" hidden>
+      <h2 id="penales-title" tabindex="-1">Mis penales</h2>
+      <p id="penales-status" role="status" aria-live="polite"></p>
+      <div id="penales-list"></div>
+    </section>
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
       <section id="activation-view" class="panel" aria-labelledby="activation-title">
@@ -910,6 +915,31 @@
       finally { button.disabled = false; }
     }
 
+    async function loadMyPenalties() {
+      const status = byId('penales-status');
+      const list = byId('penales-list');
+      list.replaceChildren();
+      if (!accessToken) {
+        status.textContent = 'Para ver tus penales, entrá con tu código personal desde Registrar estímulo.';
+        return;
+      }
+      status.textContent = 'Cargando tus penales…';
+      try {
+        const data = await Murci.apiPost({ action: 'murcielapp_misPenales', token: accessToken });
+        if (state.section !== 'penales') return;
+        const sessions = new Map(data.sesiones.map(item => [String(item.id), item]));
+        status.textContent = data.penales.length ? `${data.penales.length} penales registrados.` : 'Todavía no hay penales registrados para vos.';
+        const ul = document.createElement('ul');
+        data.penales.forEach(item => {
+          const session = sessions.get(String(item.sesionId));
+          const li = document.createElement('li');
+          li.textContent = [session && session.fecha, session && session.nombre, item.rol, item.resultado, item.zona && `Zona ${item.zona}`, item.potencia && `Potencia ${item.potencia}`].filter(Boolean).join(' · ');
+          ul.append(li);
+        });
+        list.append(ul);
+      } catch (error) { if (state.section === 'penales') status.textContent = error.message || 'No se pudieron cargar tus penales.'; }
+    }
+
     function weekDates(periodo) {
       const monday = new Date(localDate() + 'T12:00:00Z');
       monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7) - (periodo === 'anterior' ? 7 : 0));
@@ -1057,9 +1087,11 @@
       byId('accessibility-open').setAttribute('aria-expanded', 'false');
       const isTraining = section === 'entrenar';
       const isRegister = section === 'registrar';
+      const isPenales = section === 'penales';
       byId('entrenar-section').hidden = !isTraining;
       byId('register-section').hidden = !isRegister;
-      byId('upcoming-section').hidden = isTraining || isRegister;
+      byId('penales-section').hidden = !isPenales;
+      byId('upcoming-section').hidden = section !== 'perfil';
       byId('upcoming-message').hidden = section === 'perfil';
       byId('antidopaje-recursos').hidden = section !== 'perfil';
       document.querySelectorAll('.nav-btn').forEach(button => {
@@ -1075,6 +1107,9 @@
         if (!byId('stimulus-date').value) byId('stimulus-date').value = localDate();
         updateStimulusType();
         if (accessToken) showRegisterForm(); else showActivation();
+      } else if (isPenales) {
+        byId('penales-title').focus();
+        loadMyPenalties();
       } else {
         byId('upcoming-title').textContent = {
           penales: 'Penales', perfil: 'Mi perfil'
@@ -1087,6 +1122,7 @@
       state.accessibilityOpen = true;
       byId('entrenar-section').hidden = true;
       byId('register-section').hidden = true;
+      byId('penales-section').hidden = true;
       byId('upcoming-section').hidden = true;
       byId('accessibility-section').hidden = false;
       byId('accessibility-open').setAttribute('aria-expanded', 'true');
@@ -1100,7 +1136,8 @@
       byId('accessibility-open').setAttribute('aria-expanded', 'false');
       byId('entrenar-section').hidden = state.section !== 'entrenar';
       byId('register-section').hidden = state.section !== 'registrar';
-      byId('upcoming-section').hidden = state.section === 'entrenar' || state.section === 'registrar';
+      byId('penales-section').hidden = state.section !== 'penales';
+      byId('upcoming-section').hidden = state.section !== 'perfil';
       document.querySelector(`.nav-btn[data-section="${state.section}"]`).setAttribute('aria-current', 'page');
       byId('accessibility-open').focus();
     }

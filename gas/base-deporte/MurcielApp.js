@@ -300,6 +300,36 @@ function murcielapp_sesion(payload) {
   return { nombre: String(person.Nombre || '').trim() };
 }
 
+function murcielapp_misPenales(payload) {
+  var person = murcielapp_persona_(payload);
+  var id = String(person[PERSONA_ID_COLUMN] || '').trim();
+  if (id === 'TEST_SANTIAGO') return { penales: [], sesiones: [] };
+  var dni = normalizarDNI_(person.DNI);
+  var matches = function(value) {
+    var text = String(value || '').trim();
+    return text === id || !!dni && normalizarDNI_(text) === dni;
+  };
+  var penales = sheetToObjects(getSheet(SHEETS.penales)).map(function(row) {
+    return _normalizarPenalBackend_(row, {});
+  }).filter(function(row) {
+    return matches(row.jugadora_persona_id) || matches(row.arquera_persona_id);
+  }).map(function(row) {
+    return {
+      id: row.id, sesionId: row.sesionId,
+      rol: matches(row.jugadora_persona_id) ? 'Ejecutante' : 'Arquera',
+      zona: row.zona, potencia: row.potencia, resultado: row.resultado,
+      arqueraCalidad: row.arquera_calidad || ''
+    };
+  });
+  var ids = new Set(penales.map(function(row) { return String(row.sesionId); }));
+  var sesiones = penales.length ? penales_getSesiones().data.filter(function(row) {
+    return ids.has(String(row.id));
+  }).map(function(row) {
+    return { id: row.id, nombre: row.nombre, fecha: murcielapp_date_(row.fecha), contexto: row.contexto };
+  }) : [];
+  return { penales: penales, sesiones: sesiones };
+}
+
 function murcielapp_validarEstimulo_(payload) {
   var date = String(payload.fecha || '');
   var type = String(payload.tipo || '');

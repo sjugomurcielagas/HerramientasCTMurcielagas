@@ -65,6 +65,7 @@ const MURCIELAPP_ACTIONS = new Set([
   'murcielapp_codigoPrueba',
   'murcielapp_activar',
   'murcielapp_sesion',
+  'murcielapp_misPenales',
   'murcielapp_registrarEstimulo',
   'murcielapp_miSemana',
   'murcielapp_adminEstimulos',
