@@ -49,8 +49,6 @@
     const kpis = [['Estímulos del período', total.cantidad], ['Promedio semanal', model.promedios.cantidad.semanal], ['Promedio mensual', model.promedios.cantidad.mensual]];
     let html = `<h3>${esc(individual || 'Equipo')} · ${fmt(state.desde)} al ${fmt(state.hasta)}</h3>`;
     html += `<p class="daily-note">Última actualización: ${esc(new Date(model.actualizado).toLocaleString('es-AR', { timeZone: M.ZONA }))} (Argentina).</p>`;
-    html += '<p class="daily-note">Se incluyen ambos sistemas para todas las fechas. Por jugadora y semana se conserva la mayor cantidad por tipo; el formulario semanal aporta solo lo que excede los registros diarios. Los complementos semanales se ubican en el lunes de inicio, sin inventar fechas diarias. Los minutos y la carga provienen solo de registros diarios.</p>';
-    if (model.conciliaciones.length) html += '<div class="notice">Hay diferencias entre fuentes. Se aplicó el criterio favorable a la jugadora; las cantidades conciliadas pueden requerir revisión de coincidencias.</div>';
     {
       html += `<div class="daily-kpis">${kpis.map(([label, value]) => `<div class="daily-kpi"><strong>${num(value)}</strong>${esc(label)}</div>`).join('')}</div>`;
       html += '<p class="daily-note">Promedios = cantidad del período ÷ semanas o meses calendario incluidos, también los que no tienen registros. Las semanas y meses parciales cuentan como uno. En la vista de equipo son promedios del equipo, sin dividir por jugadora.</p>';
@@ -66,8 +64,6 @@
         cells([fmt(d.fecha), d.fisico, d.tecnico, d.otros, num(d.minutos), num(d.carga), d.cantidad ? `${d.cantidad} ${d.cantidad === 1 ? 'registro' : 'registros'}` : 'Sin datos registrados'])));
       if ($('daily-view').value === 'week') html += table('Evolución semanal en el rango seleccionado', ['Semana desde', 'Estímulos', 'Minutos', 'Carga interna'], model.semanas.map(w => cells([fmt(w.desde), w.cantidad, num(w.minutos), num(w.carga)])));
       if ($('daily-view').value === 'month') html += table('Mes a mes', ['Mes', 'Estímulos', 'Físico', 'Técnico-táctico'], model.meses.map(m => cells([m.mes, m.cantidad, m.fisico, m.tecnico])));
-      if (model.conciliaciones.length) html += '<details><summary>Ver conciliación entre sistemas</summary>' + table('Conciliación por jugadora y semana', ['Jugadora', 'Semana', 'Total semanal informado', 'Total diario', 'Complemento incluido'], model.conciliaciones.map(r => cells([r.jugadora, fmt(r.semana), r.semanal.total, r.diario.cantidad, r.complemento]))) + '</details>';
-      if (model.historicos.length) html += '<details><summary>Ver formularios semanales de origen</summary>' + table('Detalle histórico semanal', ['Semana desde', 'Jugadora', 'Estímulos', 'Físico', 'Técnico-táctico'], model.historicos.map(r => cells([fmt(r.fecha), r.jugadora, r.total, r.fisico, r.tecnico]))) + '</details>';
       html += '<details><summary>Ver estímulos registrados</summary>' + records(model.registros.filter(r => !r.historico), 'Registros incluidos en los totales') + '</details>';
     }
     $('daily-output').innerHTML = html; $('daily-output').hidden = false;

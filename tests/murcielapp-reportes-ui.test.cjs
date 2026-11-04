@@ -124,7 +124,7 @@ test('CT ve equipo, jugadora, CSV, móvil, transición y error sin dejar cifras 
     await page.locator('#daily-from').fill('2026-10-12');
     await page.locator('#daily-to').fill('2026-10-18');
     await page.getByRole('button', { name: 'Ver reporte', exact: true }).click();
-    await page.getByText(/Se incluyen ambos sistemas/).waitFor();
+    await page.locator('#daily-output h3').filter({hasText:'12/10/2026 al 18/10/2026'}).waitFor();
     assert.equal(await page.locator('.daily-kpis').count(), 1);
     fail();
     await page.getByRole('button', { name: 'Ver reporte', exact: true }).first().click();
@@ -161,7 +161,7 @@ test('Gestión administra accesos y dirige todo el análisis a Reportes de entre
     await page.locator('#daily-from').fill('2026-09-01');
     await page.locator('#daily-to').fill('2026-10-20');
     await page.getByRole('button', { name: 'Ver reporte', exact: true }).click();
-    await page.locator('#daily-output').getByText('Detalle histórico semanal', { exact: true }).waitFor({state: 'attached'});
+    await page.locator('#daily-output h3').filter({hasText:'01/09/2026 al 20/10/2026'}).waitFor();
     await page.locator('#daily-player').selectOption('P1');
     assert.deepEqual(await page.locator('.daily-kpi strong').allTextContents(), ['6', '0,75', '3']);
     const teamTable = page.locator('#daily-output .report-table-group').filter({has: page.locator('caption', {hasText: 'Cantidades y promedios por tipo'})});
@@ -248,7 +248,7 @@ test('Físico más Técnico-táctico permite comparar jugadoras sin contar Otros
   } finally {await context.close();}
 });
 
-test('muestra conciliación, detalle diario anterior al corte y CSV con complemento', async () => {
+test('mantiene la conciliación interna y muestra resultados y detalle diario', async () => {
  const {context,page,rows,historical,errors}=await fixture();
  rows[0].fecha='2026-10-14';
  historical.push({fecha:'2026-10-19',jugadora:'Pérez, Ana',persona_id:'P1',periodoAnalisis:'2026-S42',total:3,fisico:2,tecnico:1});
@@ -259,10 +259,9 @@ test('muestra conciliación, detalle diario anterior al corte y CSV con compleme
   await page.locator('#daily-output:not([hidden])').waitFor();
   await page.locator('#daily-period').selectOption('2026-10-12');
   await page.getByRole('button',{name:'Ver reporte',exact:true}).click();
-  await page.getByText('Hay diferencias entre fuentes.',{exact:false}).waitFor();
+  await page.locator('#daily-output h3').filter({hasText:'12/10/2026 al 18/10/2026'}).waitFor();
   assert.equal(await page.locator('.daily-kpi strong').first().innerText(),'3');
-  await page.getByText('Ver conciliación entre sistemas',{exact:true}).click();
-  assert.match(await page.locator('#daily-output').innerText(),/Total semanal informado/);
+  assert.doesNotMatch(await page.locator('#daily-output').innerText(), /conciliaci[oó]n|criterio favorable|diferencias entre fuentes|formulario|ambos sistemas/i);
   await page.getByText('Ver estímulos registrados',{exact:true}).click();
   assert.match(await page.locator('#daily-output').innerText(),/14\/10\/2026/);
   const download=page.waitForEvent('download');
