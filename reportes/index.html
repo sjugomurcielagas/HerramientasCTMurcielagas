@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reportes de entrenamiento</title><link rel="stylesheet" href="murcielapp.css?v=20261103j"></head><body><div class="app">
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reportes de entrenamiento</title><link rel="stylesheet" href="murcielapp.css?v=20261105a"></head><body><div class="app">
     <nav class="top-nav" aria-label="Navegación principal">
       <a class="back-home" href="../" aria-label="Volver al inicio">← Inicio</a>
       <div class="module-title" aria-label="Módulo actual"><strong>Reportes</strong></div>
@@ -9,24 +9,23 @@
       </div>
     </nav>
 
-<header class="report-header"><h1>Reportes de entrenamiento</h1><p>El entrenamiento del equipo, en un solo lugar.</p></header>
+<header class="report-header"><h1>Reportes de entrenamiento</h1><p>Consultá qué se registró en el período, para el equipo o por jugadora.</p></header>
 <main id="daily-report" class="panel daily-report" aria-labelledby="daily-title">
   <div class="panel-body">
 
     <h2 id="daily-title" tabindex="-1">Entrenamientos del equipo</h2>
-    <p>Elegí una jugadora o todo el equipo y el período que querés consultar.</p>
     <form id="daily-auth" class="daily-controls">
       <label for="daily-key">Clave del cuerpo técnico<input id="daily-key" type="password" autocomplete="current-password" required></label>
-      <label><span>Recordar acceso en este navegador</span><input id="daily-remember" type="checkbox"></label>
+      <label class="remember-access"><input id="daily-remember" type="checkbox"><span>Recordar acceso en este navegador</span></label>
       <button class="primary" type="submit">Entrar a Reportes</button>
     </form>
     <div class="daily-controls" id="daily-session" hidden><span>Acceso del cuerpo técnico</span><button id="daily-logout" type="button">Cerrar sesión</button></div>
-    <p id="daily-status" role="status" aria-live="polite">Ingresá para consultar los registros del equipo.</p>
+    <p id="daily-status" role="status" aria-live="polite">Ingresá con la clave del cuerpo técnico.</p>
     <div id="daily-workspace" hidden>
       <form id="daily-range" class="daily-controls">
         <label for="daily-view">Ver por<select id="daily-view"><option value="day">Día</option><option value="week" selected>Semana</option><option value="month">Mes</option></select></label>
         <label for="daily-player">Jugadora<select id="daily-player"><option value="">Todo el equipo</option></select></label>
-<label for="daily-year">Año<select id="daily-year"></select></label>
+        <label for="daily-year">Año<select id="daily-year"></select></label>
         <label for="daily-period"><span id="daily-period-title">Semana</span><select id="daily-period"></select></label>
         <div id="daily-dates" class="daily-controls" hidden>
           <label for="daily-from">Desde<input id="daily-from" type="date" required></label>
@@ -42,4 +41,4 @@
 
   </div>
 </main></div>
-<script src="../assets/config.js?v=20261020"></script><script src="murcielapp-model.js?v=20261103j"></script><script src="historico.js?v=20261103j"></script><script src="murcielapp.js?v=20261103j"></script></body></html>
+<script src="../assets/config.js?v=20261020"></script><script src="murcielapp-model.js?v=20261103j"></script><script src="historico.js?v=20261103j"></script><script src="murcielapp.js?v=20261105a"></script></body></html>

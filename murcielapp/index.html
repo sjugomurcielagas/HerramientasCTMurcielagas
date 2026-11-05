@@ -274,7 +274,14 @@
     </section>
     <section id="upcoming-section" class="panel" aria-labelledby="upcoming-title" hidden>
       <h2 id="upcoming-title" tabindex="-1"></h2>
-      <p>Esta sección estará disponible próximamente.</p>
+      <p id="upcoming-message">Esta sección estará disponible próximamente.</p>
+      <div id="antidopaje-recursos" hidden>
+        <h3>Recursos de antidopaje</h3>
+        <div class="actions">
+          <a class="btn secondary" href="../assets/lista-ama-2026-es.pdf" download="Lista-AMA-2026-es.pdf">Descargar Lista AMA 2026 en español (PDF)</a>
+          <a class="btn secondary" href="https://www.argentina.gob.ar/antidopaje/lista-de-prohibiciones" target="_blank" rel="noopener">Consultar la lista vigente en la CNAD (nueva pestaña)</a>
+        </div>
+      </div>
     </section>
     <section id="register-section" aria-labelledby="register-title" hidden>
       <h2 id="register-title" tabindex="-1">Registrar estímulo</h2>
@@ -1053,6 +1060,8 @@
       byId('entrenar-section').hidden = !isTraining;
       byId('register-section').hidden = !isRegister;
       byId('upcoming-section').hidden = isTraining || isRegister;
+      byId('upcoming-message').hidden = section === 'perfil';
+      byId('antidopaje-recursos').hidden = section !== 'perfil';
       document.querySelectorAll('.nav-btn').forEach(button => {
         if (button.dataset.section === section) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');

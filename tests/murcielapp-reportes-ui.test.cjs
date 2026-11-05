@@ -258,6 +258,9 @@ test('mantiene la conciliación interna y muestra resultados y detalle diario', 
   await page.getByRole('button',{name:'Entrar a Reportes',exact:true}).click();
   await page.locator('#daily-output:not([hidden])').waitFor();
   await page.locator('#daily-period').selectOption('2026-10-12');
+  assert.equal(await page.locator('#daily-output').isHidden(), true);
+  assert.equal(await page.locator('#daily-download').isHidden(), true);
+  assert.match(await page.getByRole('status').innerText(), /Ver reporte/);
   await page.getByRole('button',{name:'Ver reporte',exact:true}).click();
   await page.locator('#daily-output h3').filter({hasText:'12/10/2026 al 18/10/2026'}).waitFor();
   assert.equal(await page.locator('.daily-kpi strong').first().innerText(),'3');

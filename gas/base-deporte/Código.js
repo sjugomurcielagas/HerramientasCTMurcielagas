@@ -868,6 +868,16 @@ function antidoping_loadWadaRules_() {
 }
 
 function antidoping_evalWada_(principioActivo) {
+  if (antidoping_isDorzolamida_(principioActivo)) {
+    return {
+      estado: 'EXCEPCIÓN S5: VÍA OFTÁLMICA TÓPICA',
+      fuente_wada: 'Lista de Prohibiciones AMA 2026, S5 (excepciones)',
+      criterio_wada: 'La sección S5 exceptúa la administración oftálmica tópica de dorzolamida.',
+      advertencia_detalle: 'No prohibida por vía oftálmica tópica (gotas para los ojos), tanto en competencia como fuera de competencia.',
+      en_competencia: 'No prohibida por vía oftálmica tópica',
+      fuera_competencia: 'No prohibida por vía oftálmica tópica'
+    };
+  }
   var rules = antidoping_loadWadaRules_();
   if (!rules.length) {
     return {
@@ -897,17 +907,17 @@ function antidoping_evalWada_(principioActivo) {
   var hits = exactHits.length ? exactHits : boundaryHits;
   if (!hits.length) {
     return {
-      estado: 'PERMITIDO',
+      estado: 'NO FIGURA COMO PROHIBIDO',
       fuente_wada: 'WADA_Sustancias',
       observaciones_wada: 'El principio activo fue identificado, pero no figura en la base WADA cargada.',
-      criterio_wada: 'Se identificó un principio activo válido y no aparece en la base WADA cargada; bajo este criterio operativo el uso se considera habilitado.',
+      criterio_wada: 'El principio activo identificado no tiene coincidencias en la base WADA cargada.',
       advertencia_detalle: '',
       en_competencia: 'N/D',
       fuera_competencia: 'N/D'
     };
   }
   var h = hits[0];
-  var hasProhibido = hits.some(function(x) { return normalizeText(x.estado).indexOf('prohibido') !== -1; });
+  var hasProhibido = hits.some(function(x) { return /^prohibid[oa]s?\b/.test(normalizeText(x.estado)); });
   var warningDetails = antidoping_collectWarnings_(hits);
   var enCompetenciaResumen = hits.map(function(x) { return x.en_competencia; }).filter(Boolean).join(' / ') || 'N/D';
   var fueraCompetenciaResumen = hits.map(function(x) { return x.fuera_competencia; }).filter(Boolean).join(' / ') || 'N/D';
@@ -932,9 +942,14 @@ function antidoping_evalWada_(principioActivo) {
   };
 }
 
+function antidoping_isDorzolamida_(value) {
+  return /^(dorzolamida|dorzolamide)$/.test(normalizeText(value || ''));
+}
+
 function antidoping_resolveDirectActiveQuery_(consulta) {
   var consultaNorm = normalizeText(consulta);
   if (!consultaNorm) return '';
+  if (antidoping_isDorzolamida_(consultaNorm)) return 'Dorzolamida';
 
   var rules = antidoping_loadWadaRules_();
   for (var i = 0; i < rules.length; i++) {
@@ -1176,6 +1191,11 @@ function antidoping_appendHistorial_(query, result) {
 function antidoping_buscarMedicamento(payload) {
   var consulta = String((payload && payload.consulta) || '').trim();
   if (!consulta) throw new Error('consulta es requerida');
+  var revisados = antidoping_buscarEvidencia_(consulta, new Date());
+  if (revisados.length) {
+    antidoping_appendHistorial_(consulta, revisados[0]);
+    return ok(true, revisados);
+  }
   var consultaNorm = normalizeText(consulta);
   var forceRefresh = !!(payload && payload.forceRefresh);
   var directActiveQuery = antidoping_resolveDirectActiveQuery_(consulta);
@@ -1190,8 +1210,17 @@ function antidoping_buscarMedicamento(payload) {
   if (!forceRefresh && !shouldBypassCache) {
     var cached = antidoping_readCache_(consultaNorm);
     if (cached && cached.length) {
-      antidoping_appendHistorial_(consulta, cached[0]);
-      return ok(true, cached);
+      var candidatosGuardados = cached.map(antidoping_comoCandidato_);
+      antidoping_appendHistorial_(consulta, candidatosGuardados[0]);
+      return ok(true, candidatosGuardados);
+    }
+  }
+  if (!directActiveQuery && !marcaAliasMatches.length) {
+    var candidatosIndice = antidoping_buscarIndiceArgentino_(consulta);
+    if (candidatosIndice.length) {
+      antidoping_writeCache_(consultaNorm, consulta, 'argly_indice', candidatosIndice);
+      antidoping_appendHistorial_(consulta, candidatosIndice[0]);
+      return ok(true, candidatosIndice);
     }
   }
 
@@ -1326,7 +1355,7 @@ function antidoping_buscarMedicamento(payload) {
     }
     var activeNorm = normalizeText(principio);
     var medicineNorm = normalizeText(item.medicamento || consulta);
-    var resolvedActive = !!activeNorm && activeNorm !== medicineNorm;
+    var resolvedActive = !!activeNorm && (source === 'direct_active' || activeNorm !== medicineNorm);
     if (!resolvedActive) {
       var secondary = antidoping_secondaryEvidenceLookup_(item.medicamento || consulta);
       if (secondary && secondary.principio_activo) {
@@ -1408,7 +1437,7 @@ function antidoping_buscarMedicamento(payload) {
     }];
   }
 
-  var cacheResult = enrichedCacheResult_(enriquecidos, source);
+  var cacheResult = enrichedCacheResult_(enriquecidos.map(antidoping_comoCandidato_), source);
   antidoping_writeCache_(consultaNorm, consulta, source, cacheResult);
   antidoping_appendHistorial_(consulta, cacheResult[0]);
   return ok(true, cacheResult);

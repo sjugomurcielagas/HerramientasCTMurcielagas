@@ -48,13 +48,15 @@
 
     const kpis = [['Estímulos del período', total.cantidad], ['Promedio semanal', model.promedios.cantidad.semanal], ['Promedio mensual', model.promedios.cantidad.mensual]];
     let html = `<h3>${esc(individual || 'Equipo')} · ${fmt(state.desde)} al ${fmt(state.hasta)}</h3>`;
+    if (!total.cantidad) html += '<p class="daily-empty">No hay registros para esta selección. Probá otro período, otra jugadora o todos los tipos de estímulo.</p>';
     html += `<p class="daily-note">Última actualización: ${esc(new Date(model.actualizado).toLocaleString('es-AR', { timeZone: M.ZONA }))} (Argentina).</p>`;
     {
       html += `<div class="daily-kpis">${kpis.map(([label, value]) => `<div class="daily-kpi"><strong>${num(value)}</strong>${esc(label)}</div>`).join('')}</div>`;
-      html += '<p class="daily-note">Promedios = cantidad del período ÷ semanas o meses calendario incluidos, también los que no tienen registros. Las semanas y meses parciales cuentan como uno. En la vista de equipo son promedios del equipo, sin dividir por jugadora.</p>';
+      html += '<details class="daily-note"><summary>¿Cómo se calculan los promedios?</summary><p>Se divide la cantidad del período por las semanas o los meses incluidos, aunque no tengan registros. Los períodos parciales cuentan como uno. En la vista de equipo, el promedio no se divide por jugadora.</p></details>';
       html += table('Cantidades y promedios por tipo de estímulo', ['Tipo', 'Cantidad del período', 'Promedio semanal', 'Promedio mensual'], ['fisicoTecnico', 'fisico', 'tecnico', 'otros', ...(total.sinClasificar ? ['sinClasificar'] : [])].filter(t => !$('daily-type').value || $('daily-type').value === t).map(t => cells([t === 'fisicoTecnico' ? 'Físico + Técnico-táctico (sin Otros)' : type({tipo:t}), total[t], num(model.promedios[t].semanal), num(model.promedios[t].mensual)])));
       html += '<p class="daily-note">Los totales muestran lo registrado. Un día sin datos no significa que no hubo entrenamiento.</p>';
       if (!playerId) {
+        html += '<p class="daily-note">Seleccioná el nombre de una jugadora para ver su reporte.</p>';
         html += '<p class="daily-note table-legend">F + T = Físico + Técnico-táctico, sin Otros. Total incluye Otros. / sem. y / mes son promedios.</p>';
         html += table('Totales por jugadora', ['Jugadora', 'F + T', 'F + T / sem.', 'F + T / mes', 'Total', 'Total / sem.', 'Total / mes', 'Físico', 'Técnico', 'Otros'], model.plantel.map(p =>
           `<tr><td><button type="button" data-daily-player="${esc(p.personaId)}">${esc(p.nombre)}</button>${p.fueraPlantel ? '<span class="daily-note"> · fuera del plantel activo</span>' : ''}</td>` +
@@ -194,8 +196,22 @@
     }
     const labels = {day:['Día anterior', 'Día siguiente'],week:['Semana anterior','Semana siguiente'],month:['Mes anterior','Mes siguiente']}[unit];
     $('daily-prev').textContent = '← ' + labels[0]; $('daily-next').textContent = labels[1] + ' →';
-    $('daily-period-label').textContent = fmt($('daily-from').value) + ' al ' + fmt($('daily-to').value);
+    const from = $('daily-from').value, to = $('daily-to').value;
+    $('daily-period-label').textContent = from && to ? (from === to ? fmt(from) : fmt(from) + ' al ' + fmt(to)) : '';
     $('daily-export').disabled = true; $('daily-download').hidden = true;
+  }
+  function pendingPeriod() {
+    if ($('daily-period').value !== 'custom' && state.payload &&
+        $('daily-from').value === state.desde && $('daily-to').value === state.hasta) {
+      render();
+      return;
+    }
+    state.request++;
+    state.payload = null;
+    state.model = null;
+    $('daily-output').hidden = true;
+    $('daily-refresh').disabled = false;
+    $('daily-status').textContent = 'Para consultar las fechas elegidas, seleccioná «Ver reporte».';
   }
   async function navigate(direction) {
     const unit = $('daily-view').value;
@@ -210,9 +226,16 @@
   }
   $('daily-prev').addEventListener('click', () => navigate(-1));
   $('daily-next').addEventListener('click', () => navigate(1));
-  $('daily-year').addEventListener('change', () => { state.anchor = M.advance(state.anchor, 'month', (Number($('daily-year').value) - Number(state.anchor.slice(0, 4))) * 12); populatePeriods(); period(); });
-  $('daily-period').addEventListener('change', () => { if ($('daily-period').value !== 'custom') state.anchor = $('daily-period').value; period(); });
-  $('daily-view').addEventListener('change', () => { populatePeriods($('daily-period').value === 'custom'); period(); if ($('daily-period').value === 'custom') render(); });
+  $('daily-year').addEventListener('change', () => { state.anchor = M.advance(state.anchor, 'month', (Number($('daily-year').value) - Number(state.anchor.slice(0, 4))) * 12); populatePeriods(); period(); pendingPeriod(); });
+  $('daily-period').addEventListener('change', () => { if ($('daily-period').value !== 'custom') state.anchor = $('daily-period').value; period(); pendingPeriod(); });
+  $('daily-view').addEventListener('change', () => {
+    const custom = $('daily-period').value === 'custom';
+    populatePeriods(custom); period();
+    if (custom && state.payload) render(); else pendingPeriod();
+  });
+  for (const id of ['daily-from', 'daily-to']) {
+    $(id).addEventListener('input', () => { period(); pendingPeriod(); });
+  }
   $('daily-type').addEventListener('change', render);
   $('daily-range').addEventListener('submit', event => { event.preventDefault(); period(); load(); });
   $('daily-export').addEventListener('click', () => {

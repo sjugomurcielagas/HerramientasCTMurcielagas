@@ -2,6 +2,7 @@
 <html lang="es-AR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="murci-antidoping-native" content="1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Antidoping · Las Murciélagas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,26 +49,33 @@
   <header class="topbar"><div class="topbar-inner"><a class="home-link" href="../index.html">← Inicio</a><div class="brand"><img src="../assets/fadec-logo.webp" alt="Logo FADEC" onerror="this.style.display='none'"><img src="../assets/logo-murcielagas.webp" alt="Logo Las Murciélagas" onerror="this.style.display='none'"><div><div class="brand-title">Antidoping</div></div></div></div></header>
   <main>
     <section id="appView">
-      <nav class="tabs" aria-label="Navegación interna"><button class="tab-btn active" data-view="consultaView">Consulta</button><button class="tab-btn" data-view="tueView">TUE</button><button class="tab-btn" data-view="frecuentesView">Frecuentes revisados</button><button class="tab-btn" data-view="historialView">Historial</button><button class="tab-btn" data-view="criteriosView">Criterios</button></nav>
+      <nav class="tabs" aria-label="Navegación interna"><button class="tab-btn active" data-view="consultaView">Consulta</button><button class="tab-btn" data-view="tueView">TUE</button><button class="tab-btn" data-view="frecuentesView">Frecuentes</button><button class="tab-btn" data-view="historialView">Historial</button><button class="tab-btn" data-view="criteriosView">Criterios</button></nav>
 
       <section id="consultaView" class="app-section">
         <div class="panel">
           <div class="panel-head"><div><h2>Consultar medicamento</h2><p>Buscá por nombre comercial, medicamento o principio activo.</p></div></div>
           <div class="notice">La ausencia de coincidencia en WADA no autoriza el uso. Si no hay revisión guardada, el resultado debe tratarse como orientativo y requiere verificación.</div>
-          <div class="form-row" style="margin-top:13px"><label for="queryInput">Medicamento o principio activo</label><input id="queryInput" placeholder="Ej: salbutamol, paracetamol, ibuprofeno"></div>
-          <div class="actions"><button id="buscarBtn" class="btn">Buscar</button><button id="limpiarBtn" class="btn ghost" type="button">Limpiar</button></div>
-          <div id="buscarStatus" class="status-line"></div>
+          <form id="consultaForm">
+            <div class="form-row" style="margin-top:13px"><label for="queryInput">Medicamento o principio activo</label><input id="queryInput" placeholder="Ej: Refrianex o paracetamol" required></div>
+            <div class="actions"><button id="buscarBtn" class="btn" type="submit">Buscar</button><button id="limpiarBtn" class="btn ghost" type="button">Limpiar</button></div>
+          </form>
+          <div id="buscarStatus" class="status-line" role="status"></div>
+          <div class="actions" style="margin-top:13px">
+            <button id="gestionarTueBtn" class="btn ghost small" type="button">Gestionar TUE</button>
+            <a class="btn ghost small" href="https://www.wada-ama.org/en/prohibited-list" target="_blank" rel="noopener noreferrer">Ver lista vigente (AMA)</a>
+            <a class="btn ghost small" href="../assets/lista-ama-2026-es.pdf" download>Descargar lista AMA 2026 en español (PDF)</a>
+          </div>
         </div>
         <div id="resultados" class="grid"><div class="empty">Ingresá una consulta para ver resultados.</div></div>
       </section>
 
       <section id="tueView" class="app-section hidden">
         <div class="panel">
-          <div class="panel-head"><div><h2>TUE</h2><p>Gestioná autorizaciones terapéuticas por jugadora y controlá su vigencia.</p></div></div>
+          <div class="panel-head"><div><h2>TUE</h2><p>Prepará la solicitud y registrá su seguimiento por jugadora. La autorización la otorga la organización antidopaje competente.</p></div></div>
           <details class="secondary-toggle"><summary>Criterio de uso TUE</summary><div class="notice">Usá esta sección cuando una medicación prohibida o condicionada no pueda reemplazarse y haya que iniciar o seguir una TUE. La fecha de vencimiento se propone a un año por defecto, pero se puede editar según la aprobación real.</div></details>
           <div class="actions" style="margin-top:13px">
             <a class="btn secondary small" id="tueFormBtn" href="#" target="_blank" rel="noopener noreferrer">Formulario TUE IBSA</a>
-            <a class="btn ghost small" id="tueGuideBtn" href="#" target="_blank" rel="noopener noreferrer">Instrucciones y proceso</a>
+            <a class="btn ghost small" id="tueGuideBtn" href="#" target="_blank" rel="noopener noreferrer">Solicitud nacional (CNAD)</a>
             <button class="btn ghost small" id="recargarTuesBtn" type="button">Recargar TUE</button>
           </div>
           <div class="tue-stats" id="tueStats" style="margin-top:13px"><div class="empty">Cargando estado TUE...</div></div>
@@ -109,26 +117,26 @@
 
       <section id="frecuentesView" class="app-section hidden">
         <div class="panel">
-          <div class="panel-head"><div><h2>Medicamentos frecuentes</h2><p>Lista inicial para revisión manual y seguimiento de fuentes.</p></div><button id="recargarFrecuentesBtn" class="btn secondary small">Recargar</button></div>
+          <div class="panel-head"><div><h2>Medicamentos frecuentes</h2><p>Usá el nombre guardado como punto de partida para una consulta actual.</p></div><button id="recargarFrecuentesBtn" class="btn secondary small">Recargar</button></div>
           <div id="frecuentesList" class="grid"><div class="empty">Cargando frecuentes...</div></div>
         </div>
       </section>
 
       <section id="historialView" class="app-section hidden">
         <div class="panel">
-          <div class="panel-head"><div><h2>Historial de consultas</h2><p>Últimas consultas registradas.</p></div><button id="recargarHistorialBtn" class="btn secondary small">Recargar</button></div>
+          <div class="panel-head"><div><h2>Historial de consultas</h2><p>Consultas registradas. Volvé a buscar para verificar la evaluación vigente.</p></div><button id="recargarHistorialBtn" class="btn secondary small">Recargar</button></div>
           <div id="historialList" class="grid"><div class="empty">Sin historial cargado.</div></div>
         </div>
       </section>
 
       <section id="criteriosView" class="app-section hidden">
         <div class="panel">
-          <div class="panel-head"><div><h2>Criterios del módulo</h2><p>Reglas de interpretación y fuentes aceptadas.</p></div><div class="actions"><a class="btn ghost tiny" id="wadaAnnualBtn" href="#" target="_blank" rel="noopener noreferrer" title="Usar el 1 de enero para actualizar la lista vigente">Actualizar WADA anual</a></div></div>
+          <div class="panel-head"><div><h2>Criterios del módulo</h2><p>Reglas de interpretación y fuentes aceptadas.</p></div><div class="actions"><a class="btn ghost tiny" href="https://www.argentina.gob.ar/antidopaje/lista-de-prohibiciones" target="_blank" rel="noopener noreferrer">Lista vigente en español</a></div></div>
           <div class="grid">
             <article class="source-row"><div class="source-k">Fuente antidopaje principal</div><div class="source-v">Lista Prohibida WADA vigente.</div></article>
-            <article class="source-row"><div class="source-k">Fuente argentina farmacológica</div><div class="source-v">ANMAT/VNM, PAMI u otra fuente argentina confiable para identificar medicamento y principio activo.</div></article>
-            <article class="source-row"><div class="source-k">Fuente secundaria</div><div class="source-v">Global DRO solo si hay integración estable. Si no, NADAmed u otra base oficial nacional, por principio activo.</div></article>
-            <article class="source-row"><div class="source-k">Regla crítica</div><div class="source-v">Si no aparece en WADA, no decir permitido. Mostrar “No figura como prohibido...” solo si también se consultó fuente secundaria.</div></article>
+            <article class="source-row"><div class="source-k">Composición en Argentina</div><div class="source-v">La ficha revisada enlaza al prospecto o a las instrucciones del fabricante. Confirmá que la presentación coincida con tu envase.</div></article>
+            <article class="source-row"><div class="source-k">Coincidencias de catálogo</div><div class="source-v">Si solo se encuentra una coincidencia de nombre, la composición y la evaluación quedan pendientes de verificar.</div></article>
+            <article class="source-row"><div class="source-k">Cómo leer el resultado</div><div class="source-v">La evaluación se aplica al fútbol para ciegas y al contexto indicado en la ficha. Prestá atención a la vía, a la competencia y a las condiciones que figuren en el resultado.</div></article>
           </div>
         </div>
       </section>
@@ -136,7 +144,7 @@
     </section>
   </main>
 
-  <script src="../assets/config.js?v=20261020"></script>
+  <script src="../assets/config.js?v=20261105-antidoping"></script>
   <script>
     var resultCardPatched = false;
     var resultcardpatched = false;
@@ -144,20 +152,21 @@
     window.resultcardpatched = window.resultcardpatched || false;
     const API_URL=API_BASE_URL;
     const STRICT_MODE={tolerant_json:false,synthetic_frecuentes:false};
-    const WADA_LISTA_VIGENTE_URL='https://drive.google.com/file/d/1vuOT1Yclhb0c_m6P5r1PUyAHb6FlZRX2/view?usp=drive_link';
-    const TUE_FORM_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
-    const TUE_GUIDE_URL='https://antidoping.ibsasport.org/therapeutic-use-exemptions/';
+    const TUE_FORM_URL='https://ibsasport.org/anti-doping-and-classification/anti-doping/therapeutic-use-exemptions/';
+    const TUE_GUIDE_URL='https://www.argentina.gob.ar/antidopaje/autorizacion-de-uso-terapeutico-aut';
     const FALLBACK_FRECUENTES=['Paracetamol','Ibuprofeno','Loratadina','Cetirizina','Amoxicilina','Omeprazol','Salbutamol','Budesonida','Diclofenac','Dipirona / metamizol','Domperidona','Betametasona','Dexametasona','Prednisona','Pseudoefedrina','Fenilefrina','Novalgina'];
-    const SEARCH_ALIASES={novalgina:['novalgina','dipirona','metamizol'],dipirona:['dipirona','metamizol','novalgina'],metamizol:['metamizol','dipirona','novalgina'],anaflex:['anaflex','paracetamol'],paracetamol:['paracetamol','anaflex']};
-    const state={frecuentes:[],frecuentesError:'',historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],tueDraft:null,loaded:{frecuentes:false,historial:false,plantel:false,tues:false}};
+    const state={frecuentes:[],frecuentesError:'',historial:[],plantel:[],tues:{resumen:{},casos:[]},lastResults:[],searchRequest:0,tueDraft:null,loaded:{frecuentes:false,historial:false,plantel:false,tues:false}};
 
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
-      document.getElementById('buscarBtn').addEventListener('click',buscar);
+      document.getElementById('consultaForm').addEventListener('submit',e=>{e.preventDefault();buscar()});
       document.getElementById('limpiarBtn').addEventListener('click',limpiarBusqueda);
-      document.getElementById('queryInput').addEventListener('keydown',e=>{if(e.key==='Enter')buscar()});
+      document.getElementById('queryInput').addEventListener('input',resetSearchResults);
+      document.getElementById('gestionarTueBtn').addEventListener('click',()=>showView('tueView'));
       document.getElementById('recargarFrecuentesBtn').addEventListener('click',loadFrecuentes);
       document.getElementById('recargarHistorialBtn').addEventListener('click',loadHistorial);
+      document.getElementById('frecuentesList').addEventListener('click',repetirConsulta);
+      document.getElementById('historialList').addEventListener('click',repetirConsulta);
       document.getElementById('recargarTuesBtn').addEventListener('click',loadTUEs);
       document.getElementById('guardarTUEBtn').addEventListener('click',guardarTUE);
       document.getElementById('tuePlayerSelect').addEventListener('change',syncTUEForm);
@@ -165,10 +174,8 @@
       document.getElementById('tueFileInput').addEventListener('change',subirArchivoTUE);
       document.getElementById('resultados').addEventListener('click',handleResultadosClick);
       document.getElementById('tueBoard').addEventListener('click',handleTUEBoardClick);
-      document.getElementById('wadaAnnualBtn').href=WADA_LISTA_VIGENTE_URL;
       document.getElementById('tueFormBtn').href=TUE_FORM_URL;
       document.getElementById('tueGuideBtn').href=TUE_GUIDE_URL;
-      loadFrecuentes();
     });
 
     const apiGet=(action,params={})=>Murci.apiGet(action,params,API_URL);
@@ -177,27 +184,42 @@
       document.querySelectorAll('.app-section').forEach(s=>s.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===id));
+      if(id==='frecuentesView'&&!state.loaded.frecuentes)loadFrecuentes();
       if(id==='historialView'&&!state.loaded.historial)loadHistorial();
       if(id==='tueView'&&!state.loaded.plantel)loadPlantel();
       if(id==='tueView'&&!state.loaded.tues)loadTUEs();
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    async function buscar(){
-      const q=document.getElementById('queryInput').value.trim(),status=document.getElementById('buscarStatus');
+    async function buscar(presentacion){
+      const input=document.getElementById('queryInput'),status=document.getElementById('buscarStatus');
+      const q=presentacion||input.value.trim();
       if(!q){status.textContent='Ingresá un medicamento o principio activo.';status.className='status-line error';return}
-      status.textContent='Buscando coincidencias...';status.className='status-line';
-      document.getElementById('resultados').innerHTML='<div class="empty">Buscando coincidencias...</div>';
+      if(presentacion)input.value=presentacion;
+      const request=++state.searchRequest;
+      const resultados=document.getElementById('resultados');
+      state.lastResults=[];
+      status.textContent='Buscando coincidencias…';status.className='status-line';
+      resultados.setAttribute('aria-busy','true');
+      resultados.replaceChildren();
       try{
-        const resolved=await buscarConAliases(q);
-        const items=(resolved.items||[]).filter(Boolean);
+        const data=await apiPost({action:'antidoping_buscarMedicamento',consulta:q});
+        if(request!==state.searchRequest)return;
+        const received=Array.isArray(data)?data:Array.isArray(data?.resultados)?data.resultados:[data];
+        const items=received.filter(item=>item && typeof item==='object');
         renderResultados(items);
-        const aliasText=resolved.usedAlias?` usando alias: ${resolved.usedAlias}`:'';
-        status.textContent=items.length?`Consulta completada${aliasText}.`:'Sin coincidencias confiables.';status.className=items.length?'status-line ok':'status-line error';
-        loadHistorial();
+        const hasEvidence=items.some(item=>!esPendiente(estadoResultado(item)));
+        status.textContent=items.some(item=>item.requiere_presentacion)
+          ? 'Elegí la presentación que coincide con el envase.'
+          : hasEvidence?'Consulta completada.':'No se pudo verificar la consulta.';
+        state.loaded.historial=false;
+        if(presentacion)resultados.querySelector('h3')?.focus();
       }catch(err){
-        status.textContent='Sin respuesta del servicio en este momento. Mostrando resultado orientativo.';status.className='status-line warn';
+        if(request!==state.searchRequest)return;
+        status.textContent='No se pudo consultar el servicio. Volvé a intentarlo.';status.className='status-line error';
         renderResultados([fallbackResultado(q)]);
+      }finally{
+        if(request===state.searchRequest)resultados.removeAttribute('aria-busy');
       }
     }
 
@@ -208,49 +230,94 @@
       cont.innerHTML=state.lastResults.map((item,index)=>resultCard(item,index)).join('');
     }
     function resultCard(r,index){
-      const estado=estadoNormalizado(r.estado||r.resultado||'NO ENCONTRADO / REQUIERE VERIFICACIÓN');
-      const contextoBits=[r.presentacion?`Presentación: ${esc(r.presentacion)}`:'',r.laboratorio?`Laboratorio: ${esc(r.laboratorio)}`:'',(r.en_competencia||r.fuera_competencia)?`Competencia: ${esc(r.en_competencia||'N/D')} / ${esc(r.fuera_competencia||'N/D')}`:''].filter(Boolean);
-      const contexto=contextoBits.length?`<div class="meta">${contextoBits.join(' · ')}</div>`:'';
-      const decision=decisionBlock(r,estado,index);
-      const summary=(r.advertencia_detalle||r.criterio_wada||r.observaciones||'').trim();
-      const consulta=r.__consulta&&r.__consulta!==r.medicamento?`<div class="meta">Consulta: ${esc(r.__consulta)}</div>`:'';
+      const estado=estadoResultado(r);
+      const name=resultTitle(r);
+      const confirmed=!r.requiere_presentacion;
+      const contextoBits=[
+        r.laboratorio && `Laboratorio: ${esc(r.laboratorio)}`,
+        r.via && `Vía: ${esc(r.via)}`,
+        r.deporte && `Deporte: ${esc(r.deporte)}`,
+        confirmed && r.en_competencia && r.en_competencia!=='N/D' && `En competencia: ${esc(r.en_competencia)}`,
+        confirmed && r.fuera_competencia && r.fuera_competencia!=='N/D' && `Fuera de competencia: ${esc(r.fuera_competencia)}`
+      ].filter(Boolean);
+      const contexto=contextoBits.map(text=>`<div class="meta">${text}</div>`).join('');
+      const decision=confirmed ? decisionBlock(r,estado,index) : '<p>Confirmá que esta presentación coincide con el envase para ver la evaluación.</p>';
+      const componentes=Array.isArray(r.componentes)?r.componentes.filter(component=>component?.nombre):[];
+      const formula=componentes.length
+        ? `<div class="detail-box"><strong>Composición</strong><ul>${componentes.map(component=>`<li>${esc(component.nombre)}${component.cantidad?` (${esc(component.cantidad)})`:''}${confirmed && component.estado?` · ${esc(component.estado)}`:''}${confirmed && component.detalle?`<br>${esc(component.detalle)}`:''}</li>`).join('')}</ul></div>`
+        : `<div class="meta">${esPendiente(estado) && (r.principio_activo||r.principioActivo)?'Posible principio activo: ':''}${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>`;
       const detailBits=[
-        r.criterio_wada ? `<div><strong>Criterio:</strong> ${esc(r.criterio_wada)}</div>` : '',
-        r.observaciones ? `<div><strong>Observación:</strong> ${esc(r.observaciones)}</div>` : '',
-        r.fuente_argentina ? `<div><strong>Fuente argentina:</strong> ${esc(r.fuente_argentina)}</div>` : '',
-        r.fuente_wada ? `<div><strong>WADA:</strong> ${esc(r.fuente_wada)}</div>` : '',
-        r.fuente_secundaria ? `<div><strong>Secundaria:</strong> ${esc(r.fuente_secundaria)}</div>` : '',
-        r.fecha_revision ? `<div><strong>Fecha:</strong> ${esc(r.fecha_revision)}</div>` : ''
+        confirmed && (r.tipo_resultado || !esPendiente(estado)) && r.criterio_wada && `<div><strong>Criterio:</strong> ${esc(r.criterio_wada)}</div>`,
+        confirmed && !esPendiente(estado) && r.observaciones && r.observaciones!==r.criterio_wada && `<div><strong>Observación:</strong> ${esc(r.observaciones)}</div>`,
+        r.fuente_argentina && `<div><strong>Fuente argentina:</strong> ${esc(r.fuente_argentina)}</div>`,
+        r.fuente_wada && `<div><strong>AMA:</strong> ${esc(r.fuente_wada)}</div>`,
+        r.fuente_secundaria && `<div><strong>Fuente adicional:</strong> ${esc(r.fuente_secundaria)}</div>`,
+        r.fecha_revision && `<div><strong>Fecha de revisión:</strong> ${esc(r.fecha_revision)}</div>`
       ].filter(Boolean).join('');
-      const detailToggle=detailBits?`<div class="detail-toggle"><button class="btn ghost small" type="button" data-action="toggle-detail" data-index="${index}">Ver detalle</button><div class="detail-box hidden" data-detail-for="${index}">${detailBits}</div></div>`:'';
-      const summaryHtml=summary?`<div class="meta">${esc(summary)}</div>`:'';
-      return `<article class="result-card"><div class="actions" style="justify-content:space-between"><div><div class="result-title">${esc(r.medicamento||r.nombre_comercial||r.consulta||'Consulta')}</div><div class="meta">${esc(r.principio_activo||r.principioActivo||'Principio activo no identificado')}</div>${consulta}${contexto}</div>${estadoBadge(estado)}</div>${decision}${summaryHtml}${detailToggle}</article>`;
+      const details=detailBits?`<details class="detail-toggle"><summary>Ver detalle y referencias</summary><div class="detail-box">${detailBits}</div></details>`:'';
+      const actions=confirmed
+        ? `<div class="actions"><button class="btn ghost small" type="button" data-action="copy-whatsapp" data-index="${index}">Copiar para WhatsApp</button></div>
+           <div class="form-row" data-share-preview hidden>
+             <label for="share-text-${index}">Texto para WhatsApp</label>
+             <textarea id="share-text-${index}" rows="6" readonly></textarea>
+           </div>
+           <div role="status" class="status-line" data-copy-status></div>`
+        : `<button class="btn secondary small" type="button" data-action="select-presentation" data-index="${index}" aria-describedby="resultado-titulo-${index}">Elegir esta presentación</button>`;
+      return `<article class="result-card" id="resultado-${index}" aria-labelledby="resultado-titulo-${index}">
+        <div class="actions" style="justify-content:space-between">
+          <h3 class="result-title" id="resultado-titulo-${index}" tabindex="-1">${esc(name)}</h3>
+          ${confirmed?estadoBadge(estado):'<span class="badge warn">Confirmá la presentación</span>'}
+        </div>
+        ${formula}${contexto}${decision}${fuentesHtml(r)}${details}${actions}
+      </article>`;
+    }
+    function resultTitle(r){
+      return [r.medicamento||r.nombre_comercial||r.consulta||'Consulta',r.presentacion].filter(Boolean).join(' · ');
     }
     function decisionBlock(r,estado,index){
-      const s=estadoNormalizado(estado||'');
+      const s=estadoNormalizado(estado);
       const detail=r.advertencia_detalle||'';
-      const tueBtn=shouldOfferTUE(r,estado)?`<div class="actions" style="margin-top:10px"><button class="btn small" data-action="open-tue" data-index="${index}">Requiere TUE</button></div>`:'';
-      if(s.includes('NO RECONOCE')||s.includes('NO HABILITAR')||s.includes('REQUIERE REVISIÓN')||s.includes('NO ENCONTRADO')){
-        return `<div class="decision-btn block">🔴 No habilitar uso</div><p><strong>Motivo:</strong> ${esc(detail||'No se pudo identificar un principio activo confiable para validar en WADA.')}</p>${tueBtn}`;
+      if(s.startsWith('EXCEPCIÓN')){
+        return `<div class="decision-btn warn">${esc(detail||s)}</div>`;
       }
-      if(s.includes('PROHIBIDO')){
-        return `<div class="decision-btn block">🔴 No habilitar uso</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:''}${tueBtn}`;
+      if(s==='SIN PROHIBICIÓN IDENTIFICADA'||s.startsWith('RESTRICCIÓN POR DEPORTE')||s.startsWith('EN MONITOREO')){
+        return `<div class="decision-btn ok">${esc(detail||s)}</div>`;
+      }
+      const tueBtn=shouldOfferTUE(r,estado)?`<div class="actions" style="margin-top:10px"><button class="btn small" type="button" data-action="open-tue" data-index="${index}">Iniciar ficha TUE</button></div>`:'';
+      if(esProhibicion(s)){
+        return `<div class="decision-btn block">${esc(s)}</div>${detail?`<p><strong>Motivo:</strong> ${esc(detail)}</p>`:''}${tueBtn}`;
+      }
+      if(s.startsWith('NO FIGURA')||s.startsWith('NO PROHIBIDO')){
+        return `<div class="decision-btn warn">No figura como prohibido en la base consultada</div>${detail?`<p><strong>Advertencia:</strong> ${esc(detail)}</p>`:''}`;
+      }
+      if(esPendiente(s)){
+        return '<div class="decision-btn warn">Resultado sin verificar</div><p>Confirmá la presentación y la composición en el envase o el prospecto.</p>';
       }
       if(s.includes('ADVERTENCIA')||s.includes('CONDICIONADO')||s.includes('REQUIERE')||s.includes('UMBRAL')||s.includes('DEPORTE ESPECÍFICO')){
-        return `<div class="decision-btn warn">🟡 Uso con advertencia</div>${detail?`<p><strong>Advertencia:</strong> ${esc(detail)}</p>`:'<p><strong>Advertencia:</strong> revisar dosis, vía y contexto de competencia.</p>'}${tueBtn}`;
+        return `<div class="decision-btn warn">Revisá las condiciones</div>${detail?`<p><strong>Advertencia:</strong> ${esc(detail)}</p>`:'<p>Revisá la dosis, la vía y el contexto de competencia.</p>'}${tueBtn}`;
       }
-      if(s.includes('NO FIGURA')||s.includes('PERMITIDO')){
-        return `<div class="decision-btn ok">🟢 Uso habilitado</div>`;
+      if(s.startsWith('PERMITIDO')){
+        return `<div class="decision-btn ok">Sin restricción identificada para el contexto indicado</div>${detail?`<p>${esc(detail)}</p>`:''}`;
       }
       return `<div class="decision-btn warn">🟡 Requiere revisión médica</div>${tueBtn}`;
     }
     function shouldOfferTUE(r,estado){
       const s=estadoNormalizado(estado||'');
-      const detail=estadoNormalizado(r.advertencia_detalle||'');
-      return s.includes('PROHIBIDO')||s.includes('ADVERTENCIA')||s.includes('CONDICIONADO')||detail.includes('TUE');
+      return esProhibicion(s)||r.permite_iniciar_tue===true;
+    }
+    function httpsUrl(value){
+      try{
+        const parsed=new URL(String(value||''));
+        return parsed.protocol==='https:'?parsed.href:'';
+      }catch{return ''}
     }
     function fuentesHtml(r){
-      return '';
+      const links=[
+        [httpsUrl(r.fuente_url),r.tipo_resultado==='candidato'?'Ver índice de productos':'Ver prospecto o ficha'],
+        [httpsUrl(r.fuente_secundaria_url),'Ver registro o fuente adicional'],
+        [httpsUrl(r.fuente_wada_url),'Ver fuente AMA']
+      ].filter(([url])=>url);
+      return links.length?`<div class="actions">${links.map(([url,label])=>`<a class="btn ghost small" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`).join('')}</div>`:'';
     }
 
     async function loadFrecuentes(){
@@ -273,51 +340,7 @@
       const cont=document.getElementById('frecuentesList');
       if(state.frecuentesError){cont.innerHTML=`<div class="empty">${esc(state.frecuentesError)}</div>`;return}
       if(!state.frecuentes.length){cont.innerHTML='<div class="empty">Sin frecuentes cargados.</div>';return}
-      cont.innerHTML=state.frecuentes.map(m=>`<article class="med-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(m.medicamento||m.nombre_comercial||m.nombre)}</div><div class="meta">${esc(m.principio_activo||m.principioActivo||'Pendiente de identificar')}</div></div>${estadoBadge(estadoNormalizado(m.estado||'REQUIERE REVISIÓN'))}</div>${m.observaciones?`<div class="meta">${esc(m.observaciones)}</div>`:''}</article>`).join('');
-    }
-
-    async function buscarConAliases(query){
-      const variantes=searchVariants(query);
-      const agregados=[];
-      const seen=new Set();
-      let usedAlias='';
-      for(const variante of variantes){
-        try{
-          const data=await apiPost({action:'antidoping_buscarMedicamento',consulta:variante});
-          const items=(Array.isArray(data)?data:(Array.isArray(data?.resultados)?data.resultados:[data])).filter(Boolean);
-          for(const item of items){
-            const key=resultadoKey(item);
-            if(!key||seen.has(key))continue;
-            seen.add(key);
-            agregados.push({...item,__consulta:variante,__score:resultadoScoreItem(item)});
-          }
-          if(!usedAlias&&variante!==query&&items.length)usedAlias=variante;
-        }catch(_err){}
-      }
-      const confiables=agregados.filter(r=>r.__score>=0).sort((a,b)=>b.__score-a.__score);
-      if(!confiables.length)return{items:[fallbackResultado(query)],usedAlias:''};
-      return{items:confiables,usedAlias};
-    }
-    function searchVariants(query){
-      const direct=String(query||'').trim();
-      const normalized=normalizeAliasKey(direct).replace(/[^a-z0-9]+/g,' ').trim();
-      const extras=SEARCH_ALIASES[normalized]||[];
-      const singular=normalized.length>3&&normalized.endsWith('s')?normalized.slice(0,-1):'';
-      return Array.from(new Set([direct,...extras,singular].filter(Boolean)));
-    }
-    function resultadoKey(item){
-      return normalizeAliasKey([item?.medicamento||item?.nombre_comercial||item?.consulta||'',item?.principio_activo||item?.principioActivo||'',item?.presentacion||'',item?.laboratorio||''].join('|')).trim();
-    }
-    function resultadoScoreItem(item){
-      const estado=estadoNormalizado(item?.estado||item?.resultado||'');
-      let score=0;
-      if(estado.includes('PROHIBIDO'))score+=10;
-      if(estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO'))score+=6;
-      if(estado.includes('PERMITIDO')||estado.includes('NO FIGURA'))score+=4;
-      if(item?.principio_activo||item?.principioActivo)score+=2;
-      if(item?.fuente_argentina||item?.fuente_wada||item?.fuente_secundaria)score+=1;
-      if(estado.includes('NO ENCONTRADO')||estado.includes('REQUIERE VERIFICACION'))score-=4;
-      return score;
+      cont.innerHTML=state.frecuentes.map(item=>consultaGuardada(item)).join('');
     }
 
     async function loadHistorial(){
@@ -327,7 +350,25 @@
         state.historial=Array.isArray(data)?data:[];
         state.loaded.historial=true;
       }catch(err){state.historial=[]}
-      cont.innerHTML=state.historial.length?state.historial.map(h=>`<article class="med-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(h.medicamento||h.consulta||'Consulta')}</div><div class="meta">${esc(h.principio_activo||h.principioActivo||'')} · ${esc(h.fecha_revision||h.fechaRevision||'sin fecha')}</div></div>${estadoBadge(estadoNormalizado(h.estado||h.resultado||'REQUIERE REVISIÓN'))}</div></article>`).join(''):'<div class="empty">Sin historial disponible.</div>';
+      cont.innerHTML=state.historial.length?state.historial.map(item=>consultaGuardada(item,true)).join(''):'<div class="empty">Sin historial disponible.</div>';
+    }
+
+    function consultaGuardada(item,esHistorial=false){
+      const consulta=item.consulta||item.medicamento||item.nombre_comercial||item.nombre;
+      if(!consulta)return '';
+      const fecha=esHistorial && (item.fecha_revision||item.fechaRevision);
+      return `<article class="med-card"><h3 class="med-title">${esc(consulta)}</h3>
+        ${fecha?`<div class="meta">Fecha registrada: ${esc(fecha)}</div>`:''}
+        <button class="btn ghost small" type="button" data-repetir-consulta="${esc(consulta)}">${esHistorial?'Volver a consultar':'Consultar'}</button>
+      </article>`;
+    }
+
+    function repetirConsulta(event){
+      const button=event.target.closest('[data-repetir-consulta]');
+      if(!button)return;
+      showView('consultaView');
+      document.getElementById('queryInput').focus();
+      buscar(button.dataset.repetirConsulta);
     }
 
     async function loadPlantel(){
@@ -374,21 +415,70 @@
       cont.innerHTML=casos.map(t=>`<article class="tue-card"><div class="actions" style="justify-content:space-between"><div><div class="med-title">${esc(t.nombre||'Sin jugadora')}</div><div class="meta">${esc(t.medicamento||'Sin medicamento')} · ${esc(t.sustancia||'Sin sustancia')}</div></div>${estadoBadge(estadoNormalizado(t.estado||''))}</div><div class="meta">Emisión: ${esc(t.fecha_emision||'—')} · Vencimiento: ${esc(t.fecha_vencimiento||'—')}</div><div class="meta">Médico tratante: ${esc(t.medico_tratante||'Sin registrar')}</div><div class="meta">IBSA enviado: ${esc(t.ibsa_enviado||'NO')}${t.ibsa_fecha_envio?` · ${esc(t.ibsa_fecha_envio)}`:''}</div>${t.observaciones?`<p>${esc(t.observaciones)}</p>`:''}<div class="actions" style="margin-top:10px"><button class="btn small secondary" data-action="edit-tue" data-persona-id="${esc(t.persona_id||t.Persona_ID||'')}" data-dni="${esc(t.dni||'')}">Editar</button>${t.archivo?`<a class="btn ghost small" href="${esc(t.archivo)}" target="_blank" rel="noopener noreferrer">Ver TUE</a>`:''}</div></article>`).join('');
     }
 
-    function handleResultadosClick(e){
-      const detailBtn=e.target.closest('[data-action="toggle-detail"]');
-      if(detailBtn){
-        const idx=detailBtn.dataset.index;
-        const box=document.querySelector(`[data-detail-for="${idx}"]`);
-        if(box)box.classList.toggle('hidden');
-        return;
+    function textoWhatsApp(result){
+      const estado=estadoResultado(result);
+      const pending=esPendiente(estado);
+      const componentes=Array.isArray(result.componentes)?result.componentes:[];
+      const formula=componentes.filter(component=>component?.nombre)
+        .map(component=>[component.nombre,component.cantidad].filter(Boolean).join(' ')).join(', ');
+      const prospecto=httpsUrl(result.fuente_url);
+      const wada=httpsUrl(result.fuente_wada_url);
+      const detalle=result.advertencia_detalle||result.criterio_wada;
+      const condiciones=componentes.filter(component=>component?.detalle && component.estado!=='SIN PROHIBICIÓN IDENTIFICADA');
+      const detalles=condiciones.map(component=>{
+        const fuente=httpsUrl(component.fuente_wada_url);
+        return `${component.nombre}: ${component.detalle}${fuente && fuente!==wada?` ${fuente}`:''}`;
+      });
+      return [
+        `Consulta antidopaje · ${result.deporte||'Fútbol para ciegas'}`,
+        resultTitle(result),
+        !pending && formula && `Composición: ${formula}.`,
+        pending
+          ? 'Resultado sin verificar. Para confirmar la consulta, necesitamos el nombre exacto y la composición que figuran en el envase o prospecto.'
+          : `Resultado: ${estado}.`,
+        ...(!pending ? (detalles.length?detalles:[detalle]) : []),
+        !pending && result.fecha_revision && `Revisión: ${result.fecha_revision}.`,
+        prospecto && `${result.tipo_resultado==='candidato'?'Índice de productos':'Prospecto o ficha'}: ${prospecto}`,
+        wada && `Fuente AMA: ${wada}`
+      ].filter(Boolean).join('\n');
+    }
+
+    async function copiarWhatsApp(button,result){
+      const card=button.closest('.result-card');
+      const preview=card.querySelector('[data-share-preview]');
+      const output=preview.querySelector('textarea');
+      const status=card.querySelector('[data-copy-status]');
+      const text=textoWhatsApp(result);
+      preview.hidden=false;
+      output.value=text;
+      try{
+        await navigator.clipboard.writeText(text);
+        status.textContent='Copiado. Podés pegarlo en WhatsApp.';
+      }catch{
+        output.focus();
+        output.select();
+        status.textContent='Seleccionamos el texto para que lo copies manualmente.';
       }
-      const btn=e.target.closest('[data-action="open-tue"]');
+    }
+
+    function handleResultadosClick(e){
+      const btn=e.target.closest('button[data-action][data-index]');
       if(!btn)return;
       const index=Number(btn.dataset.index);
       const result=state.lastResults[index];
       if(!result)return;
+      if(btn.dataset.action==='select-presentation'){
+        if(result.requiere_presentacion && result.consulta_presentacion)buscar(result.consulta_presentacion);
+        return;
+      }
+      if(result.requiere_presentacion)return;
+      if(btn.dataset.action==='copy-whatsapp'){
+        copiarWhatsApp(btn,result);
+        return;
+      }
+      if(btn.dataset.action!=='open-tue'||!shouldOfferTUE(result,estadoResultado(result)))return;
       state.tueDraft={
-        medicamento:result.medicamento||result.consulta||'',
+        medicamento:resultTitle(result),
         sustancia:result.principio_activo||'',
         justificacion:buildTUEJustification(result),
         observaciones:result.observaciones||'',
@@ -401,6 +491,7 @@
       syncTUEForm();
       document.getElementById('tueStatus').textContent='Completá la jugadora y guardá la ficha TUE.';
       document.getElementById('tueStatus').className='status-line';
+      document.getElementById('tuePlayerSelect').focus();
     }
 
     function handleTUEBoardClick(e){
@@ -519,7 +610,22 @@
       if(emision&&!vto.value)vto.value=addOneYearIso_(emision);
     }
 
-    function limpiarBusqueda(){document.getElementById('queryInput').value='';document.getElementById('buscarStatus').textContent='';document.getElementById('resultados').innerHTML='<div class="empty">Ingresá una consulta para ver resultados.</div>';state.lastResults=[]}
+    function resetSearchResults(){
+      state.searchRequest++;
+      state.lastResults=[];
+      const status=document.getElementById('buscarStatus');
+      status.textContent='';
+      status.className='status-line';
+      const resultados=document.getElementById('resultados');
+      resultados.removeAttribute('aria-busy');
+      resultados.innerHTML='<div class="empty">Ingresá una consulta para ver resultados.</div>';
+    }
+    function limpiarBusqueda(){
+      const input=document.getElementById('queryInput');
+      input.value='';
+      resetSearchResults();
+      input.focus();
+    }
     function fallbackResultado(q){return{consulta:q,estado:'NO ENCONTRADO / REQUIERE VERIFICACIÓN',observaciones:'No hay revisión registrada para esta consulta.'}}
     function hoyIso_(){return new Date().toISOString().slice(0,10)}
     function addOneYearIso_(iso){const d=new Date(`${iso}T12:00:00Z`);if(Number.isNaN(d.getTime()))return'';d.setUTCDate(d.getUTCDate()+365);return d.toISOString().slice(0,10)}
@@ -534,9 +640,19 @@
     function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const result=String(reader.result||'');resolve(result.includes(',')?result.split(',')[1]:result)};reader.onerror=()=>reject(new Error('No se pudo leer el archivo.'));reader.readAsDataURL(file)})}
     function getExtension(filename){const parts=String(filename||'').split('.');return parts.length>1?parts.pop().toLowerCase():'bin'}
     function guessMimeType(ext){ext=String(ext||'').toLowerCase();if(ext==='jpg'||ext==='jpeg')return'image/jpeg';if(ext==='png')return'image/png';if(ext==='pdf')return'application/pdf';return'application/octet-stream'}
-    function normalizeAliasKey(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
     function estadoNormalizado(v){return String(v||'').trim().toUpperCase()}
-    function estadoBadge(estado){const cls=estado.includes('PROHIBIDO')||estado.includes('NO RECONOCE')||estado.includes('NO HABILITAR')||estado.includes('NO ENCONTRADO')?'danger':estado.includes('ADVERTENCIA')||estado.includes('CONDICIONADO')||estado.includes('REVISIÓN')||estado.includes('REVISAR')?'warn':estado.includes('NO FIGURA')||estado.includes('PERMITIDO')||estado.includes('VIGENTE')?'ok':'dark';return `<span class="badge ${cls}">${esc(estado||'SIN ESTADO')}</span>`}
+    function estadoResultado(item){
+      if(item?.requiere_presentacion)return 'CONFIRMAR PRESENTACIÓN';
+      const tieneEvidencia=['producto','principio_activo'].includes(item?.tipo_resultado) &&
+        item.fecha_revision && httpsUrl(item.fuente_wada_url);
+      return tieneEvidencia?estadoNormalizado(item.estado)||'REQUIERE VERIFICACIÓN':'REQUIERE VERIFICACIÓN';
+    }
+    function esProhibicion(estado){return /^PROHIBID[OA]S?\b/.test(estado)}
+    function esPendiente(estado){return /NO RECONOCE|NO HABILITAR|NO ENCONTRADO|REQUIERE (REVISI[ÓO]N|VERIFICACI[ÓO]N)/.test(estado)}
+    function estadoBadge(estado){
+      const cls=esProhibicion(estado)?'danger':esPendiente(estado)||/^(NO FIGURA|NO PROHIBIDO|EXCEPCIÓN)|ADVERTENCIA|CONDICIONADO|REVISAR/.test(estado)?'warn':/^(PERMITIDO|VIGENTE|SIN PROHIBICIÓN|RESTRICCIÓN POR DEPORTE|EN MONITOREO)/.test(estado)?'ok':'dark';
+      return `<span class="badge ${cls}">${esc(estado||'SIN ESTADO')}</span>`;
+    }
     function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
   </script>
   <div class="page-version-tag">Versión UI</div>

@@ -911,7 +911,8 @@ const UI_DEPLOYED_AT = 'reportes-murcielapp';
 
   if (global.document) {
     const path = String(global.location?.pathname || '');
-    if (/\/antidoping\/?(?:index\.html)?$/i.test(path) || /\/antidoping\/$/i.test(path)) {
+    if (!global.document.querySelector?.('meta[name="murci-antidoping-native"]') &&
+        (/\/antidoping\/?(?:index\.html)?$/i.test(path) || /\/antidoping\/$/i.test(path))) {
       initAntidopingEnhancements_();
     }
   }
