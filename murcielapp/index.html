@@ -210,7 +210,8 @@
     <div class="wrap nav-inner">
       <button class="nav-btn" type="button" data-section="entrenar" aria-current="page">Entrenar</button>
       <button class="nav-btn" type="button" data-section="registrar">Registrar estímulo</button>
-      <button class="nav-btn" type="button" data-section="penales">Penales</button>
+      <button class="nav-btn" type="button" data-section="analisis">Análisis</button>
+      <button class="nav-btn" type="button" data-section="herramientas">Herramientas</button>
       <button class="nav-btn" type="button" data-section="perfil">Mi perfil</button>
     </div>
   </nav>
@@ -281,6 +282,22 @@
           <a class="btn secondary" href="../assets/lista-ama-2026-es.pdf" download="Lista-AMA-2026-es.pdf">Descargar Lista AMA 2026 en español (PDF)</a>
           <a class="btn secondary" href="https://www.argentina.gob.ar/antidopaje/lista-de-prohibiciones" target="_blank" rel="noopener">Consultar la lista vigente en la CNAD (nueva pestaña)</a>
         </div>
+      </div>
+    </section>
+    <section id="analysis-section" class="panel" aria-labelledby="analysis-title" hidden>
+      <h2 id="analysis-title" tabindex="-1">Análisis</h2>
+      <p>Consultá tus resultados para conocer mejor tu rendimiento.</p>
+      <div class="choice-buttons">
+        <button class="btn" id="open-analysis-penales" type="button">Penales</button>
+        <button class="btn secondary" type="button" disabled>Partidos (próximamente)</button>
+      </div>
+    </section>
+    <section id="tools-section" class="panel" aria-labelledby="tools-title" hidden>
+      <h2 id="tools-title" tabindex="-1">Herramientas</h2>
+      <p>Recursos útiles para tu preparación y cuidado.</p>
+      <div class="choice-buttons">
+        <a class="btn secondary" href="../assets/lista-ama-2026-es.pdf" download="Lista-AMA-2026-es.pdf">Descargar Lista AMA 2026</a>
+        <a class="btn secondary" href="https://www.argentina.gob.ar/antidopaje/lista-de-prohibiciones" target="_blank" rel="noopener">Consultar lista vigente</a>
       </div>
     </section>
     <section id="penales-section" class="panel" aria-labelledby="penales-title" hidden>
@@ -1166,12 +1183,16 @@
       const isTraining = section === 'entrenar';
       const isRegister = section === 'registrar';
       const isPenales = section === 'penales';
+      const isAnalysis = section === 'analisis';
+      const isTools = section === 'herramientas';
       byId('entrenar-section').hidden = !isTraining;
       byId('register-section').hidden = !isRegister;
       byId('penales-section').hidden = !isPenales;
+      byId('analysis-section').hidden = !isAnalysis;
+      byId('tools-section').hidden = !isTools;
       byId('upcoming-section').hidden = section !== 'perfil';
       byId('upcoming-message').hidden = section === 'perfil';
-      byId('antidopaje-recursos').hidden = section !== 'perfil';
+      byId('antidopaje-recursos').hidden = true;
       document.querySelectorAll('.nav-btn').forEach(button => {
         if (button.dataset.section === section) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
@@ -1188,6 +1209,10 @@
       } else if (isPenales) {
         byId('penales-title').focus();
         loadMyPenalties();
+      } else if (isAnalysis) {
+        byId('analysis-title').focus();
+      } else if (isTools) {
+        byId('tools-title').focus();
       } else {
         byId('upcoming-title').textContent = {
           penales: 'Penales', perfil: 'Mi perfil'
@@ -1201,6 +1226,8 @@
       byId('entrenar-section').hidden = true;
       byId('register-section').hidden = true;
       byId('penales-section').hidden = true;
+      byId('analysis-section').hidden = true;
+      byId('tools-section').hidden = true;
       byId('upcoming-section').hidden = true;
       byId('accessibility-section').hidden = false;
       byId('accessibility-open').setAttribute('aria-expanded', 'true');
@@ -1215,6 +1242,8 @@
       byId('entrenar-section').hidden = state.section !== 'entrenar';
       byId('register-section').hidden = state.section !== 'registrar';
       byId('penales-section').hidden = state.section !== 'penales';
+      byId('analysis-section').hidden = state.section !== 'analisis';
+      byId('tools-section').hidden = state.section !== 'herramientas';
       byId('upcoming-section').hidden = state.section !== 'perfil';
       document.querySelector(`.nav-btn[data-section="${state.section}"]`).setAttribute('aria-current', 'page');
       byId('accessibility-open').focus();
@@ -1267,6 +1296,7 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
+    byId('open-analysis-penales').addEventListener('click', () => showSection('penales'));
     byId('penales-total').addEventListener('click', () => { penaltiesScope = 'total'; renderMyPenalties(); });
     byId('penales-sessions').addEventListener('click', () => { penaltiesScope = 'session'; renderMyPenalties(); });
     byId('home-button').addEventListener('click', () => showSection('entrenar'));
