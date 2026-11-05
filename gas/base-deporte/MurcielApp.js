@@ -317,6 +317,7 @@ function murcielapp_misPenales(payload) {
     return {
       id: row.id, sesionId: row.sesionId,
       rol: matches(row.jugadora_persona_id) ? 'Ejecutante' : 'Arquera',
+      roles: [matches(row.jugadora_persona_id) ? 'Ejecutante' : '', matches(row.arquera_persona_id) ? 'Arquera' : ''].filter(Boolean),
       zona: row.zona, potencia: row.potencia, resultado: row.resultado,
       arqueraCalidad: row.arquera_calidad || ''
     };

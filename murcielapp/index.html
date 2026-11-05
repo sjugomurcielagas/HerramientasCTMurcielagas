@@ -286,6 +286,11 @@
     <section id="penales-section" class="panel" aria-labelledby="penales-title" hidden>
       <h2 id="penales-title" tabindex="-1">Mis penales</h2>
       <p id="penales-status" role="status" aria-live="polite"></p>
+      <div class="actions" role="group" aria-label="Alcance de las estadísticas de penales">
+        <button class="btn secondary" id="penales-total" type="button" aria-pressed="true">General</button>
+        <button class="btn secondary" id="penales-sessions" type="button" aria-pressed="false">Por sesión</button>
+      </div>
+      <div id="penales-session-buttons" class="actions" role="group" aria-label="Elegir sesión" hidden></div>
       <div id="penales-list"></div>
     </section>
     <section id="register-section" aria-labelledby="register-title" hidden>
@@ -446,6 +451,9 @@
     let deletingStimulus = null;
     let myWeekPeriod = 'actual';
     let weekRequest = 0;
+    let penaltiesData = null;
+    let penaltiesScope = 'total';
+    let penaltiesSessionId = '';
 
     function setEditingStimulus(item) {
       editingStimulus = item;
@@ -927,17 +935,83 @@
       try {
         const data = await Murci.apiPost({ action: 'murcielapp_misPenales', token: accessToken });
         if (state.section !== 'penales') return;
-        const sessions = new Map(data.sesiones.map(item => [String(item.id), item]));
-        status.textContent = data.penales.length ? `${data.penales.length} penales registrados.` : 'Todavía no hay penales registrados para vos.';
-        const ul = document.createElement('ul');
-        data.penales.forEach(item => {
-          const session = sessions.get(String(item.sesionId));
-          const li = document.createElement('li');
-          li.textContent = [session && session.fecha, session && session.nombre, item.rol, item.resultado, item.zona && `Zona ${item.zona}`, item.potencia && `Potencia ${item.potencia}`].filter(Boolean).join(' · ');
-          ul.append(li);
-        });
-        list.append(ul);
+        penaltiesData = data;
+        renderMyPenalties();
       } catch (error) { if (state.section === 'penales') status.textContent = error.message || 'No se pudieron cargar tus penales.'; }
+    }
+
+    function penaltyRole(item, role) { return (item.roles || [item.rol]).includes(role); }
+    function penaltyPercent(part, total) { return total ? `${Math.round(part * 100 / total)} %` : 'Sin datos'; }
+    function penaltyStat(parent, title, items, role) {
+      if (!items.length) return;
+      const section = document.createElement('section');
+      const heading = document.createElement('h3'); heading.textContent = title; section.append(heading);
+      const goals = items.filter(item => item.resultado === 'gol').length;
+      const saved = items.filter(item => item.resultado === 'atajado').length;
+      const lead = document.createElement('p');
+      lead.textContent = role === 'Ejecutante'
+        ? `${items.length} tiros · ${goals} goles · eficacia ${penaltyPercent(goals, items.length)}.`
+        : `${items.length} tiros recibidos · ${saved} atajadas · porcentaje de atajadas ${penaltyPercent(saved, items.length)}.`;
+      section.append(lead);
+      const breakdown = document.createElement('ul');
+      const definitions = role === 'Ejecutante'
+        ? [['gol', 'Goles'], ['atajado', 'Atajados'], ['afuera', 'Afuera'], ['palo', 'Palos']]
+        : [['atajado', 'Atajadas'], ['gol', 'Goles recibidos'], ['afuera', 'Afuera'], ['palo', 'Palos']];
+      definitions.forEach(([key, label]) => {
+        const count = items.filter(item => item.resultado === key).length;
+        const li = document.createElement('li'); li.textContent = `${label}: ${count}.`; breakdown.append(li);
+      });
+      section.append(breakdown);
+      const zones = new Map();
+      items.forEach(item => { if (item.zona) zones.set(item.zona, (zones.get(item.zona) || 0) + 1); });
+      if (zones.size) {
+        const zoneHeading = document.createElement('h4'); zoneHeading.textContent = role === 'Ejecutante' ? 'Zonas de los tiros' : 'Zonas de los tiros recibidos'; section.append(zoneHeading);
+        const zoneList = document.createElement('ul');
+        [...zones.entries()].sort((a, b) => b[1] - a[1]).forEach(([zone, count]) => {
+          const li = document.createElement('li'); li.textContent = `Zona ${zone}: ${count} tiros.`; zoneList.append(li);
+        });
+        section.append(zoneList);
+      }
+      if (role === 'Ejecutante') {
+        const powers = new Map();
+        items.forEach(item => { if (item.potencia) powers.set(item.potencia, (powers.get(item.potencia) || 0) + 1); });
+        if (powers.size) {
+          const power = document.createElement('p');
+          power.textContent = `Potencia: ${[...powers.entries()].map(([name, count]) => `${name} ${count}`).join(', ')}.`;
+          section.append(power);
+        }
+      }
+      parent.append(section);
+    }
+
+    function renderMyPenalties() {
+      if (!penaltiesData) return;
+      const { penales, sesiones } = penaltiesData;
+      const status = byId('penales-status');
+      const list = byId('penales-list'); list.replaceChildren();
+      const sessionButtons = byId('penales-session-buttons'); sessionButtons.replaceChildren();
+      byId('penales-total').setAttribute('aria-pressed', String(penaltiesScope === 'total'));
+      byId('penales-sessions').setAttribute('aria-pressed', String(penaltiesScope === 'session'));
+      sessionButtons.hidden = penaltiesScope !== 'session' || !sesiones.length;
+      if (!penales.length) { status.textContent = 'Todavía no hay penales registrados para vos.'; return; }
+      if (penaltiesScope === 'session') {
+        if (!sesiones.some(item => String(item.id) === penaltiesSessionId)) penaltiesSessionId = String(sesiones[0]?.id || '');
+        sesiones.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).forEach(session => {
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'btn secondary';
+          button.textContent = [session.fecha, session.nombre].filter(Boolean).join(' · ');
+          button.setAttribute('aria-pressed', String(String(session.id) === penaltiesSessionId));
+          button.addEventListener('click', () => { penaltiesSessionId = String(session.id); renderMyPenalties(); button.focus(); });
+          sessionButtons.append(button);
+        });
+      }
+      const visible = penaltiesScope === 'total' ? penales : penales.filter(item => String(item.sesionId) === penaltiesSessionId);
+      const selected = sesiones.find(item => String(item.id) === penaltiesSessionId);
+      status.textContent = penaltiesScope === 'total' ? `Estadísticas generales: ${visible.length} penales.`
+        : `Sesión ${selected ? [selected.fecha, selected.nombre].filter(Boolean).join(' · ') : ''}: ${visible.length} penales.`;
+      penaltyStat(list, 'Como ejecutante', visible.filter(item => penaltyRole(item, 'Ejecutante')), 'Ejecutante');
+      penaltyStat(list, 'Como arquera', visible.filter(item => penaltyRole(item, 'Arquera')), 'Arquera');
+      if (!visible.length) list.textContent = 'No hay penales tuyos en esta sesión.';
+      const note = document.createElement('p'); note.textContent = 'Los porcentajes describen los penales registrados. Para interpretar una zona o un resultado, tené en cuenta la cantidad de tiros.'; list.append(note);
     }
 
     function weekDates(periodo) {
@@ -1189,6 +1263,8 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
+    byId('penales-total').addEventListener('click', () => { penaltiesScope = 'total'; renderMyPenalties(); });
+    byId('penales-sessions').addEventListener('click', () => { penaltiesScope = 'session'; renderMyPenalties(); });
     byId('home-button').addEventListener('click', () => showSection('entrenar'));
     byId('open-my-week').addEventListener('click', () => showMyWeek(new Date(localDate() + 'T12:00:00Z').getUTCDay() === 1 ? 'anterior' : 'actual'));
     byId('my-week-current').addEventListener('click', () => showMyWeek('actual'));
