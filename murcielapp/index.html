@@ -1000,7 +1000,11 @@
           const button = document.createElement('button'); button.type = 'button'; button.className = 'btn secondary';
           button.textContent = [session.fecha, session.nombre].filter(Boolean).join(' · ');
           button.setAttribute('aria-pressed', String(String(session.id) === penaltiesSessionId));
-          button.addEventListener('click', () => { penaltiesSessionId = String(session.id); renderMyPenalties(); button.focus(); });
+          button.addEventListener('click', () => {
+            penaltiesSessionId = String(session.id);
+            renderMyPenalties();
+            [...sessionButtons.querySelectorAll('button')].find(item => item.getAttribute('aria-pressed') === 'true')?.focus();
+          });
           sessionButtons.append(button);
         });
       }
