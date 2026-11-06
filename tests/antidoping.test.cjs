@@ -356,7 +356,7 @@ test('MurcielApp descarga la lista local en español desde Herramientas sin most
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     page.setDefaultTimeout(5000);
     await page.goto(`http://127.0.0.1:${server.address().port}/murcielapp/`);
-    const downloadLink = page.getByRole('link', { name: /descargar lista ama 2026 en español/i });
+    const downloadLink = page.getByRole('link', { name: /descargar lista ama 2026/i });
     assert.equal(await downloadLink.count(), 0);
     await page.getByRole('button', { name: 'Herramientas' }).click();
     await downloadLink.waitFor();
