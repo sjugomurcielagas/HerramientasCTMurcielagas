@@ -331,7 +331,7 @@ test('en la consulta para el CT se puede copiar una aclaración con sus fuentes'
   }
 });
 
-test('MurcielApp descarga la lista local en español desde Mi perfil sin mostrar el buscador', async () => {
+test('MurcielApp descarga la lista local en español desde Herramientas sin mostrar el buscador', async () => {
   const { chromium } = require('@playwright/test');
   const channel = process.env.PLAYWRIGHT_CHANNEL || 'msedge';
   const browser = await chromium.launch({ ...(channel === 'chromium' ? {} : { channel }), headless: true });
@@ -358,7 +358,7 @@ test('MurcielApp descarga la lista local en español desde Mi perfil sin mostrar
     await page.goto(`http://127.0.0.1:${server.address().port}/murcielapp/`);
     const downloadLink = page.getByRole('link', { name: /descargar lista ama 2026 en español/i });
     assert.equal(await downloadLink.count(), 0);
-    await page.getByRole('button', { name: 'Mi perfil' }).click();
+    await page.getByRole('button', { name: 'Herramientas' }).click();
     await downloadLink.waitFor();
     assert.equal(await page.getByRole('textbox', { name: /medicamento|principio activo/i }).count(), 0);
     assert.equal(await page.locator('a[href*="/antidoping"]').count(), 0);
