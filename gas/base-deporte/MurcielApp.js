@@ -323,7 +323,10 @@ function murcielapp_misPenales(payload) {
     };
   });
   var ids = new Set(penales.map(function(row) { return String(row.sesionId); }));
-  var sesiones = penales.length ? penales_getSesiones().data.filter(function(row) {
+  var sesionesResponse = penales.length ? penales_getSesiones() : [];
+  var sesionesRows = Array.isArray(sesionesResponse) ? sesionesResponse :
+    sesionesResponse && Array.isArray(sesionesResponse.data) ? sesionesResponse.data : [];
+  var sesiones = penales.length ? sesionesRows.filter(function(row) {
     return ids.has(String(row.id));
   }).map(function(row) {
     return { id: row.id, nombre: row.nombre, fecha: murcielapp_date_(row.fecha), contexto: row.contexto };
