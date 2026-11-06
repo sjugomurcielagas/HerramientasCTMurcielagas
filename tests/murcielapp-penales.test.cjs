@@ -80,5 +80,7 @@ test('Penales ofrece título, estado anunciado y resultados en lista semántica'
   assert.match(html, /renderPenaltyHeatmap/);
   assert.match(html, /Cada círculo representa un resultado diferente/);
   assert.match(html, /penalty-ball/);
+  assert.match(html, /gol: 'gol'/);
+  assert.match(html, /atajado: 'ataja'/);
   assert.match(html, /penales-title'\)\.focus\(\)/);
 });

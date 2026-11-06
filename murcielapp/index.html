@@ -971,7 +971,7 @@
 
     function penaltyRole(item, role) { return (item.roles || [item.rol]).includes(role); }
     function penaltyPercent(part, total) { return total ? `${Math.round(part * 100 / total)} %` : 'Sin datos'; }
-    function penaltyResultLabel(value) { return ({ gol: 'goles', atajado: 'atajadas', afuera: 'afuera', palo: 'palo' }[value] || value || 'sin resultado'); }
+    function penaltyResultLabel(value) { return ({ gol: 'gol', atajado: 'ataja', afuera: 'afuera', palo: 'palo' }[value] || value || 'sin resultado'); }
     function renderPenaltyHeatmap(parent, items, role) {
       const title = document.createElement('h4');
       title.textContent = role === 'Ejecutante' ? 'Mapa de tiros ejecutados' : 'Mapa de tiros recibidos';
