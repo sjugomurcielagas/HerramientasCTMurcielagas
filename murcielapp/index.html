@@ -117,6 +117,18 @@
     .choice-buttons .btn { min-width: 0; }
     .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid var(--action-outline); border-radius: 12px; padding: 9px 16px; background: var(--action-bg); color: var(--action-text); font-weight: 700; text-decoration: none; text-align: center; }
     .btn.secondary { background: var(--action-quiet-bg); color: var(--action-quiet-text); }
+    .penalty-heatmap { display: grid; gap: 8px; margin: 14px 0; }
+    .penalty-heat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; max-width: 420px; }
+    .penalty-heat-cell { min-height: 74px; border: 1px solid var(--borde); border-radius: 10px; padding: 7px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; }
+    .penalty-heat-label { font-size: .78rem; font-weight: 700; }
+    .penalty-heat-balls { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+    .penalty-ball { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: .72rem; font-weight: 800; border: 2px solid currentColor; }
+    .penalty-ball-gol { background: #b91c1c; }
+    .penalty-ball-atajado { background: #15803d; }
+    .penalty-ball-afuera { background: #64748b; }
+    .penalty-ball-palo { background: #d97706; }
+    .penalty-heat-external { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; max-width: 420px; }
+    .penalty-heat-external .penalty-heat-cell { min-height: 58px; }
     .header-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
     .header-actions .btn { flex-shrink: 0; padding-inline: 12px; }
     .header-actions .header-icon { width: 48px; padding: 0; font-size: 1.35rem; line-height: 1; }
@@ -959,6 +971,32 @@
 
     function penaltyRole(item, role) { return (item.roles || [item.rol]).includes(role); }
     function penaltyPercent(part, total) { return total ? `${Math.round(part * 100 / total)} %` : 'Sin datos'; }
+    function penaltyResultLabel(value) { return ({ gol: 'goles', atajado: 'atajadas', afuera: 'afuera', palo: 'palo' }[value] || value || 'sin resultado'); }
+    function renderPenaltyHeatmap(parent, items, role) {
+      const title = document.createElement('h4');
+      title.textContent = role === 'Ejecutante' ? 'Mapa de tiros ejecutados' : 'Mapa de tiros recibidos';
+      parent.append(title);
+      const wrap = document.createElement('div'); wrap.className = 'penalty-heatmap';
+      const sectors = ['1','2','3','4','5','6','7','8','9'];
+      const external = [['fuera-izq', 'Afuera izquierda'], ['travesano', 'Travesaño'], ['fuera-der', 'Afuera derecha'], ['palo-izq', 'Palo izquierdo'], ['fuera-arr', 'Afuera arriba'], ['palo-der', 'Palo derecho']];
+      const createCell = (key, label) => {
+        const cell = document.createElement('div'); cell.className = 'penalty-heat-cell';
+        const values = new Map(); items.filter(item => String(item.zona) === key).forEach(item => values.set(item.resultado, (values.get(item.resultado) || 0) + 1));
+        const balls = document.createElement('div'); balls.className = 'penalty-heat-balls';
+        [...values.entries()].forEach(([result, count]) => {
+          const ball = document.createElement('span'); ball.className = `penalty-ball penalty-ball-${result}`; ball.textContent = String(count);
+          ball.setAttribute('aria-label', `${count} ${penaltyResultLabel(result)}`); balls.append(ball);
+        });
+        const name = document.createElement('span'); name.className = 'penalty-heat-label'; name.textContent = label;
+        cell.append(name, balls);
+        cell.setAttribute('aria-label', `${label}: ${values.size ? [...values.entries()].map(([result, count]) => `${count} ${penaltyResultLabel(result)}`).join(', ') : 'sin tiros'}`);
+        return cell;
+      };
+      const grid = document.createElement('div'); grid.className = 'penalty-heat-grid'; sectors.forEach(key => grid.append(createCell(key, `Zona ${key}`))); wrap.append(grid);
+      const externalGrid = document.createElement('div'); externalGrid.className = 'penalty-heat-external'; external.forEach(([key, label]) => externalGrid.append(createCell(key, label))); wrap.append(externalGrid);
+      const legend = document.createElement('p'); legend.textContent = 'Cada círculo representa un resultado diferente dentro del sector; el número indica cuántas veces ocurrió.'; wrap.append(legend);
+      parent.append(wrap);
+    }
     function penaltyStat(parent, title, items, role) {
       if (!items.length) return;
       const section = document.createElement('section');
@@ -998,6 +1036,7 @@
           section.append(power);
         }
       }
+      renderPenaltyHeatmap(section, items, role);
       parent.append(section);
     }
 
